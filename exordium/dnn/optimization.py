@@ -25,7 +25,6 @@ import matplotlib.pyplot as plt
 
 
 class SquareRootScheduler:
-
     def __init__(self, lr=0.1):
         self.lr = lr
 
@@ -35,8 +34,8 @@ class SquareRootScheduler:
 def cb_scheduler_sqrt(lr: float = 1e-2):
     return tf.keras.callbacks.LearningRateScheduler(SquareRootScheduler(lr=0.1))
 
-class FactorScheduler:
 
+class FactorScheduler:
     def __init__(self, factor=1, stop_factor_lr=1e-7, base_lr=0.1):
         self.factor = factor
         self.stop_factor_lr = stop_factor_lr
@@ -46,11 +45,12 @@ class FactorScheduler:
         self.base_lr = max(self.stop_factor_lr, self.base_lr * self.factor)
         return self.base_lr
 
+
 def cb_scheduler_factor(factor=0.9, stop_factor_lr=1e-2, base_lr=2.0):
     return tf.keras.callbacks.LearningRateScheduler(FactorScheduler(factor=factor, stop_factor_lr=stop_factor_lr, base_lr=base_lr))
 
-class MultiFactorScheduler:
 
+class MultiFactorScheduler:
     def __init__(self, step, factor, base_lr):
         self.step = step
         self.factor = factor
@@ -63,11 +63,12 @@ class MultiFactorScheduler:
         else:
             return self.base_lr
 
+
 def cb_scheduler_multifactor(step=[15, 30], factor=0.5, base_lr=0.5):
     return tf.keras.callbacks.LearningRateScheduler(MultiFactorScheduler(step=step, factor=factor, base_lr=base_lr))
 
-class CosineScheduler:
 
+class CosineScheduler:
     def __init__(self, max_update, base_lr=0.01, final_lr=0,
                  warmup_steps=0, warmup_begin_lr=0):
         self.base_lr_orig = base_lr
@@ -91,9 +92,11 @@ class CosineScheduler:
                 math.pi * (epoch - self.warmup_steps) / self.max_steps)) / 2
         return self.base_lr
 
+
 def cb_scheduler_cosine(max_update, base_lr=0.01, final_lr=0, warmup_steps=0, warmup_begin_lr=0):
     return tf.keras.callbacks.LearningRateScheduler(CosineScheduler(max_update, base_lr=base_lr, final_lr=final_lr, 
                                                                     warmup_steps=warmup_steps, warmup_begin_lr=warmup_begin_lr))
+
 
 def _plot_scheduler(scheduler, num_epochs, output_path: str = 'plot_scheduler.png'):
     fig = plt.figure()
@@ -105,7 +108,6 @@ def _plot_scheduler(scheduler, num_epochs, output_path: str = 'plot_scheduler.pn
 
 class WarmUp(tf.keras.optimizers.schedules.LearningRateSchedule):
     """Applys a warmup schedule on a given learning rate decay schedule."""
-
     def __init__(
             self,
             initial_learning_rate,
@@ -144,6 +146,7 @@ class WarmUp(tf.keras.optimizers.schedules.LearningRateSchedule):
             'name': self.name
         }
 
+
 def create_optimizer(init_lr, num_train_steps, num_warmup_steps):
     """Creates an optimizer with learning rate schedule."""
     # Implements linear decay of the learning rate.
@@ -163,6 +166,7 @@ def create_optimizer(init_lr, num_train_steps, num_warmup_steps):
         epsilon=1e-6,
         exclude_from_weight_decay=['layer_norm', 'bias'])
     return optimizer
+
 
 class AdamWeightDecay(tf.keras.optimizers.Adam):
     """Adam enables L2 weight decay and clip_by_global_norm on gradients.
@@ -270,9 +274,8 @@ class AdamWeightDecay(tf.keras.optimizers.Adam):
                     return False
         return True
 
+
 class LAMB(tf.keras.optimizers.Optimizer):
-
-
     """Optimizer that implements the LAMB (Layer-wise Adaptive Moments)
     optimizer as TF2 tf.keras.optimizers.
     See paper [Large Batch Optimization for Deep Learning: Training BERT

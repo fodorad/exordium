@@ -1,12 +1,3 @@
-[submodule "tools/opensmile_wrapper"]
-	path = tools/opensmile_wrapper
-	url = https://github.com/fodorad/opensmile_wrapper
 [submodule "tools/pyAudioAnalysis"]
 	path = tools/pyAudioAnalysis
 	url = https://github.com/tyiannak/pyAudioAnalysis
-[submodule "tools/Katna"]
-	path = tools/Katna
-	url = https://github.com/keplerlab/Katna.git
-[submodule "tools/video-keyframe-detector"]
-	path = tools/video-keyframe-detector
-	url = https://github.com/joelibaceta/video-keyframe-detector

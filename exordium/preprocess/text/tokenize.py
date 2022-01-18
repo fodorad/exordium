@@ -3,8 +3,20 @@ import re
 import pickle
 from typing import List, Tuple, Set
 
+import spacy
 from tqdm import tqdm
 from pathlib import Path
+
+
+try:
+    NLP = spacy.load("en_core_web_sm")
+except Exception:
+    os.system('python -m spacy download en')
+    os.system('spacy download en_vectors_web_lg')
+    try:
+        NLP = spacy.load("en_core_web_sm")
+    except:
+        raise ValueError('SpaCy requires a restart.')
 
 
 def texts2tokens(input_list: List[str], output_path: str, ids: List[str] = None) -> None:
@@ -39,13 +51,6 @@ def tokenize_with_spacy(raw_text: str) -> Tuple[List[str], Set[str]]:
     Returns:
         Tuple[List[str], Set[str]]: tokenized text, vocabulary
     """
-    import spacy
-    try:
-        NLP = spacy.load("en_core_web_sm")
-    except Exception:
-        os.system('python -m spacy download en')
-        os.system('spacy download en_vectors_web_lg')
-        raise ValueError('SpaCy is set. restart.')
     doc = NLP(raw_text)
     vocab = set()
     tokenized_text = []

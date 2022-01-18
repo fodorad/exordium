@@ -1,3 +1,4 @@
+import sys
 import time
 import multiprocessing as mp
 from typing import Union, List, Callable, Any, Tuple
@@ -54,7 +55,7 @@ def get_idle_gpus(thr: float = 0.1) -> List[int]:
                 gpu_ids.append(gpu_id)
             else:
                 print(f'GPU:{gpu_id} is busy: {usage}')    
-        except e:
+        except:
             print(f'GPU:{gpu_id} is busy.')
     nvidia_smi.nvmlShutdown()
     if len(gpu_ids) == 0:

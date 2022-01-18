@@ -1,5 +1,5 @@
 # exordium
-Collection of preprocessing, utility functions and deep learning methods.
+Collection of preprocessing functions and deep learning methods.
 
 --------
 ## Install dependencies
