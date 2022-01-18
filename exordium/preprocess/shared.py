@@ -1,5 +1,7 @@
-from typing import Union, List, Callable, Any, Tuple
+import time
 import multiprocessing as mp
+from typing import Union, List, Callable, Any, Tuple
+
 from tqdm import tqdm
 
 
@@ -59,3 +61,20 @@ def get_idle_gpus(thr: float = 0.1) -> List[int]:
         print(f'There isn\'t any idle GPUs currently...')
         sys.exit(0)
     return gpu_ids
+
+
+def timer(func):
+    def wrapper(*args, **kwargs):
+        before = time.time()
+        func(*args, **kwargs)
+        print('Function took:', time.time()-before, 'seconds.')
+    return wrapper
+
+
+def timer_with_return(func):
+    def wrapper(*args, **kwargs):
+        before = time.time()
+        val = func(*args, **kwargs)
+        print('Function took:', time.time()-before, 'seconds.')
+        return val
+    return wrapper

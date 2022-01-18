@@ -35,3 +35,4 @@ def extract_feature_maps(X: np.ndarray,
     preds = model.predict(X_preprocessed, batch_size=batch_size, verbose=1)
     return preds
 
+
