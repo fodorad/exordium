@@ -1,5 +1,7 @@
+import os
 import sys
 import time
+from pathlib import Path
 import multiprocessing as mp
 from typing import Union, List, Callable, Any, Tuple
 
@@ -79,3 +81,13 @@ def timer_with_return(func):
         print('Function took:', time.time()-before, 'seconds.')
         return val
     return wrapper
+
+
+def get_project_root() -> Path:
+    return Path(__file__).parent.parent
+
+
+def get_weight_location() -> Path:
+    # default weight location
+    # possible future feature: configuration file and custom cache location
+    return Path().home() / '.cache' / 'torch' / 'hub' / 'checkpoints'

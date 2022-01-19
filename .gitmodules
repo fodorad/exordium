@@ -1,3 +1,6 @@
 [submodule "tools/pyAudioAnalysis"]
 	path = tools/pyAudioAnalysis
 	url = https://github.com/tyiannak/pyAudioAnalysis
+[submodule "tools/FAb-Net"]
+	path = tools/FAb-Net
+	url = https://github.com/oawiles/FAb-Net
