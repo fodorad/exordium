@@ -3,8 +3,8 @@ Collection of preprocessing functions and deep learning methods.
 
 # Setup
 ## Environment
-* Python 3.8
-* PyTorch 1.8
+* Python 3.10
+* PyTorch 1.11
 
 ## Install dependencies
 ```bash
