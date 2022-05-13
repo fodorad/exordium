@@ -20,7 +20,7 @@ git submodule update --init --recursive
 ## Audio
 Install pyAudioAnalysis package
 ```bash
-mv ./tools/pyAudioAnalysis/requirements.txt ./tools/pyAudioAnalysis/_requirements.txt 
+mv ./tools/pyAudioAnalysis/requirements.txt ./tools/pyAudioAnalysis/_requirements.txt
 pip install -e ./tools/pyAudioAnalysis
 ```
 

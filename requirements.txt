@@ -13,3 +13,7 @@ librosa
 torch
 torchvision
 transformers
+fairseq
+retina-face
+deepface
+av

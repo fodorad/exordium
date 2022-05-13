@@ -1,6 +1,7 @@
 # Project
 test/
 data/processed
+data/videos/0*
 datasets/
 
 # Byte-compiled / optimized / DLL files
