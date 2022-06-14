@@ -3,7 +3,9 @@ scipy
 pydub
 spacy
 pandas
+pickle5
 Pillow
+openpyxl
 matplotlib
 prettytable
 opencv-python
@@ -11,9 +13,12 @@ scikit-learn
 scikit-image
 librosa
 torch
+opensmile
 torchvision
 transformers
 fairseq
 retina-face
 deepface
+moviepy
 av
+bbox_visualizer

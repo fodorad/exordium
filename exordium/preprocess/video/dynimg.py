@@ -23,7 +23,7 @@ def frames2dynimgs(input_dir, output_dir):
 
 def get_dynamic_image(frames, normalized: bool = True):
     """ Takes a list of frames and returns either a raw or normalized dynamic image.
-    
+
     Example:
         # 1 dyn img from list of frames
         frames = glob.glob('./example_frames/*.jpg')
