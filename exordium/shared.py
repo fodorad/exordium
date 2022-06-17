@@ -136,7 +136,7 @@ class PickleLoader(Loader):
             pickle.dump(data, f)
 
 class DetLoader(Loader):
-    
+
     def load(self, path):
         from exordium.preprocess.video.tracker import RetinafaceDetections
         return RetinafaceDetections().load(path)

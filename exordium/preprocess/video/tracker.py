@@ -361,13 +361,13 @@ class RetinafaceDetections():
 
     def __init__(self):
         self.detections = []
-    
+
     def add(self, detection: dict):
         self.detections.append(detection)
 
     def __len__(self):
         return len(self.detections)
-    
+
     def __getitem__(self, idx):
         return self.detections[idx]
 
@@ -375,9 +375,9 @@ class RetinafaceDetections():
         with open(output_file, 'w') as f:
             writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
-            writer.writerow(['frame', 'score', 
-                             'x', 'y', 'w', 'h', 
-                             'left_eye_x', 'left_eye_y', 
+            writer.writerow(['frame', 'score',
+                             'x', 'y', 'w', 'h',
+                             'left_eye_x', 'left_eye_y',
                              'right_eye_x', 'right_eye_y',
                              'nose_x', 'nose_y',
                              'left_mouth_x', 'left_mouth_y',
@@ -385,7 +385,7 @@ class RetinafaceDetections():
             for detection in self.detections:
                 writer.writerow([detection['frame'],
                                  detection['score'],
-                                 *detection['bb']] + 
+                                 *detection['bb']] +
                                  list(np.reshape(detection['landmarks'], (10,))))
 
 
@@ -411,12 +411,12 @@ class IoUTracker():
         self.new_track_id = 0
         self.tracks = dict()
 
-    def label_iou(self, detections, 
-                        iou_thr: float = 0.2, 
+    def label_iou(self, detections,
+                        iou_thr: float = 0.2,
                         min_det_score: float = 0.7,
                         max_lost: int = 25):
-
-        for detection in detections:
+        print('label iou')
+        for detection in tqdm(detections):
             # drop low confidence detection
             if detection['score'] < min_det_score: continue
 
@@ -426,8 +426,14 @@ class IoUTracker():
                 self.new_track_id += 1
                 continue
 
+            # current state of the dictionary, otherwise "RuntimeError: dictionary changed size during iteration"
+            tracks = list(self.tracks.items()).copy()
+
+            print('number of active tracks:', len(tracks))
+
+            tracks_to_add = []
             # if condition is met, assign detection to an unfinished track
-            for _, track in self.tracks.items():
+            for _, track in tracks:
                 # get track's last timestep's detection
                 last_detection_frame = sorted(list(track.location.keys()))[-1]
 
@@ -436,21 +442,30 @@ class IoUTracker():
                     #print(f'{detection["frame"]}: same frame, different detection')
                     continue
 
+                # calculate iou of the detection and the track's last detection
+                iou = iou_xywh(track.location[last_detection_frame]['bb'], detection['bb'])
+
                 # last frame is within lost frame tolerance and IoU threshold is met
                 if detection['frame'] - last_detection_frame < max_lost and \
-                    iou_xywh(track.location[last_detection_frame]['bb'], detection['bb']) > iou_thr:
+                    iou > iou_thr:
 
                     # add detection to track
-                    self.tracks[track.id].update(detection)
+                    tracks_to_add.append((track.id, iou))
                     #print(f'{detection["frame"]}: track ({track.id}) is extended')
-                
-                else:
-                    # start new track
-                    self.tracks[self.new_track_id] = Track(self.new_track_id, detection)
-                    self.new_track_id += 1
+
+            if len(tracks_to_add) == 0:
+                # start new track
+                self.tracks[self.new_track_id] = Track(self.new_track_id, detection)
+                self.new_track_id += 1
+            else:
+                # get good iou tracks, sort by iou and get the highest one
+                best_iou_track = sorted(tracks_to_add, key=lambda x: x[1], reverse=True)[0]
+                # update the best track with the detection
+                self.tracks[best_iou_track[0]].update(detection)
         return self
 
     def interpolate(self):
+        print('interpolate')
         for _, track in self.tracks.items():
             # get frames with detections
             t_list = np.array(sorted(list(track.location.keys())))
@@ -463,7 +478,7 @@ class IoUTracker():
                 # get start and end detections
                 d_start = track.location[t_start]
                 d_end = track.location[t_end]
-                
+
                 # interpolate bb coords
                 # bb shape == (4,2)
                 bb_interp = interpolate.interp1d(np.array([t_start, t_end]), 
@@ -553,9 +568,10 @@ class IoUTracker():
             blacklist.append(k)
             print(len(blacklist), '/', len(track_ids), '\r', end='', flush=True)
         return self
-    
+
 
     def merge_iou(self, max_lost: int = 125, iou_thr: float = 0.2):
+        print('merge iou')
         track_ids = list(self.tracks.keys())
         if len(track_ids) == 1: return self
         blacklist = []
@@ -604,7 +620,7 @@ class IoUTracker():
             if k not in keep_ids:
                 self.tracks.pop(k)
         return self
-    
+
     def select_center(self, center_point: tuple, top_k: int = 1):
         center_point = np.array(center_point)
         keep = sorted([(k, np.linalg.norm(track.center()-center_point)) for k, track in self.tracks.items()], key=lambda x: x[1], reverse=False)
@@ -623,7 +639,7 @@ class IoUTracker():
         for frame_ind, frame_path in tqdm(enumerate(frames), total=len(frames)):
             if frame_ind % sample_every_n != 0: continue
             frame = cv2.imread(frame_path)
-        
+
             for _, track in self.tracks.items():
                 if not frame_ind in track.location:
                     frame = np.zeros((h, w, 3))
@@ -777,6 +793,7 @@ def find_and_track_deepface(frames_dir: str,
                             gpu_id: int = 0,
                             retinaface_arch: str = 'resnet50',
                             cache_det: str = 'test.det',
+                            visualize_det: bool = False,
                             **kwargs):
     """ Refactor for general use case
 
@@ -796,10 +813,16 @@ def find_and_track_deepface(frames_dir: str,
     # detect face bounding boxes
     detections = detect_faces(frame_paths=frames, detector=RetinaFace(gpu_id=gpu_id, network=retinaface_arch), batch_size=batch_size, output_path=cache_det)
 
+    #if visualize_det:
+    #    Path(./).mkdir(parents=True, exist_ok=True)
+    #    detection_visualization(frames, detections, detection_dir)
+    #    frames2video(detection_dir, Path(detection_dir).parent / f'{Path(detection_dir).stem}.mp4')
+
     h, w, _ = cv2.imread(frames[0]).shape
     cx = w // 2
     cy = h // 2
 
+    print('Run tracker...')
     # label, interpolate, merge and filter tracks
     tracker = IoUTracker().label_iou(detections) \
                           .interpolate() \
@@ -808,14 +831,10 @@ def find_and_track_deepface(frames_dir: str,
                           .filter_topk_length(top_k=num_tracks) \
                           .select_center((cx, cy))
 
-    print('[postprocess] number of tracks:', len(tracker.tracks), 
+    print('[postprocess] number of tracks:', len(tracker.tracks),
           'lengths of tracks:', [(id, len(track)) for id, track in tracker.tracks.items()])
 
-    #if detection_dir is not None:
-    #    Path(detection_dir).mkdir(parents=True, exist_ok=True)
-    #    detection_visualization(frames, detections, detection_dir)
-    #    frames2video(detection_dir, Path(detection_dir).parent / f'{Path(detection_dir).stem}.mp4')
-    #
+
     #if track_dir is not None:
     #    Path(track_dir).mkdir(parents=True, exist_ok=True)
     #    track_visualization(frames, tracker.tracks, track_dir)
@@ -865,6 +884,7 @@ def find_and_track_iou(frames_dir: str,
     cx = w // 2
     cy = h // 2
 
+    print('Run tracker...')
     # label, interpolate, merge and filter tracks
     tracker = IoUTracker().label_iou(detections) \
                           .interpolate() \
@@ -872,7 +892,7 @@ def find_and_track_iou(frames_dir: str,
                           .filter_topk_length(top_k=num_tracks) \
                           .select_center((cx, cy))
 
-    print('[postprocess] number of tracks:', len(tracker.tracks), 
+    print('[postprocess] number of tracks:', len(tracker.tracks),
           'lengths of tracks:', [(id, len(track)) for id, track in tracker.tracks.items()])
 
     return tracker.tracks

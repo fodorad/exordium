@@ -24,7 +24,7 @@ class GraphVisualization:
                         node_color="skyblue",
                         edge_color="grey",
                         node_shape=".",
-                        alpha=0.5,
+                        alpha=0.8,
                         linewidths=10)
         if output is not None:
             Path(output).parent.mkdir(parents=True, exist_ok=True)

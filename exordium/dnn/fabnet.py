@@ -78,6 +78,8 @@ def job_fabnet(device: str, frame_dirs: list, batch_size: int, output_dir: str) 
             # probabilities = probabilities / probabilities.sum(axis=1)[:,None]
             # probabilities = probabilities.detach().cpu().numpy().squeeze()
             feature = feature.detach().cpu().numpy().squeeze()
+            if samples.shape[0] == 1 and feature.shape == (256,):
+                feature = np.expand_dims(feature, axis=0)
             assert feature.shape == (samples.shape[0], 256), f'[FAb-Net] Got shape {feature.shape} instead of the expected shape: {(samples.shape[0], 256)}.'
             features.append(feature)
         features = np.concatenate(features, axis=0)
