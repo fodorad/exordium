@@ -260,7 +260,7 @@ def nms(boxes, scores, overlapThresh, classes=None):
     else:
         return boxes[pick], scores[pick]
 
-@timer_with_return
+
 def face_alignment(img: np.ndarray,
                    landmarks: np.ndarray,
                    detector: str = 'mtcnn',
@@ -322,7 +322,7 @@ def face_alignment2(img: np.ndarray,
                    detector: str = 'mtcnn'):
     # modified version of function in deepface repository:
     # https://github.com/serengil/deepface/blob/master/deepface/commons/functions.py
-    # left_eye, right_eye, nose: (x, y), (h, w)
+    # left_eye, right_eye, nose: (x, y), (w, h)
     # img[x,y,:] = (0,255,0)
     # cv2 image, top left is 0,0
     #
@@ -336,7 +336,6 @@ def face_alignment2(img: np.ndarray,
 
     right_eye = landmarks[0,:]
     left_eye = landmarks[1,:]
-    nose = landmarks[2,:]
 
     left_eye_x, left_eye_y = left_eye
     right_eye_x, right_eye_y = right_eye
@@ -366,9 +365,8 @@ def face_alignment2(img: np.ndarray,
     if direction == -1:
         angle = 90 - angle
 
-    img = np.array(Image.fromarray(img).rotate(direction*angle, resample=Image.BICUBIC)) # rotate
+    return np.array(Image.fromarray(img).rotate(direction*angle, resample=Image.BICUBIC)) # rotate
 
-    return img
 
 def visualize_mtcnn(img: np.ndarray,
                     bb_xyxy: np.ndarray,

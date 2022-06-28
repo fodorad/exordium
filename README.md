@@ -11,9 +11,14 @@ Collection of preprocessing functions and deep learning methods.
 pip install -r requirements.txt --user
 ```
 
-## Initialize submodules:
+## Initialize submodules
 ```bash
 git submodule update --init --recursive
+```
+
+## Run tests
+```bash
+python -m unittest
 ```
 
 # Modalities
