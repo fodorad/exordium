@@ -1,422 +1,21 @@
 import os
 import csv
 import random
-from pathlib import Path
-from unicodedata import decimal
-from PIL import Image
-from collections import OrderedDict
 import itertools
+from pathlib import Path
+from collections import OrderedDict
 
 import cv2
 import numpy as np
 from tqdm import tqdm
 from deepface import DeepFace
 from scipy import interpolate
+import bbox_visualizer as bbv
 
 from exordium.shared import timer, timer_with_return, load_or_create
 from exordium.preprocess.video.frames import frames2video
+from exordium.preprocess.video.bb import iou_xywh, xywh2xyxy, xyxy2xywh
 from batch_face import RetinaFace # pip install git+https://github.com/elliottzheng/batch-face.git@master
-# from motrackers.utils.misc import xyxy2xywh, xywh2xyxy, iou_xywh
-import bbox_visualizer as bbv
-
-
-def get_centroid(bboxes):
-    """
-    Calculate centroids for multiple bounding boxes.
-
-    Args:
-        bboxes (numpy.ndarray): Array of shape `(n, 4)` or of shape `(4,)` where
-            each row contains `(xmin, ymin, width, height)`.
-
-    Returns:
-        numpy.ndarray: Centroid (x, y) coordinates of shape `(n, 2)` or `(2,)`.
-
-    """
-
-    one_bbox = False
-    if len(bboxes.shape) == 1:
-        one_bbox = True
-        bboxes = bboxes[None, :]
-
-    xmin = bboxes[:, 0]
-    ymin = bboxes[:, 1]
-    w, h = bboxes[:, 2], bboxes[:, 3]
-
-    xc = xmin + 0.5*w
-    yc = ymin + 0.5*h
-
-    x = np.hstack([xc[:, None], yc[:, None]])
-
-    if one_bbox:
-        x = x.flatten()
-    return x
-
-
-def iou(bbox1, bbox2):
-    """
-    Calculates the intersection-over-union of two bounding boxes.
-    Source: https://github.com/bochinski/iou-tracker/blob/master/util.py
-
-    Args:
-        bbox1 (numpy.array or list[floats]): Bounding box of length 4 containing
-            ``(x-top-left, y-top-left, x-bottom-right, y-bottom-right)``.
-        bbox2 (numpy.array or list[floats]): Bounding box of length 4 containing
-            ``(x-top-left, y-top-left, x-bottom-right, y-bottom-right)``.
-
-    Returns:
-        float: intersection-over-onion of bbox1, bbox2.
-    """
-
-    bbox1 = [float(x) for x in bbox1]
-    bbox2 = [float(x) for x in bbox2]
-
-    (x0_1, y0_1, x1_1, y1_1), (x0_2, y0_2, x1_2, y1_2) = bbox1, bbox2
-
-    # get the overlap rectangle
-    overlap_x0 = max(x0_1, x0_2)
-    overlap_y0 = max(y0_1, y0_2)
-    overlap_x1 = min(x1_1, x1_2)
-    overlap_y1 = min(y1_1, y1_2)
-
-    # check if there is an overlap
-    if overlap_x1 - overlap_x0 <= 0 or overlap_y1 - overlap_y0 <= 0:
-        return 0.0
-
-    # if yes, calculate the ratio of the overlap to each ROI size and the unified size
-    size_1 = (x1_1 - x0_1) * (y1_1 - y0_1)
-    size_2 = (x1_2 - x0_2) * (y1_2 - y0_2)
-    size_intersection = (overlap_x1 - overlap_x0) * (overlap_y1 - overlap_y0)
-    size_union = size_1 + size_2 - size_intersection
-
-    iou_ = size_intersection / size_union
-
-    return iou_
-
-
-def iou_xywh(bbox1, bbox2):
-    """
-    Calculates the intersection-over-union of two bounding boxes.
-    Source: https://github.com/bochinski/iou-tracker/blob/master/util.py
-
-    Args:
-        bbox1 (numpy.array or list[floats]): bounding box of length 4 containing ``(x-top-left, y-top-left, width, height)``.
-        bbox2 (numpy.array or list[floats]): bounding box of length 4 containing ``(x-top-left, y-top-left, width, height)``.
-
-    Returns:
-        float: intersection-over-onion of bbox1, bbox2.
-    """
-    bbox1 = bbox1[0], bbox1[1], bbox1[0]+bbox1[2], bbox1[1]+bbox1[3]
-    bbox2 = bbox2[0], bbox2[1], bbox2[0]+bbox2[2], bbox2[1]+bbox2[3]
-
-    iou_ = iou(bbox1, bbox2)
-
-    return iou_
-
-
-def xyxy2xywh(xyxy):
-    """
-    Convert bounding box coordinates from (xmin, ymin, xmax, ymax) format to (xmin, ymin, width, height).
-
-    Args:
-        xyxy (numpy.ndarray):
-
-    Returns:
-        numpy.ndarray: Bounding box coordinates (xmin, ymin, width, height).
-
-    """
-
-    if len(xyxy.shape) == 2:
-        w, h = xyxy[:, 2] - xyxy[:, 0] + 1, xyxy[:, 3] - xyxy[:, 1] + 1
-        xywh = np.concatenate((xyxy[:, 0:2], w[:, None], h[:, None]), axis=1)
-        return xywh.astype("int")
-    elif len(xyxy.shape) == 1:
-        (left, top, right, bottom) = xyxy
-        width = right - left + 1
-        height = bottom - top + 1
-        return np.array([left, top, width, height]).astype('int')
-    else:
-        raise ValueError("Input shape not compatible.")
-
-
-def xywh2xyxy(xywh):
-    """
-    Convert bounding box coordinates from (xmin, ymin, width, height) to (xmin, ymin, xmax, ymax) format.
-
-    Args:
-        xywh (numpy.ndarray): Bounding box coordinates as `(xmin, ymin, width, height)`.
-
-    Returns:
-        numpy.ndarray : Bounding box coordinates as `(xmin, ymin, xmax, ymax)`.
-
-    """
-
-    if len(xywh.shape) == 2:
-        x = xywh[:, 0] + xywh[:, 2]
-        y = xywh[:, 1] + xywh[:, 3]
-        xyxy = np.concatenate((xywh[:, 0:2], x[:, None], y[:, None]), axis=1).astype('int')
-        return xyxy
-    if len(xywh.shape) == 1:
-        x, y, w, h = xywh
-        xr = x + w
-        yb = y + h
-        return np.array([x, y, xr, yb]).astype('int')
-
-
-def midwh2xywh(midwh):
-    """
-    Convert bounding box coordinates from (xmid, ymid, width, height) to (xmin, ymin, width, height) format.
-
-    Args:
-        midwh (numpy.ndarray): Bounding box coordinates (xmid, ymid, width, height).
-
-    Returns:
-        numpy.ndarray: Bounding box coordinates (xmin, ymin, width, height).
-    """
-
-    if len(midwh.shape) == 2:
-        xymin = midwh[:, 0:2] - midwh[:, 2:] * 0.5
-        wh = midwh[:, 2:]
-        xywh = np.concatenate([xymin, wh], axis=1).astype('int')
-        return xywh
-    if len(midwh.shape) == 1:
-        xmid, ymid, w, h = midwh
-        xywh = np.array([xmid-w*0.5, ymid-h*0.5, w, h]).astype('int')
-        return xywh
-
-
-def intersection_complement_indices(big_set_indices, small_set_indices):
-    """
-    Get the complement of intersection of two sets of indices.
-
-    Args:
-        big_set_indices (numpy.ndarray): Indices of big set.
-        small_set_indices (numpy.ndarray): Indices of small set.
-
-    Returns:
-        numpy.ndarray: Indices of set which is complementary to intersection of two input sets.
-    """
-    assert big_set_indices.shape[0] >= small_set_indices.shape[1]
-    n = len(big_set_indices)
-    mask = np.ones((n,), dtype=bool)
-    mask[small_set_indices] = False
-    intersection_complement = big_set_indices[mask]
-    return intersection_complement
-
-
-def nms(boxes, scores, overlapThresh, classes=None):
-    """
-    Non-maximum suppression. based on Malisiewicz et al.
-
-    Args:
-        boxes (numpy.ndarray): Boxes to process (xmin, ymin, xmax, ymax)
-        scores (numpy.ndarray): Corresponding scores for each box
-        overlapThresh (float):  Overlap threshold for boxes to merge
-        classes (numpy.ndarray, optional): Class ids for each box.
-
-    Returns:
-        tuple: a tuple containing:
-            - boxes (list): nms boxes
-            - scores (list): nms scores
-            - classes (list, optional): nms classes if specified
-
-    """
-
-    if boxes.dtype.kind == "i":
-        boxes = boxes.astype("float")
-
-    if scores.dtype.kind == "i":
-        scores = scores.astype("float")
-
-    pick = []
-
-    x1 = boxes[:, 0]
-    y1 = boxes[:, 1]
-    x2 = boxes[:, 2]
-    y2 = boxes[:, 3]
-    area = (x2 - x1 + 1) * (y2 - y1 + 1)
-
-    idxs = np.argsort(scores)
-
-    while len(idxs) > 0:
-        last = len(idxs) - 1
-        i = idxs[last]
-        pick.append(i)
-
-        xx1 = np.maximum(x1[i], x1[idxs[:last]])
-        yy1 = np.maximum(y1[i], y1[idxs[:last]])
-        xx2 = np.minimum(x2[i], x2[idxs[:last]])
-        yy2 = np.minimum(y2[i], y2[idxs[:last]])
-
-        w = np.maximum(0, xx2 - xx1 + 1)
-        h = np.maximum(0, yy2 - yy1 + 1)
-
-        overlap = (w * h) / area[idxs[:last]]
-
-        # delete all indexes from the index list that have
-        idxs = np.delete(idxs, np.concatenate(([last], np.where(overlap > overlapThresh)[0])))
-
-    if classes is not None:
-        return boxes[pick], scores[pick], classes[pick]
-    else:
-        return boxes[pick], scores[pick]
-
-
-def face_alignment(img: np.ndarray,
-                   landmarks: np.ndarray,
-                   detector: str = 'mtcnn',
-                   desiredLeftEye=(0.38, 0.38),
-                   desiredFaceWidth=224,
-                   desiredFaceHeight=None):
-    # expected MTCNN implementation: https://github.com/timesler/facenet-pytorch
-
-    assert landmarks.shape == (5,2), f'Expected: (5,2), got istead: {landmarks.shape}'
-    assert detector in {'mtcnn'}, 'Only MTCNN format is supported right now.'
-
-    # if the desired face height is None, set it to be the
-    # desired face width (normal behavior)
-    if desiredFaceHeight is None:
-        desiredFaceHeight = desiredFaceWidth
-
-    landmarks = np.rint(landmarks).astype(np.int32)
-
-    left_eye_x, left_eye_y = landmarks[1,:] # participant's left eye
-    right_eye_x, right_eye_y = landmarks[0,:] # participant's right eye
-
-    # compute the angle between the eye centroids
-    dY = right_eye_y - left_eye_y
-    dX = right_eye_x - left_eye_x
-    angle = np.degrees(np.arctan2(dY, dX)) - 180
-
-    # compute center (x, y)-coordinates (i.e., the median point)
-    # between the two eyes in the input image
-    eyesCenter = (int((left_eye_x + right_eye_x) // 2),
-                  int((left_eye_y + right_eye_y) // 2))
-
-    # compute the desired right eye x-coordinate based on the
-    # desired x-coordinate of the left eye
-    desiredRightEyeX = 1.0 - desiredLeftEye[0]
-
-    # determine the scale of the new resulting image by taking
-    # the ratio of the distance between eyes in the *current*
-    # image to the ratio of distance between eyes in the *desired* image
-    dist = np.sqrt((dX ** 2) + (dY ** 2))
-    desiredDist = (desiredRightEyeX - desiredLeftEye[0])
-    desiredDist *= desiredFaceWidth
-    scale = desiredDist / dist
-
-    # grab the rotation matrix for rotating and scaling the face
-    M = cv2.getRotationMatrix2D(eyesCenter, angle, scale)
-
-    tX = desiredFaceWidth * 0.5 
-    tY = desiredFaceHeight * desiredLeftEye[1]
-    M[0, 2] += (tX - eyesCenter[0])
-    M[1, 2] += (tY - eyesCenter[1])
-
-    # apply the affine transformation
-    return cv2.warpAffine(img, M, (desiredFaceWidth, desiredFaceHeight), flags=cv2.INTER_CUBIC)
-
-
-def face_alignment2(img: np.ndarray,
-                   landmarks: np.ndarray,
-                   bb_xyxy: np.ndarray = None,
-                   detector: str = 'mtcnn'):
-    # modified version of function in deepface repository:
-    # https://github.com/serengil/deepface/blob/master/deepface/commons/functions.py
-    # left_eye, right_eye, nose: (x, y), (w, h)
-    # img[x,y,:] = (0,255,0)
-    # cv2 image, top left is 0,0
-    #
-    # expected MTCNN implementation: https://github.com/timesler/facenet-pytorch
-
-    assert landmarks.shape == (5,2), f'Expected: (5,2), got istead: {landmarks.shape}'
-    assert detector in {'mtcnn'}, 'Only MTCNN format is supported right now.'
-
-    bb_xyxy = np.rint(bb_xyxy).astype(np.int32)
-    landmarks = np.rint(landmarks).astype(np.int32)
-
-    right_eye = landmarks[0,:]
-    left_eye = landmarks[1,:]
-
-    left_eye_x, left_eye_y = left_eye
-    right_eye_x, right_eye_y = right_eye
-
-    # find rotation direction
-    if left_eye_y < right_eye_y:
-        point_3rd = (right_eye_x, left_eye_y)
-        direction = -1 # rotate clcokwise
-    else:
-        point_3rd = (left_eye_x, right_eye_y)
-        direction = 1 # rotate counter clockwise
-
-    # Euclidean distance of p1 and p2:
-    #     np.sqrt(np.sum(np.power(p1-p2, 2)))
-    # or
-    #     np.linalg.norm((p1-p2))
-    a = np.linalg.norm(np.array(left_eye)  - np.array(point_3rd))
-    b = np.linalg.norm(np.array(right_eye) - np.array(point_3rd))
-    c = np.linalg.norm(np.array(right_eye) - np.array(left_eye))
-
-    assert b != 0 and c != 0, 'Division by zero'
-
-    cos_a = (b*b + c*c - a*a)/(2*b*c) # apply cosine rule
-    cos_a = np.clip(cos_a, -1., 1.) # floating point errors can lead to NaN
-    angle = (np.arccos(cos_a) * 180) / np.pi # radian to degree
-
-    if direction == -1:
-        angle = 90 - angle
-
-    return np.array(Image.fromarray(img).rotate(direction*angle, resample=Image.BICUBIC)) # rotate
-
-
-def visualize_mtcnn(img: np.ndarray,
-                    bb_xyxy: np.ndarray,
-                    probability: float,
-                    landmarks: np.ndarray,
-                    output_path: str = 'test.png'):
-    assert bb_xyxy.shape == (4,)
-    assert isinstance(probability, (float, np.float32)), f'Expected: float, got instead: {type(probability)}'
-    assert landmarks.shape == (5,2), f'Expected: (5,2), got istead: {landmarks.shape}'
-
-    bb_xyxy = np.rint(bb_xyxy).astype(np.int32)
-    landmarks = np.rint(landmarks).astype(np.int32)
-    probability = np.round(probability, decimals=2)
-
-    colors = [(255,0,0),(0,255,0), (0,0,255), (0,0,0), (255,255,255)]
-    img = bbv.draw_rectangle(img, bb_xyxy.astype(int))
-    #img = bbv.add_label(img, "{:2f}".format(probability), bb_xyxy)
-    img = cv2.putText(img, str(probability), bb_xyxy[:2]-5, cv2.FONT_HERSHEY_SIMPLEX,
-                      0.5, (0,255,0), 1, cv2.LINE_AA)
-    for i in range(landmarks.shape[0]):
-        img = cv2.circle(img, landmarks[i,:].astype(int), 1, colors[i], -1)
-
-    if output_path is not None:
-        cv2.imwrite(output_path, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-
-def test_face_alignment(img_path: str = None):
-    import torch
-    from facenet_pytorch import MTCNN
-    if img_path is None:
-        img_path = 'data/processed/frames/h-jMFLm6U_Y.000/frame_00001.png'
-    img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    mtcnn = MTCNN(keep_all=True, device=device)
-    bb_xyxy, probs, landmarks = mtcnn.detect(img, landmarks=True)
-    bb_xyxy = bb_xyxy[0]
-    probability = probs[0]
-    landmarks = landmarks[0]
-    print(bb_xyxy)
-    print(probs)
-    print(landmarks)
-    img_path = Path(img_path)
-    output_path_orig = img_path.parents[2] / 'faces_aligned' / img_path.parent.name / img_path.name
-    output_path_aligned = img_path.parents[2] / 'faces_aligned' / img_path.parent.name / f'{img_path.stem}_aligned.png'
-    output_path_orig.parent.mkdir(parents=True, exist_ok=True)
-    output_path_aligned.parent.mkdir(parents=True, exist_ok=True)
-    visualize_mtcnn(img, bb_xyxy, probability, landmarks, output_path=str(output_path_orig))
-
-    img = face_alignment(img, landmarks)
-    #visualize_mtcnn(img, bb_xyxy, probability, landmarks, output_path='test_aligned.png')
-    cv2.imwrite(str(output_path_aligned), cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
 
 class Track():
@@ -424,7 +23,7 @@ class Track():
     def __init__(self, id: int, detection: dict, verbose: bool = False):
         # detection: score: float, bb: np.ndarray (xywh), landmarks: np.ndarray (5,2)
         self.id = id
-        self.location = dict()
+        self.location = {}
         self.update(detection)
         if verbose:
             print(f'{detection["frame"]}: new track ({self.id}) is started')
@@ -439,10 +38,7 @@ class Track():
 
     def sample(self, num: int = 5):
         if len(self.location) == 0: return None
-        dets = []
-        for k, v in self.location.items():
-            if v['score'] != -1: # not an interpolated detection
-                dets.append((k, v))
+        dets = [(k, v) for k, v in self.location.items() if v['score'] != -1]
         if len(dets) < num: return dets
         return random.sample(dets, num)
 
@@ -511,8 +107,7 @@ class RetinafaceDetections():
     def load(self, input_file: str):
         with open(input_file, 'r') as f:
             csv_reader = csv.reader(f, delimiter=',')
-            line_count = 0
-            for record in csv_reader:
+            for line_count, record in enumerate(csv_reader):
                 if line_count > 0:
                     self.detections.append({
                         'frame': int(record[0]),
@@ -520,7 +115,6 @@ class RetinafaceDetections():
                         'bb': np.array(record[2:6], dtype=np.int32),
                         'landmarks': np.array(record[6:16], dtype=np.int32).reshape(5,2),
                     })
-                line_count += 1
         return self
 
 
@@ -528,7 +122,7 @@ class IoUTracker():
 
     def __init__(self):
         self.new_track_id = 0
-        self.tracks = dict()
+        self.tracks = {}
 
     def label_iou(self, detections,
                         iou_thr: float = 0.2,
@@ -572,7 +166,7 @@ class IoUTracker():
                     tracks_to_add.append((track.id, iou))
                     #print(f'{detection["frame"]}: track ({track.id}) is extended')
 
-            if len(tracks_to_add) == 0:
+            if not tracks_to_add:
                 # start new track
                 self.tracks[self.new_track_id] = Track(self.new_track_id, detection)
                 self.new_track_id += 1
@@ -753,14 +347,14 @@ class IoUTracker():
 
     def save(self, frames: list, output_dir: str, sample_every_n: int = 1):
         print(f'Save faces to {output_dir}...')
-        assert len(frames) > 0
+        assert frames, 'Empty list of frames'
         h, w, _ = cv2.imread(frames[0])
         for frame_ind, frame_path in tqdm(enumerate(frames), total=len(frames)):
             if frame_ind % sample_every_n != 0: continue
             frame = cv2.imread(frame_path)
 
             for _, track in self.tracks.items():
-                if not frame_ind in track.location:
+                if frame_ind not in track.location:
                     frame = np.zeros((h, w, 3))
                     cv2.imwrite(str(Path(output_dir) / 'frame_{:05d}.png'.format(frame_ind)), frame)
                 else:
@@ -769,7 +363,7 @@ class IoUTracker():
                     bb_xyxy = xywh2xyxy(detection['bb'])
                     # centering
                     cx, cy = bb_xyxy[0]-bb_xyxy[2], bb_xyxy[1]-bb_xyxy[3]
-                    face_bb_xyxy = np.rint(np.array([cx-bb_size//2, cy-bb_size//2, 
+                    face_bb_xyxy = np.rint(np.array([cx-bb_size//2, cy-bb_size//2,
                                                      cx+bb_size//2, cx-bb_size//2]))
                     # correct if necessary
                     face_bb_xyxy[face_bb_xyxy < 0] = 0
@@ -781,6 +375,7 @@ class IoUTracker():
                     x1, y1, x2, y2 = face_bb_xyxy
                     face = frame[y1:y2, x1:x2, :]
                     cv2.imwrite(str(Path(output_dir) / 'frame_{:05d}.png'.format(frame_ind)), face)
+
 
 def detection_visualization(frame_paths: list, detections: RetinafaceDetections, output_dir: str, sample_every_n: int = 25):
     print(f'Save detections to {output_dir}...')
@@ -798,7 +393,7 @@ def face_visualization(frames: list, tracks: OrderedDict, output_dir: str, sampl
     print(f'Save faces to {output_dir}...')
     if Path(output_dir).exists(): return # skip already done samples
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    assert len(frames) > 0
+    assert frames, 'Empty list of frames'
     h, w, _ = cv2.imread(frames[0]).shape
     for frame_ind, frame_path in tqdm(enumerate(frames), total=len(frames)):
         #if frame_ind < 27861: continue
@@ -812,7 +407,7 @@ def face_visualization(frames: list, tracks: OrderedDict, output_dir: str, sampl
             if bb_size % 2 == 1: bb_size -= 1 # make it even
             #if f.shape == (bb_size, bb_size, 3): continue
             #print('bb size:', bb_size)
-            if not frame_ind in track.location:
+            if frame_ind not in track.location:
                 frame = np.zeros((bb_size, bb_size, 3))
                 cv2.imwrite(str(Path(output_dir) / 'frame_{:05d}.png'.format(frame_ind)), frame)
             else:
@@ -823,7 +418,7 @@ def face_visualization(frames: list, tracks: OrderedDict, output_dir: str, sampl
                 cx = bb_xyxy[0] + abs(bb_xyxy[2]-bb_xyxy[0])//2
                 cy = bb_xyxy[1] + abs(bb_xyxy[3]-bb_xyxy[1])//2
                 #print('center of bb:', cx, cy)
-                face_bb_xyxy = np.rint(np.array([cx-bb_size//2, cy-bb_size//2, 
+                face_bb_xyxy = np.rint(np.array([cx-bb_size//2, cy-bb_size//2,
                                                  cx+bb_size//2, cy+bb_size//2])).astype(np.int32)
                 #print('calculated bb:', face_bb_xyxy)
                 # correct if necessary
@@ -848,27 +443,12 @@ def track_visualization(frame_paths: list, tracks: OrderedDict, output_dir: str,
     for frame_ind, frame_path in tqdm(enumerate(frame_paths), total=len(frame_paths)):
         if frame_ind % sample_every_n != 0: continue
         frame = cv2.imread(frame_path)
-        
-        fx, fy = frame.shape[1], frame.shape[0]
-        #frame_center = (int(fx//2), int(fy//2))
-
         for _, track in tracks.items():
-            if not frame_ind in track.location: continue
+            if frame_ind not in track.location: continue
             detection = track.location[frame_ind]
             bb_xyxy = xywh2xyxy(detection['bb'])
-            
             frame = bbv.draw_rectangle(frame, bb_xyxy)
             frame = bbv.add_label(frame, "{}|{:2d}".format(track.id, int(detection['score']*100)), bb_xyxy)
-
-            #cx, cy = track.center()
-            #print(frame.shape, fx, fy)
-            #track_center = (int(cx), int(cy))
-            #print(center_point)
-            #import sys;sys.exit()
-            #print(frame_ind, track_center, frame_center)
-            #frame = cv2.circle(frame, track_center, 1, (0,0,255), -1)
-            #frame = cv2.arrowedLine(frame, track_center, frame_center, (0,0,150), 1)
-
             cv2.imwrite(str(Path(output_dir) / 'frame_{:05d}.png'.format(frame_ind)), frame)
 
 
@@ -906,7 +486,7 @@ def detect_faces(frame_paths: list, detector: RetinaFace, batch_size: int = 32, 
 
 @timer_with_return
 @load_or_create('pkl')
-def find_and_track_deepface(frames_dir: str,
+def find_and_track_deepface(frames_dir: str | Path,
                             num_tracks: int = 2,
                             batch_size: int = 32,
                             gpu_id: int = 0,
@@ -925,10 +505,10 @@ def find_and_track_deepface(frames_dir: str,
         retinaface_arch (str, optional): _description_. Defaults to 'resnet50'.
         cache_det (str, optional): _description_. Defaults to 'test.det'.
     """
-    assert retinaface_arch in ['mobilenet', 'resnet50'], 'Invalid architecture choice for RetinaFace. Choose from ["mobilenet","resnet50"].'
+    assert retinaface_arch in {'mobilenet', 'resnet50'}, 'Invalid architecture choice for RetinaFace. Choose from {"mobilenet","resnet50"}.'
 
     # get frames
-    frames = [str(Path(frames_dir) / frame) for frame in sorted(os.listdir(str(frames_dir)))]
+    frames = [str(Path(frames_dir) / frame) for frame in sorted(os.listdir(frames_dir))]
     # detect face bounding boxes
     detections = detect_faces(frame_paths=frames, detector=RetinaFace(gpu_id=gpu_id, network=retinaface_arch), batch_size=batch_size, output_path=cache_det)
 
@@ -974,7 +554,7 @@ def find_and_track_deepface(frames_dir: str,
 
 @timer_with_return
 @load_or_create('pkl')
-def find_and_track_iou(frames_dir: str,
+def find_and_track_iou(frames_dir: str | Path,
                        num_tracks: int = 2,
                        batch_size: int = 32,
                        gpu_id: int = 0,
@@ -992,10 +572,10 @@ def find_and_track_iou(frames_dir: str,
         retinaface_arch (str, optional): _description_. Defaults to 'resnet50'.
         cache_det (str, optional): _description_. Defaults to 'test.det'.
     """
-    assert retinaface_arch in ['mobilenet', 'resnet50'], 'Invalid architecture choice for RetinaFace. Choose from ["mobilenet","resnet50"].'
+    assert retinaface_arch in {'mobilenet', 'resnet50'}, 'Invalid architecture choice for RetinaFace. Choose from ["mobilenet","resnet50"].'
 
     # get frames
-    frames = [str(Path(frames_dir) / frame) for frame in sorted(os.listdir(str(frames_dir)))]
+    frames = [str(Path(frames_dir) / frame) for frame in sorted(os.listdir(frames_dir))]
     # detect face bounding boxes
     detections = detect_faces(frame_paths=frames, detector=RetinaFace(gpu_id=gpu_id, network=retinaface_arch), batch_size=batch_size, output_path=cache_det)
 
@@ -1017,121 +597,7 @@ def find_and_track_iou(frames_dir: str,
     return tracker.tracks
 
 
-def nms(boxes, scores, overlapThresh, classes=None):
-    """
-    perform non-maximum suppression. based on Malisiewicz et al.
-    Args:
-        boxes (numpy.ndarray): boxes to process
-        scores (numpy.ndarray): corresponding scores for each box
-        overlapThresh (float): overlap threshold for boxes to merge
-        classes (numpy.ndarray, optional): class ids for each box.
-
-    Returns:
-        (tuple): tuple containing:
-
-        boxes (list): nms boxes
-        scores (list): nms scores
-        classes (list, optional): nms classes if specified
-    """
-    # # if there are no boxes, return an empty list
-    # if len(boxes) == 0:
-    #     return [], [], [] if classes else [], []
-
-    # if the bounding boxes integers, convert them to floats --
-    # this is important since we'll be doing a bunch of divisions
-    if boxes.dtype.kind == "i":
-        boxes = boxes.astype("float")
-
-    if scores.dtype.kind == "i":
-        scores = scores.astype("float")
-
-    # initialize the list of picked indexes
-    pick = []
-
-    # grab the coordinates of the bounding boxes
-    x1 = boxes[:, 0]
-    y1 = boxes[:, 1]
-    x2 = boxes[:, 2]
-    y2 = boxes[:, 3]
-    #score = boxes[:, 4]
-    # compute the area of the bounding boxes and sort the bounding
-    # boxes by the bottom-right y-coordinate of the bounding box
-    area = (x2 - x1 + 1) * (y2 - y1 + 1)
-    idxs = np.argsort(scores)
-
-    # keep looping while some indexes still remain in the indexes
-    # list
-    while len(idxs) > 0:
-        # grab the last index in the indexes list and add the
-        # index value to the list of picked indexes
-        last = len(idxs) - 1
-        i = idxs[last]
-        pick.append(i)
-
-        # find the largest (x, y) coordinates for the start of
-        # the bounding box and the smallest (x, y) coordinates
-        # for the end of the bounding box
-        xx1 = np.maximum(x1[i], x1[idxs[:last]])
-        yy1 = np.maximum(y1[i], y1[idxs[:last]])
-        xx2 = np.minimum(x2[i], x2[idxs[:last]])
-        yy2 = np.minimum(y2[i], y2[idxs[:last]])
-
-        # compute the width and height of the bounding box
-        w = np.maximum(0, xx2 - xx1 + 1)
-        h = np.maximum(0, yy2 - yy1 + 1)
-
-        # compute the ratio of overlap
-        overlap = (w * h) / area[idxs[:last]]
-
-        # delete all indexes from the index list that have
-        idxs = np.delete(idxs, np.concatenate(([last],
-                                               np.where(overlap > overlapThresh)[0])))
-
-    if classes is not None:
-        return boxes[pick], scores[pick], classes[pick]
-    else:
-        return boxes[pick], scores[pick]
-
-def iou(bbox1, bbox2):
-    """
-    Calculates the intersection-over-union of two bounding boxes.
-
-    Args:
-        bbox1 (numpy.array, list of floats): bounding box in format x1,y1,x2,y2.
-        bbox2 (numpy.array, list of floats): bounding box in format x1,y1,x2,y2.
-
-    Returns:
-        int: intersection-over-onion of bbox1, bbox2
-    """
-
-    bbox1 = [float(x) for x in bbox1]
-    bbox2 = [float(x) for x in bbox2]
-
-    (x0_1, y0_1, x1_1, y1_1) = bbox1
-    (x0_2, y0_2, x1_2, y1_2) = bbox2
-
-    # get the overlap rectangle
-    overlap_x0 = max(x0_1, x0_2)
-    overlap_y0 = max(y0_1, y0_2)
-    overlap_x1 = min(x1_1, x1_2)
-    overlap_y1 = min(y1_1, y1_2)
-
-    # check if there is an overlap
-    if overlap_x1 - overlap_x0 <= 0 or overlap_y1 - overlap_y0 <= 0:
-        return 0
-
-    # if yes, calculate the ratio of the overlap to each ROI size and the unified size
-    size_1 = (x1_1 - x0_1) * (y1_1 - y0_1)
-    size_2 = (x1_2 - x0_2) * (y1_2 - y0_2)
-    size_intersection = (overlap_x1 - overlap_x0) * (overlap_y1 - overlap_y0)
-    size_union = size_1 + size_2 - size_intersection
-
-    return size_intersection / size_union
-
-
 if __name__ == '__main__':
-    test_face_alignment()
-    quit()
     find_and_track_iou(frames_dir='data/processed/frames/002003_FC1_A_360p',
                        cache_det='data/processed/faces/002003_FC1_A_360p.det',
                        gpu_id=2)
@@ -1143,7 +609,7 @@ if __name__ == '__main__':
     #    Path(detection_dir).mkdir(parents=True, exist_ok=True)
     #    detection_visualization(frames, detections, detection_dir)
     #    frames2video(detection_dir, Path(detection_dir).parent / f'{Path(detection_dir).stem}.mp4')
-    #
+
     #if track_dir is not None:
     #    Path(track_dir).mkdir(parents=True, exist_ok=True)
     #    track_visualization(frames, tracker.tracks, track_dir)
