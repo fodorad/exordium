@@ -7,7 +7,7 @@ roberta.eval()
 def extract_roberta(text: str):
     tokens_text = roberta.encode(text)
     roberta_feature = roberta.extract_features(tokens_text).squeeze() # (T, C)
-    return roberta_feature
+    return roberta_feature.detach().numpy()
 
 
 if __name__ == "__main__":
