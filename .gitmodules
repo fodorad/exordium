@@ -4,3 +4,6 @@
 [submodule "tools/FAb-Net"]
 	path = tools/FAb-Net
 	url = https://github.com/oawiles/FAb-Net
+[submodule "tools/3DDFA_V2"]
+	path = tools/3DDFA_V2
+	url = https://github.com/cleardusk/3DDFA_V2

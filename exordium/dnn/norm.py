@@ -128,7 +128,7 @@ fi_au_std = torch.tensor([0.60922607, 0.35848543, 0.59989241, 0.26159211, 0.4771
 def get_mean_std(loader, ndim):
     # VAR[X] = E[X**2] - E[X]**2
     if ndim == 2:
-        # vector - (B, C)
+        # vectors - (B, C)
         dim = [0]
     elif ndim == 3:
         # time series - (B, T, C)
