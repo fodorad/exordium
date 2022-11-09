@@ -13,6 +13,7 @@ scikit-learn
 scikit-image
 librosa
 torch
+einops
 opensmile
 torchvision
 transformers
@@ -22,3 +23,4 @@ deepface
 moviepy
 av
 bbox_visualizer
+git+https://github.com/elliottzheng/batch-face.git@master
