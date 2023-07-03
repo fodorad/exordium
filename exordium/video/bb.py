@@ -1,37 +1,56 @@
-"""Source: motrackers.utils.misc
-"""
 import numpy as np
 
 
-def get_centroid(bboxes: np.ndarray):
+def crop_mid(image: np.ndarray, mid: np.ndarray, bb_size: int) -> np.ndarray:
+    image_height, image_width, _ = image.shape
+    half_size = bb_size // 2
+
+    # Adjust bounding box coordinates if they exceed image boundaries
+    x1 = np.clip(mid[0] - half_size, 0, image_width)
+    y1 = np.clip(mid[1] - half_size, 0, image_height)
+    x2 = np.clip(mid[0] + half_size, 0, image_width)
+    y2 = np.clip(mid[1] + half_size, 0, image_height)
+
+    # Crop the image based on adjusted bounding box coordinates
+    cropped_image = image[y1:y2, x1:x2]
+    return cropped_image
+
+
+def crop_xyxy(image: np.ndarray, bb_xyxy: np.ndarray) -> np.ndarray:
+    image_height, image_width, _ = image.shape
+
+    # Adjust bounding box coordinates if they exceed image boundaries
+    x1 = np.clip(bb_xyxy[0], 0, image_width)
+    y1 = np.clip(bb_xyxy[1], 0, image_height)
+    x2 = np.clip(bb_xyxy[2], 0, image_width)
+    y2 = np.clip(bb_xyxy[3], 0, image_height)
+
+    # Crop the image based on adjusted bounding box coordinates
+    cropped_image = image[y1:y2, x1:x2]
+    return cropped_image
+
+
+def xywh2mid(bb_xywh: np.ndarray):
     """
     Calculate centroids for multiple bounding boxes.
 
     Args:
-        bboxes (numpy.ndarray): Array of shape `(n, 4)` or of shape `(4,)` where
+        bb_xywh (numpy.ndarray): Array of shape `(n, 4)` or of shape `(4,)` where
             each row contains `(xmin, ymin, width, height)`.
 
     Returns:
         numpy.ndarray: Centroid (x, y) coordinates of shape `(n, 2)` or `(2,)`.
 
     """
-    one_bbox = False
-    if len(bboxes.shape) == 1:
-        one_bbox = True
-        bboxes = bboxes[None, :]
+    if bb_xywh.ndim == 1:
+        bb_xywh = bb_xywh[None, :]
 
-    xmin, ymin = bboxes[:, 0], bboxes[:, 1]
-    w, h = bboxes[:, 2], bboxes[:, 3]
+    xmin, ymin, w, h = bb_xywh[:, 0], bb_xywh[:, 1], bb_xywh[:, 2], bb_xywh[:, 3]
 
     xc = xmin + 0.5 * w
     yc = ymin + 0.5 * h
 
-    x = np.hstack([xc[:, None], yc[:, None]])
-
-    if one_bbox:
-        x = x.flatten()
-
-    return x
+    return np.column_stack((xc, yc))
 
 
 def iou(bbox1, bbox2):
@@ -102,21 +121,22 @@ def xyxy2xywh(xyxy):
         numpy.ndarray: Bounding box coordinates (xmin, ymin, width, height).
 
     """
-
-    if len(xyxy.shape) == 2:
-        w, h = xyxy[:, 2] - xyxy[:, 0] + 1, xyxy[:, 3] - xyxy[:, 1] + 1
-        xywh = np.concatenate((xyxy[:, 0:2], w[:, None], h[:, None]), axis=1)
-        return xywh.astype("int")
-    elif len(xyxy.shape) == 1:
-        (left, top, right, bottom) = xyxy
+    if xyxy.ndim == 1:
+        left, top, right, bottom = xyxy
         width = right - left + 1
         height = bottom - top + 1
-        return np.array([left, top, width, height]).astype('int')
+        return np.array([left, top, width, height], dtype='int')
+
+    elif xyxy.ndim == 2:
+        width = xyxy[:, 2] - xyxy[:, 0] + 1
+        height = xyxy[:, 3] - xyxy[:, 1] + 1
+        return np.column_stack((xyxy[:, 0], xyxy[:, 1], width, height)).astype("int")
+
     else:
         raise ValueError("Input shape not compatible.")
 
 
-def xywh2xyxy(xywh):
+def xywh2xyxy(bb_xywh: np.ndarray):
     """
     Convert bounding box coordinates from (xmin, ymin, width, height) to (xmin, ymin, xmax, ymax) format.
 
@@ -128,19 +148,22 @@ def xywh2xyxy(xywh):
 
     """
 
-    if len(xywh.shape) == 2:
-        x = xywh[:, 0] + xywh[:, 2]
-        y = xywh[:, 1] + xywh[:, 3]
-        return np.concatenate((xywh[:, 0:2], x[:, None], y[:, None]), axis=1).astype('int') # xyxy
+    if bb_xywh.ndim == 1:
+        x, y, w, h = bb_xywh
+        xmax = x + w
+        ymax = y + h
+        return np.array([x, y, xmax, ymax], dtype='int')
 
-    if len(xywh.shape) == 1:
-        x, y, w, h = xywh
-        xr = x + w
-        yb = y + h
-        return np.array([x, y, xr, yb]).astype('int')
+    elif bb_xywh.ndim == 2:
+        x, y, w, h = bb_xywh[:, 0], bb_xywh[:, 1], bb_xywh[:, 2], bb_xywh[:, 3]
+        xmax = x + w
+        ymax = y + h
+        return np.column_stack((x, y, xmax, ymax)).astype('int')  # xyxy
+    
+    else:
+        raise ValueError("Input shape not compatible.")
 
-
-def midwh2xywh(midwh):
+def midwh2xywh(midwh: np.ndarray):
     """
     Convert bounding box coordinates from (xmid, ymid, width, height) to (xmin, ymin, width, height) format.
 
@@ -150,33 +173,17 @@ def midwh2xywh(midwh):
     Returns:
         numpy.ndarray: Bounding box coordinates (xmin, ymin, width, height).
     """
-
-    if len(midwh.shape) == 2:
-        xymin = midwh[:, 0:2] - midwh[:, 2:] * 0.5
-        wh = midwh[:, 2:]
-        return np.concatenate([xymin, wh], axis=1).astype('int') # xywh
-
-    if len(midwh.shape) == 1:
+    if midwh.ndim == 1:
         xmid, ymid, w, h = midwh
-        return np.array([xmid-w*0.5, ymid-h*0.5, w, h]).astype('int') # xywh
+        return np.array([xmid - w * 0.5, ymid - h * 0.5, w, h], dtype='int')  # xywh
 
+    elif midwh.ndim == 2:
+        xymin = midwh[:, :2] - midwh[:, 2:] * 0.5
+        wh = midwh[:, 2:]
+        return np.concatenate([xymin, wh], axis=1).astype('int')  # xywh
 
-def intersection_complement_indices(big_set_indices, small_set_indices):
-    """
-    Get the complement of intersection of two sets of indices.
-
-    Args:
-        big_set_indices (numpy.ndarray): Indices of big set.
-        small_set_indices (numpy.ndarray): Indices of small set.
-
-    Returns:
-        numpy.ndarray: Indices of set which is complementary to intersection of two input sets.
-    """
-    assert big_set_indices.shape[0] >= small_set_indices.shape[1]
-    n = len(big_set_indices)
-    mask = np.ones((n,), dtype=bool)
-    mask[small_set_indices] = False
-    return big_set_indices[mask] # intersection_complement
+    else:
+        raise ValueError("Input shape not compatible.")
 
 
 def nms(boxes, scores, overlapThresh, classes=None):
@@ -205,10 +212,7 @@ def nms(boxes, scores, overlapThresh, classes=None):
 
     pick = []
 
-    x1 = boxes[:, 0]
-    y1 = boxes[:, 1]
-    x2 = boxes[:, 2]
-    y2 = boxes[:, 3]
+    x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
     area = (x2 - x1 + 1) * (y2 - y1 + 1)
 
     idxs = np.argsort(scores)
@@ -228,7 +232,7 @@ def nms(boxes, scores, overlapThresh, classes=None):
 
         overlap = (w * h) / area[idxs[:last]]
 
-        # delete all indexes from the index list that have
+        # Delete indexes from the index list that have overlap above the threshold
         idxs = np.delete(idxs, np.concatenate(([last], np.where(overlap > overlapThresh)[0])))
 
     if classes is not None:

@@ -1,21 +1,28 @@
-import os
-import sys
 import time
 import pickle
 import threading
 from pathlib import Path
 import multiprocessing as mp
 from abc import ABC, abstractmethod
-from typing import Union, List, Callable, Any, Tuple
-
+from typing import Callable, Any
 import torch
 import numpy as np
 from tqdm import tqdm
 
 
+def get_project_root() -> Path:
+    return Path(__file__).parents[2]
+
+
+def get_weight_location() -> Path:
+    # default weight location
+    # possible future feature: configuration file and custom cache location
+    return Path().home() / '.cache' / 'torch' / 'hub' / 'checkpoints'
+
+
 def processes_eval(fcn: Callable[..., Any], 
-                   data: List[Tuple[Union[str, int],...]], 
-                   use_mp: bool = True) -> List[Tuple[Union[str, int, None],...]]:
+                   data: list[tuple[str | int, ...]], 
+                   use_mp: bool = True) -> list[tuple[str | int | None, ...]]:
     """Eval function using multiple processes
 
     Args:
@@ -41,10 +48,9 @@ def processes_eval(fcn: Callable[..., Any],
 
 
 def threads_eval(fcn: Callable[..., Any], 
-                 data: List[Union[str, int]],
+                 data: list[str | int],
                  device_ids: str = 'all',
-                 *args,
-                 **kwargs):
+                 *args, **kwargs):
     # get gpu devices
     if device_ids == 'all':
         devices = [f'cuda:{id}' for id in range(torch.cuda.device_count())]
@@ -55,23 +61,32 @@ def threads_eval(fcn: Callable[..., Any],
     print(f'Available devices: {devices}.')
 
     splits = np.array_split(data, len(devices))
+
     threads = []
     for i in range(len(devices)):
-        # batch_size
-        # output_dir
+        # batch_size, output_dir
         threads.append(threading.Thread(target=fcn, args=(devices[i], splits[i]) + args, kwargs=kwargs))
-    for thread in threads: thread.start()
-    for thread in threads: thread.join()
+
+    for thread in threads:
+        thread.start()
+
+    for thread in threads:
+        thread.join()
 
 
 def reload_matplotlib() -> None:
     from importlib import reload
     import matplotlib
     reload(matplotlib)
-    matplotlib.use('TkAgg')
+    try:
+        matplotlib.use('TkAgg')
+    except ImportError:
+        # ImportError: Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, 
+        # as 'headless' is currently running
+        pass
 
 
-def get_idle_gpus(thr: float = 0.1) -> List[int]:
+def get_idle_gpus(thr: float = 0.1) -> list[int]:
     """Returns the available GPU ids
 
     Args:
@@ -82,23 +97,26 @@ def get_idle_gpus(thr: float = 0.1) -> List[int]:
     """
     import nvidia_smi
     nvidia_smi.nvmlInit()
+
     gpu_ids = []
     for gpu_id in range(3):
+
         try:
             handle = nvidia_smi.nvmlDeviceGetHandleByIndex(gpu_id)
             info = nvidia_smi.nvmlDeviceGetMemoryInfo(handle)
             usage = info.used/info.total
+
             if info.used/info.total < thr:
                 print(f'GPU:{gpu_id} is idle: {usage}')
                 gpu_ids.append(gpu_id)
             else:
                 print(f'GPU:{gpu_id} is busy: {usage}')    
+
         except:
             print(f'GPU:{gpu_id} is busy.')
+
     nvidia_smi.nvmlShutdown()
-    if len(gpu_ids) == 0:
-        print(f'There isn\'t any idle GPUs currently...')
-        sys.exit(0)
+    assert len(gpu_ids) == 0, f'There isn\'t any idle GPUs currently...'
     return gpu_ids
 
 
@@ -122,55 +140,77 @@ def timer_with_return(func):
 class Loader(ABC):
 
     @abstractmethod
-    def load(self, path):
+    def load(self, path: str | Path):
         pass
 
+
     @abstractmethod
-    def save(self, data, path):
+    def save(self, data, path: str | Path):
         pass
+
 
 class PickleLoader(Loader):
 
-    def load(self, path):
+    def load(self, path: str | Path):
         with open(path, 'rb') as f:
             val = pickle.load(f)
         return val
-    
-    def save(self, data, path):
+
+
+    def save(self, data, path: str | Path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'wb') as f:
             pickle.dump(data, f)
 
-class DetLoader(Loader):
 
-    def load(self, path):
-        from exordium.video.retinaface import RetinafaceDetections
-        return RetinafaceDetections().load(path)
+class FrameDetLoader(Loader):
 
-    def save(self, data, path):
+    def load(self, path: str | Path):
+        from exordium.video.tracker import FrameDetections
+        return FrameDetections().load(path)
+
+    def save(self, data, path: str | Path):
         data.save(path)
+
+
+class VideoDetLoader(Loader):
+
+    def load(self, path: str | Path):
+        from exordium.video.tracker import VideoDetections
+        return VideoDetections().load(path)
+
+    def save(self, data, path: str | Path):
+        data.save(path)
+
 
 class NpyLoader(Loader):
 
-    def load(self, path):
+    def load(self, path: str | Path):
         return np.load(path)
 
-    def save(self, data, path):
+
+    def save(self, data, path: str | Path):
         np.save(path, data)
 
+
 def load_or_create(format: str):
-    if format == 'det':
-        loader = DetLoader()
-    elif format == 'npy':
-        loader = NpyLoader()
-    elif format == 'pkl':
-        loader = PickleLoader()
-    else:
-        raise NotImplementedError()
+    
+    match format:
+        case 'fdet':
+            loader = FrameDetLoader()
+        case 'vdet':
+            loader = VideoDetLoader()
+        case 'npy':
+            loader = NpyLoader()
+        case 'pkl':
+            loader = PickleLoader()
+        case _:
+            raise NotImplementedError()
 
     def decorator(function):
         def wrapper(*args, **kwargs):
             output_path = None if 'output_path' not in kwargs else kwargs['output_path']
+
             if output_path is not None and Path(output_path).exists() and \
                 (('overwrite' not in kwargs) or ('overwrite' in kwargs and not kwargs['overwrite'])):
                 print(f'Load from {output_path}...')
@@ -181,18 +221,10 @@ def load_or_create(format: str):
                     print(f'Save to {output_path}...')
                     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
                     loader.save(val, output_path)
+
             return val
         return wrapper
     return decorator
-
-def get_project_root() -> Path:
-    return Path(__file__).parents[2]
-
-
-def get_weight_location() -> Path:
-    # default weight location
-    # possible future feature: configuration file and custom cache location
-    return Path().home() / '.cache' / 'torch' / 'hub' / 'checkpoints'
 
 
 if __name__ == '__main__':

@@ -5,18 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Print(nn.Module):
-    def __init__(self, description=None):
-        self.description = description
-        super(Print, self).__init__()
-
-    def forward(self, x):
-        if not self.description is None:
-            print(self.description)
-        print(x.shape)
-        return x
-
-
 class IrisBlock(nn.Module):
     """This is the main building block for architecture"""
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 3, stride: int = 1):
@@ -205,120 +193,13 @@ class IrisPredictor():
         self.net = IrisLandmarks().to(gpu)
         self.net.load_weights(f"{os.path.dirname(__file__)}/irislandmarks.pth")
 
+
     def predict(self, img):
+
+        assert img.shape == (64, 64, 3), \
+            f'Invalid image shape. Expected (64, 64, 3), got instead {img.shape}'
+
         eye_gpu, iris_gpu = self.net.predict_on_image(img)
         eye = eye_gpu.cpu().numpy().squeeze(0)[:,:2] # (71, 2)
         iris = iris_gpu.cpu().numpy().squeeze(0)[:,:2] # (5, 2)
         return eye, iris
-
-
-'''
-    2
-3   0   1
-    4   
-'''
-IRIS_LANDMARKS = {
-    'center': 0,
-    'left': 3,
-    'top': 2,
-    'right': 1,
-    'bottom': 4
-}
-
-# TODO
-def get_eye(img, point, bb_size: int = 64):
-    return img[int(point[1]-bb_size//2):int(point[1]+bb_size//2),
-               int(point[0]-bb_size//2):int(point[0]+bb_size//2), :]
-
-def crop_eye_pipeline(img_path):
-
-    import cv2
-    from exordium.video.face import face_crop_with_landmarks
-    from exordium.video.tddfa_v2 import FACE_LANDMARKS
-
-    d = face_crop_with_landmarks(img_path)
-    d = d[0]
-    xy_min = np.min(d['landmarks'][np.array(FACE_LANDMARKS['left_eye']),:], axis=0) # (2,)
-    xy_max = np.max(d['landmarks'][np.array(FACE_LANDMARKS['right_eye']),:], axis=0) # (2,)
-
-    img = d['img']
-
-
-if __name__ == "__main__":
-
-    import cv2
-    import matplotlib
-    #matplotlib.use('QtAgg')
-    import matplotlib.pyplot as plt
-    from exordium.video.face import face_crop_with_landmarks
-    from exordium.video.tddfa_v2 import FACE_LANDMARKS
- 
-    img_path = 'data/processed/frames/h-jMFLm6U_Y.000/frame_00001.png'
-    img_path = '/home/fodor/dev/eye/data/talkingFace/frames/000001.png'
-    d = face_crop_with_landmarks(img_path)
-    d = d[0]
-    print(d['img'].shape)
-    print(d['landmarks'].shape)
-    print()
-    le = np.mean(d['landmarks'][np.array(FACE_LANDMARKS['left_eye']),:], axis=0)
-    re = np.mean(d['landmarks'][np.array(FACE_LANDMARKS['right_eye']),:], axis=0)
-    
-    plt.figure()
-    plt.imshow(d['img'][:,:,::-1])
-    plt.scatter(le[0], le[1], s=5.0, color='b')
-    plt.scatter(re[0], re[1], s=5.0, color='g')
-    plt.savefig('iris_out.png')
-
-    le_eye = get_eye(d['img'], le)
-    re_eye = get_eye(d['img'], re)
-    cv2.imwrite('left_eye.png', le_eye)
-    cv2.imwrite('right_eye.png', re_eye)
-    
-    img = cv2.imread("data/processed/eye/test_eye.jpg")
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = cv2.resize(img, (64, 64))
-
-    ip = IrisPredictor()
-    eye, iris = ip.predict(img)
-
-    print(le_eye.shape)
-    print(re_eye.shape)
-    le_eye_out, le_iris_out = ip.predict(le_eye)
-    re_eye_out, re_iris_out = ip.predict(re_eye)
-
-
-    print('eye:', eye.shape)
-    print('iris:', iris.shape)
-
-    le_eye = cv2.cvtColor(le_eye, cv2.COLOR_BGR2RGB)
-    re_eye = cv2.cvtColor(re_eye, cv2.COLOR_BGR2RGB)
-
-    plt.figure()
-    plt.imshow(img)
-    x, y = eye[:, 0], eye[:, 1]
-    plt.scatter(x, y, s=5.0, color='b')
-
-
-    x, y = iris[:, 0], iris[:, 1]
-    plt.scatter(x, y, s=5.0, color='r')
-    
-    x, y = iris[4, 0], iris[4, 1]
-    plt.scatter(x, y, s=5.0, color='g')
-    plt.savefig('test_eye_out.jpg')
-
-
-
-    plt.figure()
-    plt.imshow(le_eye)
-    x, y = le_eye_out[:, 0], le_eye_out[:, 1]
-    plt.scatter(x, y, s=5.0, color='b')
-    x, y = le_iris_out[:, 0], le_iris_out[:, 1]
-    plt.scatter(x, y, s=5.0, color='r')
-    plt.savefig('test_le_eye_out.jpg')
-    plt.figure()
-    plt.imshow(re_eye)
-    x, y = re_eye_out[:, 0], re_eye_out[:, 1]
-    plt.scatter(x, y, s=5.0, color='b')
-    x, y = re_iris_out[:, 0], re_iris_out[:, 1]
-    plt.scatter(x, y, s=5.0, color='r')
-    plt.savefig('test_re_eye_out.jpg')

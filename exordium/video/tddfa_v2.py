@@ -1,11 +1,19 @@
 import os
 import yaml
 from pathlib import Path
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+
+from exordium.utils.shared import get_project_root
+sys.path.append(str((get_project_root() / 'tools').resolve()))
+sys.path.append(str((get_project_root() / 'tools' / '3DDFA_V2').resolve()))
+
 from TDDFA_ONNX import TDDFA_ONNX # tools/3DDFA_V2
 from FaceBoxes.FaceBoxes_ONNX import FaceBoxes_ONNX # tools/3DDFA_V2
-from exordium.utils.shared import get_project_root
+from utils.pose import calc_pose # tools/3DDFA_V2/utils/pose
+
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 os.environ['OMP_NUM_THREADS'] = '4'
@@ -40,6 +48,54 @@ FACE_LANDMARKS = {
 }
 
 
+class TDDFA_V2():
+
+
+    def __init__(self) -> None:
+        """Headpose Extractor using 3DDFA_V2"""
+        def_cfg = yaml.load(open(get_project_root() / Path(f'tools/3DDFA_V2/configs/mb1_120x120.yml')), Loader=yaml.SafeLoader)
+        def_cfg['checkpoint_fp'] = str(get_project_root() / f'tools/3DDFA_V2/{def_cfg["checkpoint_fp"]}')
+        def_cfg['bfm_fp'] = str(get_project_root() / f'tools/3DDFA_V2/{def_cfg["bfm_fp"]}')
+        self.model = TDDFA_ONNX(**def_cfg)
+
+
+    def inference(self, img: str | Path | np.ndarray, boxes: list | None = None) -> dict:
+        """Estimate headposes from an image using the bounding boxes.
+
+        Args:
+            img (str | Path | np.ndarray): image containing at least 1 face. It can be a path to an image (str | Path), 
+                or np.ndarray with shape=(H,W,3).
+            boxes (list | None, optional): bounding boxes. If no bounding box is provided (None), 
+                then the input image is a close face crop already. Defaults to None.
+
+        Returns:
+            tuple[float, float, float]: yaw, pitch, roll
+
+        """
+        if isinstance(img, str | Path):
+            img = cv2.imread(str(img))
+
+        if boxes is None:
+            boxes = [[0, 0, img.shape[0], img.shape[1], 1.]]
+
+        param_lst, roi_box_lst = self.model(img, boxes) # regress 3DMM params
+        _, pose = calc_pose(param_lst[0])
+
+        # reconstruct vertices - sparse 2d
+        # list of (3, 68) tensor (x, y, z) with 68 landmarks per box
+        fine_landmarks = self.model.recon_vers(param_lst, roi_box_lst, dense_flag=False)
+        fine_landmarks = fine_landmarks[0][:2,:].T
+
+        return {
+            'landmarks': fine_landmarks,
+            'headpose': [pose[0], pose[1], pose[2]], # yaw, pitch, roll
+        }
+
+
+
+
+
+
 def get_faceboxes(img, verbose: bool = True):
     face_boxes = FaceBoxes_ONNX()
     boxes = face_boxes(img)
@@ -47,7 +103,11 @@ def get_faceboxes(img, verbose: bool = True):
     return boxes # list of [x1, y1, x2, y2, score]
 
 
-def get_3DDFA_V2_landmarks(img: np.ndarray, boxes: list, tddfa: TDDFA_ONNX = None):
+def get_3DDFA_V2_landmarks(img: np.ndarray, boxes: list | None = None, tddfa: TDDFA_ONNX = None, project2d: bool = True):
+
+    if boxes is None:
+        # image is already a cropped face image
+        boxes = [[0, 0, img.shape[0], img.shape[1], 1.]]
 
     if tddfa is None:
         def_cfg = yaml.load(open(get_project_root() / Path(f'tools/3DDFA_V2/configs/mb1_120x120.yml')), Loader=yaml.SafeLoader)
@@ -59,7 +119,29 @@ def get_3DDFA_V2_landmarks(img: np.ndarray, boxes: list, tddfa: TDDFA_ONNX = Non
 
     # reconstruct vertices - sparse 2d
     # list of (3, 68) tensor (x, y, z) with 68 landmarks per box
-    return tddfa.recon_vers(param_lst, roi_box_lst, dense_flag=False)
+    fine_landmarks = tddfa.recon_vers(param_lst, roi_box_lst, dense_flag=False)
+    
+    if project2d:
+        fine_landmarks = fine_landmarks[0][:2,:].T
+    
+    return fine_landmarks
+
+
+def get_3DDFA_V2_headpose(img: np.ndarray, boxes: list, tddfa: TDDFA_ONNX = None):
+
+    if tddfa is None:
+        def_cfg = yaml.load(open(get_project_root() / Path(f'tools/3DDFA_V2/configs/mb1_120x120.yml')), Loader=yaml.SafeLoader)
+        def_cfg['checkpoint_fp'] = str(get_project_root() / f'tools/3DDFA_V2/{def_cfg["checkpoint_fp"]}')
+        def_cfg['bfm_fp'] = str(get_project_root() / f'tools/3DDFA_V2/{def_cfg["bfm_fp"]}')
+        tddfa = TDDFA_ONNX(**def_cfg)
+
+    param_lst, _ = tddfa(img, boxes) # regress 3DMM params
+
+    _, pose = calc_pose(param_lst[0])
+    yaw = pose[0]
+    pitch = pose[1]
+    roll = pose[2]
+    return yaw, pitch, roll
 
 
 def draw_landmarks(img, pts, **kwargs):

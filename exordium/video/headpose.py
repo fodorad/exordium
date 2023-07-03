@@ -1,45 +1,67 @@
-import yaml
-from pathlib import Path
 import cv2
+import numpy as np
+from tqdm import tqdm
+from pathlib import Path
 from exordium.video.retinaface import detect_faces
-from exordium.utils.shared import get_project_root
-
-try:
-    from TDDFA import TDDFA
-    from utils.pose import calc_pose
-except:
-    raise ImportError('3DDFA_V2 cannot be found. Build, then add "tools/3DDFA_V2" directory to PYTHONPATH.')
-
-def_cfg = yaml.load(open(get_project_root() / Path(f'tools/3DDFA_V2/configs/mb1_120x120.yml')), Loader=yaml.SafeLoader)
-def_cfg['checkpoint_fp'] = str(get_project_root() / f'tools/3DDFA_V2/{def_cfg["checkpoint_fp"]}')
-def_cfg['bfm_fp'] = str(get_project_root() / f'tools/3DDFA_V2/{def_cfg["bfm_fp"]}')
 
 
-class HeadPoseEstimator(TDDFA):
-    def __init__(self):
-        super(HeadPoseEstimator, self).__init__(gpu_mode=True, **def_cfg)
-
-    def estimate_headpose(self, img, boxes):
-        param_lst, _ = self.__call__(img, boxes)
-
-        param = param_lst[0]
-        _, pose = calc_pose(param)
-        yaw = pose[0]
-        pitch = pose[1]
-        roll = pose[2]
-
-        return yaw, pitch, roll
-
-
-def frames2headpose(frame_paths: str | list, model: HeadPoseEstimator = None):
+def frames2headpose(frame_paths: str | np.ndarray | list, model: HeadposeExtractor | None = None):
 
     if model is None:
-        model = HeadPoseEstimator()
+        model = HeadposeExtractor()
 
-    if isinstance(frame_paths, str):
+    if isinstance(frame_paths, str | np.ndarray):
         frame_paths = [frame_paths]
 
-    detections = detect_faces(frame_paths=frame_paths)
-    poses = [(i, model.estimate_headpose(cv2.imread(frame_path), [detections[0]['bb']]))
-             for i, frame_path in enumerate(frame_paths)] # [(yaw, pitch, roll), ...]
+    detections = detect_faces(frame_paths=frame_paths, format='xyxys,lmks')
+
+    poses = []
+    for i, frame_path in enumerate(frame_paths):
+        #detections.format = 'xyxys,lmks'
+        det = detections.get_highest_score(frame_ind=i)
+
+        if isinstance(frame_path, str):
+            image = cv2.imread(frame_path)
+        elif isinstance(frame_path, np.ndarray):
+            image = frame_path
+
+        if det is not None:
+            headpose = model.estimate_headpose(image, [det[0]])
+        else:
+            headpose = (np.nan, np.nan, np.nan)
+
+        elem = {'id': i, 'frame_path': frame_path, 'headpose': headpose} # [(yaw, pitch, roll), ...]
+        poses.append(elem) 
+
+    return poses
+
+
+def face2headpose(face_paths: str | Path | np.ndarray | list, model: HeadposeExtractor | None = None, verbose: bool = False):
+
+    if model is None:
+        model = HeadposeExtractor()
+
+    if isinstance(face_paths, str | Path | np.ndarray):
+        face_paths = [face_paths]
+
+    poses = []
+    for face in tqdm(face_paths, desc='Extract headpose', disable=not verbose):
+
+        id = int(Path(face).stem)
+
+        if isinstance(face, str | Path):
+            image = cv2.imread(str(face))
+        elif isinstance(face, np.ndarray):
+            image = face
+
+        bb = [0, 0, image.shape[0], image.shape[1]]
+
+        if len(np.unique(image)) == 1 and image.ravel()[0] in [0, np.nan]:
+            headpose = (np.nan, np.nan, np.nan)
+        else:
+            headpose = model.estimate_headpose(image, [bb])
+
+        elem = {'id': id, 'frame_path': None if isinstance(face, np.ndarray) else face, 'headpose': headpose} # [(yaw, pitch, roll), ...]
+        poses.append(elem)
+
     return poses

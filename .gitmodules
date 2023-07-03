@@ -7,3 +7,9 @@
 [submodule "tools/pyAudioAnalysis"]
 	path = tools/pyAudioAnalysis
 	url = https://github.com/tyiannak/pyAudioAnalysis.git
+[submodule "tools/OpenGraphAU"]
+	path = tools/OpenGraphAU
+	url = https://github.com/lingjivoo/OpenGraphAU
+[submodule "tools/emonet"]
+	path = tools/emonet
+	url = https://github.com/face-analysis/emonet/
