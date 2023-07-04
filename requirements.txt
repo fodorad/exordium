@@ -1,3 +1,4 @@
+sh
 tqdm
 scipy
 pydub

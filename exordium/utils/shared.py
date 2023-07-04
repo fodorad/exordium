@@ -166,7 +166,7 @@ class PickleLoader(Loader):
 class FrameDetLoader(Loader):
 
     def load(self, path: str | Path):
-        from exordium.video.tracker import FrameDetections
+        from exordium.video.detection import FrameDetections
         return FrameDetections().load(path)
 
     def save(self, data, path: str | Path):
@@ -176,7 +176,7 @@ class FrameDetLoader(Loader):
 class VideoDetLoader(Loader):
 
     def load(self, path: str | Path):
-        from exordium.video.tracker import VideoDetections
+        from exordium.video.detection import VideoDetections
         return VideoDetections().load(path)
 
     def save(self, data, path: str | Path):

@@ -30,18 +30,20 @@ def crop_xyxy(image: np.ndarray, bb_xyxy: np.ndarray) -> np.ndarray:
     return cropped_image
 
 
-def xywh2mid(bb_xywh: np.ndarray):
+def xywh2mid(bb_xywh: np.ndarray | list[int]) -> np.ndarray:
     """
     Calculate centroids for multiple bounding boxes.
 
     Args:
-        bb_xywh (numpy.ndarray): Array of shape `(n, 4)` or of shape `(4,)` where
+        bb_xywh (numpy.ndarray | list[int]): List of 4 ints or array of shape `(n, 4)` or of shape `(4,)` where
             each row contains `(xmin, ymin, width, height)`.
 
     Returns:
         numpy.ndarray: Centroid (x, y) coordinates of shape `(n, 2)` or `(2,)`.
 
     """
+    bb_xywh = np.array(bb_xywh)
+
     if bb_xywh.ndim == 1:
         bb_xywh = bb_xywh[None, :]
 
@@ -50,7 +52,7 @@ def xywh2mid(bb_xywh: np.ndarray):
     xc = xmin + 0.5 * w
     yc = ymin + 0.5 * h
 
-    return np.column_stack((xc, yc))
+    return np.round(np.column_stack((xc, yc))).astype(int)
 
 
 def iou(bbox1, bbox2):

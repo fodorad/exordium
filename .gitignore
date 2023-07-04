@@ -1,5 +1,6 @@
 # Project
-data/processed
+.vscode
+data/processed*
 data/videos/0*
 datasets/
 

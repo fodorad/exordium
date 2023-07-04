@@ -16,9 +16,9 @@ pip install -r requirements.txt --user
 git submodule update --init --recursive
 ```
 
-## Run tests
+## Run unittests
 ```bash
-python -m unittest
+python -m unittest discover -s test
 ```
 
 # Modalities

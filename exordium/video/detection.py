@@ -5,17 +5,19 @@ import csv
 import pickle
 from dataclasses import dataclass
 
+from batch_face import RetinaFace  # pip install git+https://github.com/elliottzheng/batch-face.git@master
 import cv2
 import numpy as np
 from tqdm import tqdm
 from decord import VideoReader, cpu
 from scipy.interpolate import interp1d # type: ignore
-import bbox_visualizer as bbv
-from deepface import DeepFace
-from batch_face import RetinaFace  # pip install git+https://github.com/elliottzheng/batch-face.git@master
+#import bbox_visualizer as bbv
+#from deepface import DeepFace
+#import torch
+#import torchvision
 
 from exordium.utils.shared import load_or_create
-from exordium.video.bb import xywh2xyxy, xyxy2xywh, xywh2mid, crop_mid
+from exordium.video.bb import xywh2xyxy, xyxy2xywh, xywh2mid, crop_mid, iou_xywh
 
 
 @dataclass
@@ -23,33 +25,42 @@ class Detection:
     frame_id: int
     frame_path: str
     score: float
-    bb_xywh: list[int]
-    bb_xyxy: list[int]
-    landmarks: np.ndarray
+    bb_xywh: np.ndarray # (4,)
+    bb_xyxy: np.ndarray # (4,)
+    landmarks: np.ndarray # (5,2)
 
     def crop(self) -> np.ndarray:
         assert Path(self.frame_path).exists(), f'Image or video does not exist at {self.frame_path}.'
         if Path(self.frame_path).suffix == '.mp4':
             vr = VideoReader(str(self.frame_path), ctx=cpu(0))
-            frame = vr[self.frame_id]
+            frame = vr[self.frame_id].asnumpy()
         else:
             frame = cv2.imread(self.frame_path)
-        mid = xywh2mid(self.bb_xywh)
-        bb_size = max(self.bb_xywh[2:])
+        mid: np.ndarray = xywh2mid(self.bb_xywh)[0]
+        bb_size: int = max(self.bb_xywh[2:])
         image_crop = crop_mid(frame, mid, bb_size)
         return image_crop
 
-    def frame_center(self) -> tuple[int, int]:
+    def frame_center(self) -> np.ndarray:
         assert Path(self.frame_path).exists(), f'Image or video does not exist at {self.frame_path}.'
         if Path(self.frame_path).suffix == '.mp4':
             vr = VideoReader(str(self.frame_path), ctx=cpu(0))
-            frame = vr[0] # frame size is consistent, index do not matter
+            frame = vr[0].asnumpy() # frame size is consistent, index do not matter
         else:
             frame = cv2.imread(self.frame_path)
         height, width, _ = frame.shape
-        cx = width // 2
-        cy = height // 2
-        return cx, cy
+        return np.array([width // 2, height // 2]).astype(int)
+
+    def __eq__(self, other: 'Detection') -> bool:
+        if isinstance(other, Detection):
+            return self.frame_id == other.frame_id and \
+                   self.frame_path == other.frame_path and \
+                   self.score == other.score and \
+                   np.all(np.equal(self.bb_xyxy, other.bb_xyxy)) and \
+                   np.all(np.equal(self.bb_xywh, other.bb_xywh)) and \
+                   np.all(np.equal(self.landmarks, other.landmarks))     
+        return False
+
 
 class FrameDetections:
 
@@ -91,12 +102,11 @@ class FrameDetections:
         else:
             raise StopIteration
 
-    def get_short_format(self, idx):
-        return (list(self.detections[idx]['bb_xyxy']) + [self.detections[idx]['score']], 
-                self.detections[idx]['landmarks'])
-
-    def dict_to_short(self, det):
-        return (list(det['bb_xyxy']) + [det['score']], det['landmarks'])
+    def __eq__(self, other: 'FrameDetections') -> bool:
+        if not isinstance(other, FrameDetections): return False
+        for fdet1, fdet2 in zip(self.detections, other.detections):
+            if fdet1 != fdet2: return False
+        return True
 
     def get_biggest_bb(self):
         return sorted(self.detections,
@@ -124,8 +134,26 @@ class FrameDetections:
                 writer.writerow([detection.frame_id,
                                  detection.frame_path,
                                  detection.score,
-                                 *detection.bb_xywh] +
-                                 list(np.reshape(detection.landmarks, (10,))))
+                                 *detection.bb_xywh,
+                                 *detection.landmarks.flatten()])
+
+    def save_format(self) -> tuple[list[str], list[str]]:
+        names = ['frame_id', 'frame_path', 'score',
+                 'x', 'y', 'w', 'h',
+                 'left_eye_x', 'left_eye_y',
+                 'right_eye_x', 'right_eye_y',
+                 'nose_x', 'nose_y',
+                 'left_mouth_x', 'left_mouth_y',
+                 'right_mouth_x', 'right_mouth_y']
+
+        values = []
+        for detection in self.detections:
+            values.append([detection.frame_id,
+                           detection.frame_path,
+                           detection.score,
+                           *detection.bb_xywh,
+                           *detection.landmarks.flatten()])
+        return names, values
 
     def load(self, input_file: str):
 
@@ -137,9 +165,9 @@ class FrameDetections:
                     d = {'frame_id': int(record[0]),
                          'frame_path': str(record[1]),
                          'score': float(record[2]),
-                         'bb_xywh': np.array(record[3:7], dtype=np.int32),
-                         'bb_xyxy': xywh2xyxy(np.array(record[3:7], dtype=np.int32)),
-                         'landmarks': np.array(record[7:17], dtype=np.int32).reshape(5,2)}
+                         'bb_xywh': np.array(record[3:7], dtype=int),
+                         'bb_xyxy': xywh2xyxy(np.array(record[3:7], dtype=int)),
+                         'landmarks': np.array(record[7:17], dtype=int).reshape(5,2)}
                     detection = Detection(**d)
                     self.detections.append(detection)
 
@@ -155,7 +183,9 @@ class VideoDetections():
         self.index = 0
 
     def add(self, fdet: FrameDetections) -> None:
-        self.detections.append(fdet)
+        # add FrameDetection only if it is not an empty.
+        if len(fdet) > 0:
+            self.detections.append(fdet)
 
     def __getitem__(self, index: int) -> FrameDetections:
         return self.detections[index]
@@ -174,15 +204,49 @@ class VideoDetections():
         else:
             raise StopIteration
 
-    def save(self, output_path: str | Path) -> None:
-        
-        with open(str(output_path), 'wb') as f:
-            pickle.dump(self.detections, f)
+    def __eq__(self, other: 'VideoDetections') -> bool:
+        if not isinstance(other, VideoDetections): return False
+        for fdet1, fdet2 in zip(self.detections, other.detections):
+            if fdet1 != fdet2: return False
+        return True
 
-    def load(self, path: str | Path) -> None:
+    def save(self, output_file: str):
+    
+        names, _ = self.detections[0].save_format()
+        with open(output_file, 'w') as f:
+            writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(names)
 
-        with open(str(path), 'rb') as f:
-            self.detections = pickle.load(f)
+            for frame_detections in self.detections:
+                _, values = frame_detections.save_format()
+                for value in values:
+                    writer.writerow(value)
+
+    def load(self, input_file: str):
+
+        with open(input_file, 'r') as f:
+            csv_reader = csv.reader(f, delimiter=',')
+
+            for line_count, record in enumerate(csv_reader):
+                if line_count > 0:
+                    d = {'frame_id': int(record[0]),
+                         'frame_path': str(record[1]),
+                         'score': float(record[2]),
+                         'bb_xywh': np.array(record[3:7], dtype=int),
+                         'bb_xyxy': xywh2xyxy(np.array(record[3:7], dtype=int)),
+                         'landmarks': np.array(record[7:17], dtype=int).reshape(5,2)}
+                    detection = Detection(**d)
+                    
+                    frame_detections: FrameDetections = next((frame_detections for frame_detections in self.detections 
+                                                              if frame_detections[0].frame_id == detection.frame_id), None)
+                    if frame_detections is None:
+                        frame_detections = FrameDetections()
+                        frame_detections.add_detection(detection)
+                        self.detections.append(frame_detections)
+                    else:
+                        frame_detections.add_detection(detection)
+
+        return self
 
 
 class FaceDetector():
@@ -193,6 +257,7 @@ class FaceDetector():
         self.detector = RetinaFace(gpu_id=gpu_id, network='resnet50')
         self.batch_size = batch_size
         self.verbose = verbose
+        if self.verbose: print('RetinaFace is loaded.')
     
     @load_or_create('fdet')
     def detect_image(self, frame_path: str | Path, **kwargs) -> FrameDetections | None:
@@ -245,12 +310,11 @@ class FaceDetector():
             batch_frame_paths = frame_paths[batch_ind:batch_ind+self.batch_size]
             images = [cv2.imread(str(frame_path)) for frame_path in batch_frame_paths]
 
-            frame_dets = self.detector(images, cv=True)
+            frame_dets: list[list[tuple[np.ndarray, np.ndarray, float]]] = self.detector(images, cv=True)
             
-            if frame_dets is None: continue
-
             # iterate over the frame detections
             for frame_det, frame_path in zip(frame_dets, batch_frame_paths):
+                if len(frame_det) == 0: continue # skip frames without detection
                 frame_detections = FrameDetections()
                 # iterate over all the faces detected within a frame
                 for face_det in frame_det:
@@ -266,7 +330,8 @@ class FaceDetector():
                                                    'bb_xywh': bb_xywh,
                                                    'landmarks': landmarks})
             
-                video_detections.add(frame_detections)
+                if len(frame_detections) > 0:
+                    video_detections.add(frame_detections)
 
         return video_detections
 
@@ -281,28 +346,27 @@ class FaceDetector():
         video_detections = VideoDetections()
         for batch_ind in tqdm(range(0, len(vr), self.batch_size),
                               desc='RetinaFace detection', disable=not self.verbose):
-            images = vr.get_batch(list(range(batch_ind,batch_ind+self.batch_size)))
-            frame_dets = self.detector(images, cv=True)
-            
-            if frame_dets is None: continue
-
+            frame_indices = [ind for ind in range(batch_ind,batch_ind+self.batch_size) if ind < len(vr)]
+            images: np.ndarray = vr.get_batch(frame_indices).asnumpy()
+            # if no face is detected, then empty list [] will be at that frame index
+            frame_dets: list[list[tuple[np.ndarray, np.ndarray, float]]] = self.detector(images, cv=True)
             # iterate over the frame detections
-            for frame_det, frame_id in zip(frame_dets, range(len(vr))):
+            for frame_det, frame_id in zip(frame_dets, frame_indices):
+                if len(frame_det) == 0: continue # skip frames without detection
                 frame_detections = FrameDetections()
                 # iterate over all the faces detected within a frame
                 for face_det in frame_det:
-                        bb_xyxy, landmarks, score = face_det
-                        bb_xyxy = np.rint(np.array(bb_xyxy)).astype(np.int32)
-                        bb_xyxy = np.where(bb_xyxy < 0, np.zeros_like(bb_xyxy), bb_xyxy)
-                        bb_xywh = xyxy2xywh(bb_xyxy).astype(np.int32)
-                        landmarks = np.rint(np.array(landmarks)).astype(np.int32)
-                        frame_detections.add_dict({'frame_id': frame_id,
-                                                   'frame_path': str(video_path),
-                                                   'score': score,
-                                                   'bb_xyxy': bb_xyxy,
-                                                   'bb_xywh': bb_xywh,
-                                                   'landmarks': landmarks})
-            
+                    bb_xyxy, landmarks, score = face_det
+                    bb_xyxy = np.rint(np.array(bb_xyxy)).astype(np.int32)
+                    bb_xyxy = np.where(bb_xyxy < 0, np.zeros_like(bb_xyxy), bb_xyxy)
+                    bb_xywh = xyxy2xywh(bb_xyxy).astype(np.int32)
+                    landmarks = np.rint(np.array(landmarks)).astype(np.int32)
+                    frame_detections.add_dict({'frame_id': frame_id,
+                                               'frame_path': str(video_path),
+                                               'score': score,
+                                               'bb_xyxy': bb_xyxy,
+                                               'bb_xywh': bb_xywh,
+                                               'landmarks': landmarks})
                 video_detections.add(frame_detections)
 
         return video_detections
@@ -663,7 +727,7 @@ class Tracker():
         else:
             tracks = self.tracks
         return sorted([track for _, track in tracks.items()],
-                      key=lambda x: np.linalg.norm(x[1].center() - x[1].first_detection().frame_center()))[0]
+                      key=lambda x: np.linalg.norm(x.center() - x.first_detection().frame_center()))[0]
 
     @classmethod
     def save_track_faces(cls, track: Track, output_dir: str | Path, sample_every_n: int = 1) -> None:
@@ -915,7 +979,10 @@ def center_face_track(frame_dir: str | Path,
 
     print('Run face detector...')
     face_detector = FaceDetector(gpu_id=gpu_id, batch_size=batch_size, verbose=verbose)
-    video_detections = face_detector.iterate_folder(frame_dir=frame_dir, output_path=cache_vdet)
+    if Path(frame_dir).is_dir():
+        video_detections = face_detector.iterate_folder(frame_dir=frame_dir, output_path=cache_vdet)
+    else: # video
+        video_detections = face_detector.detect_video(video_path=frame_dir, output_path=cache_vdet)
 
     print('Run tracker...')
     # label, interpolate, merge and filter tracks
@@ -935,8 +1002,13 @@ def center_face_track(frame_dir: str | Path,
 
 if __name__ == '__main__':
 
-    center_face_track(frame_dir='data/videos/002003_FC1_A.mp4',
-                      gpu_id=2)
+    video1 = 'data/videos/9KAqOrdiZ4I.001.mp4'
+    video2 = 'data/videos/002003_FC1_A.mp4'
+
+    center_face_track(frame_dir=video1,
+                      gpu_id=0,
+                      verbose=True,
+                      cache_vdet='test.vdet')
 
     detection_dir = 'data/processed/faces/002003_FC1_A_360p'
     track_dir = 'data/processed/tracks/002003_FC1_A_360p'
