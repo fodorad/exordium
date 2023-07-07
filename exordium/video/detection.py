@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from tqdm import tqdm
 from decord import VideoReader, cpu
-from scipy.interpolate import interp1d # type: ignore
+from scipy.interpolate import interp1d  # type: ignore
 #import bbox_visualizer as bbv
 #from deepface import DeepFace
 #import torch
@@ -24,12 +24,13 @@ class Detection:
     frame_id: int
     frame_path: str
     score: float
-    bb_xywh: np.ndarray # (4,)
-    bb_xyxy: np.ndarray # (4,)
-    landmarks: np.ndarray # (5,2)
+    bb_xywh: np.ndarray  # (4,)
+    bb_xyxy: np.ndarray  # (4,)
+    landmarks: np.ndarray  # (5,2)
 
     def crop(self) -> np.ndarray:
-        assert Path(self.frame_path).exists(), f'Image or video does not exist at {self.frame_path}.'
+        assert Path(self.frame_path).exists(
+        ), f'Image or video does not exist at {self.frame_path}.'
         if Path(self.frame_path).suffix == '.mp4':
             vr = VideoReader(str(self.frame_path), ctx=cpu(0))
             frame = vr[self.frame_id].asnumpy()
@@ -41,10 +42,12 @@ class Detection:
         return image_crop
 
     def frame_center(self) -> np.ndarray:
-        assert Path(self.frame_path).exists(), f'Image or video does not exist at {self.frame_path}.'
+        assert Path(self.frame_path).exists(
+        ), f'Image or video does not exist at {self.frame_path}.'
         if Path(self.frame_path).suffix == '.mp4':
             vr: VideoReader = VideoReader(str(self.frame_path), ctx=cpu(0))
-            frame = vr[0].asnumpy() # frame size is consistent, index do not matter
+            frame = vr[0].asnumpy(
+            )  # frame size is consistent, index do not matter
         else:
             frame = cv2.imread(self.frame_path)
         height, width, _ = frame.shape
@@ -77,7 +80,8 @@ class FrameDetections:
 
     def add_dict(self, detection: dict) -> None:
         for key in Detection.__annotations__.keys():
-            assert key in detection.keys(), f'Invalid detection dict. Missing key: {key}'
+            assert key in detection.keys(
+            ), f'Invalid detection dict. Missing key: {key}'
         self.detections.append(Detection(**detection))
 
     def add_detection(self, detection: Detection) -> None:
@@ -113,45 +117,42 @@ class FrameDetections:
                       reverse=True)[0]
 
     def get_highest_score(self):
-        return sorted(self.detections,
-                      key=lambda d: d.score,
-                      reverse=True)[0]
+        return sorted(self.detections, key=lambda d: d.score, reverse=True)[0]
 
     def save(self, output_file: str):
 
         with open(output_file, 'w') as f:
-            writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow(['frame_id', 'frame_path', 'score',
-                             'x', 'y', 'w', 'h',
-                             'left_eye_x', 'left_eye_y',
-                             'right_eye_x', 'right_eye_y',
-                             'nose_x', 'nose_y',
-                             'left_mouth_x', 'left_mouth_y',
-                             'right_mouth_x', 'right_mouth_y'])
+            writer = csv.writer(f,
+                                delimiter=',',
+                                quotechar='"',
+                                quoting=csv.QUOTE_MINIMAL)
+            writer.writerow([
+                'frame_id', 'frame_path', 'score', 'x', 'y', 'w', 'h',
+                'left_eye_x', 'left_eye_y', 'right_eye_x', 'right_eye_y',
+                'nose_x', 'nose_y', 'left_mouth_x', 'left_mouth_y',
+                'right_mouth_x', 'right_mouth_y'
+            ])
 
             for detection in self.detections:
-                writer.writerow([detection.frame_id,
-                                 detection.frame_path,
-                                 detection.score,
-                                 *detection.bb_xywh,
-                                 *detection.landmarks.flatten()])
+                writer.writerow([
+                    detection.frame_id, detection.frame_path, detection.score,
+                    *detection.bb_xywh, *detection.landmarks.flatten()
+                ])
 
     def save_format(self) -> tuple[list[str], list[str]]:
-        names = ['frame_id', 'frame_path', 'score',
-                 'x', 'y', 'w', 'h',
-                 'left_eye_x', 'left_eye_y',
-                 'right_eye_x', 'right_eye_y',
-                 'nose_x', 'nose_y',
-                 'left_mouth_x', 'left_mouth_y',
-                 'right_mouth_x', 'right_mouth_y']
+        names = [
+            'frame_id', 'frame_path', 'score', 'x', 'y', 'w', 'h',
+            'left_eye_x', 'left_eye_y', 'right_eye_x', 'right_eye_y', 'nose_x',
+            'nose_y', 'left_mouth_x', 'left_mouth_y', 'right_mouth_x',
+            'right_mouth_y'
+        ]
 
         values = []
         for detection in self.detections:
-            values.append([detection.frame_id,
-                           detection.frame_path,
-                           detection.score,
-                           *detection.bb_xywh,
-                           *detection.landmarks.flatten()])
+            values.append([
+                detection.frame_id, detection.frame_path, detection.score,
+                *detection.bb_xywh, *detection.landmarks.flatten()
+            ])
         return names, values
 
     def load(self, input_file: str):
@@ -161,12 +162,20 @@ class FrameDetections:
 
             for line_count, record in enumerate(csv_reader):
                 if line_count > 0:
-                    d = {'frame_id': int(record[0]),
-                         'frame_path': str(record[1]),
-                         'score': float(record[2]),
-                         'bb_xywh': np.array(record[3:7], dtype=int),
-                         'bb_xyxy': xywh2xyxy(np.array(record[3:7], dtype=int)),
-                         'landmarks': np.array(record[7:17], dtype=int).reshape(5,2)}
+                    d = {
+                        'frame_id':
+                        int(record[0]),
+                        'frame_path':
+                        str(record[1]),
+                        'score':
+                        float(record[2]),
+                        'bb_xywh':
+                        np.array(record[3:7], dtype=int),
+                        'bb_xyxy':
+                        xywh2xyxy(np.array(record[3:7], dtype=int)),
+                        'landmarks':
+                        np.array(record[7:17], dtype=int).reshape(5, 2)
+                    }
                     detection = Detection(**d)
                     self.detections.append(detection)
 
@@ -205,16 +214,21 @@ class VideoDetections():
 
     def __eq__(self, other: 'VideoDetections') -> bool:
         if not isinstance(other, VideoDetections): return False
-        for index, (fdet1, fdet2) in enumerate(zip(self.detections, other.detections)):
+        for index, (fdet1,
+                    fdet2) in enumerate(zip(self.detections,
+                                            other.detections)):
             if fdet1 != fdet2:
                 return False
         return True
 
     def save(self, output_file: str):
-    
+
         names, _ = self.detections[0].save_format()
         with open(output_file, 'w') as f:
-            writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            writer = csv.writer(f,
+                                delimiter=',',
+                                quotechar='"',
+                                quoting=csv.QUOTE_MINIMAL)
             writer.writerow(names)
 
             for frame_detections in self.detections:
@@ -229,16 +243,27 @@ class VideoDetections():
 
             for line_count, record in enumerate(csv_reader):
                 if line_count > 0:
-                    d = {'frame_id': int(record[0]),
-                         'frame_path': str(record[1]),
-                         'score': float(record[2]),
-                         'bb_xywh': np.array(record[3:7], dtype=int),
-                         'bb_xyxy': xywh2xyxy(np.array(record[3:7], dtype=int)),
-                         'landmarks': np.array(record[7:17], dtype=int).reshape(5,2)}
+                    d = {
+                        'frame_id':
+                        int(record[0]),
+                        'frame_path':
+                        str(record[1]),
+                        'score':
+                        float(record[2]),
+                        'bb_xywh':
+                        np.array(record[3:7], dtype=int),
+                        'bb_xyxy':
+                        xywh2xyxy(np.array(record[3:7], dtype=int)),
+                        'landmarks':
+                        np.array(record[7:17], dtype=int).reshape(5, 2)
+                    }
                     detection = Detection(**d)
-                    
-                    frame_detections: FrameDetections = next((frame_detections for frame_detections in self.detections 
-                                                              if frame_detections[0].frame_id == detection.frame_id), None)
+
+                    frame_detections: FrameDetections = next((
+                        frame_detections
+                        for frame_detections in self.detections
+                        if frame_detections[0].frame_id == detection.frame_id),
+                                                             None)
                     if frame_detections is None:
                         frame_detections = FrameDetections()
                         frame_detections.add_detection(detection)
@@ -251,7 +276,10 @@ class VideoDetections():
 
 class FaceDetector():
 
-    def __init__(self, gpu_id: int = 0, batch_size: int = 30, verbose: bool = True):
+    def __init__(self,
+                 gpu_id: int = 0,
+                 batch_size: int = 30,
+                 verbose: bool = True):
         """FaceDetector detects faces within frames.
         """
         self.detector = RetinaFace(gpu_id=gpu_id, network='resnet50')
@@ -260,14 +288,16 @@ class FaceDetector():
         if self.verbose: print('RetinaFace is loaded.')
 
     @load_or_create('fdet')
-    def detect_image(self, frame_path: str | Path | np.ndarray, **kwargs) -> FrameDetections:
+    def detect_image(self, frame_path: str | Path | np.ndarray,
+                     **kwargs) -> FrameDetections:
         if isinstance(frame_path, (str | Path)):
             image = cv2.imread(str(frame_path))
         else:
             assert isinstance(frame_path, np.ndarray) and frame_path.ndim == 3 and frame_path.shape[-1] == 3, \
                 f'Invalid input image. Expected shape is (H,W,C), got instead {frame_path.shape}.'
             image = frame_path
-        frame_dets: list[tuple[np.ndarray, np.ndarray, float]] = self.detector([image], cv=True)[0]
+        frame_dets: list[tuple[np.ndarray, np.ndarray,
+                               float]] = self.detector([image], cv=True)[0]
 
         frame_detections = FrameDetections()
         # iterate over all the faces detected within a frame
@@ -277,17 +307,20 @@ class FaceDetector():
             bb_xyxy = np.where(bb_xyxy < 0, np.zeros_like(bb_xyxy), bb_xyxy)
             bb_xywh = xyxy2xywh(bb_xyxy).astype(int)
             landmarks = np.rint(np.array(landmarks)).astype(int)
-            frame_detections.add_dict({'frame_id': -1,
-                                       'frame_path': str(frame_path),
-                                       'score': score,
-                                       'bb_xyxy': bb_xyxy,
-                                       'bb_xywh': bb_xywh,
-                                       'landmarks': landmarks})
+            frame_detections.add_dict({
+                'frame_id': -1,
+                'frame_path': str(frame_path),
+                'score': score,
+                'bb_xyxy': bb_xyxy,
+                'bb_xywh': bb_xywh,
+                'landmarks': landmarks
+            })
 
         return frame_detections
 
     @load_or_create('vdet')
-    def iterate_folder(self, frame_dir: str | Path, **kwargs) -> VideoDetections:
+    def iterate_folder(self, frame_dir: str | Path,
+                       **kwargs) -> VideoDetections:
         '''Iterate over ordered frames of a video in a single folder
 
         image:
@@ -310,67 +343,94 @@ class FaceDetector():
         video_detections = VideoDetections()
 
         for batch_ind in tqdm(range(0, len(frame_paths), self.batch_size),
-                              desc='RetinaFace detection', disable=not self.verbose):
-            batch_frame_paths = frame_paths[batch_ind:batch_ind+self.batch_size]
-            images = [cv2.imread(str(frame_path)) for frame_path in batch_frame_paths]
+                              desc='RetinaFace detection',
+                              disable=not self.verbose):
+            batch_frame_paths = frame_paths[batch_ind:batch_ind +
+                                            self.batch_size]
+            images = [
+                cv2.imread(str(frame_path)) for frame_path in batch_frame_paths
+            ]
 
-            frame_dets: list[list[tuple[np.ndarray, np.ndarray, float]]] = self.detector(images, cv=True)
-            
+            frame_dets: list[list[tuple[np.ndarray, np.ndarray,
+                                        float]]] = self.detector(images,
+                                                                 cv=True)
+
             # iterate over the frame detections
             for frame_det, frame_path in zip(frame_dets, batch_frame_paths):
-                if len(frame_det) == 0: continue # skip frames without detection
-                frame_detections = FrameDetections()
-                # iterate over all the faces detected within a frame
-                for face_det in frame_det:
-                        bb_xyxy, landmarks, score = face_det
-                        bb_xyxy = np.rint(np.array(bb_xyxy)).astype(int)
-                        bb_xyxy = np.where(bb_xyxy < 0, np.zeros_like(bb_xyxy), bb_xyxy)
-                        bb_xywh = xyxy2xywh(bb_xyxy).astype(int)
-                        landmarks = np.rint(np.array(landmarks)).astype(int)
-                        frame_detections.add_dict({'frame_id': int(Path(frame_path).stem),
-                                                   'frame_path': str(frame_path),
-                                                   'score': score,
-                                                   'bb_xyxy': bb_xyxy,
-                                                   'bb_xywh': bb_xywh,
-                                                   'landmarks': landmarks})
-            
-                if len(frame_detections) > 0:
-                    video_detections.add(frame_detections)
-
-        return video_detections
-
-
-    @load_or_create('vdet')
-    def detect_video(self, video_path: str | Path, **kwargs) -> VideoDetections:
-        """Iterate over frames of a video
-        """
-        assert Path(video_path).exists(), f'Video does not exist at {str(video_path)}'
-        vr = VideoReader(str(video_path), ctx=cpu(0))
-
-        video_detections = VideoDetections()
-        for batch_ind in tqdm(range(0, len(vr), self.batch_size),
-                              desc='RetinaFace detection', disable=not self.verbose):
-            frame_indices = [ind for ind in range(batch_ind,batch_ind+self.batch_size) if ind < len(vr)]
-            images: np.ndarray = vr.get_batch(frame_indices).asnumpy()
-            # if no face is detected, then empty list [] will be at that frame index
-            frame_dets: list[list[tuple[np.ndarray, np.ndarray, float]]] = self.detector(images, cv=True)
-            # iterate over the frame detections
-            for frame_det, frame_id in zip(frame_dets, frame_indices):
-                if len(frame_det) == 0: continue # skip frames without detection
+                if len(frame_det) == 0:
+                    continue  # skip frames without detection
                 frame_detections = FrameDetections()
                 # iterate over all the faces detected within a frame
                 for face_det in frame_det:
                     bb_xyxy, landmarks, score = face_det
                     bb_xyxy = np.rint(np.array(bb_xyxy)).astype(int)
-                    bb_xyxy = np.where(bb_xyxy < 0, np.zeros_like(bb_xyxy), bb_xyxy)
+                    bb_xyxy = np.where(bb_xyxy < 0, np.zeros_like(bb_xyxy),
+                                       bb_xyxy)
                     bb_xywh = xyxy2xywh(bb_xyxy).astype(int)
                     landmarks = np.rint(np.array(landmarks)).astype(int)
-                    frame_detections.add_dict({'frame_id': frame_id,
-                                               'frame_path': str(video_path),
-                                               'score': score,
-                                               'bb_xyxy': bb_xyxy,
-                                               'bb_xywh': bb_xywh,
-                                               'landmarks': landmarks})
+                    frame_detections.add_dict({
+                        'frame_id':
+                        int(Path(frame_path).stem),
+                        'frame_path':
+                        str(frame_path),
+                        'score':
+                        score,
+                        'bb_xyxy':
+                        bb_xyxy,
+                        'bb_xywh':
+                        bb_xywh,
+                        'landmarks':
+                        landmarks
+                    })
+
+                if len(frame_detections) > 0:
+                    video_detections.add(frame_detections)
+
+        return video_detections
+
+    @load_or_create('vdet')
+    def detect_video(self, video_path: str | Path,
+                     **kwargs) -> VideoDetections:
+        """Iterate over frames of a video
+        """
+        assert Path(
+            video_path).exists(), f'Video does not exist at {str(video_path)}'
+        vr = VideoReader(str(video_path), ctx=cpu(0))
+
+        video_detections = VideoDetections()
+        for batch_ind in tqdm(range(0, len(vr), self.batch_size),
+                              desc='RetinaFace detection',
+                              disable=not self.verbose):
+            frame_indices = [
+                ind for ind in range(batch_ind, batch_ind + self.batch_size)
+                if ind < len(vr)
+            ]
+            images: np.ndarray = vr.get_batch(frame_indices).asnumpy()
+            # if no face is detected, then empty list [] will be at that frame index
+            frame_dets: list[list[tuple[np.ndarray, np.ndarray,
+                                        float]]] = self.detector(images,
+                                                                 cv=True)
+            # iterate over the frame detections
+            for frame_det, frame_id in zip(frame_dets, frame_indices):
+                if len(frame_det) == 0:
+                    continue  # skip frames without detection
+                frame_detections = FrameDetections()
+                # iterate over all the faces detected within a frame
+                for face_det in frame_det:
+                    bb_xyxy, landmarks, score = face_det
+                    bb_xyxy = np.rint(np.array(bb_xyxy)).astype(int)
+                    bb_xyxy = np.where(bb_xyxy < 0, np.zeros_like(bb_xyxy),
+                                       bb_xyxy)
+                    bb_xywh = xyxy2xywh(bb_xyxy).astype(int)
+                    landmarks = np.rint(np.array(landmarks)).astype(int)
+                    frame_detections.add_dict({
+                        'frame_id': frame_id,
+                        'frame_path': str(video_path),
+                        'score': score,
+                        'bb_xyxy': bb_xyxy,
+                        'bb_xywh': bb_xywh,
+                        'landmarks': landmarks
+                    })
                 video_detections.add(frame_detections)
 
         return video_detections
@@ -378,30 +438,35 @@ class FaceDetector():
 
 class Track():
 
-    def __init__(self, track_id: int, detection: Detection, verbose: bool = False) -> None:
+    def __init__(self,
+                 track_id: int,
+                 detection: Detection,
+                 verbose: bool = False) -> None:
         self.track_id = track_id
         self.detections: list[Detection] = []
         self.add(detection)
         self.index = 0
-        if verbose: print(f'track {self.track_id} is started')
+        if verbose: print(f'Track {self.track_id} is started.')
 
     def frame_ids(self) -> list[int]:
         return sorted([elem.frame_id for elem in self.detections])
 
     def get_detection(self, frame_id: int) -> Detection:
-        return next((detection for detection in self.detections if detection.frame_id == frame_id))
+        return next((detection for detection in self.detections
+                     if detection.frame_id == frame_id))
 
-    def add(self, detection: Union[Detection,'Track']) -> None:
+    def add(self, detection: Union[Detection, 'Track']) -> None:
         if isinstance(detection, Detection):
             self.detections.append(detection)
-        elif isinstance(detection, 'Track'):
+        elif isinstance(detection, Track):
             self.detections += detection.detections
         else:
             raise NotImplementedError()
         self.detections.sort(key=lambda obj: obj.frame_id)
 
     def track_frame_distance(self, track: 'Track') -> int:
-        return abs(self.last_detection().frame_id - track.first_detection().frame_id)
+        return abs(self.last_detection().frame_id -
+                   track.first_detection().frame_id)
 
     def last_detection(self) -> Detection:
         return self.detections[-1]
@@ -418,18 +483,17 @@ class Track():
         xs, ys = [], []
         for detection in self.detections:
             if detection.score != -1:  # not an interpolated detection
-                bb = detection.bb_xywh
-                xs.append(bb[0] + bb[2] // 2)
-                ys.append(bb[1] + bb[3] // 2)
+                bb_midwh = xywh2midwh(detection.bb_xywh)
+                xs.append(bb_midwh[0])
+                ys.append(bb_midwh[1])
         return np.array([np.array(xs).mean(), np.array(ys).mean()])
 
     def bb_size(self, extra_percent: float = 0.2) -> int:
         ws, hs = [], []
         for detection in self.detections:
             if detection.score != -1:  # not an interpolated detection
-                bb = detection.bb_xywh
-                ws.append(bb[2])
-                hs.append(bb[3])
+                ws.append(detection.bb_xywh[2])
+                hs.append(detection.bb_xywh[3])
         return int(max(ws + hs) * (1 + extra_percent))
 
     def __len__(self) -> int:
@@ -455,8 +519,8 @@ class Tracker():
 
     def __init__(self):
         self.new_track_id: int = 0
-        self.tracks: dict[int,Track] = {}
-        self.selected_tracks: dict[int,Track] = {}
+        self.tracks: dict[int, Track] = {}
+        self.selected_tracks: dict[int, Track] = {}
         self.path_to_id: Callable[..., int] = lambda p: int(Path(p).stem)
         self.id_to_path: Callable[..., str] = lambda i: f'{i:06d}.png'
 
@@ -468,7 +532,10 @@ class Tracker():
                          verbose: bool = False) -> 'Tracker':
 
         # iterate over frame-wise detections
-        for frame_detections in tqdm(detections, total=len(detections), desc="Label tracks, IoU", disable=not verbose):
+        for frame_detections in tqdm(detections,
+                                     total=len(detections),
+                                     desc="Label tracks, IoU",
+                                     disable=not verbose):
             # iterate over detections within a frame
             for detection in frame_detections:
                 # skip low confidence detection
@@ -476,7 +543,8 @@ class Tracker():
 
                 # initialize the very first track
                 if len(self.tracks) == 0:
-                    self.tracks[self.new_track_id] = Track(self.new_track_id, detection)
+                    self.tracks[self.new_track_id] = Track(
+                        self.new_track_id, detection)
                     self.new_track_id += 1
                     continue
 
@@ -496,8 +564,10 @@ class Tracker():
                     #    continue
 
                     # calculate iou of the detection and the track's last detection, and the frame distance
-                    iou: float = iou_xywh(track_last_detection.bb_xywh, detection.bb_xywh)
-                    frame_distance: int = abs(detection.frame_id - track_last_detection.frame_id)
+                    iou: float = iou_xywh(track_last_detection.bb_xywh,
+                                          detection.bb_xywh)
+                    frame_distance: int = abs(detection.frame_id -
+                                              track_last_detection.frame_id)
 
                     # last frame is within lost frame tolerance and IoU threshold is met
                     if frame_distance < max_lost and iou > iou_threshold:
@@ -507,11 +577,14 @@ class Tracker():
 
                 if not tracks_to_add:
                     # start new track
-                    self.tracks[self.new_track_id] = Track(self.new_track_id, detection)
+                    self.tracks[self.new_track_id] = Track(
+                        self.new_track_id, detection)
                     self.new_track_id += 1
                 else:
                     # get good iou tracks, sort by iou and get the highest one
-                    best_iou_track = sorted(tracks_to_add, key=lambda x: x[1], reverse=True)[0]
+                    best_iou_track = sorted(tracks_to_add,
+                                            key=lambda x: x[1],
+                                            reverse=True)[0]
                     # add the detection to the end of the best track
                     self.tracks[best_iou_track[0]].add(detection)
 
@@ -537,18 +610,28 @@ class Tracker():
                 # interpolate bb coords
                 bb_interp = interp1d(
                     np.array([frame_id_start, frame_id_end]),
-                    np.array([detection_start.bb_xywh, detection_end.bb_xywh]).T)
-                new_bb: np.ndarray = bb_interp(np.arange(frame_id_start, frame_id_end + 1, 1))
+                    np.array([detection_start.bb_xywh,
+                              detection_end.bb_xywh]).T)
+                new_bb: np.ndarray = bb_interp(
+                    np.arange(frame_id_start, frame_id_end + 1, 1))
 
                 # interpolate lmks coords
                 lmks_x_interp = interp1d(
                     np.array([frame_id_start, frame_id_end]),
-                    np.array([detection_start.landmarks[:, 0], detection_end.landmarks[:, 0]]).T)
+                    np.array([
+                        detection_start.landmarks[:, 0],
+                        detection_end.landmarks[:, 0]
+                    ]).T)
                 lmks_y_interp = interp1d(
                     np.array([frame_id_start, frame_id_end]),
-                    np.array([detection_start.landmarks[:, 1], detection_end.landmarks[:, 1]]).T)
-                new_lmks_x: np.ndarray = lmks_x_interp(np.arange(frame_id_start, frame_id_end + 1, 1))
-                new_lmks_y: np.ndarray = lmks_y_interp(np.arange(frame_id_start, frame_id_end + 1, 1))
+                    np.array([
+                        detection_start.landmarks[:, 1],
+                        detection_end.landmarks[:, 1]
+                    ]).T)
+                new_lmks_x: np.ndarray = lmks_x_interp(
+                    np.arange(frame_id_start, frame_id_end + 1, 1))
+                new_lmks_y: np.ndarray = lmks_y_interp(
+                    np.arange(frame_id_start, frame_id_end + 1, 1))
 
                 # round and change type
                 new_frame_ids = np.arange(frame_id_start + 1, frame_id_end, 1)
@@ -559,12 +642,18 @@ class Tracker():
                 # add interpolated detections to the tracks
                 for ind, frame_id in enumerate(new_frame_ids):
                     new_detection = {
-                        'frame_id': int(frame_id),
-                        'frame_path': '',
-                        'score': -1,
-                        'bb_xywh': new_bb[:, ind],
-                        'bb_xyxy': xywh2xyxy(new_bb[:, ind]),
-                        'landmarks': np.stack([new_lmks_x[:, ind], new_lmks_y[:, ind]]).T,
+                        'frame_id':
+                        int(frame_id),
+                        'frame_path':
+                        '',
+                        'score':
+                        -1,
+                        'bb_xywh':
+                        new_bb[:, ind],
+                        'bb_xyxy':
+                        xywh2xyxy(new_bb[:, ind]),
+                        'landmarks':
+                        np.stack([new_lmks_x[:, ind], new_lmks_y[:, ind]]).T,
                     }
                     track.add(Detection(**new_detection))
         return self
@@ -680,10 +769,12 @@ class Tracker():
         return self
     '''
 
-    def merge_iou(self, max_lost: int = -1, iou_threshold: float = 0.2) -> 'Tracker':
+    def merge_iou(self,
+                  max_lost: int = -1,
+                  iou_threshold: float = 0.2) -> 'Tracker':
         # skip the merge step, if there is a single track in the video, or no tracks
         if len(self.tracks) <= 1: return self
-        
+
         track_ids = list(self.tracks.keys())
         blacklist = []
         for track_id1 in track_ids:
@@ -702,11 +793,14 @@ class Tracker():
 
                 # condition check: -1 means that any number of frames between two tracks are accepted,
                 # otherwise the max_lost number of frames or less are accepted
-                is_max_lost: bool = (max_lost == -1) or (track_1.track_frame_distance(track_2) <= max_lost)
-                is_iou_threshold: bool = iou_xywh(track_1_last_detection.xywh, track_2_first_detection.xywh) > iou_threshold
+                is_max_lost: bool = (max_lost == -1) or (
+                    track_1.track_frame_distance(track_2) <= max_lost)
+                is_iou_threshold: bool = iou_xywh(
+                    track_1_last_detection.xywh,
+                    track_2_first_detection.xywh) > iou_threshold
 
                 # merge tracks if within lost frame tolerance and IoU threshold is met
-                if  is_max_lost and is_iou_threshold:
+                if is_max_lost and is_iou_threshold:
                     track_1.add(track_2)
                     self.tracks.pop(track_id2)
                     blacklist.append(track_id2)
@@ -715,14 +809,22 @@ class Tracker():
         return self
 
     def select_long_tracks(self, min_length: int = 250) -> 'Tracker':
-        self.selected_tracks = {track_id: track for track_id, track in self.tracks.items() 
-                                if len(track) > min_length}
+        self.selected_tracks = {
+            track_id: track
+            for track_id, track in self.tracks.items()
+            if len(track) > min_length
+        }
         return self
 
     def select_topk_long_tracks(self, top_k: int = 1) -> 'Tracker':
-        tracks: list[tuple[int, Track]] = sorted([(track_id, track) for track_id, track in self.tracks.items()],
-                                                 key=lambda x: len(x[1]), reverse=True)
-        self.selected_tracks = {track_id: track for track_id, track in tracks[:top_k]}
+        tracks: list[tuple[int, Track]] = sorted(
+            [(track_id, track) for track_id, track in self.tracks.items()],
+            key=lambda x: len(x[1]),
+            reverse=True)
+        self.selected_tracks = {
+            track_id: track
+            for track_id, track in tracks[:top_k]
+        }
         return self
 
     def get_center_track(self) -> Track:
@@ -731,17 +833,25 @@ class Tracker():
         else:
             tracks = self.tracks
         return sorted([track for _, track in tracks.items()],
-                      key=lambda x: np.linalg.norm(x.center() - x.first_detection().frame_center()))[0]
+                      key=lambda x: np.linalg.norm(x.center(
+                      ) - x.first_detection().frame_center()))[0]
 
     @classmethod
-    def save_track_faces(cls, track: Track, output_dir: str | Path, sample_every_n: int = 1) -> None:
+    def save_track_faces(cls,
+                         track: Track,
+                         output_dir: str | Path,
+                         sample_every_n: int = 1) -> None:
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        for i, detection in tqdm(enumerate(track), total=len(track), desc='Save track faces'):
+        for i, detection in tqdm(enumerate(track),
+                                 total=len(track),
+                                 desc='Save track faces'):
             if i % sample_every_n != 0: continue
             image = detection.crop()
-            cv2.imwrite(str(output_dir / Path(detection.frame_path).name), image)
+            cv2.imwrite(str(output_dir / Path(detection.frame_path).name),
+                        image)
+
 
 '''
 def detection_visualization(frame_paths: str | list[str],
@@ -964,6 +1074,7 @@ def find_and_track_deepface(frames_dir: str | Path,
     return tracker.tracks
 '''
 
+
 def center_face_track(frame_dir: str | Path,
                       min_det_score: float = 0.7,
                       bb_iou_thr: float = 0.2,
@@ -982,23 +1093,28 @@ def center_face_track(frame_dir: str | Path,
     }, 'Invalid architecture choice for RetinaFace. Choose from ["mobilenet","resnet50"].'
 
     print('Run face detector...')
-    face_detector = FaceDetector(gpu_id=gpu_id, batch_size=batch_size, verbose=verbose)
+    face_detector = FaceDetector(gpu_id=gpu_id,
+                                 batch_size=batch_size,
+                                 verbose=verbose)
     if Path(frame_dir).is_dir():
-        video_detections = face_detector.iterate_folder(frame_dir=frame_dir, output_path=cache_vdet)
-    else: # video
-        video_detections = face_detector.detect_video(video_path=frame_dir, output_path=cache_vdet)
+        video_detections = face_detector.iterate_folder(frame_dir=frame_dir,
+                                                        output_path=cache_vdet)
+    else:  # video
+        video_detections = face_detector.detect_video(video_path=frame_dir,
+                                                      output_path=cache_vdet)
 
     print('Run tracker...')
     # label, interpolate, merge and filter tracks
     tracker = Tracker().label_tracks_iou(video_detections, min_score=min_det_score, iou_threshold=bb_iou_thr, max_lost=interp_max_lost) \
-                       .merge_iou(max_lost=merge_max_lost, iou_threshold=merge_iou_thr) 
+                       .merge_iou(max_lost=merge_max_lost, iou_threshold=merge_iou_thr)
 
-    
+
     track: Track = tracker.select_topk_long_tracks(top_k=2) \
                           .get_center_track()
 
     print('[Track]\n\tnumber of tracks:', len(tracker.tracks),
-          '\n\tlengths of tracks:', [(id, len(track)) for id, track in tracker.tracks.items()],
+          '\n\tlengths of tracks:', [(id, len(track))
+                                     for id, track in tracker.tracks.items()],
           '\n\tlength of selected center track:', len(track))
 
     return track
