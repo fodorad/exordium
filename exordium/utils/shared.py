@@ -169,7 +169,7 @@ class FrameDetLoader(Loader):
         from exordium.video.detection import FrameDetections
         return FrameDetections().load(path)
 
-    def save(self, data, path: str | Path):
+    def save(self, data: 'FrameDetections', path: str | Path):
         data.save(path)
 
 
@@ -179,7 +179,7 @@ class VideoDetLoader(Loader):
         from exordium.video.detection import VideoDetections
         return VideoDetections().load(path)
 
-    def save(self, data, path: str | Path):
+    def save(self, data: 'VideoDetections', path: str | Path):
         data.save(path)
 
 

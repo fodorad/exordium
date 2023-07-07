@@ -1,5 +1,5 @@
 import unittest
-import csv
+import os
 import numpy as np
 from exordium.video.detection import Detection, FrameDetections
 
@@ -204,8 +204,6 @@ class FrameDetectionsTestCase(unittest.TestCase):
         self.assertEqual(loaded_detections[0], detection1)
         self.assertEqual(loaded_detections[1], detection2)
 
-        # Clean up the output file
-        import os
         os.remove(output_file)
 
 

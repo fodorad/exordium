@@ -1,7 +1,5 @@
 import unittest
-import pickle
-from pathlib import Path
-import csv
+import os
 import numpy as np
 from exordium.video.detection import VideoDetections, FrameDetections, Detection
 
@@ -98,8 +96,6 @@ class VideoDetectionsTestCase(unittest.TestCase):
 
         self.assertEqual(self.video_detections, loaded_video_detections)
 
-        # Clean up the output file
-        import os
         os.remove(output_file)        
 
 
