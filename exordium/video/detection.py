@@ -36,7 +36,7 @@ class Detection:
             frame = vr[self.frame_id].asnumpy()
         else:
             frame = cv2.imread(self.frame_path)
-        midwh: np.ndarray = xywh2midwh(self.bb_xywh)[0]
+        midwh: np.ndarray = xywh2midwh(self.bb_xywh)
         bb_size: int = max(self.bb_xywh[2:])
         image_crop = crop_mid(frame, midwh[:2], bb_size)
         return image_crop
@@ -194,6 +194,10 @@ class VideoDetections():
         # add FrameDetection only if it is not an empty.
         if len(fdet) > 0:
             self.detections.append(fdet)
+    
+    def merge(self, vdet: 'VideoDetections') -> None:
+        for fdet in vdet:
+            self.add(fdet)
 
     def __getitem__(self, index: int) -> FrameDetections:
         return self.detections[index]
@@ -279,7 +283,7 @@ class FaceDetector():
     def __init__(self,
                  gpu_id: int = 0,
                  batch_size: int = 30,
-                 verbose: bool = True):
+                 verbose: bool = False):
         """FaceDetector detects faces within frames.
         """
         self.detector = RetinaFace(gpu_id=gpu_id, network='resnet50')
@@ -796,8 +800,8 @@ class Tracker():
                 is_max_lost: bool = (max_lost == -1) or (
                     track_1.track_frame_distance(track_2) <= max_lost)
                 is_iou_threshold: bool = iou_xywh(
-                    track_1_last_detection.xywh,
-                    track_2_first_detection.xywh) > iou_threshold
+                    track_1_last_detection.bb_xywh,
+                    track_2_first_detection.bb_xywh) > iou_threshold
 
                 # merge tracks if within lost frame tolerance and IoU threshold is met
                 if is_max_lost and is_iou_threshold:
