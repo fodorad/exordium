@@ -80,10 +80,8 @@ def frames2video(input_path: str | list[str] | list[np.ndarray],
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if isinstance(input_path, (str, Path)):
-        input_path = sorted([
-            str(Path(input_path) / elem) for elem in os.listdir(input_path)
-            if elem[-4:] == extension
-        ])
+        input_path = sorted([str(elem) for elem in list(Path(input_path).iterdir())
+                             if elem.suffix == extension])
 
     # input_path = input_path[:1000]
     # output_path = 'test.mp4'

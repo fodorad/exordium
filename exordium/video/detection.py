@@ -1,41 +1,45 @@
-import random
-from pathlib import Path
-from typing import Callable, Union
 import csv
-from dataclasses import dataclass
+import random
+import itertools
+from pathlib import Path
+from typing import Callable
 
 from batch_face import RetinaFace  # pip install git+https://github.com/elliottzheng/batch-face.git@master
+from deepface import DeepFace
 import cv2
 import numpy as np
 from tqdm import tqdm
 from decord import VideoReader, cpu
 from scipy.interpolate import interp1d  # type: ignore
-#import bbox_visualizer as bbv
-#from deepface import DeepFace
-#import torch
-#import torchvision
 
 from exordium.utils.shared import load_or_create
 from exordium.video.bb import xywh2xyxy, xyxy2xywh, xywh2midwh, crop_mid, iou_xywh
+from exordium.video.frames import frames2video
 
 
-@dataclass
 class Detection:
-    frame_id: int
-    frame_path: str
-    score: float
-    bb_xywh: np.ndarray  # (4,)
-    bb_xyxy: np.ndarray  # (4,)
-    landmarks: np.ndarray  # (5,2)
+
+    def __init__(self, frame_id: int, frame_path: str, score: float, bb_xywh: np.ndarray, bb_xyxy: np.ndarray, landmarks: np.ndarray):
+        self.frame_id: int = frame_id
+        self.frame_path: str = frame_path
+        self.score: float = score
+        self.bb_xywh: np.ndarray = bb_xywh # (4,)
+        self.bb_xyxy: np.ndarray = bb_xyxy # (4,)
+        self.landmarks: np.ndarray = landmarks # (5,2)
+    
+    def frame(self) -> np.ndarray:
+        assert Path(self.frame_path).suffix in {'png', 'jpg'}
+        return cv2.imread(self.frame_path)
 
     def crop(self) -> np.ndarray:
         assert Path(self.frame_path).exists(
         ), f'Image or video does not exist at {self.frame_path}.'
         if Path(self.frame_path).suffix == '.mp4':
             vr = VideoReader(str(self.frame_path), ctx=cpu(0))
-            frame = vr[self.frame_id].asnumpy()
+            frame = vr[self.frame_id].asnumpy() # RGB
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         else:
-            frame = cv2.imread(self.frame_path)
+            frame = cv2.imread(self.frame_path) # BGR
         midwh: np.ndarray = xywh2midwh(self.bb_xywh)
         bb_size: int = max(self.bb_xywh[2:])
         image_crop = crop_mid(frame, midwh[:2], bb_size)
@@ -54,7 +58,6 @@ class Detection:
         return np.array([width // 2, height // 2]).astype(int)
 
     def __eq__(self, other: 'Detection') -> bool:
-        if not isinstance(other, Detection): return False
         return self.frame_id == other.frame_id and \
                self.frame_path == other.frame_path and \
                abs(self.score - other.score) < 1e-6 and \
@@ -105,7 +108,6 @@ class FrameDetections:
             raise StopIteration
 
     def __eq__(self, other: 'FrameDetections') -> bool:
-        if not isinstance(other, FrameDetections): return False
         for fdet1, fdet2 in zip(self.detections, other.detections):
             if fdet1 != fdet2:
                 return False
@@ -163,23 +165,25 @@ class FrameDetections:
             for line_count, record in enumerate(csv_reader):
                 if line_count > 0:
                     d = {
-                        'frame_id':
-                        int(record[0]),
-                        'frame_path':
-                        str(record[1]),
-                        'score':
-                        float(record[2]),
-                        'bb_xywh':
-                        np.array(record[3:7], dtype=int),
-                        'bb_xyxy':
-                        xywh2xyxy(np.array(record[3:7], dtype=int)),
-                        'landmarks':
-                        np.array(record[7:17], dtype=int).reshape(5, 2)
+                        'frame_id': int(record[0]),
+                        'frame_path': str(record[1]),
+                        'score': float(record[2]),
+                        'bb_xywh': np.array(record[3:7], dtype=int),
+                        'bb_xyxy': xywh2xyxy(np.array(record[3:7], dtype=int)),
+                        'landmarks': np.array(record[7:17], dtype=int).reshape(5, 2)
                     }
                     detection = Detection(**d)
                     self.detections.append(detection)
 
         return self
+
+    def add_detections_to_frame(self, frame: np.ndarray | None) -> np.ndarray:
+        if frame is None: frame = cv2.imread(self.detections[0].frame_path)
+        cv2.putText(frame, f"frame id: {self.detections[0].frame_id:06d}", (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        for detection in self.detections:
+            cv2.putText(frame, f"score: {detection.score:.2f}", (detection.bb_xyxy[0] - 5, detection.bb_xyxy[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.rectangle(frame, (detection.bb_xyxy[0], detection.bb_xyxy[1]), (detection.bb_xyxy[2], detection.bb_xyxy[3]), (0, 255, 0), 2)
+        return frame
 
 
 class VideoDetections():
@@ -198,6 +202,13 @@ class VideoDetections():
     def merge(self, vdet: 'VideoDetections') -> None:
         for fdet in vdet:
             self.add(fdet)
+    
+    def frame_ids(self) -> list[int]:
+        return [fdet[0].frame_id for fdet in self.detections]
+    
+    def get_frame_detection(self, frame_id: int) -> FrameDetections:
+        return next((frame_detection for frame_detection in self.detections
+                     if frame_detection[0].frame_id == frame_id))
 
     def __getitem__(self, index: int) -> FrameDetections:
         return self.detections[index]
@@ -217,12 +228,8 @@ class VideoDetections():
             raise StopIteration
 
     def __eq__(self, other: 'VideoDetections') -> bool:
-        if not isinstance(other, VideoDetections): return False
-        for index, (fdet1,
-                    fdet2) in enumerate(zip(self.detections,
-                                            other.detections)):
-            if fdet1 != fdet2:
-                return False
+        for fdet1, fdet2 in zip(self.detections, other.detections):
+            if fdet1 != fdet2: return False
         return True
 
     def save(self, output_file: str):
@@ -276,6 +283,19 @@ class VideoDetections():
                         frame_detections.add_detection(detection)
 
         return self
+
+    def save_detections_to_video(self, frame_dir: str | Path, output_dir: str | Path, fps: int = 30, sample_every_n: int = 1, verbose: bool = False) -> None:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        frame_paths = sorted(list(Path(frame_dir).iterdir()))
+        frame_ids = [int(Path(frame_path).stem) for frame_path in frame_paths]
+        frame_detection_ids = self.frame_ids()
+        for frame_id, frame_path in tqdm(enumerate(zip(frame_ids, frame_paths)), total=len(frame_ids), desc='Save frames', disable=not verbose):
+            frame = cv2.imread(frame_path)
+            if frame_id in frame_detection_ids:
+                frame_detection = self.get_frame_detection(frame_id)
+                frame = frame_detection.add_detections_to_frame(frame)
+            cv2.imwrite(str(output_dir / f'{Path(frame_path.stem).png}'), frame)
 
 
 class FaceDetector():
@@ -447,8 +467,7 @@ class Track():
                  detection: Detection,
                  verbose: bool = False) -> None:
         self.track_id = track_id
-        self.detections: list[Detection] = []
-        self.add(detection)
+        self.detections: list[Detection] = [detection]
         self.index = 0
         if verbose: print(f'Track {self.track_id} is started.')
 
@@ -459,14 +478,16 @@ class Track():
         return next((detection for detection in self.detections
                      if detection.frame_id == frame_id))
 
-    def add(self, detection: Union[Detection, 'Track']) -> None:
-        if isinstance(detection, Detection):
-            self.detections.append(detection)
-        elif isinstance(detection, Track):
-            self.detections += detection.detections
-        else:
-            raise NotImplementedError()
+    def __sort_detections(self) -> None:
         self.detections.sort(key=lambda obj: obj.frame_id)
+
+    def add(self, detection: Detection) -> None:
+        self.detections.append(detection)
+        self.__sort_detections()
+
+    def merge(self, detection: 'Track') -> None:
+        self.detections += detection.detections
+        self.__sort_detections()
 
     def track_frame_distance(self, track: 'Track') -> int:
         return abs(self.last_detection().frame_id -
@@ -518,6 +539,40 @@ class Track():
         else:
             raise StopIteration
 
+    def save_track_target_to_images(self, output_dir: str | Path, bb_size: int = 224, fps: int = 30, sample_every_n: int = 1, verbose: bool = False) -> None:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        for i, detection in tqdm(enumerate(self.detections), desc='Save track targets', disable=not verbose):
+            if i % sample_every_n != 0: continue
+            image = detection.crop()
+            if bb_size != -1:
+                image = cv2.resize(image, (bb_size, bb_size), interpolation=cv2.INTER_AREA)
+            cv2.imwrite(str(output_dir / f'{detection.frame_id:06d}.png'), image)
+
+        frames2video(output_dir, output_dir.parent / f'{output_dir.stem}.mp4', fps)
+
+    def save_track_with_context_to_video(self, frame_dir: str | Path, output_dir: str | Path, fps: int = 30, sample_every_n: int = 1, verbose: bool = False) -> None:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        frame_paths = sorted(list(Path(frame_dir).iterdir()))
+        frame_ids = [int(Path(frame_path).stem) for frame_path in frame_paths]
+        track_frame_ids = self.frame_ids()
+
+        for frame_id, frame_path in tqdm(zip(frame_ids, frame_paths), total=len(frame_paths), desc='Save video frames', disable=not verbose):
+            if frame_id % sample_every_n != 0: continue
+            if frame_id not in track_frame_ids: continue
+
+            frame = cv2.imread(str(frame_path))
+            detection = self.get_detection(frame_id)
+
+            cv2.putText(frame, f"frame id: {frame_id:06d}", (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.putText(frame, f"score: {detection.score:.2f}", (detection.bb_xyxy[0] - 5, detection.bb_xyxy[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.rectangle(frame, (detection.bb_xyxy[0], detection.bb_xyxy[1]), (detection.bb_xyxy[2], detection.bb_xyxy[3]), (0, 255, 0), 2)
+            cv2.imwrite(str(Path(output_dir) / f'{frame_id:06d}.png'), frame)
+
+        frames2video(output_dir, output_dir.parent / f'{output_dir.stem}.mp4', fps)
 
 class Tracker():
 
@@ -527,6 +582,7 @@ class Tracker():
         self.selected_tracks: dict[int, Track] = {}
         self.path_to_id: Callable[..., int] = lambda p: int(Path(p).stem)
         self.id_to_path: Callable[..., str] = lambda i: f'{i:06d}.png'
+        self.deepface = None
 
     def label_tracks_iou(self,
                          detections: VideoDetections,
@@ -553,8 +609,8 @@ class Tracker():
                     continue
 
                 # current state of the dictionary, otherwise "RuntimeError: dictionary changed size during iteration"
-                # tracks = list(self.tracks.items()).copy()
-                # tracks = copy.deepcopy(self.tracks)
+                #tracks = list(self.tracks.items()).copy()
+                #tracks = copy.deepcopy(self.tracks)
 
                 tracks_to_add: list[tuple[int, float]] = []
                 # if condition is met, assign detection to an unfinished track
@@ -592,10 +648,10 @@ class Tracker():
                     # add the detection to the end of the best track
                     self.tracks[best_iou_track[0]].add(detection)
 
-        self = self.interpolate()
+        self = self.__interpolate()
         return self
 
-    def interpolate(self) -> 'Tracker':
+    def __interpolate(self) -> 'Tracker':
 
         for _, track in self.tracks.items():
             # get sorted list of frame ids of the track
@@ -614,28 +670,18 @@ class Tracker():
                 # interpolate bb coords
                 bb_interp = interp1d(
                     np.array([frame_id_start, frame_id_end]),
-                    np.array([detection_start.bb_xywh,
-                              detection_end.bb_xywh]).T)
-                new_bb: np.ndarray = bb_interp(
-                    np.arange(frame_id_start, frame_id_end + 1, 1))
+                    np.array([detection_start.bb_xywh, detection_end.bb_xywh]).T)
+                new_bb: np.ndarray = bb_interp(np.arange(frame_id_start, frame_id_end + 1, 1))
 
                 # interpolate lmks coords
                 lmks_x_interp = interp1d(
                     np.array([frame_id_start, frame_id_end]),
-                    np.array([
-                        detection_start.landmarks[:, 0],
-                        detection_end.landmarks[:, 0]
-                    ]).T)
+                    np.array([detection_start.landmarks[:, 0], detection_end.landmarks[:, 0]]).T)
                 lmks_y_interp = interp1d(
                     np.array([frame_id_start, frame_id_end]),
-                    np.array([
-                        detection_start.landmarks[:, 1],
-                        detection_end.landmarks[:, 1]
-                    ]).T)
-                new_lmks_x: np.ndarray = lmks_x_interp(
-                    np.arange(frame_id_start, frame_id_end + 1, 1))
-                new_lmks_y: np.ndarray = lmks_y_interp(
-                    np.arange(frame_id_start, frame_id_end + 1, 1))
+                    np.array([detection_start.landmarks[:, 1], detection_end.landmarks[:, 1]]).T)
+                new_lmks_x: np.ndarray = lmks_x_interp(np.arange(frame_id_start, frame_id_end + 1, 1))
+                new_lmks_y: np.ndarray = lmks_y_interp(np.arange(frame_id_start, frame_id_end + 1, 1))
 
                 # round and change type
                 new_frame_ids = np.arange(frame_id_start + 1, frame_id_end, 1)
@@ -646,132 +692,77 @@ class Tracker():
                 # add interpolated detections to the tracks
                 for ind, frame_id in enumerate(new_frame_ids):
                     new_detection = {
-                        'frame_id':
-                        int(frame_id),
-                        'frame_path':
-                        '',
-                        'score':
-                        -1,
-                        'bb_xywh':
-                        new_bb[:, ind],
-                        'bb_xyxy':
-                        xywh2xyxy(new_bb[:, ind]),
-                        'landmarks':
-                        np.stack([new_lmks_x[:, ind], new_lmks_y[:, ind]]).T,
+                        'frame_id': int(frame_id),
+                        'frame_path': '',
+                        'score': -1,
+                        'bb_xywh': new_bb[:, ind],
+                        'bb_xyxy': xywh2xyxy(new_bb[:, ind]),
+                        'landmarks': np.stack([new_lmks_x[:, ind], new_lmks_y[:, ind]]).T,
                     }
                     track.add(Detection(**new_detection))
-        return self
 
-    '''
-    def merge_deepface(self,
-                       frames: list,
-                       sample: int = 5,
-                       threshold: float = 0.85):
-        print('DeepFace verification started...')
-        # models = ["VGG-Face", "Facenet", "Facenet512", "OpenFace", "DeepFace", "DeepID", "ArcFace", "Dlib"]
+        return self
+    
+    def merge_deepface(self, sample: int = 5, threshold: float = 0.85, verbose: bool = False):
+        if verbose: print('DeepFace verification started...')
+        
         model_name = 'ArcFace'
-        model = DeepFace.build_model(model_name)
-        print(model_name, 'is loaded.')
+        if self.deepface is None:
+            # models = ["VGG-Face", "Facenet", "Facenet512", "OpenFace", "DeepFace", "DeepID", "ArcFace", "Dlib"]
+            self.model = DeepFace.build_model(model_name)
+            if verbose: print(model_name, 'is loaded.')
 
         track_ids = list(self.tracks.keys())
-        if len(track_ids) == 1:
-            return self
+        if len(track_ids) == 1: return self
 
         blacklist = []
-        for k in track_ids:
+        for track_id1 in track_ids:
+            if track_id1 in blacklist: continue
 
-            if k in blacklist:
-                continue
+            for track_id2 in track_ids:
+                if track_id1 == track_id2 or track_id2 in blacklist: continue
 
-            for t in track_ids:
+                # get two tracks
+                track1: Track = self.tracks[track_id1]
+                track2: Track = self.tracks[track_id2]
+                
+                # sample tracks
+                detections_1: list[Detection] = track1.sample(sample)
+                detections_2: list[Detection] = track2.sample(sample)
 
-                if k == t or t in blacklist:
-                    continue
-
-                dets_k = self.tracks[k].sample(sample)
-                dets_t = self.tracks[t].sample(sample)
-
-                if dets_k is None or dets_t is None:
-                    continue
-
-                combs = list(
-                    itertools.product(list(range(len(dets_k))),
-                                      list(range(len(dets_t)))))
+                # all pairwise combination of the faces within the two tracks
+                pairs = list(itertools.product(list(range(len(detections_1))), list(range(len(detections_2)))))
+                
+                # load face pairs
                 frame_pairs = []
-                print('')
-                for i, (k_i, t_i) in enumerate(combs):
-                    print(len(blacklist),
-                          '/',
-                          len(track_ids),
-                          '|',
-                          k,
-                          'vs',
-                          t,
-                          '|',
-                          i + 1,
-                          '/',
-                          len(combs),
-                          '\r',
-                          end='',
-                          flush=True)
-                    frame_id_k = dets_k[k_i][0]
-                    frame_id_t = dets_t[t_i][0]
-                    bb_k_xyxy = xywh2xyxy(dets_k[k_i][1]['bb'])
-                    bb_t_xyxy = xywh2xyxy(dets_t[t_i][1]['bb'])
-                    frame_k = cv2.imread(
-                        frames[frame_id_k])[bb_k_xyxy[1]:bb_k_xyxy[3],
-                                            bb_k_xyxy[0]:bb_k_xyxy[2], :]
-                    frame_t = cv2.imread(
-                        frames[frame_id_t])[bb_t_xyxy[1]:bb_t_xyxy[3],
-                                            bb_t_xyxy[0]:bb_t_xyxy[2], :]
-                    frame_pairs.append([frame_k, frame_t])
+                if verbose: print('')
+                for i, (track_ind1, track_ind2) in enumerate(pairs):
+                    if verbose: print(len(blacklist), '/', len(track_ids), '|', track_id1, 'vs', track_id2, '|', i+1, '/', len(pairs), '\r', end='', flush=True)
+                    face1: np.ndarray = detections_1[track_ind1].crop()
+                    face2: np.ndarray = detections_2[track_ind2].crop()
+                    frame_pairs.append([face1, face2])
 
                 DF_res = DeepFace.verify(img1_path=frame_pairs,
                                          model_name=model_name,
-                                         model=model,
+                                         model=self.model,
                                          enforce_detection=False,
                                          detector_backend='skip',
                                          prog_bar=False)
-
-                mean_verification_score = np.array(
-                    [v['verified'] for _, v in DF_res.items()],
-                    dtype=np.float32).mean()
+                mean_verification_score = np.array([v['verified'] for _, v in DF_res.items()], dtype=np.float32).mean()
 
                 if mean_verification_score > threshold:
                     # merge tracks
-                    self.tracks[k].merge(self.tracks[t])
-                    self.tracks.pop(t)
-                    blacklist.append(t)
-                    print(
-                        len(blacklist),
-                        '/',
-                        len(track_ids),
-                        '|',
-                        f'{k} & {t} merged with {mean_verification_score} score',
-                        '\r',
-                        end='',
-                        flush=True)
+                    track1.merge(track2)
+                    self.tracks.pop(track_id2)
+                    blacklist.append(track_id2)
+                    if verbose: print(len(blacklist), '/', len(track_ids), '|', f'{track_id1} & {track_id2} merged with {mean_verification_score} score', '\r', end='', flush=True)
                 else:
-                    print(
-                        len(blacklist),
-                        '/',
-                        len(track_ids),
-                        '|',
-                        f'{k} & {t} not merged with {mean_verification_score} scores',
-                        '\r',
-                        end='',
-                        flush=True)
+                    if verbose: print(len(blacklist), '/', len(track_ids), '|', f'{track_id1} & {track_id2} not merged with {mean_verification_score} scores', '\r', end='', flush=True)
 
-            blacklist.append(k)
-            print(len(blacklist),
-                  '/',
-                  len(track_ids),
-                  '\r',
-                  end='',
-                  flush=True)
+            blacklist.append(track_id1)
+            if verbose: print(len(blacklist), '/', len(track_ids), '\r', end='', flush=True)
 
         return self
-    '''
 
     def merge_iou(self,
                   max_lost: int = -1,
@@ -805,7 +796,7 @@ class Tracker():
 
                 # merge tracks if within lost frame tolerance and IoU threshold is met
                 if is_max_lost and is_iou_threshold:
-                    track_1.add(track_2)
+                    track_1.merge(track_2)
                     self.tracks.pop(track_id2)
                     blacklist.append(track_id2)
 
@@ -831,6 +822,17 @@ class Tracker():
         }
         return self
 
+    def select_topk_biggest_bb_tracks(self, top_k: int = 1) -> 'Tracker':
+        tracks: list[tuple[int, Track]] = sorted(
+            [(track_id, track) for track_id, track in self.tracks.items()],
+            key=lambda x: x[1].bb_size(),
+            reverse=True)
+        self.selected_tracks = {
+            track_id: track
+            for track_id, track in tracks[:top_k]
+        }
+        return self
+
     def get_center_track(self) -> Track:
         if len(self.selected_tracks) > 0:
             tracks = self.selected_tracks
@@ -840,251 +842,18 @@ class Tracker():
                       key=lambda x: np.linalg.norm(x.center(
                       ) - x.first_detection().frame_center()))[0]
 
-    @classmethod
-    def save_track_faces(cls,
-                         track: Track,
-                         output_dir: str | Path,
-                         sample_every_n: int = 1) -> None:
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
 
-        for i, detection in tqdm(enumerate(track),
-                                 total=len(track),
-                                 desc='Save track faces'):
-            if i % sample_every_n != 0: continue
-            image = detection.crop()
-            cv2.imwrite(str(output_dir / Path(detection.frame_path).name),
-                        image)
-
-
-'''
-def detection_visualization(frame_paths: str | list[str],
-                            detections: RetinafaceDetections | str,
-                            output_dir: str,
-                            sample_every_n: int = 25,
-                            only_detected: bool = False):
-
-    if isinstance(frame_paths, str):
-        frame_paths = sorted([
-            str(Path(frame_paths) / elem) for elem in os.listdir(frame_paths)
-        ])
-
-    if isinstance(detections, str):
-        detections = DetLoader().load(detections)
-
-    if only_detected:
-        ids = detections.ids()
-    else:
-        ids = list(
-            range(int(Path(frame_paths[0]).stem),
-                  int(Path(frame_paths[-1]).stem)))
-
-    ids = ids[::sample_every_n]
-
-    for id in tqdm(ids,
-                   total=len(ids),
-                   desc=f'Save detections to {output_dir}'):
-        frame_path = next(
-            filter(lambda frame_path: int(Path(frame_path).stem) == id,
-                   frame_paths), None)
-        if frame_path is None: continue
-        frame = cv2.imread(frame_path)
-        cv2.putText(frame, f"frame id: {id:02d}", (5, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-        dets = [
-            detection for detection in detections if detection['frame'] == id
-        ]
-        for det in dets:
-            bb_xyxy = xywh2xyxy(det['bb'])
-            cv2.putText(frame, "score: {:.2f}".format(det['score']),
-                        (bb_xyxy[0] - 5, bb_xyxy[1]), cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5, (0, 255, 0), 2)
-            cv2.rectangle(frame, (bb_xyxy[0], bb_xyxy[1]),
-                          (bb_xyxy[2], bb_xyxy[3]), (0, 255, 0), 2)
-            cv2.imwrite(str(Path(output_dir) / f'{id:06d}.png'), frame)
-
-
-def track_visualization(frame_paths: str | list[str],
-                        tracks: OrderedDict,
-                        output_dir: str,
-                        sample_every_n: int = 25):
-
-    if isinstance(frame_paths, str):
-        frame_paths = sorted([
-            str(Path(frame_paths) / elem) for elem in os.listdir(frame_paths)
-        ])
-
-    ids = list(
-        range(int(Path(frame_paths[0]).stem), int(Path(frame_paths[-1]).stem)))
-    ids = ids[::sample_every_n]
-
-    for id in tqdm(ids, total=len(ids), desc=f'Save tracks to {output_dir}'):
-
-        frame_path = next(
-            filter(lambda frame_path: int(Path(frame_path).stem) == id,
-                   frame_paths), None)
-        if frame_path is None: continue
-        frame = cv2.imread(frame_path)
-
-        for _, track in tracks.items():
-
-            if id not in track.location:
-                continue
-
-            detection = track.location[id]
-            bb_xyxy = xywh2xyxy(detection['bb'])
-            frame = bbv.draw_rectangle(frame, bb_xyxy)
-            frame = bbv.add_label(
-                frame, "{}|{:2d}".format(track.id,
-                                         int(detection['score'] * 100)),
-                bb_xyxy)
-            cv2.imwrite(str(Path(output_dir) / f'{id:06d}.png'), frame)
-
-
-def face_visualization(frames: str | list[str],
-                       tracks: OrderedDict,
-                       output_dir: str,
-                       sample_every_n: int = 1,
-                       extra_percent: float = 0.2):
-
-    assert frames, 'Empty list of frames'
-
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    if isinstance(frames, str):
-        frames = sorted(
-            [str(Path(frames) / elem) for elem in os.listdir(frames)])
-
-    h, w, _ = cv2.imread(frames[0]).shape
-    ids = list(range(int(Path(frames[0]).stem),
-                     int(Path(frames[-1]).stem) + 1))
-    ids = ids[::sample_every_n]
-
-    for id in tqdm(ids,
-                   total=len(ids),
-                   desc=f'Save face RGB images to {output_dir}'):
-        frame_path = next(
-            filter(lambda frame_path: int(Path(frame_path).stem) == id,
-                   frames), None)
-        if frame_path is None: continue
-
-        frame = cv2.imread(frame_path)
-
-        for _, track in tracks.items():
-            bb_size = track.bb_size(extra_percent=extra_percent)
-
-            if bb_size % 2 == 1:
-                bb_size -= 1  # make it even
-
-            if id not in track.location:
-                face = np.zeros((bb_size, bb_size, 3))
-            else:
-                detection = track.location[id]
-                bb_xyxy = xywh2xyxy(detection['bb'])
-                #print('detected bb:', bb_xyxy)
-                # centering
-                cx = bb_xyxy[0] + abs(bb_xyxy[2] - bb_xyxy[0]) // 2
-                cy = bb_xyxy[1] + abs(bb_xyxy[3] - bb_xyxy[1]) // 2
-                #print('center of bb:', cx, cy)
-                face_bb_xyxy = np.rint(
-                    np.array([
-                        cx - bb_size // 2, cy - bb_size // 2,
-                        cx + bb_size // 2, cy + bb_size // 2
-                    ])).astype(np.int32)
-                #print('calculated bb:', face_bb_xyxy)
-                # correct if necessary
-                face_bb_xyxy[face_bb_xyxy < 0] = 0
-                face_bb_xyxy[face_bb_xyxy[0] > w] = w
-                face_bb_xyxy[face_bb_xyxy[2] > w] = w
-                face_bb_xyxy[face_bb_xyxy[1] > h] = h
-                face_bb_xyxy[face_bb_xyxy[3] > h] = h
-                # cut face
-                x1, y1, x2, y2 = face_bb_xyxy
-                #print('thresholded bb:', face_bb_xyxy)
-                face = frame[y1:y2, x1:x2, :]
-
-                if face.shape != (bb_size, bb_size, 3):
-                    face_resized = np.zeros((bb_size, bb_size, 3))
-                    sh, sw = (bb_size - face.shape[0]) // 2, (
-                        bb_size - face.shape[1]) // 2
-                    face_resized[sh:sh + face.shape[0],
-                                 sw:sw + face.shape[1], :] = face
-                    face = face_resized
-
-            cv2.imwrite(str(output_dir / f'{id:06d}.png'), face)
-
-
-@timer_with_return
 @load_or_create('pkl')
-def find_and_track_deepface(frames_dir: str | Path,
-                            num_tracks: int = 2,
-                            batch_size: int = 32,
-                            gpu_id: int = 0,
-                            retinaface_arch: str = 'resnet50',
-                            cache_det: str = 'test.det',
-                            **kwargs):
-    """ Refactor for general use case
-
-    Args:
-        frames_dir (str): _description_
-        num_tracks (int, optional): _description_. Defaults to 1.
-        batch_size (int, optional): _description_. Defaults to 32.
-        gpu_id (int, optional): _description_. Defaults to 0.
-        overwrite (bool, optional): _description_. Defaults to True.
-        retinaface_arch (str, optional): _description_. Defaults to 'resnet50'.
-        cache_det (str, optional): _description_. Defaults to 'test.det'.
-    """
-    assert retinaface_arch in {
-        'mobilenet', 'resnet50'
-    }, 'Invalid architecture choice for RetinaFace. Choose from {"mobilenet","resnet50"}.'
-
-    # get frames
-    frames = [
-        str(Path(frames_dir) / frame)
-        for frame in sorted(os.listdir(frames_dir))
-    ]
-
-    # detect face bounding boxes
-    detections = detect_faces(frame_paths=frames,
-                              detector=RetinaFace(gpu_id=gpu_id,
-                                                  network=retinaface_arch),
-                              batch_size=batch_size,
-                              output_path=cache_det)
-
-    #if visualize_det:
-    #    Path(./).mkdir(parents=True, exist_ok=True)
-    #    detection_visualization(frames, detections, detection_dir)
-    #    frames2video(detection_dir, Path(detection_dir).parent / f'{Path(detection_dir).stem}.mp4')
-
-    h, w, _ = cv2.imread(frames[0]).shape
-    cx = w // 2
-    cy = h // 2
-
-    print('Run tracker...')
-    # label, interpolate, merge and filter tracks
-    tracker = IoUTracker().label_iou(detections, max_lost=90) \
-                          .interpolate() \
-                          .filter_min_length(min_length=10) \
-                          .merge_deepface(frames, sample=10, threshold=0.6) \
-                          .filter_topk_length(top_k=num_tracks) \
-                          .select_center((cx, cy))
-
-    print('[postprocess] number of tracks:', len(tracker.tracks),
-          'lengths of tracks:',
-          [(id, len(track)) for id, track in tracker.tracks.items()])
-
-    return tracker.tracks
-'''
-
-
 def center_face_track(frame_dir: str | Path,
                       min_det_score: float = 0.7,
                       bb_iou_thr: float = 0.2,
                       interp_max_lost: int = 30,
+                      merge_algorithm: str = 'iou',
                       merge_max_lost: int = -1,
                       merge_iou_thr: float = 0.2,
+                      deepface_sample: int = 5,
+                      deepface_threshold: float = 0.85,
+                      select_track_priority: str = 'bb_size',
                       batch_size: int = 32,
                       gpu_id: int = 0,
                       retinaface_arch: str = 'resnet50',
@@ -1092,9 +861,12 @@ def center_face_track(frame_dir: str | Path,
                       cache_vdet: str = 'test.vdet',
                       **kwargs):
 
-    assert retinaface_arch in {
-        'mobilenet', 'resnet50'
-    }, 'Invalid architecture choice for RetinaFace. Choose from ["mobilenet","resnet50"].'
+    assert merge_algorithm in {'iou', 'deepface'}, \
+        f'Invalid merge algorithm {merge_algorithm}. Choose one from "iou" or "deepface".'
+    assert select_track_priority in {'bb_size', 'track_length'}, \
+        f'Invalid priority {select_track_priority}. Choose one from "bb_size" or "track_length".'
+    assert retinaface_arch in {'mobilenet', 'resnet50'}, \
+        'Invalid architecture choice for RetinaFace. Choose from ["mobilenet","resnet50"].'
 
     print('Run face detector...')
     face_detector = FaceDetector(gpu_id=gpu_id,
@@ -1108,13 +880,22 @@ def center_face_track(frame_dir: str | Path,
                                                       output_path=cache_vdet)
 
     print('Run tracker...')
-    # label, interpolate, merge and filter tracks
+    # label and interpolate tracks
     tracker = Tracker().label_tracks_iou(video_detections, min_score=min_det_score, iou_threshold=bb_iou_thr, max_lost=interp_max_lost) \
-                       .merge_iou(max_lost=merge_max_lost, iou_threshold=merge_iou_thr)
+    
+    # merge tracks
+    if merge_algorithm == 'iou':
+        tracker.merge_iou(max_lost=merge_max_lost, iou_threshold=merge_iou_thr)
+    else: # deepface
+        tracker.merge_deepface(sample=deepface_sample, threshold=deepface_threshold, verbose=verbose)
 
-
-    track: Track = tracker.select_topk_long_tracks(top_k=2) \
-                          .get_center_track()
+    # select the topk longest tracks, and then a single center track
+    if select_track_priority == 'track_length':
+        track: Track = tracker.select_topk_long_tracks(top_k=2) \
+                              .get_center_track()
+    else: # biggest bounding box is preferred
+        track: Track = tracker.select_topk_biggest_bb_tracks(top_k=1) \
+                              .get_center_track()
 
     print('[Track]\n\tnumber of tracks:', len(tracker.tracks),
           '\n\tlengths of tracks:', [(id, len(track))
@@ -1128,11 +909,16 @@ if __name__ == '__main__':
 
     video1 = 'data/videos/9KAqOrdiZ4I.001.mp4'
     video2 = 'data/videos/002003_FC1_A.mp4'
+    video3 = 'data/videos/multispeaker_720p.mp4'
+    video4 = 'data/videos/multispeaker_360p.mp4'
 
-    center_face_track(frame_dir=video1,
-                      gpu_id=0,
-                      verbose=True,
-                      cache_vdet='test.vdet')
+    ct = center_face_track(frame_dir=video4,
+                           verbose=True,
+                           cache_vdet=f'data/processed/cache/{Path(video4).stem}.vdet')
 
-    detection_dir = 'data/processed/faces/002003_FC1_A_360p'
-    track_dir = 'data/processed/tracks/002003_FC1_A_360p'
+    ct.save_track_with_context_to_video(frame_dir=f'data/processed/frames/{Path(video4).stem}',
+                                        output_dir=f'data/processed/tracks/{Path(video4).stem}_{str(ct.track_id)}_context/frames',
+                                        fps=30, sample_every_n=30)
+
+    ct.save_track_target_to_images(output_dir=f'data/processed/tracks/{Path(video4).stem}_{str(ct.track_id)}_target/frames',
+                                   fps=30, sample_every_n=30)

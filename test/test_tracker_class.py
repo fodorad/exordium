@@ -86,6 +86,14 @@ class TrackerTestCase(unittest.TestCase):
         track = tracker.get_center_track()
         output_dir = Path(FACE_DIR)
         Tracker.save_track_faces(track, output_dir)
+        
+    def test_save_track_video(self):
+        tracker = Tracker()
+        tracker.label_tracks_iou(self.vdet, max_lost=30, verbose=False)
+        track = tracker.get_center_track()
+        output_dir = Path(FACE_DIR)
+        Tracker.save_track_video(track, FRAMES_DIR, output_dir)
+
 
 if __name__ == '__main__':
     unittest.main()

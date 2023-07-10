@@ -188,7 +188,6 @@ class NpyLoader(Loader):
     def load(self, path: str | Path):
         return np.load(path)
 
-
     def save(self, data, path: str | Path):
         np.save(path, data)
 
@@ -209,18 +208,19 @@ def load_or_create(format: str):
 
     def decorator(function):
         def wrapper(*args, **kwargs):
-            output_path = None if 'output_path' not in kwargs else kwargs['output_path']
+            output_path: str | Path | None = kwargs.get('output_path', None)
+            overwrite: bool = kwargs.get('overwrite', False)
+            verbose = kwargs.get('verbose', False)
 
-            if output_path is not None and Path(output_path).exists() and \
-                (('overwrite' not in kwargs) or ('overwrite' in kwargs and not kwargs['overwrite'])):
-                print(f'Load from {output_path}...')
-                val = loader.load(output_path)
-            else:
+            if output_path is None or not Path(output_path).exists() or (Path(output_path).exists() and overwrite):
                 val = function(*args, **kwargs)
                 if output_path is not None:
-                    print(f'Save to {output_path}...')
+                    if verbose: print(f'Save to {str(output_path)}...')
                     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
                     loader.save(val, output_path)
+            else:
+                if verbose: print(f'Load from {str(output_path)}...')
+                val = loader.load(output_path)
 
             return val
         return wrapper
