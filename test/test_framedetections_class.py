@@ -93,11 +93,9 @@ class FrameDetectionsTestCase(unittest.TestCase):
         )
         self.frame_detections.add_detection(detection1)
         self.frame_detections.add_detection(detection2)
-
         detections = []
         for detection in self.frame_detections:
             detections.append(detection)
-
         self.assertEqual(detections, [detection1, detection2])
 
     def test_get_biggest_bb(self):
@@ -119,7 +117,6 @@ class FrameDetectionsTestCase(unittest.TestCase):
         )
         self.frame_detections.add_detection(detection1)
         self.frame_detections.add_detection(detection2)
-
         biggest_bb = self.frame_detections.get_biggest_bb()
         self.assertEqual(biggest_bb, detection2)
 
@@ -142,12 +139,10 @@ class FrameDetectionsTestCase(unittest.TestCase):
         )
         self.frame_detections.add_detection(detection1)
         self.frame_detections.add_detection(detection2)
-
         highest_score = self.frame_detections.get_highest_score()
         self.assertEqual(highest_score, detection2)
 
     def test_equal(self):
-        
         detection1 = Detection(
             frame_id=1,
             frame_path='path/to/frame1.jpg',
@@ -195,15 +190,12 @@ class FrameDetectionsTestCase(unittest.TestCase):
         )
         self.frame_detections.add_detection(detection1)
         self.frame_detections.add_detection(detection2)
-
         output_file = 'output.csv'
         self.frame_detections.save(output_file)
-
         loaded_detections = FrameDetections().load(output_file)
         self.assertEqual(len(loaded_detections), 2)
         self.assertEqual(loaded_detections[0], detection1)
         self.assertEqual(loaded_detections[1], detection2)
-
         os.remove(output_file)
 
 

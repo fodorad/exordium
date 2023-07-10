@@ -1,8 +1,8 @@
 import unittest
-from pathlib import Path
 import os
 import cv2
 import numpy as np
+from pathlib import Path
 from exordium.video.detection import FaceDetector, FrameDetections, VideoDetections
 
 RESOLUTION = '720p'
@@ -54,6 +54,7 @@ class FaceDetectorTestCase(unittest.TestCase):
         loaded_video_detections = self.face_detector.detect_video(VIDEO_PATH, output_path=output_path)
         self.assertEqual(video_detections, loaded_video_detections)
         os.remove(output_path)
+
 
 if __name__ == '__main__':
     unittest.main()

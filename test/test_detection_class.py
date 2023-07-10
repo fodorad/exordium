@@ -1,7 +1,7 @@
 import unittest
-from pathlib import Path
 import cv2
 import numpy as np
+from pathlib import Path
 from exordium.video.detection import Detection
 
 RESOLUTION = '720p'
@@ -84,6 +84,7 @@ class DetectionTestCase(unittest.TestCase):
         self.assertEqual(detection1, detection2)
         self.assertNotEqual(detection1, detection3)
         self.assertNotEqual(detection2, detection3)
+
 
 if __name__ == '__main__':
     unittest.main()

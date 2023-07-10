@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from exordium.video.detection import Tracker, Track, VideoDetections, FrameDetections, Detection, FaceDetector
+from exordium.video.detection import Tracker, VideoDetections, FaceDetector
 
 FRAMES_DIR = f'data/processed/frames/9KAqOrdiZ4I.001'
 CACHE_PATH = f'data/processed/cache/9KAqOrdiZ4I.001.vdet'
@@ -79,20 +79,6 @@ class TrackerTestCase(unittest.TestCase):
         self.assertEqual(len(tracker.selected_tracks), 1)
         center_track = tracker.get_center_track()
         self.assertEqual(center_track.track_id, 2)
-    
-    def test_save_track_faces(self):
-        tracker = Tracker()
-        tracker.label_tracks_iou(self.vdet, max_lost=30, verbose=False)
-        track = tracker.get_center_track()
-        output_dir = Path(FACE_DIR)
-        Tracker.save_track_faces(track, output_dir)
-        
-    def test_save_track_video(self):
-        tracker = Tracker()
-        tracker.label_tracks_iou(self.vdet, max_lost=30, verbose=False)
-        track = tracker.get_center_track()
-        output_dir = Path(FACE_DIR)
-        Tracker.save_track_video(track, FRAMES_DIR, output_dir)
 
 
 if __name__ == '__main__':

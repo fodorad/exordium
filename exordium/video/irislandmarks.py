@@ -191,7 +191,7 @@ class IrisPredictor():
 
     def __init__(self, gpu: str = 'cuda:0'):
         self.net = IrisLandmarks().to(gpu)
-        self.net.load_weights(f"{os.path.dirname(__file__)}/irislandmarks.pth")
+        self.net.load_weights(f"{os.path.dirname(__file__)}/research/irislandmarks.pth")
 
 
     def predict(self, img):

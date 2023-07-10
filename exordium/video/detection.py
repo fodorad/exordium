@@ -82,9 +82,9 @@ class FrameDetections:
         self.index = 0
 
     def add_dict(self, detection: dict) -> None:
-        for key in Detection.__annotations__.keys():
-            assert key in detection.keys(
-            ), f'Invalid detection dict. Missing key: {key}'
+        for key in ['frame_id', 'frame_path', 'score', 'bb_xywh', 'bb_xyxy', 'landmarks']:
+            assert key in list(detection.keys()), \
+                f'Invalid detection dict. Missing key: {key}'
         self.detections.append(Detection(**detection))
 
     def add_detection(self, detection: Detection) -> None:
@@ -255,18 +255,12 @@ class VideoDetections():
             for line_count, record in enumerate(csv_reader):
                 if line_count > 0:
                     d = {
-                        'frame_id':
-                        int(record[0]),
-                        'frame_path':
-                        str(record[1]),
-                        'score':
-                        float(record[2]),
-                        'bb_xywh':
-                        np.array(record[3:7], dtype=int),
-                        'bb_xyxy':
-                        xywh2xyxy(np.array(record[3:7], dtype=int)),
-                        'landmarks':
-                        np.array(record[7:17], dtype=int).reshape(5, 2)
+                        'frame_id': int(record[0]),
+                        'frame_path': str(record[1]),
+                        'score': float(record[2]),
+                        'bb_xywh': np.array(record[3:7], dtype=int),
+                        'bb_xyxy': xywh2xyxy(np.array(record[3:7], dtype=int)),
+                        'landmarks': np.array(record[7:17], dtype=int).reshape(5, 2)
                     }
                     detection = Detection(**d)
 
@@ -463,11 +457,14 @@ class FaceDetector():
 class Track():
 
     def __init__(self,
-                 track_id: int,
-                 detection: Detection,
+                 track_id: int | None = None,
+                 detection: Detection | None = None,
                  verbose: bool = False) -> None:
         self.track_id = track_id
-        self.detections: list[Detection] = [detection]
+        if detection is None:
+            self.detections: list[Detection] = []
+        else:
+            self.detections: list[Detection] = [detection]
         self.index = 0
         if verbose: print(f'Track {self.track_id} is started.')
 
@@ -524,6 +521,9 @@ class Track():
     def __len__(self) -> int:
         return len(self.detections)
 
+    def __getitem__(self, index: int) -> Detection:
+        return self.detections[index]
+
     def __str__(self) -> str:
         return f'ID {self.track_id} track with {len(self.detections)} dets ' \
                f'from {self.detections[0].frame_id} to {self.detections[-1].frame_id}.'
@@ -538,6 +538,52 @@ class Track():
             return value
         else:
             raise StopIteration
+    
+    def __save_format(self) -> tuple[list[str], list[str]]:
+        names = [
+            'frame_id', 'frame_path', 'score', 'x', 'y', 'w', 'h',
+            'left_eye_x', 'left_eye_y', 'right_eye_x', 'right_eye_y', 'nose_x',
+            'nose_y', 'left_mouth_x', 'left_mouth_y', 'right_mouth_x',
+            'right_mouth_y'
+        ]
+
+        values = []
+        for detection in self.detections:
+            values.append([
+                detection.frame_id, detection.frame_path, detection.score,
+                *detection.bb_xywh, *detection.landmarks.flatten()
+            ])
+        return names, values
+    
+    def save(self, output_file: str):
+        names, values = self.__save_format()
+        with open(output_file, 'w') as f:
+            writer = csv.writer(f,
+                                delimiter=',',
+                                quotechar='"',
+                                quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(names)
+            for value in values:
+                writer.writerow(value)
+    
+    def load(self, input_file: str | Path):
+
+        with open(str(input_file), 'r') as f:
+            csv_reader = csv.reader(f, delimiter=',')
+
+            for line_count, record in enumerate(csv_reader):
+                if line_count == 0: continue
+                d = {
+                    'frame_id': int(record[0]),
+                    'frame_path': str(record[1]),
+                    'score': float(record[2]),
+                    'bb_xywh': np.array(record[3:7], dtype=int),
+                    'bb_xyxy': xywh2xyxy(np.array(record[3:7], dtype=int)),
+                    'landmarks': np.array(record[7:17], dtype=int).reshape(5, 2)
+                }
+                self.add(Detection(**d))
+
+        return self
 
     def save_track_target_to_images(self, output_dir: str | Path, bb_size: int = 224, fps: int = 30, sample_every_n: int = 1, verbose: bool = False) -> None:
         output_dir = Path(output_dir)
