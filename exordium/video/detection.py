@@ -284,12 +284,12 @@ class VideoDetections():
         frame_paths = sorted(list(Path(frame_dir).iterdir()))
         frame_ids = [int(Path(frame_path).stem) for frame_path in frame_paths]
         frame_detection_ids = self.frame_ids()
-        for frame_id, frame_path in tqdm(enumerate(zip(frame_ids, frame_paths)), total=len(frame_ids), desc='Save frames', disable=not verbose):
-            frame = cv2.imread(frame_path)
+        for frame_id, frame_path in tqdm(zip(frame_ids, frame_paths), total=len(frame_ids), desc='Save frames', disable=not verbose):
+            frame = cv2.imread(str(frame_path))
             if frame_id in frame_detection_ids:
                 frame_detection = self.get_frame_detection(frame_id)
                 frame = frame_detection.add_detections_to_frame(frame)
-            cv2.imwrite(str(output_dir / f'{Path(frame_path.stem).png}'), frame)
+            cv2.imwrite(str(output_dir / f'{Path(frame_path).stem}.png'), frame)
 
 
 class FaceDetector():
@@ -780,21 +780,18 @@ class Tracker():
                 pairs = list(itertools.product(list(range(len(detections_1))), list(range(len(detections_2)))))
                 
                 # load face pairs
-                frame_pairs = []
+                DF_res: list[dict] = []
                 if verbose: print('')
                 for i, (track_ind1, track_ind2) in enumerate(pairs):
                     if verbose: print(len(blacklist), '/', len(track_ids), '|', track_id1, 'vs', track_id2, '|', i+1, '/', len(pairs), '\r', end='', flush=True)
                     face1: np.ndarray = detections_1[track_ind1].crop()
                     face2: np.ndarray = detections_2[track_ind2].crop()
-                    frame_pairs.append([face1, face2])
-
-                DF_res = DeepFace.verify(img1_path=frame_pairs,
-                                         model_name=model_name,
-                                         model=self.model,
-                                         enforce_detection=False,
-                                         detector_backend='skip',
-                                         prog_bar=False)
-                mean_verification_score = np.array([v['verified'] for _, v in DF_res.items()], dtype=np.float32).mean()
+                    DF_res.append(DeepFace.verify(img1_path=face1,
+                                                  img2_path=face2,
+                                                  model_name=model_name,
+                                                  enforce_detection=False,
+                                                  detector_backend='skip'))
+                mean_verification_score = np.array([d['verified'] for d in DF_res], dtype=np.float32).mean()
 
                 if mean_verification_score > threshold:
                     # merge tracks
@@ -858,8 +855,13 @@ class Tracker():
         return self
 
     def select_topk_long_tracks(self, top_k: int = 1) -> 'Tracker':
+        if len(self.selected_tracks) == 0:
+            tracks = self.tracks
+        else:
+            tracks = self.selected_tracks
+
         tracks: list[tuple[int, Track]] = sorted(
-            [(track_id, track) for track_id, track in self.tracks.items()],
+            [(track_id, track) for track_id, track in tracks.items()],
             key=lambda x: len(x[1]),
             reverse=True)
         self.selected_tracks = {
@@ -869,8 +871,13 @@ class Tracker():
         return self
 
     def select_topk_biggest_bb_tracks(self, top_k: int = 1) -> 'Tracker':
+        if len(self.selected_tracks) == 0:
+            tracks = self.tracks
+        else:
+            tracks = self.selected_tracks
+
         tracks: list[tuple[int, Track]] = sorted(
-            [(track_id, track) for track_id, track in self.tracks.items()],
+            [(track_id, track) for track_id, track in tracks.items()],
             key=lambda x: x[1].bb_size(),
             reverse=True)
         self.selected_tracks = {
@@ -880,10 +887,11 @@ class Tracker():
         return self
 
     def get_center_track(self) -> Track:
-        if len(self.selected_tracks) > 0:
-            tracks = self.selected_tracks
-        else:
+        if len(self.selected_tracks) == 0:
             tracks = self.tracks
+        else:
+            tracks = self.selected_tracks
+
         return sorted([track for _, track in tracks.items()],
                       key=lambda x: np.linalg.norm(x.center(
                       ) - x.first_detection().frame_center()))[0]
@@ -899,6 +907,7 @@ def center_face_track(frame_dir: str | Path,
                       merge_iou_thr: float = 0.2,
                       deepface_sample: int = 5,
                       deepface_threshold: float = 0.85,
+                      select_min_length: int = 1,
                       select_track_priority: str = 'bb_size',
                       batch_size: int = 32,
                       gpu_id: int = 0,
@@ -934,6 +943,9 @@ def center_face_track(frame_dir: str | Path,
         tracker.merge_iou(max_lost=merge_max_lost, iou_threshold=merge_iou_thr)
     else: # deepface
         tracker.merge_deepface(sample=deepface_sample, threshold=deepface_threshold, verbose=verbose)
+
+    if select_min_length > 1:
+        tracker.select_long_tracks(select_min_length)
 
     # select the topk longest tracks, and then a single center track
     if select_track_priority == 'track_length':
