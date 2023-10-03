@@ -1,8 +1,10 @@
 # Project
 .vscode
-data/processed*
-data/videos/0*
-datasets/
+data/tmp/
+data/processed/
+data/example_multispeaker/
+refactor/
+todo/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

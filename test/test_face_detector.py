@@ -3,55 +3,51 @@ import os
 import cv2
 import numpy as np
 from pathlib import Path
-from exordium.video.detection import FaceDetector, FrameDetections, VideoDetections
+from exordium import DATA_DIR, EXAMPLE_VIDEO_PATH
+from exordium.video.facedetector import RetinaFaceDetector, FrameDetections, VideoDetections
 
-RESOLUTION = '720p'
-FRAME_PATH = f'data/processed/frames/multispeaker_{RESOLUTION}/000000.png'
-FRAME_DIR = f'data/processed/frames/9KAqOrdiZ4I.001'
-VIDEO_PATH = f'data/videos/9KAqOrdiZ4I.001.mp4'
-assert Path(FRAME_PATH).exists() and Path(FRAME_DIR).is_dir() and Path(VIDEO_PATH).exists()
+FRAME_PATH = DATA_DIR / 'processed' / 'example_multispeaker' / 'frames' / '000000.png'
+FRAME_DIR = DATA_DIR / 'processed' / 'example_multispeaker' / 'frames'
 
 
 class FaceDetectorTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.face_detector = FaceDetector(verbose=False)
+        self.face_detector = RetinaFaceDetector()
 
-    def test_detect_image(self):
-        frame_detections = self.face_detector.detect_image(FRAME_PATH)
+    def test_retinaface_detect_image_path(self):
+        frame_detections = self.face_detector.detect_image_path(FRAME_PATH)
         self.assertIsInstance(frame_detections, FrameDetections)
         self.assertEqual(len(frame_detections), 3)
 
-    def test_detect_image_with_no_face(self):
+    def test_retinaface_detect_image_no_face(self):
         image = np.zeros(shape=(200,300,3))
         frame_detections = self.face_detector.detect_image(image)
         self.assertIsInstance(frame_detections, FrameDetections)
         self.assertEqual(len(frame_detections), 0)
 
-    def test_iterate_folder(self):
-        n_frames = len(list(Path(FRAME_DIR).iterdir()))
-        video_detections = self.face_detector.iterate_folder(FRAME_DIR)
+    def test_retinaface_detect_frame_dir(self):
+        n_frames = len(list(FRAME_DIR.iterdir()))
+        video_detections = self.face_detector.detect_frame_dir(FRAME_DIR)
         self.assertIsInstance(video_detections, VideoDetections)
-        self.assertEqual(len(video_detections), n_frames)
+        # last frame of the example video is black
+        self.assertEqual(len(video_detections), n_frames - 1)
 
-    def test_detect_video(self):
-        cap = cv2.VideoCapture(VIDEO_PATH)
+    def test_retinaface_detect_video(self):
+        cap = cv2.VideoCapture(str(EXAMPLE_VIDEO_PATH))
         n_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         cap.release()
-        video_detections = self.face_detector.detect_video(VIDEO_PATH)
+        video_detections = self.face_detector.detect_video(EXAMPLE_VIDEO_PATH)
         self.assertIsInstance(video_detections, VideoDetections)
-        self.assertEqual(len(video_detections), n_frames)
+        # last frame of the example video is black
+        self.assertEqual(len(video_detections), n_frames - 1)
 
-    def test_detect_video_with_output(self):
-        cap = cv2.VideoCapture(VIDEO_PATH)
-        n_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        cap.release()
-        output_path = 'test.vdet'
+    def test_retinaface_detect_video_with_output(self):
+        output_path = DATA_DIR / 'test.vdet'
         if Path(output_path).exists(): os.remove(output_path)
-        video_detections = self.face_detector.detect_video(VIDEO_PATH, output_path=output_path)
+        video_detections = self.face_detector.detect_video(EXAMPLE_VIDEO_PATH, output_path=output_path)
         self.assertIsInstance(video_detections, VideoDetections)
-        self.assertEqual(len(video_detections), n_frames)
-        loaded_video_detections = self.face_detector.detect_video(VIDEO_PATH, output_path=output_path)
+        loaded_video_detections = self.face_detector.detect_video(EXAMPLE_VIDEO_PATH, output_path=output_path)
         self.assertEqual(video_detections, loaded_video_detections)
         os.remove(output_path)
 

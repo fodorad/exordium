@@ -3,31 +3,31 @@ import librosa
 import librosa.display
 import numpy as np
 import matplotlib.pyplot as plt
+from exordium import PathType
 
 
 def deltas(feature: np.ndarray) -> np.ndarray:
-    """Calculate differential (delta) and acceleration (deltadelta) features 
-    from MFCC or spectrograms
+    """Calculate differential (delta) and acceleration (deltadelta) features from MFCC or spectrograms.
 
     Args:
         feature (np.ndarray): MFCC or spectrogram.
 
     Returns:
-        np.ndarray: tensor of feature, deltas and deltadeltas
+        np.ndarray: tensor of feature, deltas and deltadeltas.
     """
     differential = librosa.feature.delta(feature)
     acceleration = librosa.feature.delta(feature, order=2)
     return np.stack([feature, differential, acceleration], axis=2)
 
 
-def audio2logmelspec(input_path: str, output_path: str, sr: int, save_fig: bool = False) -> None:
-    """Creates the MFCCs, log mel-spectrogram, delta and deltadelta features
-    from audio files
+def audio2logmelspec(input_path: PathType, output_path: PathType, sr: int, save_fig: bool = False) -> None:
+    """Creates the MFCCs, log mel-spectrogram, delta and deltadelta features from audio files.
 
     Args:
-        input_path (str): audio path
-        output_path (str): output path
-        sr (int): sampling rate
+        input_path (PathType): path to the audio file.
+        output_path (PathType): path to the output file.
+        sr (int): sample rate.
+        save_fig (bool, optional). saves the figures. Defaults to False.
     """
     n_fft = 2048
     hop_length = 512
@@ -39,7 +39,7 @@ def audio2logmelspec(input_path: str, output_path: str, sr: int, save_fig: bool 
         return
 
     output_path.mkdir(parents=True, exist_ok=True)
-    y, sr = librosa.load(input_path, sr=sr) # sr=22050
+    y, _ = librosa.load(input_path, sr=sr) # sr=22050
 
     # preemphasis
     y_preemph = librosa.effects.preemphasis(y, coef=0.97, zi=[y[1]])
@@ -75,7 +75,7 @@ def audio2logmelspec(input_path: str, output_path: str, sr: int, save_fig: bool 
         melspec_preemph_dB_tensor = deltas(melspec_preemph_dB)
 
         # save npy
-        np.save(str(Path(output_path) / f'melspec_dB_{n_mels}_preemph.npy'), melspec_preemph_dB_tensor)
+        np.save(str(output_path / f'melspec_dB_{n_mels}_preemph.npy'), melspec_preemph_dB_tensor)
 
         # save figures
         if save_fig:
@@ -87,13 +87,13 @@ def audio2logmelspec(input_path: str, output_path: str, sr: int, save_fig: bool 
             save_melspec_specshow(melspec_preemph_dB_tensor[...,2], str(prefix_fig / f'melspec_dB_{n_mels}_delta2_preemph.png'), 'Log-Mel spectrogram - Delta2 preemphasis', is_delta=True)
 
 
-def save_mfcc_specshow(data: np.ndarray, output_path: str, title: str) -> None:
-    """Save MFCC plot to disk
+def save_mfcc_specshow(data: np.ndarray, output_path: PathType, title: str) -> None:
+    """Save MFCC plot to file.
 
     Args:
-        data (np.ndarray): MFCCs
-        output_path (str): output path
-        title (str): title of figure
+        data (np.ndarray): MFCCs.
+        output_path (PathType): path to the output file.
+        title (str): title of figure.
     """
     plt.figure(figsize=(10,4))
     librosa.display.specshow(data, x_axis='time')
@@ -103,18 +103,18 @@ def save_mfcc_specshow(data: np.ndarray, output_path: str, title: str) -> None:
     plt.close()
 
 
-def save_melspec_specshow(data: np.ndarray, 
-                          output_path: str, 
-                          title: str, 
-                          sr: int = 44100, # 22050, 
+def save_melspec_specshow(data: np.ndarray,
+                          output_path: PathType,
+                          title: str,
+                          sr: int = 44100, # 22050,
                           is_delta: bool = False) -> None:
-    """Save mel-spectrogram, delta, deltadelta plots to disk
+    """Save mel-spectrogram, delta, deltadelta plots to a file.
 
     Args:
-        data (np.ndarray): mel-spectrogram or delta or deltadelta
-        output_path (str): output path
-        title (str): title of figure
-        sr (int, optional): sampling rate. Defaults to 44100.
+        data (np.ndarray): mel-spectrogram or delta or deltadelta.
+        output_path (PathType): path to the output file.
+        title (str): title of figure.
+        sr (int, optional): sample rate. Defaults to 44100.
         is_delta (bool, optional): data is delta or deltadelta. Defaults to False.
     """
     plt.figure(figsize=(10,4))

@@ -1,16 +1,16 @@
 import unittest
 import os
 import numpy as np
-from exordium.video.bb import xywh2xyxy
-from exordium.video.detection import Detection, Track
+from exordium import DATA_DIR
+from exordium.video.detection import DetectionFromImage, Track
 
 
 class TrackTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.detection1 = Detection(1, 'video/000001.png', 0.9, np.array([10, 20, 50, 60]), xywh2xyxy(np.array([10, 20, 50, 60])), np.array([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]))
-        self.detection2 = Detection(2, 'video/000002.png', 0.8, np.array([20, 30, 60, 70]), xywh2xyxy(np.array([20, 30, 60, 70])), np.array([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]))
-        self.detection3 = Detection(3, 'video/000003.png', 0.7, np.array([30, 40, 70, 80]), xywh2xyxy(np.array([30, 40, 70, 80])), np.array([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]))
+        self.detection1 = DetectionFromImage(frame_id=1, source='video/000001.png', score=0.9, bb_xywh=np.array([10, 20, 50, 60]), landmarks=np.array([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]))
+        self.detection2 = DetectionFromImage(frame_id=2, source='video/000002.png', score=0.8, bb_xywh=np.array([20, 30, 60, 70]), landmarks=np.array([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]))
+        self.detection3 = DetectionFromImage(frame_id=3, source='video/000003.png', score=0.7, bb_xywh=np.array([30, 40, 70, 80]), landmarks=np.array([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]))
 
     def test_track_creation(self):
         track = Track(1, self.detection1)
@@ -45,10 +45,10 @@ class TrackTestCase(unittest.TestCase):
     def test_track_frame_distance(self):
         track1 = Track(1, self.detection1)
         track2 = Track(2, self.detection2)
-        distance = track1.track_frame_distance(track2)
+        distance = track1.frame_distance(track2)
         self.assertEqual(distance, 1)
         track3 = Track(3, self.detection3)
-        distance = track1.track_frame_distance(track3)
+        distance = track1.frame_distance(track3)
         self.assertEqual(distance, 2)
 
     def test_last_detection(self):
@@ -100,7 +100,7 @@ class TrackTestCase(unittest.TestCase):
         track = Track(1, self.detection1)
         track.add(self.detection2)
         track.add(self.detection3)
-        output_file = 'output.csv'
+        output_file = str(DATA_DIR / 'output.csv')
         track.save(output_file)
         loaded_detections = Track(track_id=1).load(output_file)
         self.assertEqual(len(loaded_detections), 3)

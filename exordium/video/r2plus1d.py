@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import torch
 from torchvision.transforms import Compose
@@ -5,54 +6,35 @@ from einops.layers.torch import Rearrange, Reduce
 from exordium.video.transform import ToTensor, Resize, CenterCrop, Normalize
 
 
-def build_r2plus1d():
-    return torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_32_kinetics", num_classes=400, pretrained=True)
+class R2plus1DWrapper(torch.nn.Module):
+    """R2+1D wrapper class.
 
-
-def freeze(model, layer_names: list = None, verbose: bool = True):
-
-    # freeze feature extractors, finetune last block (5th)
-    if layer_names is None:
-        layer_names = ['stem', 'layer1', 'layer2', 'layer3']
-
-    layer_counter = 0
-    for (name, module) in model.named_children():
-        if name in layer_names:
-            for layer in module.children():
-                for param in layer.parameters():
-                    param.requires_grad = False
-                
-                if verbose: print('Layer "{}" in module "{}" is frozen!'.format(layer_counter, name))
-                layer_counter+=1
-
-
-def unfreeze(model, verbose: bool = True):
-    layer_counter = 0
-    for (name, module) in model.named_children():
-        for layer in module.children():
-            for param in layer.parameters():
-                param.requires_grad = True
-            
-            if verbose: print('Layer "{}" in module "{}" is unfrozen!'.format(layer_counter, name))
-            layer_counter+=1
-
-
-def init_new_head(model, num_outputs: int):
-    model.fc = torch.nn.Linear(in_features=512, out_features=num_outputs)
-
-
-def remove_head(model):
-    model.fc = torch.nn.Identity()
-
-
-class VideoModel(torch.nn.Module):
-    def __init__(self, pool_spatial="mean", pool_temporal="mean"):
+    paper: https://arxiv.org/pdf/1711.11248.pdf
+    code: https://github.com/moabitcoin/ig65m-pytorch
+    """
+    def __init__(self, pool_spatial: str = "mean", pool_temporal: str = "mean"):
         super().__init__()
-        self.model = build_r2plus1d()
+        self.model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_32_kinetics", num_classes=400, pretrained=True)
         self.pool_spatial = Reduce("n c t h w -> n c t", reduction=pool_spatial)
         self.pool_temporal = Reduce("n c t -> n c", reduction=pool_temporal)
+        self.transform = Compose([
+            ToTensor(),
+            Rearrange("t h w c -> c t h w"),
+            Resize(112), # shorter side to 112, keeping scale
+            CenterCrop(112),
+            Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
+        ])
 
-    def forward(self, x):
+    def __call__(self, video: np.ndarray) -> np.ndarray:
+        if video.ndim == 4 and video.shape[0] != 32 and video.shape[3] == 3:
+            raise ValueError(f'Invalid input video. Expected np.ndarray of shape (T, H, W, C) == (32, H, W, 3) got instead {video.shape}.')
+
+        sample = self.transform(video) # (T, H, W, C) -> (C, T, H, W)
+        sample = sample.unsqueeze(0) # (B, C, T, H, W)
+        output = self.forward(sample) # (B, 512)
+        return output.detach().cpu().numpy()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.model.stem(x)
         x = self.model.layer1(x)
         x = self.model.layer2(x)
@@ -62,31 +44,34 @@ class VideoModel(torch.nn.Module):
         x = self.pool_temporal(x)
         return x
 
+    def freeze(self, layer_names: list[str] | None = None) -> None:
 
-if __name__ == '__main__':
+        # freeze feature extractors, finetune last block (5th)
+        if layer_names is None:
+            layer_names = ['stem', 'layer1', 'layer2', 'layer3']
 
-    transform = Compose([
-        ToTensor(),
-        Rearrange("t h w c -> c t h w"),
-        Resize(112), # shorter side to 112, keeping scale
-        CenterCrop(112),
-        Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
-    ])
+        layer_counter = 0
+        for (name, module) in self.model.named_children():
+            if name in layer_names:
+                for layer in module.children():
+                    for param in layer.parameters():
+                        param.requires_grad = False
 
-    from torchvision.io import read_video
-    video_path = 'data/videos/9KAqOrdiZ4I.001.mp4'
-    frames, _, _ = read_video(video_path, pts_unit='sec') # (T, H, W, C)
-    # frames = frames.permute(0, 3, 1, 2) # (T, H, W, C) -> (T, C, H, W)
-    sample = transform(frames) # (T, H, W, C) -> (C, T, H, W)
-    sample = sample.unsqueeze(0) # (B, C, T, H, W)
+                    logging.info(f'Layer {layer_counter} in module {name} is frozen!')
+                    layer_counter += 1
 
-    model = build_r2plus1d()
-    freeze(model)
-    unfreeze(model)
-    remove_head(model)
-    output = model(sample) # (B, 512)
-    print(output.shape)
+    def unfreeze(self) -> None:
+        layer_counter = 0
+        for (name, module) in self.model.named_children():
+            for layer in module.children():
+                for param in layer.parameters():
+                    param.requires_grad = True
 
-    model2 = VideoModel()
-    output2 = model2(sample) # (B, 512)
-    print(output2.shape)
+                logging.info(f'Layer {layer_counter} in module {name} is unfrozen!')
+                layer_counter += 1
+
+    def remove_head(self) -> None:
+        self.model.fc = torch.nn.Identity()
+
+    def init_new_head(self, num_outputs: int) -> None:
+        self.model.fc = torch.nn.Linear(in_features=512, out_features=num_outputs)

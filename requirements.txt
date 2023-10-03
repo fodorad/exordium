@@ -1,32 +1,22 @@
-sh
-tqdm
-scipy
-pydub
-spacy
-pandas
-pickle5
-Pillow
-openpyxl
-matplotlib
-prettytable
 opencv-python
-scikit-learn
-scikit-image
-librosa
-torch
-pytorch_lightning
-einops
-opensmile
-torchvision
-transformers
-fairseq
-deepface
-moviepy
-ffmpeg-python
-av
-bbox_visualizer
-latextable
+Pillow
+tqdm
+matplotlib
+scipy
 decord
-git+https://github.com/elliottzheng/batch-face.git@master
-tensorflow
-tensorflow-hub
+torch
+transformers
+torchvision
+networkx # exordium.visualization.graph
+opensmile # exordium.audio.smile
+librosa # exordium.audio.spectrogram
+torchaudio # exordium.audio.io
+moviepy # exordium.video.io
+pandas # exordium.video.openface
+einops # exordium.video.r2plus1d
+onnx # exordium.video.tddfa_v2
+onnxruntime # exordium.video.tddfa_v2
+types-PyYAML # exordium.video.tddfa_v2
+deepface # exordium.video.detection
+tensorflow # deepface
+git+https://github.com/elliottzheng/batch-face.git@master # exordium.video.facedetector

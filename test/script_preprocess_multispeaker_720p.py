@@ -1,14 +1,11 @@
-from pathlib import Path
-from exordium.video.frames import video2frames
+from exordium import DATA_DIR, EXAMPLE_VIDEO_PATH, PathType
+from exordium.video.io import video2frames
 
-RESOLUTION = '720p' # 360p
-VIDEO_PATH = Path(f'data/videos/multispeaker_{RESOLUTION}.mp4')
-assert VIDEO_PATH.exists(), f'Video is not available at {VIDEO_PATH}'
 
-def extract_frames(video_path: str | Path):
-    print('Extract frames...')
-    output_dir = Path(f'data/processed/frames/{video_path.stem}')
-    video2frames(input_path=VIDEO_PATH, output_dir=output_dir, verbose=True)
+def extract_frames(video_path: PathType):
+    output_dir = DATA_DIR / 'processed' / video_path.stem / 'frames'
+    video2frames(input_path=video_path, output_dir=output_dir, overwrite=True)
+
 
 if __name__ == '__main__':
-    extract_frames(VIDEO_PATH)
+    extract_frames(EXAMPLE_VIDEO_PATH)

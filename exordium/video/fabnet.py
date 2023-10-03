@@ -1,113 +1,174 @@
-import os, sys
-import threading
+import logging
 from pathlib import Path
-import torch
+from typing import Sequence
+import cv2
 import numpy as np
-from PIL import Image
+import torch
+from tqdm import tqdm
+import torch.nn as nn
 import torchvision.transforms as T
-from exordium.utils.shared import get_project_root, get_weight_location, threads_eval
-sys.path.append(str(Path(f'{get_project_root()}/tools/FAb-Net/FAb-Net/code').resolve()))
-from models_multiview import FrontaliseModelMasks_wider
+from exordium import RESOURCE_DIR
+from exordium.video.io import images2np, batch_iterator
+from exordium.video.detection import Track
+from exordium.utils.decorator import load_or_create
+# from exordium.utils.ckpt import download_file
 
 
-def get_weights():
-    """Downloads and FAb-Net model weights if required
-    
-    Note:
-        affectnet_4views: general feature extractor and emotion classifier weights 
-                          (Neutral, Happy, Sad, Surprise, Fear, Disgust, Anger, Contempt)
-    """
-    cache_dir = get_weight_location()
+class FabNetWrapper:
+    """FAb-Net wrapper class."""
 
-    weights_dir = cache_dir / 'fabnet'
-    if not (weights_dir / 'release').exists():
-        pretrained_weights = 'https://www.robots.ox.ac.uk/~vgg/research/unsup_learn_watch_faces/release_bmvc_fabnet.zip'
-        weights_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(self, gpu_id: int = 0):
+        # Weights are already prepared in RESOURCE_DIR
+        #   remote_path = 'https://www.robots.ox.ac.uk/~vgg/research/unsup_learn_watch_faces/release_bmvc_fabnet.zip'
+        #   local_path = RESOURCE_DIR / 'fabnet' / Path(remote_path).name
+        #   download_file(remote_path, local_path)
+        #   os.system(f'unzip {local_path} -d {local_path.parent}')
+        weights_path = RESOURCE_DIR / 'fabnet' / 'affectnet_4views.pth'
+        self.device = f'cuda:{gpu_id}' if gpu_id >= 0 else 'cpu'
+        state_dict = torch.load(str(weights_path))
+        self.model = FrontaliseModelMasks_wider()
+        self.model.load_state_dict(state_dict['state_dict_model'])
+        self.model.to(self.device)
+        self.model.eval()
 
-        if not Path(weights_dir / 'release_bmvc_fabnet.zip').exists():
-            os.system(f'wget {pretrained_weights} -P {weights_dir}')
+        self.transform = T.Compose([
+            T.ToTensor(),
+            T.Resize((256, 256))
+        ])
 
-        os.system(f'unzip {weights_dir}/release_bmvc_fabnet.zip -d {weights_dir}')
+        logging.info(f'FAb-Net is loaded to {self.device}.')
 
-    return weights_dir / 'release' / 'affectnet_4views.pth'
+    def __call__(self, faces: Sequence[np.ndarray]) -> np.ndarray:
+        """FAb-Net inference.
 
+        Args:
+            faces (list[np.ndarray]): list of face images of shape (H, W, C) and BGR channel order.
 
-def build_fabnet(include_top: bool = False):
-    """Builds pretrained FAb-Net model
+        Returns:
+            np.ndarray: FAb-Net features with shape (B, 256)
+        """
+        samples = images2np(faces, 'BGR', resize=(256, 256)) # (B, H, W, C) == (B, 256, 256, 3)
+        samples = torch.stack([self.transform(sample) for sample in samples]).to(self.device) # (B, C, H, W) == (B, 3, 256, 256)
 
-    Args:
-        include_top (bool, optional): also return the classifier on top. Defaults to False.
+        if samples.ndim != 4:
+            raise Exception(f'Invalid input shape. Expected sample shape is (B, C, H, W) got instead {samples.shape}.')
 
-    Returns:
-        FrontaliseModelMasks_wider: FAb-Net feature extractor if include_top is False
-        or
-        Tuple[FrontaliseModelMasks_wider, nn.Sequential]: FAb-Net feature extractor and classifier if include_top is True
-    """
-    weights_path = get_weights()
-    inner_nc = 256
-    num_classes = 8
+        with torch.no_grad():
+            feature = self.model.encoder(samples)
 
-    extractor = FrontaliseModelMasks_wider(3, inner_nc=inner_nc, num_additional_ids=32)
-    extractor.load_state_dict(torch.load(weights_path)['state_dict_model'])
-    classifier = torch.nn.Sequential(torch.nn.BatchNorm1d(inner_nc), torch.nn.Linear(inner_nc, num_classes, bias=False))
-    classifier.load_state_dict(torch.load(weights_path)['state_dict'])
+        feature = feature.detach().cpu()
+        feature = torch.reshape(feature, shape=(samples.shape[0], 256))
+        feature = feature.numpy()
 
-    if include_top:
-        return extractor, classifier
+        if not feature.shape == (samples.shape[0], 256):
+            raise Exception(f'Invalid output shape. Expected feature shape is {(samples.shape[0], 256)} got instead {feature.shape}.')
 
-    return extractor
+        return feature
 
-
-def job_fabnet(device: str, frame_dirs: list, batch_size: int, output_dir: str | Path) -> torch.Tensor:
-    """Parallelize videos over multiple gpus
-    """
-    output_dir = Path(output_dir)
-    transform = T.Compose([T.Resize((256, 256)), T.ToTensor()])
-    extractor = build_fabnet(include_top=False)
-    extractor.eval()
-    extractor.to(device)
-
-    for frame_dir in frame_dirs:
-        img_paths = [str(Path(frame_dir) / elem) for elem in sorted(os.listdir(frame_dir))] # elem.decode("utf-8"))
-
-        features = []
-        for i in range(0, len(img_paths), batch_size):
-            samples = torch.stack([transform(Image.open(img_path).convert('RGB')) for img_path in img_paths[i:i+batch_size]]).to(device) # (L, C, H, W)
-            feature = extractor.encoder(samples)
-            # IDEA : add support for the classifier
-            # probabilities = nn.Sigmoid()(classifier(xc.squeeze()))
-            # probabilities = probabilities / probabilities.sum(axis=1)[:,None]
-            # probabilities = probabilities.detach().cpu().numpy().squeeze()
-            feature = feature.detach().cpu().numpy().squeeze()
-
-            if samples.shape[0] == 1 and feature.shape == (256,):
-                feature = np.expand_dims(feature, axis=0)
-
-            assert feature.shape == (samples.shape[0], 256), f'[FAb-Net] Got shape {feature.shape} instead of the expected shape: {(samples.shape[0], 256)}.'
+    @load_or_create('npy')
+    def dir_to_feature(self, frame_dir: list[str], batch_size: int = 30, verbose: bool = False, **kwargs) -> np.ndarray:
+        img_paths = sorted(list(Path(frame_dir).glob('*.png')))
+        ids, features = [], []
+        preprocess = lambda image_path: cv2.resize(cv2.imread(str(image_path), cv2.IMREAD_UNCHANGED), (256, 256), interpolation=cv2.INTER_AREA)
+        for index in tqdm(range(0, len(img_paths), batch_size), total=np.ceil(len(img_paths)/batch_size).astype(int), desc='FAb-Net extraction', disable=not verbose):
+            batch_paths = img_paths[index:index+batch_size]
+            ids += [int(p.stem) for p in batch_paths]
+            samples = np.stack([preprocess(image_path) for image_path in batch_paths])
+            feature = self(samples)
             features.append(feature)
-
         features = np.concatenate(features, axis=0)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        assert features.shape == (len(img_paths), 256)
-        np.save(str(output_dir / f'{Path(frame_dir).name}.npy'), features)
+        return ids, features
+
+    @load_or_create('pkl')
+    def track_to_feature(self, track: Track, batch_size: int = 30, **kwargs) -> np.ndarray:
+        ids, features = [], []
+        for subset in batch_iterator(track, batch_size):
+            ids += [detection.frame_id for detection in subset if not detection.is_interpolated]
+            samples = [detection.bb_crop() for detection in subset if not detection.is_interpolated] # (B, H, W, C)
+            feature = self(samples)
+            features.append(feature)
+        features = np.concatenate(features, axis=0)
+        return ids, features
 
 
-def get_fabnet(video_paths: list, device_ids: str = 'all', batch_size=32, output_dir: str = 'tmp'):
-    threads_eval(job_fabnet, video_paths, device_ids=device_ids, batch_size=batch_size, output_dir=output_dir)
+#################################################################
+#                                                               #
+#   Code: https://github.com/oawiles/FAb-Net                    #
+#   Authors: Olivia Wiles, A. Sophia Koepke, Andrew Zisserman   #
+#                                                               #
+#################################################################
 
+class FrontaliseModelMasks_wider(nn.Module):
 
-if __name__ == '__main__':
+	def __init__(self, inner_nc=256, num_additional_ids=32):
+		super().__init__()
+		self.encoder = self.generate_encoder_layers(output_size=inner_nc, num_filters=num_additional_ids)
+		self.decoder = self.generate_decoder_layers(inner_nc*2, num_filters=num_additional_ids)
+		self.mask = self.generate_decoder_layers(inner_nc*2, num_output_channels=1, num_filters=num_additional_ids)
 
-    video_paths = [
-        'data/processed/frames/9KAqOrdiZ4I.001',
-        'data/processed/frames/h-jMFLm6U_Y.000',
-        'data/processed/frames/nEm44UpCKmA.002'
-    ]
+	def generate_encoder_layers(self, output_size=128, num_filters=64):
+		conv1 = nn.Conv2d(3, num_filters, 4, 2, 1)
+		conv2 = nn.Conv2d(num_filters, num_filters * 2, 4, 2, 1)
+		conv3 = nn.Conv2d(num_filters * 2, num_filters * 4, 4, 2, 1)
+		conv4 = nn.Conv2d(num_filters * 4, num_filters * 8, 4, 2, 1)
+		conv5 = nn.Conv2d(num_filters * 8, num_filters * 8, 4, 2, 1)
+		conv6 = nn.Conv2d(num_filters * 8, num_filters * 8, 4, 2, 1)
+		conv7 = nn.Conv2d(num_filters * 8, num_filters * 8, 4, 2, 1)
+		conv8 = nn.Conv2d(num_filters * 8, output_size, 4, 2, 1)
 
-    get_fabnet(video_paths, output_dir='data/processed/fabnet', batch_size=64, device_ids='0')
-    get_fabnet(video_paths, output_dir='data/processed/fabnet', batch_size=64, device_ids='all')
+		batch_norm = nn.BatchNorm2d(num_filters)
+		batch_norm2_0 = nn.BatchNorm2d(num_filters * 2)
+		batch_norm4_0 = nn.BatchNorm2d(num_filters * 4)
+		batch_norm8_0 = nn.BatchNorm2d(num_filters * 8)
+		batch_norm8_1 = nn.BatchNorm2d(num_filters * 8)
+		batch_norm8_2 = nn.BatchNorm2d(num_filters * 8)
+		batch_norm8_3 = nn.BatchNorm2d(num_filters * 8)
 
-    extractor, classifier = build_fabnet(include_top=True)
-    print(f'type of extractor:', type(extractor))
-    print(f'type of classifier:', type(classifier))
+		leaky_relu = nn.LeakyReLU(0.2, True)
+		return nn.Sequential(conv1, leaky_relu,
+                             conv2, batch_norm2_0, leaky_relu,
+                             conv3, batch_norm4_0, leaky_relu,
+							 conv4, batch_norm8_0, leaky_relu,
+                             conv5, batch_norm8_1, leaky_relu,
+                             conv6, batch_norm8_2, leaky_relu,
+                             conv7, batch_norm8_3, leaky_relu,
+                             conv8)
+
+	def generate_decoder_layers(self, num_input_channels, num_output_channels=2, num_filters=32):
+		up = nn.Upsample(scale_factor=2, mode='bilinear')
+
+		dconv1 = nn.Conv2d(num_input_channels, num_filters*8, 3, 1, 1)
+		dconv2 = nn.Conv2d(num_filters*8, num_filters*8, 3, 1, 1)
+		dconv3 = nn.Conv2d(num_filters*8, num_filters*8, 3, 1, 1)
+		dconv4 = nn.Conv2d(num_filters * 8 , num_filters * 8, 3, 1, 1)
+		dconv5 = nn.Conv2d(num_filters * 8 , num_filters * 4, 3, 1, 1)
+		dconv6 = nn.Conv2d(num_filters * 4 , num_filters * 2, 3, 1, 1)
+		dconv7 = nn.Conv2d(num_filters * 2 , num_filters, 3, 1, 1)
+		dconv8 = nn.Conv2d(num_filters , num_output_channels, 3, 1, 1)
+
+		batch_norm = nn.BatchNorm2d(num_filters)
+		batch_norm2_0 = nn.BatchNorm2d(num_filters * 2)
+		batch_norm2_1 = nn.BatchNorm2d(num_filters * 2)
+		batch_norm4_0 = nn.BatchNorm2d(num_filters * 4)
+		batch_norm4_1 = nn.BatchNorm2d(num_filters * 4)
+		batch_norm8_0 = nn.BatchNorm2d(num_filters * 8)
+		batch_norm8_1 = nn.BatchNorm2d(num_filters * 8)
+		batch_norm8_2 = nn.BatchNorm2d(num_filters * 8)
+		batch_norm8_3 = nn.BatchNorm2d(num_filters * 8)
+		batch_norm8_4 = nn.BatchNorm2d(num_filters * 8)
+		batch_norm8_5 = nn.BatchNorm2d(num_filters * 8)
+		batch_norm8_6 = nn.BatchNorm2d(num_filters * 8)
+		batch_norm8_7 = nn.BatchNorm2d(num_filters * 8)
+
+		leaky_relu = nn.LeakyReLU(0.2)
+		relu = nn.ReLU()
+		tanh = nn.Tanh()
+
+		return nn.Sequential(relu, nn.Upsample(scale_factor=2, mode='bilinear'), dconv1, batch_norm8_4,
+							 relu, nn.Upsample(scale_factor=2, mode='bilinear'), dconv2, batch_norm8_5,
+                             relu, nn.Upsample(scale_factor=2, mode='bilinear'), dconv3, batch_norm8_6,
+                             relu, nn.Upsample(scale_factor=2, mode='bilinear'), dconv4, batch_norm8_7,
+                             relu, nn.Upsample(scale_factor=2, mode='bilinear'), dconv5, batch_norm4_1,
+							 relu, nn.Upsample(scale_factor=2, mode='bilinear'), dconv6, batch_norm2_1,
+                             relu, nn.Upsample(scale_factor=2, mode='bilinear'), dconv7, batch_norm,
+							 relu, nn.Upsample(scale_factor=2, mode='bilinear'), dconv8, tanh)

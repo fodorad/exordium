@@ -1,33 +1,31 @@
 import unittest
-from pathlib import Path
-from exordium.video.detection import Tracker, VideoDetections, FaceDetector
+from exordium import DATA_DIR, EXAMPLE_VIDEO_PATH
+from exordium.video.facedetector import RetinaFaceDetector
+from exordium.video.detection import VideoDetections
+from exordium.video.tracker import IouTracker, DeepFaceTracker
 
-FRAMES_DIR = f'data/processed/frames/9KAqOrdiZ4I.001'
-CACHE_PATH = f'data/processed/cache/9KAqOrdiZ4I.001.vdet'
-FACE_DIR = f'data/processed/faces/9KAqOrdiZ4I.001'
-assert Path(FRAMES_DIR).is_dir()
+CACHE_PATH = DATA_DIR / 'example_multispeaker' / 'cache'
 
 
 class TrackerTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.face_detector = FaceDetector(verbose=False)
-        self.vdet = self.face_detector.iterate_folder(FRAMES_DIR, output_path=CACHE_PATH)
+        self.face_detector = RetinaFaceDetector()
+        self.vdet = self.face_detector.detect_video(EXAMPLE_VIDEO_PATH, output_path=CACHE_PATH)
 
     def test_tracker_creation(self):
-        tracker = Tracker()
+        tracker = IouTracker()
         self.assertEqual(tracker.new_track_id, 0)
         self.assertEqual(len(tracker.tracks), 0)
         self.assertEqual(len(tracker.selected_tracks), 0)
 
     def test_label_tracks_iou(self):
-        tracker = Tracker()
-        tracker.label_tracks_iou(self.vdet, max_lost=2, verbose=False)
-        self.assertEqual(len(tracker.tracks), 1)
-        self.assertEqual(len(tracker.tracks[0]), 367)
+        tracker = IouTracker()
+        tracker.label(self.vdet)
+        self.assertEqual(len(tracker.tracks), 3)
 
     def test_interpolate(self):
-        tracker = Tracker()
+        tracker = IouTracker()
         vdet_part1 = VideoDetections()
         vdet_part1.detections = self.vdet.detections[:40]
         vdet_part2 = VideoDetections()
@@ -35,13 +33,11 @@ class TrackerTestCase(unittest.TestCase):
         vdet = VideoDetections()
         vdet.merge(vdet_part1)
         vdet.merge(vdet_part2)
-        tracker.label_tracks_iou(vdet, max_lost=30, verbose=False)
-        self.assertEqual(len(tracker.tracks), 1)
-        self.assertEqual(len(tracker.tracks[0]), 367)
-        self.assertEqual(tracker.tracks[0].get_detection(45).score, -1)
+        tracker.label(vdet, max_lost=30)
+        self.assertEqual(len(tracker.tracks), 3)
 
     def test_merge_iou(self):
-        tracker = Tracker()
+        tracker = IouTracker()
         vdet_part1 = VideoDetections()
         vdet_part1.detections = self.vdet.detections[:40]
         vdet_part2 = VideoDetections()
@@ -49,36 +45,58 @@ class TrackerTestCase(unittest.TestCase):
         vdet = VideoDetections()
         vdet.merge(vdet_part1)
         vdet.merge(vdet_part2)
-        tracker.label_tracks_iou(vdet, max_lost=5, verbose=False)
-        self.assertEqual(len(tracker.tracks), 2)
+        tracker.label(vdet, max_lost=5)
+        self.assertEqual(len(tracker.tracks), 6)
         self.assertEqual(len(tracker.tracks[0]), 40)
-        self.assertEqual(len(tracker.tracks[1]), 317)
-        tracker.merge_iou()
-        self.assertEqual(len(tracker.tracks), 1)
-        self.assertEqual(len(tracker.tracks[0]), 357)
-    
-    def test_select_track(self):
-        tracker = Tracker()
+        self.assertEqual(len(tracker.tracks[1]), 40)
+        self.assertEqual(len(tracker.tracks[2]), 40)
+        tracker.merge()
+        self.assertEqual(len(tracker.tracks), 3)
+
+    def test_merge_deepface(self):
+        tracker = DeepFaceTracker()
         vdet_part1 = VideoDetections()
         vdet_part1.detections = self.vdet.detections[:40]
         vdet_part2 = VideoDetections()
-        vdet_part2.detections = self.vdet.detections[50:60]
-        vdet_part3 = VideoDetections()
-        vdet_part3.detections = self.vdet.detections[70:]
+        vdet_part2.detections = self.vdet.detections[50:]
         vdet = VideoDetections()
         vdet.merge(vdet_part1)
         vdet.merge(vdet_part2)
-        vdet.merge(vdet_part3)
-        tracker.label_tracks_iou(vdet, max_lost=5, verbose=False)
+        tracker.label(vdet, max_lost=5)
+        self.assertEqual(len(tracker.tracks), 6)
+        self.assertEqual(len(tracker.tracks[0]), 40)
+        self.assertEqual(len(tracker.tracks[1]), 40)
+        self.assertEqual(len(tracker.tracks[2]), 40)
+        tracker.merge()
         self.assertEqual(len(tracker.tracks), 3)
-        self.assertEqual(len(tracker.selected_tracks), 0)
+
+    def test_select_long_track(self):
+        tracker = IouTracker()
+        tracker.label(self.vdet)
+        self.assertEqual(len(tracker.tracks), 3)
+        self.assertEqual(len(tracker.selected_tracks), 3)
+        del tracker.tracks[0].detections[19:]
         tracker.select_long_tracks(min_length=20)
         self.assertEqual(len(tracker.tracks), 3)
         self.assertEqual(len(tracker.selected_tracks), 2)
+
+    def test_select_top_long_track(self):
+        tracker = IouTracker()
+        tracker.label(self.vdet)
+        self.assertEqual(len(tracker.tracks), 3)
+        self.assertEqual(len(tracker.selected_tracks), 3)
+        del tracker.tracks[0].detections[19:]
+        del tracker.tracks[1].detections[:100]
         tracker.select_topk_long_tracks(top_k=1)
+        self.assertEqual(len(tracker.tracks), 3)
         self.assertEqual(len(tracker.selected_tracks), 1)
+        self.assertEqual(list(tracker.selected_tracks.keys())[0], 2)
+
+    def test_select_center_track(self):
+        tracker = IouTracker()
+        tracker.label(self.vdet)
         center_track = tracker.get_center_track()
-        self.assertEqual(center_track.track_id, 2)
+        self.assertEqual(center_track.track_id, 1)
 
 
 if __name__ == '__main__':

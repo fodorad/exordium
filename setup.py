@@ -3,8 +3,8 @@ import setuptools
 setuptools.setup(
     name='exordium',
     packages=setuptools.find_packages(),
-    version='0.6',
-    description='Collection of preprocessing functions and deep learning methods.',
+    version='1.0.0',
+    description='Collection of utility tools and deep learning methods.',
     author='fodorad',
-    license='MIT',
+    license='MIT'
 )

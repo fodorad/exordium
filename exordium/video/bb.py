@@ -2,6 +2,16 @@ import numpy as np
 
 
 def crop_mid(image: np.ndarray, mid: np.ndarray, bb_size: int) -> np.ndarray:
+    """Crops an image using the middle point and size of a bounding box.
+
+    Args:
+        image (np.ndarray): input image of shape (H, W, C).
+        mid (np.array): middle point of shape (2,)
+        bb_size (int): crop size.
+
+    Returns:
+        np.ndarray: cropped image.
+    """
     image_height, image_width, _ = image.shape
     half_size = bb_size // 2
 
@@ -11,12 +21,20 @@ def crop_mid(image: np.ndarray, mid: np.ndarray, bb_size: int) -> np.ndarray:
     x2 = np.clip(mid[0] + half_size, 0, image_width)
     y2 = np.clip(mid[1] + half_size, 0, image_height)
 
-    # Crop the image based on adjusted bounding box coordinates
     cropped_image = image[y1:y2, x1:x2]
     return cropped_image
 
 
 def crop_xyxy(image: np.ndarray, bb_xyxy: np.ndarray) -> np.ndarray:
+    """Crops an image using the top left and bottom right x, y coords of a bounding box.
+
+    Args:
+        image (np.ndarray): input image of shape (H, W, C).
+        bb_xyxy (tuple[int, int]): bounding box of shape (4,).
+
+    Returns:
+        np.ndarray: cropped image.
+    """
     image_height, image_width, _ = image.shape
 
     # Adjust bounding box coordinates if they exceed image boundaries
@@ -25,24 +43,63 @@ def crop_xyxy(image: np.ndarray, bb_xyxy: np.ndarray) -> np.ndarray:
     x2 = np.clip(bb_xyxy[2], 0, image_width)
     y2 = np.clip(bb_xyxy[3], 0, image_height)
 
-    # Crop the image based on adjusted bounding box coordinates
     cropped_image = image[y1:y2, x1:x2]
     return cropped_image
 
 
-def iou_xywh(bb_xywh1: np.ndarray, bb_xywh2: np.ndarray) -> float:
-    """
-    Calculate Intersection over Union (IoU) for two bounding boxes in xyxy format.
+def center_crop(img: np.ndarray, crop_size: tuple[int, int]) -> np.ndarray:
+    """Applies center crop to an image.
 
     Args:
-        bb_xyxy1 (numpy.ndarray): First bounding box in xyxy format.
-        bb_xyxy2 (numpy.ndarray): Second bounding box in xyxy format.
+        img (np.array): input image of shape (H, W, C).
+        crop_size (tuple[int, int]): crop size.
+
+    Returns:
+        np.ndarray: cropped image.
+    """
+    c_h, c_w = img.shape[0] // 2, img.shape[1] // 2
+    half_h, half_w = crop_size[0] // 2, crop_size[1] // 2
+    return img[c_h-half_h:c_h+half_h, c_w-half_w:c_w+half_w, :]
+
+
+def apply_10_crop(img: np.ndarray, crop_size: tuple[int, int]) -> np.ndarray:
+    """Applies 10-crop method to an image.
+
+    Args:
+        img (np.ndarray): input image of shape (H, W, C).
+        crop_size (tuple[int, int]): crop size.
+
+    Returns:
+        np.ndarray: 10-crop output images of shape (10, crop_size[0], crop_size[1], C).
+    """
+    h = crop_size[0]
+    w = crop_size[1]
+    flipped_X = np.fliplr(img)
+    crops = [
+        img[:h,:w, :], # Upper Left
+        img[:h, img.shape[1]-w:, :], # Upper Right
+        img[img.shape[0]-h:, :w, :], # Lower Left
+        img[img.shape[0]-h:, img.shape[1]-w:, :], # Lower Right
+        center_crop(img, (h, w)), # Center
+        flipped_X[:h,:w, :],
+        flipped_X[:h, flipped_X.shape[1]-w:, :],
+        flipped_X[flipped_X.shape[0]-h:, :w, :],
+        flipped_X[flipped_X.shape[0]-h:, flipped_X.shape[1]-w:, :],
+        center_crop(flipped_X, (h, w))
+    ]
+    return np.array(crops)
+
+
+def iou_xywh(bb_xywh1: np.ndarray, bb_xywh2: np.ndarray) -> float:
+    """Calculate Intersection over Union (IoU) for two bounding boxes in xywh format.
+
+    Args:
+        bb_xywh1 (np.ndarray): bounding box in xywh format.
+        bb_xywh2 (np.ndarray): bounding box in xywh format.
 
     Returns:
         float: Intersection over Union (IoU) value.
-
     """
-
     # Convert xywh format to xyxy format
     bb_xyxy1 = xywh2xyxy(bb_xywh1)
     bb_xyxy2 = xywh2xyxy(bb_xywh2)
@@ -66,26 +123,32 @@ def iou_xywh(bb_xywh1: np.ndarray, bb_xywh2: np.ndarray) -> float:
 
     # Calculate the Intersection over Union (IoU) value
     iou = intersection_area / union_area
-
     return iou
 
 
 def iou_xyxy(bb_xyxy1: np.ndarray, bb_xyxy2: np.ndarray) -> float:
+    """Calculate Intersection over Union (IoU) for two bounding boxes in xyxy format.
+
+    Args:
+        bb_xyxy1 (np.ndarray): bounding box in xyxy format.
+        bb_xyxy2 (np.ndarray): bounding box in xyxy format.
+
+    Returns:
+        float: Intersection over Union (IoU) value.
+    """
     bb_xywh1 = xyxy2xywh(bb_xyxy1)
     bb_xywh2 = xyxy2xywh(bb_xyxy2)
     return iou_xywh(bb_xywh1, bb_xywh2)
 
 
 def xyxy2xywh(bb_xyxy: np.ndarray) -> np.ndarray:
-    """
-    Convert bounding box coordinates from (xmin, ymin, xmax, ymax) format to (xmin, ymin, width, height).
+    """Convert bounding box coordinates from (xmin, ymin, xmax, ymax) to (xmin, ymin, width, height).
 
     Args:
-        xyxy (numpy.ndarray):
+        xyxy (np.ndarray): bounding box in xyxy format.
 
     Returns:
-        numpy.ndarray: Bounding box coordinates (xmin, ymin, width, height).
-
+        np.ndarray: bounding box coordinates in xywh format.
     """
     bb_xyxy = np.array(bb_xyxy)
 
@@ -101,15 +164,13 @@ def xyxy2xywh(bb_xyxy: np.ndarray) -> np.ndarray:
 
 
 def xywh2xyxy(bb_xywh: np.ndarray) -> np.ndarray:
-    """
-    Convert bounding box coordinates from (xmin, ymin, width, height) to (xmin, ymin, xmax, ymax) format.
+    """Convert bounding box coordinates from (xmin, ymin, width, height) to (xmin, ymin, xmax, ymax).
 
     Args:
-        xywh (numpy.ndarray): Bounding box coordinates as `(xmin, ymin, width, height)`.
+        xywh (np.ndarray): bounding box in xywh format.
 
     Returns:
-        numpy.ndarray : Bounding box coordinates as `(xmin, ymin, xmax, ymax)`.
-
+        np.ndarray : bounding box in xyxy format.
     """
     bb_xywh = np.array(bb_xywh)
 
@@ -125,14 +186,13 @@ def xywh2xyxy(bb_xywh: np.ndarray) -> np.ndarray:
 
 
 def midwh2xywh(bb_midwh: np.ndarray) -> np.ndarray:
-    """
-    Convert bounding box coordinates from (xmid, ymid, width, height) to (xmin, ymin, width, height) format.
+    """Convert bounding box coordinates from (xmid, ymid, width, height) to (xmin, ymin, width, height).
 
     Args:
-        midwh (numpy.ndarray): Bounding box coordinates (xmid, ymid, width, height).
+        midwh (np.ndarray): bounding box in midwh format.
 
     Returns:
-        numpy.ndarray: Bounding box coordinates (xmin, ymin, width, height).
+        np.ndarray: bounding box in xywh format.
     """
     bb_midwh = np.array(bb_midwh)
 
@@ -148,15 +208,13 @@ def midwh2xywh(bb_midwh: np.ndarray) -> np.ndarray:
 
 
 def xywh2midwh(bb_xywh: np.ndarray) -> np.ndarray:
-    """
-    Calculate centroids for multiple bounding boxes.
+    """Convert bounding box coordinates from (xmin, ymin, width, height) to (xmid, ymid, width, height).
 
     Args:
-        bb_xywh (numpy.ndarray): List of 4 ints or array of shape `(n, 4)` or of shape `(4,)` where
-            each row contains `(xmin, ymin, width, height)`.
+        bb_xywh (np.ndarray): bounding box in xywh format.
 
     Returns:
-        numpy.ndarray: Centroid (x, y) coordinates of shape `(n, 2)` or `(2,)`.
+        np.ndarray: bounding box in midwh format.
 
     """
     bb_xywh = np.array(bb_xywh)
