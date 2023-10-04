@@ -44,6 +44,11 @@ Collection of preprocessing functions and deep learning methods.
 * dataframes to images
 
 # Setup
+### Install package with PyPi
+```
+pip install exordium
+```
+
 ### Install package with pip+git
 ```
 pip install -U git+https://github.com/fodorad/exordium.git
