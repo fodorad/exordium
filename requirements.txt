@@ -19,4 +19,4 @@ onnxruntime # exordium.video.tddfa_v2
 types-PyYAML # exordium.video.tddfa_v2
 deepface # exordium.video.detection
 tensorflow # deepface
-git+https://github.com/elliottzheng/batch-face.git@master # exordium.video.facedetector
+batch-face # exordium.video.facedetector

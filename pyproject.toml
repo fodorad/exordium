@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling", "hatch-requirements-txt"]
+build-backend = "hatchling.build"
+
+[project]
+name = "exordium"
+version = "1.0.2"
+description = "Collection of utility tools and deep learning methods."
+keywords = ["preprocess", "audio", "video", "text", "multimodal", "detection", "tracking"]
+authors = [
+  { name = "fodorad", email = "foauaai@inf.elte.hu" },
+]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.11"
+license = "MIT"
+dynamic = ["dependencies"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+Documentation = "https://github.com/fodorad/exordium#readme"
+Issues = "https://github.com/fodorad/exordium/issues"
+Source = "https://github.com/fodorad/exordium"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
