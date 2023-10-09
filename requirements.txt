@@ -16,7 +16,7 @@ pandas # exordium.video.openface
 einops # exordium.video.r2plus1d
 onnx # exordium.video.tddfa_v2
 onnxruntime # exordium.video.tddfa_v2
-types-PyYAML # exordium.video.tddfa_v2
+types-PyYAML # mypy exordium.video.tddfa_v2
 deepface # exordium.video.detection
 tensorflow # deepface
 batch-face # exordium.video.facedetector

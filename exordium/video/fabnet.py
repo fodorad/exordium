@@ -7,7 +7,8 @@ import torch
 from tqdm import tqdm
 import torch.nn as nn
 import torchvision.transforms as T
-from exordium import RESOURCE_DIR
+from exordium import WEIGHT_DIR
+from exordium.utils.ckpt import download_file
 from exordium.video.io import images2np, batch_iterator
 from exordium.video.detection import Track
 from exordium.utils.decorator import load_or_create
@@ -23,9 +24,11 @@ class FabNetWrapper:
         #   local_path = RESOURCE_DIR / 'fabnet' / Path(remote_path).name
         #   download_file(remote_path, local_path)
         #   os.system(f'unzip {local_path} -d {local_path.parent}')
-        weights_path = RESOURCE_DIR / 'fabnet' / 'affectnet_4views.pth'
+        self.remote_path = 'https://github.com/fodorad/exordium/releases/download/v1.0.0/fabnet_weights.pth'
+        self.local_path = WEIGHT_DIR / 'fabnet' / Path(self.remote_path).name
+        download_file(self.remote_path, self.local_path)
         self.device = f'cuda:{gpu_id}' if gpu_id >= 0 else 'cpu'
-        state_dict = torch.load(str(weights_path))
+        state_dict = torch.load(str(self.local_path))
         self.model = FrontaliseModelMasks_wider()
         self.model.load_state_dict(state_dict['state_dict_model'])
         self.model.to(self.device)

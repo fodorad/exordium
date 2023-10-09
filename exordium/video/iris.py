@@ -1,11 +1,13 @@
 from enum import Enum
+from pathlib import Path
 from typing import Sequence
 import numpy as np
 from scipy.spatial import distance
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from exordium import RESOURCE_DIR, PathType
+from exordium import WEIGHT_DIR, PathType
+from exordium.utils.ckpt import download_file
 from exordium.video.io import image2np, images2np
 
 
@@ -128,10 +130,12 @@ class IrisWrapper():
     """MediaPipe Iris wrapper class."""
 
     def __init__(self, gpu_id: int = 0):
-        self.weight_path = RESOURCE_DIR / 'iris' / 'irislandmarks.pth'
+        self.remote_path = 'https://github.com/fodorad/exordium/releases/download/v1.0.0/iris_weights.pth'
+        self.local_path = WEIGHT_DIR / 'iris' / Path(self.remote_path).name
+        download_file(self.remote_path, self.local_path)
         self.device = f'cuda:{gpu_id}' if gpu_id >= 0 else 'cpu'
         self.model = MediaPipeIris()
-        self.model.load_state_dict(torch.load(self.weight_path))
+        self.model.load_state_dict(torch.load(self.local_path))
         self.model.to(self.device)
         self.model.eval()
 

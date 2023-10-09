@@ -6,7 +6,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as T
-from exordium import RESOURCE_DIR
+from exordium import RESOURCE_DIR, WEIGHT_DIR
+from exordium.utils.ckpt import download_file
 from exordium.video.io import images2np
 
 
@@ -26,8 +27,10 @@ class EmoNetWrapper():
     """Emonet wrapper class."""
 
     def __init__(self, gpu_id: int = 0) -> None:
-        state_dict_path = RESOURCE_DIR / 'emonet' / f'emonet_8.pth'
-        state_dict = torch.load(str(state_dict_path), map_location='cpu')
+        self.remote_path = 'https://github.com/fodorad/exordium/releases/download/v1.0.0/emonet_weights.pth'
+        self.local_path = WEIGHT_DIR / 'emonet' / Path(self.remote_path).name
+        download_file(self.remote_path, self.local_path)
+        state_dict = torch.load(str(self.local_path), map_location='cpu')
 
         self.device = f'cuda:{gpu_id}' if gpu_id != -1 else 'cpu'
         self.model = EmoNet(n_expression=8)

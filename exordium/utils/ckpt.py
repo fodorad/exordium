@@ -1,4 +1,5 @@
 import os
+import logging
 from pathlib import Path
 from exordium import PathType
 
@@ -16,7 +17,9 @@ def download_file(remote_path: PathType, local_path: PathType, overwrite: bool =
     local_path = Path(local_path)
     if not local_path.exists() or overwrite:
         local_path.parent.mkdir(parents=True, exist_ok=True)
-        os.system(f'wget -t 5 {remote_path} -O {local_path}')
+        CMD = f'wget -t 5 {remote_path} -O {local_path}'
+        logging.info(CMD)
+        os.system(CMD)
 
     if not local_path.exists():
         raise FileNotFoundError(f'Downloaded file is missing at {local_path}.')

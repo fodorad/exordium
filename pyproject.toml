@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "exordium"
-version = "1.0.2"
+version = "1.1.0"
 description = "Collection of utility tools and deep learning methods."
 keywords = ["preprocess", "audio", "video", "text", "multimodal", "detection", "tracking"]
 authors = [
@@ -25,8 +25,13 @@ Documentation = "https://github.com/fodorad/exordium#readme"
 Issues = "https://github.com/fodorad/exordium/issues"
 Source = "https://github.com/fodorad/exordium"
 
-[tool.hatch.metadata]
-allow-direct-references = true
+[tool.hatch.build.options]
+exclude_submodules = ["tools/3DDFA_V2"]
 
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "tools/3DDFA_V2"
+]
