@@ -25,13 +25,5 @@ Documentation = "https://github.com/fodorad/exordium#readme"
 Issues = "https://github.com/fodorad/exordium/issues"
 Source = "https://github.com/fodorad/exordium"
 
-[tool.hatch.build.options]
-exclude_submodules = ["tools/3DDFA_V2"]
-
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]
-
-[tool.hatch.build.targets.sdist]
-exclude = [
-  "tools/3DDFA_V2"
-]

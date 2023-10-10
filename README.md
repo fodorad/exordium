@@ -58,13 +58,9 @@ pip install -U git+https://github.com/fodorad/exordium.git
 ```
 git clone https://github.com/fodorad/exordium
 cd exordium
+git submodule update --init --recursive
 pip install -e .
 pip install -U -r requirements.txt
-```
-
-### Initialize submodules
-```bash
-git submodule update --init --recursive
 ```
 
 ### Run unittests
