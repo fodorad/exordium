@@ -15,15 +15,15 @@ class Tddfav2TestCase(unittest.TestCase):
         self.face_track = self.tracker.label(self.video_detections).merge().get_center_track()
 
     def test_feature_extraction_from_ndarray(self):
-        faces = [det.bb_crop() for det in self.face_track][:3]
-        for face in faces:
+        for det in self.face_track[:3]:
+            face = det.bb_crop()
             output: dict = self.model(face)
             self.assertEqual(output['landmarks'].shape, (68,2))
             self.assertEqual(output['headpose'].shape, (3,))
 
     def test_feature_extraction_from_ndarray_with_eyes(self):
-        faces = [det.bb_crop() for det in self.face_track][:3]
-        for face in faces:
+        for det in self.face_track[:3]:
+            face = det.bb_crop()
             output: dict = self.model.face_to_eyes_crop(face, bb_size=20)
             self.assertEqual(output['landmarks'].shape, (68,2))
             self.assertEqual(output['headpose'].shape, (3,))
