@@ -49,17 +49,12 @@ Collection of preprocessing functions and deep learning methods.
 pip install exordium
 ```
 
-### Install package with pip+git
-```
-pip install -U git+https://github.com/fodorad/exordium.git
-```
-
-### Install package from repository root
+### Install package for development
 ```
 git clone https://github.com/fodorad/exordium
 cd exordium
 git submodule update --init --recursive
-pip install -e .
+pip install .
 pip install -U -r requirements.txt
 ```
 
