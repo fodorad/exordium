@@ -1,7 +1,7 @@
 import os
 import logging
 from pathlib import Path
-from typing import Sequence, Iterable, Sized
+from typing import Sequence, Iterable, Generator
 from itertools import islice
 from PIL import Image
 import cv2
@@ -176,7 +176,7 @@ def write_frames_with_audio(video: decord.VideoReader, audio_path: PathType, out
     os.system(f'rm {audio_path}')
 
 
-def batch_iterator(iterable: Iterable, batch_size: int) -> list:
+def batch_iterator(iterable: Iterable, batch_size: int) -> Generator[list, None, None]:
     """Yields batch size list of objects from an iterable."""
     iterator = iter(iterable)
 
@@ -271,7 +271,7 @@ def images2np(images: Sequence[np.ndarray | Image.Image | PathType], channel_ord
         else:
             if img.shape[:2] != (H, W):
                 raise ValueError(f'The {index}. image in the list has different dimensions.' \
-                                 f'Expected image of shape {(H, W)} got instead {(image.shape[:2])}')
+                                 f'Expected image of shape {(H, W)} got instead {(img.shape[:2])}')
 
         batched_images[index,:,:,:] = img
 

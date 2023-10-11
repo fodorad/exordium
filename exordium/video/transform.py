@@ -1,6 +1,38 @@
 from typing import Callable, Sequence
+import cv2
 import numpy as np
 import torch
+
+
+def rotate_vector(xy: np.ndarray, rotation_degree: float) -> np.ndarray:
+    """Rotates a vector.
+
+    Args:
+        xy (np.ndarray): vector represented as XY coords.
+        rotation_degree (float): rotation in degree.
+
+    Returns:
+        np.ndarray: rotated vector.
+    """
+    theta = np.deg2rad(rotation_degree)
+    R = np.array([[np.cos(theta), -np.sin(theta)],
+                  [np.sin(theta), np.cos(theta)]])
+    xy_rot = np.dot(R, xy)
+    return xy_rot
+
+
+def rotate_face(face: np.ndarray, rotation_degree: float) -> tuple[np.ndarray, np.ndarray]:
+    """Align the X axes of the Head Coordinate System and the Camera Coordinate System.
+    Args:
+        face (np.ndarray): face image of shape (H, W, 3).
+        rotation_degree (float): rotation in degree
+    Returns:
+        tuple[np.ndarray, np.ndarray]: rotated face, rotation matrix
+    """
+    height, width = face.shape[:2]
+    R = cv2.getRotationMatrix2D((width / 2, height / 2), rotation_degree, 1)
+    face_rotated = cv2.warpAffine(face, R, (width, height))
+    return face_rotated, R
 
 
 def spec_augment(spec: np.ndarray,

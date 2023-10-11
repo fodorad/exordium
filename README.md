@@ -22,6 +22,7 @@ Collection of preprocessing functions and deep learning methods.
 * categorical and dimensional emotion estimation with EmoNet
 * iris and pupil landmark estimation with MediaPipe Iris
 * fine eye landmark estimation with MediaPipe FaceMesh
+* eye gaze vector estimation with L2CS-Net
 * tracking using IoU and DeepFace
 * FAb-Net feature extraction
 * OpenFace feature extraction
@@ -41,10 +42,11 @@ Collection of preprocessing functions and deep learning methods.
 * graphs
 * 3D headpose
 * 2D landmarks
+* gaze
 * dataframes to images
 
 # Setup
-### Install package with PyPi
+### Install package from PyPI
 ```
 pip install exordium
 ```
@@ -56,10 +58,6 @@ cd exordium
 git submodule update --init --recursive
 pip install .
 pip install -U -r requirements.txt
-```
-
-### Run unittests
-```bash
 python -m unittest discover -s test
 ```
 
@@ -78,9 +76,13 @@ LinMulT is trained for Big Five personality trait estimation using the First Imp
 
 # What's next
 * Add support for Action Unit detection (OpenGraphAU)
-* Add support for Gaze estimation (L2CS-Net)
 * Add support for Blink estimation (DenseNet121, LinT, BlinkLinMulT)
 * Add support for Personality trait estimation (PersonalityLinMulT)
+
+# Updates
+* 1.2.0: Add support for L2CS-Net gaze estimation.
+* 1.1.0: PyPI publish.
+* 1.0.0: Release version.
 
 # Contact
 * Ádám Fodor (foauaai@inf.elte.hu)
