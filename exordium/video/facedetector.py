@@ -178,7 +178,7 @@ class FaceDetector(ABC):
 class RetinaFaceDetector(FaceDetector):
     """Face detector wrapper class using RetinaFace CNN."""
 
-    def __init__(self, gpu_id: int = 0, batch_size: int = 30, verbose: bool = False):
+    def __init__(self, gpu_id: int = 0, batch_size: int = 16, verbose: bool = False):
         super().__init__(batch_size=batch_size, verbose=verbose)
         self.batch_size = batch_size
         self.detector = RetinaFace(gpu_id=gpu_id, network='resnet50')

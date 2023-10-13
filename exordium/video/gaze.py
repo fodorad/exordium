@@ -68,6 +68,9 @@ def softmax_temperature(tensor, temperature):
     return result
 
 
-def looking_at_camera(yaw, pitch, thr: float = 0.5) -> bool:
+def looking_at_camera_yaw_pitch(yaw, pitch, thr: float = 0.5) -> bool:
     xy = pitchyaw_to_pixel(pitch, yaw, length=1)
+    return looking_at_camera_xy(xy, thr)
+
+def looking_at_camera_xy(xy: np.ndarray, thr: float = 0.5) -> bool:
     return bool(np.linalg.norm(xy) < thr)

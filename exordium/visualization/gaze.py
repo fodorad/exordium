@@ -18,8 +18,8 @@ def draw_vector(image: np.ndarray, origin: np.ndarray, end_point: np.ndarray) ->
     image_out = np.copy(image)
     end_point = tuple(np.round([origin[0] + end_point[0],
                                 origin[1] + end_point[1]]).astype(int))
-    cv2.arrowedLine(image_out, tuple(np.round(origin).astype(np.int32)),
-                end_point, (0, 0, 255), 2, cv2.LINE_AA, tipLength=0.18)
+    cv2.arrowedLine(image_out, tuple(np.round(origin).astype(np.int32)), end_point,
+                    (0, 0, 255), 2, cv2.LINE_AA, tipLength=0.18)
     return image_out
 
 
@@ -70,7 +70,32 @@ def convert_draw_vector(image: np.ndarray,
     return image_out
 
 
-def visualize(image: np.ndarray, aligned_face: np.ndarray, yaw: float, pitch: float) -> np.ndarray:
+def visualize_target_gaze(frame: np.ndarray,
+                          aligned_face: np.ndarray,
+                          gaze_vector_normed: np.ndarray,
+                          gaze_vector: np.ndarray,
+                          gaze_vector_origin: np.ndarray,
+                          threshold: float = 0.45) -> np.ndarray:
+    frame_out = np.copy(frame)
+    target_size = frame_out.shape[0] // 3
+    face_ratio = max(aligned_face.shape[:2]) / target_size
+    # draw normed
+    target_face = cv2.resize(aligned_face, (448, 448), interpolation=cv2.INTER_AREA)
+    target_face_radius = target_face.shape[0] // 2 # max gaze vector length
+    target_face_origin = tuple(np.array(target_face.shape[:2]) // 2)
+    target_face = cv2.circle(target_face, target_face_origin, int(target_face_radius), (0,255,0), 2)
+    target_face = cv2.circle(target_face, target_face_origin, int(target_face_radius * threshold), (255,0,0), 2)
+    target_face = cv2.circle(target_face, target_face_origin, 2, (0,255,0), 2)
+    target_face = draw_vector(target_face, target_face_origin, gaze_vector_normed * target_face_radius)
+    target_face = cv2.resize(target_face, (target_size, target_size), interpolation=cv2.INTER_AREA)
+    frame_out[-target_size:, :target_size,:] = target_face
+    # draw original
+    frame_out = cv2.circle(frame_out, gaze_vector_origin, int(target_face_radius * face_ratio), (0,255,0), 2)
+    frame_out = cv2.circle(frame_out, gaze_vector_origin, int(target_face_radius * face_ratio * threshold), (255,0,0), 2)
+    frame_out = draw_vector(frame_out, gaze_vector_origin, gaze_vector * face_ratio * target_face_radius)
+    return frame_out
+
+def visualize_normed_space(image: np.ndarray, aligned_face: np.ndarray, yaw: float, pitch: float) -> np.ndarray:
     image_out = np.copy(image)
     H, _ = image.shape[:2]
     target_size = H // 3

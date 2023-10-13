@@ -47,9 +47,9 @@ def draw_pose_box(img: np.ndarray, P: np.ndarray, landmarks: np.ndarray, color: 
 
     Args:
         img: the input image with shape (H, W, C) and BGR channel order.
-        P: Affine Camera Matrix with shape (3, 4). 
+        P: Affine Camera Matrix with shape (3, 4).
         landmarks: (68, 2) or (68, 3)
-    
+
     Returns:
         (np.ndarray):
     """

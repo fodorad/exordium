@@ -55,7 +55,6 @@ pip install exordium
 ```
 git clone https://github.com/fodorad/exordium
 cd exordium
-git submodule update --init --recursive
 pip install .
 pip install -U -r requirements.txt
 python -m unittest discover -s test

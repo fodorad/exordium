@@ -208,10 +208,11 @@ def image2np(image: np.ndarray | Image.Image | PathType, channel_order: str = 'R
             raise FileNotFoundError(f'The file cannot be found: {image}')
 
         image_path = image
-        image = cv2.imread(str(image_path), cv2.IMREAD_UNCHANGED) # BGR
+        image_bgr = cv2.imread(str(image_path), cv2.IMREAD_UNCHANGED) # BGR
+        image = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB) # RGB
 
         if image is None:
-            image = Image.open(image_path)
+            image = Image.open(image_path) # RGB
 
     if isinstance(image, Image.Image):
         return np.array(image.convert(channel_order))
@@ -220,15 +221,15 @@ def image2np(image: np.ndarray | Image.Image | PathType, channel_order: str = 'R
 
         flag: int | None = None
         match channel_order.lower():
-            case 'rgb':
-                flag = cv2.COLOR_BGR2RGB
+            case 'bgr':
+                flag = cv2.COLOR_RGB2BGR
             case 'hsv':
-                flag = cv2.COLOR_BGR2HSV
+                flag = cv2.COLOR_RGB2HSV
             case 'lab':
-                flag = cv2.COLOR_BGR2LAB
+                flag = cv2.COLOR_RGB2LAB
             case 'gray':
-                flag = cv2.COLOR_BGR2GRAY
-            case _: # stay in BGR
+                flag = cv2.COLOR_RGB2GRAY
+            case _: # stay in RGB
                 pass
 
         if flag is not None:

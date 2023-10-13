@@ -14,6 +14,7 @@ from exordium.video.transform import rotate_face, rotate_vector
 
 
 class L2csNetWrapper():
+    """L2CS-Net wrapper class."""
 
     def __init__(self, gpu_id: int = 0):
         self.device = f'cuda:{gpu_id}' if gpu_id >= 0 else 'cpu'
@@ -55,7 +56,7 @@ class L2csNetWrapper():
             Then the face with the rotate_face function from exordium.video.transform.
 
         Args:
-            faces (list[PathType | Image.Image | np.ndarray]): list of face images of shape (H, W, C).
+            faces (list[PathType | Image.Image | np.ndarray]): sequence of face images of shape (H, W, C) and RGB channel order.
 
         Returns:
             tuple[float, float]: yaw and pitch angles in degrees.
@@ -69,39 +70,44 @@ class L2csNetWrapper():
         yaw_predicted = self.softmax(gaze_yaw)
 
         # get continuous predictions in degrees
-        pitch_predicted = torch.sum(pitch_predicted.data[0] * self.idx_tensor) * 4 - 180
-        yaw_predicted = torch.sum(yaw_predicted.data[0] * self.idx_tensor) * 4 - 180
+        pitch_predicted = torch.sum(pitch_predicted.data * self.idx_tensor, dim=1) * 4 - 180
+        yaw_predicted = torch.sum(yaw_predicted.data * self.idx_tensor, dim=1) * 4 - 180
         pitch_normed = pitch_predicted.detach().cpu().numpy() * np.pi / 180.0
         yaw_normed = yaw_predicted.detach().cpu().numpy() * np.pi / 180.0
         return yaw_normed, pitch_normed
 
 
     def predict_pipeline(self, faces: Sequence[PathType | Image.Image | np.ndarray],
-                               roll_angles: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+                               roll_angles: Sequence[float]) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Predicts gaze vector using face images and their corresponding head pose roll angles.
 
         Args:
-            faces (Sequence[PathType | Image.Image | np.ndarray]): sequence of images.
-            roll_angles (np.ndarray): head pose roll angles, one per face image in "faces" argument.
+            faces (Sequence[PathType | Image.Image | np.ndarray]): sequence of face images of shape (H, W, C) and RGB channel order.
+            roll_angles (Sequence[float]): head pose roll angles, one per face image in "faces" argument.
 
         Returns:
-            tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-                yaw angles,
-                pitch angles,
-                pixel coords of the vectors in the normed space,
-                pixel coords of the vectors in the original space.
+            tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+                  rotated faces,
+                  yaw angles,
+                  pitch angles,
+                  pixel coords of the vectors in the normed space,
+                  pixel coords of the vectors in the original space.
         """
         # load images
         faces_rgb = images2np(faces, 'RGB', resize=(448, 448)) # (B, H, W, C) == (B, 448, 448, 3)
         # rotate faces to the normed space
-        rotated_faces_rgb = [rotate_face(face, roll_angle) for face, roll_angle in zip(faces_rgb, roll_angles)]
+        rotated_faces_rgb = [rotate_face(face, -roll_angle)[0] for face, roll_angle in zip(faces_rgb, roll_angles)]
         # predict gaze shperical angles in normed space
         yaw_normed, pitch_normed = self(rotated_faces_rgb) # (B,) and (B,)
         # convert to XY pixel coordinates
         gaze_vectors_normed = [pitchyaw_to_pixel(pitch=p_normed, yaw=y_normed) for p_normed, y_normed in zip(pitch_normed, yaw_normed)]
         # rotate back to the original space
         gaze_vectors = [rotate_vector(gaze_vector_normed, -roll_angle) for gaze_vector_normed, roll_angle in zip(gaze_vectors_normed, roll_angles)]
-        return yaw_normed, pitch_normed, np.concatenate(gaze_vectors_normed, axis=0), np.concatenate(gaze_vectors, axis=0)
+        return (np.stack(rotated_faces_rgb, axis=0), # (B, H, W, C)
+                yaw_normed, # (B,)
+                pitch_normed, # (B,)
+                np.stack(gaze_vectors_normed, axis=0), # (B, 2)
+                np.stack(gaze_vectors, axis=0)) # (B, 2)
 
 
 class L2CS(nn.Module):

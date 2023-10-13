@@ -82,7 +82,7 @@ class DetectionFromImage(Detection):
     source: str
 
     def frame(self) -> np.ndarray:
-        return image2np(self.source)
+        return image2np(self.source, 'RGB')
 
     def frame_center(self) -> np.ndarray:
         height, width = self.frame().shape[:2]
