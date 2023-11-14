@@ -43,7 +43,7 @@ class EmoNetWrapper():
             T.Resize((256, 256))
         ])
 
-    def __call__(self, faces: Sequence[np.ndarray]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def __call__(self, faces: Sequence[np.ndarray], return_probabilities: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """EmoNet inference.
 
         Args:
@@ -52,8 +52,8 @@ class EmoNetWrapper():
         Returns:
             np.ndarray: FAb-Net features with shape (B, 256)
         """
-        samples = images2np(faces, 'RGB', resize=(256, 256)) # (B, H, W, C) == (B, 256, 256, 3)
-        samples = torch.stack([self.transform(sample) for sample in samples]).to(self.device) # (B, C, H, W) == (B, 3, 256, 256)
+        samples_np = images2np(faces, 'RGB', resize=(256, 256)) # (B, H, W, C) == (B, 256, 256, 3)
+        samples = torch.stack([self.transform(sample) for sample in samples_np]).to(self.device) # (B, C, H, W) == (B, 3, 256, 256)
 
         if samples.ndim != 4:
             raise Exception(f'Invalid input shape. Expected sample shape is (B, C, H, W) got instead {samples.shape}.')
@@ -61,15 +61,20 @@ class EmoNetWrapper():
         with torch.no_grad():
             out_dict = self.model(samples)
 
-        expression = out_dict['expression'].detach().cpu().numpy()
+        expression_logits = out_dict['expression'].detach().cpu().numpy() # (B, 8)
+        expression_probabilities = F.softmax(out_dict['expression'], dim=1).detach().cpu().numpy() # (B, 8)
         valence = out_dict['valence'].detach().cpu().numpy()
         arousal = out_dict['arousal'].detach().cpu().numpy()
         # heatmap = out_dict['heatmap'].detach().cpu().numpy() # landmarks
 
-        expression = np.argmax(expression, axis=1) # (B, 8) discrete classes
         valence = np.round(np.clip(valence, -1.0, 1.0), decimals=3) # (B,) negative-positive
         arousal = np.round(np.clip(arousal, -1.0, 1.0), decimals=3) # (B,) calm-excited
-        return expression, valence, arousal
+        expression = np.argmax(expression_logits, axis=1) # (B, 8) discrete classes
+
+        if return_probabilities:
+            return valence, arousal, expression, expression_logits, expression_probabilities
+
+        return valence, arousal, expression
 
     def heatmap_to_image(self, heatmap):
         s = np.sum(heatmap.squeeze(), axis=0, keepdims=True)

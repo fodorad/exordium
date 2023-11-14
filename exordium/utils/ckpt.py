@@ -4,6 +4,17 @@ from pathlib import Path
 from exordium import PathType
 
 
+def get_logger(name, path):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    log_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    log_handler = logging.FileHandler(path)
+    log_handler.setLevel(logging.DEBUG)
+    log_handler.setFormatter(log_format)
+    logger.addHandler(log_handler)
+    return logger
+
+
 def download_file(remote_path: PathType, local_path: PathType, overwrite: bool = False) -> None:
     """Downloads a file to given path.
 
