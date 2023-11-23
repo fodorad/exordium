@@ -3,8 +3,8 @@ import os
 import cv2
 import numpy as np
 from pathlib import Path
-from exordium import DATA_DIR, EXAMPLE_VIDEO_PATH
-from exordium.video.facedetector import RetinaFaceDetector, FrameDetections, VideoDetections
+from exordium import DATA_DIR, EXAMPLE_VIDEO_PATH, EXAMPLE_VDET_CACHE_PATH
+from exordium.video.facedetector import RetinaFaceDetector, FrameDetections, VideoDetections, align_face
 
 FRAME_PATH = DATA_DIR / 'processed' / 'example_multispeaker' / 'frames' / '000000.png'
 FRAME_DIR = DATA_DIR / 'processed' / 'example_multispeaker' / 'frames'
@@ -50,6 +50,14 @@ class FaceDetectorTestCase(unittest.TestCase):
         loaded_video_detections = self.face_detector.detect_video(EXAMPLE_VIDEO_PATH, output_path=output_path)
         self.assertEqual(video_detections, loaded_video_detections)
         os.remove(output_path)
+
+    def test_align_face(self):
+        video_detections = self.face_detector.detect_video(EXAMPLE_VIDEO_PATH, output_path=EXAMPLE_VDET_CACHE_PATH)
+        det = video_detections[0][0]
+        output_aligned: dict = align_face(det.frame(), det.bb_xyxy, det.landmarks)
+        self.assertEqual(output_aligned['rotated_image'].ndim, 3)
+        self.assertEqual(output_aligned['rotated_face'].ndim, 3)
+        self.assertEqual(output_aligned['rotated_landmarks'].shape, (68,2))
 
 
 if __name__ == '__main__':

@@ -48,9 +48,12 @@ class EmoNetWrapper():
 
         Args:
             faces (list[np.ndarray]): list of face images of shape (H, W, C) and RGB channel order.
+            return_probabilities (bool, optional): if True, the logits and the probabilities are also returned. Default to False.
 
         Returns:
-            np.ndarray: FAb-Net features with shape (B, 256)
+            tuple[np.ndarray, np.ndarray, np.ndarray]: valence, arousal, expression
+            or
+            tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]: valence, arousal, expression, expression logits, expression probabilities
         """
         samples_np = images2np(faces, 'RGB', resize=(256, 256)) # (B, H, W, C) == (B, 256, 256, 3)
         samples = torch.stack([self.transform(sample) for sample in samples_np]).to(self.device) # (B, C, H, W) == (B, 3, 256, 256)

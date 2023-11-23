@@ -101,7 +101,7 @@ def visualize_landmarks(image: np.ndarray,
     """Landmarks are drawn to the given image"""
 
     if not (landmarks.ndim == 2 and landmarks.shape[1] == 2):
-        raise Exception(f'Expected landmakrs with shape (5,2) got istead {landmarks.shape}.')
+        raise Exception(f'Expected landmarks with shape (5,2) got instead {landmarks.shape}.')
 
     image_out = np.copy(image)
     landmarks = np.rint(landmarks).astype(int)
@@ -118,6 +118,45 @@ def visualize_landmarks(image: np.ndarray,
         if show_indices:
             cv2.putText(image_out, str(index), landmarks[index, :],
                         font, fontScale, color, font_thickness, cv2.LINE_AA)
+
+    if output_path is not None:
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(output_path), image_out)
+
+    return image_out
+
+
+def visualize_iris(image: np.ndarray,
+                   landmarks: np.ndarray,
+                   iris_landmarks: np.ndarray,
+                   output_path: str | os.PathLike | None = None,
+                   show_indices: bool = False) -> np.ndarray:
+    """Landmarks are drawn to the given image"""
+
+    if not (landmarks.ndim == 2 and landmarks.shape[1] == 2):
+        raise Exception(f'Expected landmakrs with shape (5,2) got istead {landmarks.shape}.')
+
+    image_out = np.copy(image)
+    landmarks = np.rint(landmarks).astype(int)
+    iris_landmarks = np.rint(iris_landmarks).astype(int)
+
+    radius = 1
+    thickness = 2
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fontScale = 0.3
+    font_thickness = 1
+
+    for index in range(len(landmarks)):
+        cv2.circle(image_out, landmarks[index, :], radius, (0, 255, 0), thickness)
+        if show_indices:
+            cv2.putText(image_out, str(index), landmarks[index, :],
+                        font, fontScale, (0, 0, 0), font_thickness, cv2.LINE_AA)
+
+    for index in range(len(iris_landmarks)):
+        cv2.circle(image_out, landmarks[index, :], radius, (255, 0, 0), thickness)
+        if show_indices:
+            cv2.putText(image_out, str(index), iris_landmarks[index, :],
+                        font, fontScale, (0, 0, 0), font_thickness, cv2.LINE_AA)
 
     if output_path is not None:
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)

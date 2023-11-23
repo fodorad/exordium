@@ -168,7 +168,7 @@ class IrisWrapper():
         eye = images2np([eye_original.copy()], 'RGB', (64, 64))
 
         # (71, 2) eye landmarks xy, (5, 2) iris landmarks xy
-        eye_landmarks, iris_landmarks = self([eye])
+        eye_landmarks, iris_landmarks = self(eye)
 
         # (2,) iris diameters hv
         iris_diameters = calculate_iris_diameters(iris_landmarks)

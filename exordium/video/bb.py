@@ -228,3 +228,12 @@ def xywh2midwh(bb_xywh: np.ndarray) -> np.ndarray:
     yc = ymin + 0.5 * h
 
     return np.round(np.column_stack((xc, yc, w, h))).astype(int).squeeze()
+
+
+def xyxy2full(bb_xyxy: np.ndarray) -> np.ndarray:
+    x_tl, y_tl, x_br, y_br = bb_xyxy
+    x_tr = x_br
+    y_tr = y_tl
+    x_bl = x_tl
+    y_bl = y_br
+    return np.array([x_tl, y_tl, x_tr, y_tr, x_bl, y_bl, x_br, y_br]).reshape(4, 2)

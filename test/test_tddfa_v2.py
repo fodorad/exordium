@@ -24,11 +24,11 @@ class Tddfav2TestCase(unittest.TestCase):
     def test_feature_extraction_from_ndarray_with_eyes(self):
         for det in self.face_track[:3]:
             face = det.bb_crop()
-            output: dict = self.model.face_to_eyes_crop(face, bb_size=20)
+            output: dict = self.model.face_to_eyes_crop(face)
             self.assertEqual(output['landmarks'].shape, (68,2))
             self.assertEqual(output['headpose'].shape, (3,))
-            self.assertEqual(output['left_eye'].shape, (20,20,3))
-            self.assertEqual(output['right_eye'].shape, (20,20,3))
+            self.assertEqual(output['left_eye'].ndim, 3)
+            self.assertEqual(output['right_eye'].ndim, 3)
 
 
 if __name__ == '__main__':

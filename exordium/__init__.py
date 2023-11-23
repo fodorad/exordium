@@ -14,3 +14,4 @@ PathType = str | PathLike
 
 # Example data
 EXAMPLE_VIDEO_PATH = DATA_DIR / 'videos' / 'example_multispeaker.mp4'
+EXAMPLE_VDET_CACHE_PATH = DATA_DIR / 'example_multispeaker' / 'cache.vdet'

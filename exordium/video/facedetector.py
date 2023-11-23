@@ -9,7 +9,7 @@ from tqdm import tqdm
 from decord import VideoReader, cpu
 from exordium import PathType
 from exordium.video.io import image2np
-from exordium.video.bb import xyxy2xywh
+from exordium.video.bb import xyxy2xywh, xyxy2full
 from exordium.video.detection import FrameDetections, VideoDetections
 from exordium.utils.decorator import load_or_create
 
@@ -189,36 +189,27 @@ class RetinaFaceDetector(FaceDetector):
         return self.detector(images_bgr, cv=True) # RetinaFace expects BGR images
 
 
-def align_face_and_landmarks(image: np.ndarray,
-                             landmarks: np.ndarray,
-                             left_eye_landmarks: np.ndarray,
-                             right_eye_landmarks: np.ndarray,
-                             eye_ratio: tuple[float, float] = (0.38, 0.38),
-                             output_wh: tuple[int, int] = (192, 192)) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+def align_face(image: np.ndarray, bb_xyxy: np.ndarray, landmarks: np.ndarray) -> dict[str, np.ndarray]:
     """Aligns the x axis of the Head Coordinate System (HCS) to the x axis of the Camera Coordinate System (CCS).
     The face is rotated in the opposite direction of its current roll value of the headpose.
 
     Args:
         image (np.ndarray): input image of shape (H, W, C).
+        bb_xyxy (np.ndarray): input bounding box of shape (4,).
         landmarks (np.ndarray): input landmarks of shape (N, 2).
-        left_eye_landmarks (np.ndarray): landmarks of the left eye of shape (2,)
-        right_eye_landmarks (np.ndarray): landmarks of the right eye of shape (2,)
-        eye_ratio (tuple[float, float], optional): location of the eye within the image and on the x axis. Defaults to (0.38, 0.38).
-        output_wh (tuple[int, int], optional): output width and height. Defaults to (192, 192).
 
     Raises:
         Exception: invalid landmark shape.
 
     Returns:
-        tuple[np.ndarray, np.ndarray, np.ndarray, float]: rotated face image, rotated landmarks, rotation angle in degree, rotation matrix
+        dict[str, np.ndarray]: values are the rotated image, rotated_face, rotated landmarks, rotated bb_xyxy, rotation angle in degree, rotation matrix
     """
-    if landmarks.shape[1] != 2:
-        raise Exception(f'Expected landmarks with shape (N, 2) got istead {landmarks.shape}.')
+    if landmarks.shape != (5, 2):
+        raise Exception(f'Expected RetinaFace landmarks with shape (5, 2) got instead {landmarks.shape}.')
 
     landmarks = np.rint(landmarks).astype(int)
-    output_width, output_height = output_wh
-    right_eye_x, right_eye_y = right_eye_landmarks # participant's right eye
-    left_eye_x, left_eye_y = left_eye_landmarks # participant's left eye
+    left_eye_x, left_eye_y = landmarks[RetinaFaceLandmarks.LEFT_EYE.value, :]
+    right_eye_x, right_eye_y = landmarks[RetinaFaceLandmarks.RIGHT_EYE.value, :]
 
     dY = right_eye_y - left_eye_y
     dX = right_eye_x - left_eye_x
@@ -226,22 +217,28 @@ def align_face_and_landmarks(image: np.ndarray,
     center = (int((left_eye_x + right_eye_x) // 2),
               int((left_eye_y + right_eye_y) // 2))
 
-    right_eye_ratio_x = 1.0 - eye_ratio[0]
-    dist = np.sqrt((dX**2) + (dY**2))
-    output_dist = (right_eye_ratio_x - eye_ratio[0])
-    output_dist *= output_width
-    scale = output_dist / dist
+    R = cv2.getRotationMatrix2D(center, rotation_degree, 1.)
 
-    R = cv2.getRotationMatrix2D(center, rotation_degree, scale)
-    t_x = output_width * 0.5
-    t_y = output_height * eye_ratio[1]
-    R[0, 2] += (t_x - center[0])
-    R[1, 2] += (t_y - center[1])
+    rotated_image = cv2.warpAffine(image, R, (image.shape[1], image.shape[0]), flags=cv2.INTER_CUBIC)
+    rotated_landmarks = rotate_landmarks(landmarks, R)
+    rotated_bb_full = rotate_landmarks(xyxy2full(bb_xyxy), R)
+    min_x, min_y = np.min(rotated_bb_full, axis=0)
+    max_x, max_y = np.max(rotated_bb_full, axis=0)
+    rotated_bb_xyxy = np.array([min_x, min_y, max_x, max_y], dtype=int)
+    rotated_face = rotated_image[min_y:max_y, min_x:max_x]
 
-    rotated_face = cv2.warpAffine(image, R, (output_width, output_height), flags=cv2.INTER_CUBIC)
-    _landmarks = np.concatenate([landmarks, np.ones((landmarks.shape[0], 1))], axis=1)
-    rotated_landmarks = np.rint(np.dot(R, _landmarks.T).T).astype(int)
-    return rotated_face, rotated_landmarks, rotation_degree, R
+    return {
+        'rotated_image': rotated_image, # (H, W, C)
+        'rotated_face': rotated_face, # (H, W, C)
+        'rotated_landmarks': rotated_landmarks, # (5, 2)
+        'rotated_bb_xyxy': rotated_bb_xyxy, # (4,)
+        'rotation_degree': rotation_degree, # ()
+        'rotation_matrix': R, # (3, 3)
+    }
+
+
+def rotate_landmarks(landmarks: np.ndarray, R: np.ndarray) -> np.ndarray:
+    return np.rint(np.dot(R, np.concatenate([landmarks, np.ones((landmarks.shape[0], 1))], axis=1).T).T).astype(int)
 
 
 def crop_eye_keep_ratio(img: np.ndarray, landmarks: np.ndarray, bb: tuple = (36, 60)):

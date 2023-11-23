@@ -71,7 +71,7 @@ def video2frames(input_path: PathType,
 
 def frames2video(frames: PathType | Sequence[str] | Sequence[np.ndarray],
                  output_path: PathType,
-                 fps: int | float = 25,
+                 fps: int | float = 25.,
                  extension: str = '.png',
                  overwrite: bool = False) -> None:
     """Saves frames to a video without audio.
@@ -95,7 +95,7 @@ def frames2video(frames: PathType | Sequence[str] | Sequence[np.ndarray],
 
     logging.info(f'Found {len(frames)} frames.')
     movie_clip = mpy.ImageSequenceClip(frames, fps)
-    movie_clip.write_videofile(str(output_path), logger="bar")
+    movie_clip.write_videofile(str(output_path), fps=fps, logger="bar")
     movie_clip.close()
     logging.info(f'Video is done: {str(output_path)}')
 

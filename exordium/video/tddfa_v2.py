@@ -59,6 +59,27 @@ def get_eye_with_center_crop(img: np.ndarray,
     return img[y1:y2, x1:x2, :]
 
 
+def get_bb_size_with_landmarks(landmarks: np.ndarray, extra_space: float = 1.) -> int:
+    return get_bb_size_with_eye_landmarks(np.concatenate([landmarks[FaceLandmarks.LEFT_EYE_LEFT,:], landmarks[FaceLandmarks.LEFT_EYE_RIGHT]]),
+                                          np.concatenate([landmarks[FaceLandmarks.RIGHT_EYE_LEFT,:], landmarks[FaceLandmarks.RIGHT_EYE_RIGHT]]),
+                                          extra_space)
+
+
+def get_bb_size_with_eye_landmarks(left_eye_landmarks_xyxy: np.ndarray, right_eye_landmarks_xyxy, extra_space: float = 1.) -> int:
+    return int(max([
+                np.linalg.norm(left_eye_landmarks_xyxy[:2] - left_eye_landmarks_xyxy[2:]),
+                np.linalg.norm(right_eye_landmarks_xyxy[:2] - right_eye_landmarks_xyxy[2:])
+           ]) * (1 + extra_space))
+
+
+def get_left_eye_xyxy_landmarks(landmarks: np.ndarray) -> np.ndarray:
+    return np.concatenate([landmarks[FaceLandmarks.LEFT_EYE_LEFT,:], landmarks[FaceLandmarks.LEFT_EYE_RIGHT]]).flatten()
+
+
+def get_right_eye_xyxy_landmarks(landmarks: np.ndarray) -> np.ndarray:
+    return np.concatenate([landmarks[FaceLandmarks.RIGHT_EYE_LEFT,:], landmarks[FaceLandmarks.RIGHT_EYE_RIGHT]]).flatten()
+
+
 class TDDFA_V2():
     """TDDFA_V2 wrapper class."""
 
@@ -111,38 +132,80 @@ class TDDFA_V2():
             'camera_matrix': camera_matrix
         }
 
-    def face_to_eyes_crop(self, face: PathType | np.ndarray,
-                                bb_size: int = 64) -> dict[str, np.ndarray]:
-        """Cuts out the left and right eye regions using a fixed bounding box size.
-
-        Args:
-            face (PathType | np.ndarray): image of the face.
-            bb_size (int, optional): bounding box size. Defaults to 64.
-
-        Returns:
-            dict[str, np.ndarray]: left and right eye patches among other face features from __call__
-        """
-        face = image2np(face, 'BGR')
-        face_features = self(face)
-        left_eye_center = np.mean(face_features['landmarks'][FaceLandmarks.LEFT_EYE,:], axis=0)
-        right_eye_center = np.mean(face_features['landmarks'][FaceLandmarks.RIGHT_EYE,:], axis=0)
-        left_eye = get_eye_with_center_crop(face, left_eye_center, bb_size)
-        right_eye = get_eye_with_center_crop(face, right_eye_center, bb_size)
-        return face_features | {'left_eye': left_eye, 'right_eye': right_eye}
-
-
-    def face_to_xyxy_eyes_crop(self, face: PathType | np.ndarray,
-                                     left_eye_landmarks_xyxy: np.ndarray,
-                                     right_eye_landmarks_xyxy: np.ndarray,
-                                     bb_size: int | None = None,
-                                     extra_space: float = 1.) -> dict[str, np.ndarray]:
+    def face_and_xyxy_landmarks_to_eyes_crop(self, face: PathType | np.ndarray,
+                                                   left_eye_landmarks_xyxy: np.ndarray,
+                                                   right_eye_landmarks_xyxy: np.ndarray,
+                                                   extra_space: float = 1.) -> dict[str, np.ndarray]:
         """Cuts out the left and right eye regions using a fixed bounding box size.
 
         Args:
             face (PathType | np.ndarray): image of the face.
             left_eye_landmarks_xyxy (np.ndarray): left eye landmarks using xyxy format.
             right_eye_landmarks_xyxy (np.ndarray): right eye landmarks using xyxy format.
-            bb_size (int | None, optional): bounding box size. None means that it is calculated from the eye landmarks. Defaults to None.
+            extra_space (float, optional): extra space around the bounding box. 0.2 means an extra 20%. Defaults to 1.
+
+        Returns:
+            dict[str, np.ndarray]: left and right eye patches
+        """
+        face = image2np(face, 'BGR')
+        bb_size = get_bb_size_with_eye_landmarks(left_eye_landmarks_xyxy, right_eye_landmarks_xyxy, extra_space)
+        left_eye_center = left_eye_landmarks_xyxy.reshape((2,2)).mean(axis=0)
+        right_eye_center = right_eye_landmarks_xyxy.reshape((2,2)).mean(axis=0)
+        left_eye = get_eye_with_center_crop(face, left_eye_center, bb_size)
+        right_eye = get_eye_with_center_crop(face, right_eye_center, bb_size)
+        return {'left_eye': left_eye, 'right_eye': right_eye}
+
+    def face_and_landmarks_to_eyes_crop(self, face: PathType | np.ndarray,
+                                              landmarks: np.ndarray,
+                                              extra_space: float = 1.) -> dict[str, np.ndarray]:
+        """Cuts out the left and right eye regions using previously calculated 3DDFA_V2 landmarks.
+
+        Args:
+            face (PathType | np.ndarray): image of the face.
+            landmarks (np.ndarray): previously calculated 3DDFA_V2 landmarks of shape (N, 2).
+            extra_space (float, optional): extra space around the bounding box. 0.2 means an extra 20%. Defaults to 1.
+
+        Returns:
+            dict[str, np.ndarray]: left and right eye patches
+        """
+        return self.face_and_xyxy_landmarks_to_eyes_crop(face,
+                                                         get_left_eye_xyxy_landmarks(landmarks),
+                                                         get_right_eye_xyxy_landmarks(landmarks),
+                                                         extra_space)
+
+    def face_and_landmarks_to_eyes_crop_with_yaw_dependence(self, face: PathType | np.ndarray,
+                                                                  landmarks: np.ndarray,
+                                                                  yaw_degree: float,
+                                                                  yaw_degree_threshold: float = 25.,
+                                                                  extra_space: float = 1.) -> dict[str, np.ndarray | None]:
+        """Cuts out the left and right eye regions using previously calculated 3DDFA_V2 landmarks.
+
+        Args:
+            face (PathType | np.ndarray): image of the face.
+            landmarks (np.ndarray): previously calculated 3DDFA_V2 landmarks of shape (N, 2).
+            extra_space (float, optional): extra space around the bounding box. 0.2 means an extra 20%. Defaults to 1.
+
+        Returns:
+            dict[str, np.ndarray]: left and right eye patches
+        """
+        eye_crops = self.face_and_xyxy_landmarks_to_eyes_crop(face,
+                                                              get_left_eye_xyxy_landmarks(landmarks),
+                                                              get_right_eye_xyxy_landmarks(landmarks),
+                                                              extra_space)
+        if yaw_degree > yaw_degree_threshold: # right eye only
+            eye_crops['left_eye'] = None
+
+        if yaw_degree < -yaw_degree_threshold: # left eye only
+            eye_crops['right_eye'] = None
+
+        return eye_crops
+
+    def face_to_eyes_crop(self, face: PathType | np.ndarray,
+                                extra_space: float = 1.) -> dict[str, np.ndarray]:
+        """Cuts out the left and right eye regions.
+
+        Args:
+            face (PathType | np.ndarray): image of the face.
             extra_space (float, optional): extra space around the bounding box. 0.2 means an extra 20%. Defaults to 1.
 
         Returns:
@@ -150,18 +213,30 @@ class TDDFA_V2():
         """
         face = image2np(face, 'BGR')
         face_features = self(face)
-        left_eye_center = left_eye_landmarks_xyxy.reshape((2,2)).mean(axis=0)
-        right_eye_center = right_eye_landmarks_xyxy.reshape((2,2)).mean(axis=0)
+        return face_features | self.face_and_xyxy_landmarks_to_eyes_crop(face,
+                                                                         get_left_eye_xyxy_landmarks(face_features['landmarks']),
+                                                                         get_right_eye_xyxy_landmarks(face_features['landmarks']),
+                                                                         extra_space)
 
-        if bb_size is None:
-            bb_size = int(max([
-                np.linalg.norm(left_eye_landmarks_xyxy[:2] - left_eye_landmarks_xyxy[2:]),
-                np.linalg.norm(right_eye_landmarks_xyxy[:2] - right_eye_landmarks_xyxy[2:])
-            ]) * (1 + extra_space))
+    def face_to_eyes_crop_with_yaw_dependence(self, face: PathType | np.ndarray,
+                                                    yaw_degree_threshold: float = 25.,
+                                                    extra_space: float = 1.) -> dict[str, np.ndarray]:
+        """Cuts out the left and right eye regions.
 
-        left_eye = get_eye_with_center_crop(face, left_eye_center, bb_size)
-        right_eye = get_eye_with_center_crop(face, right_eye_center, bb_size)
-        return face_features | {'left_eye': left_eye, 'right_eye': right_eye}
+        Args:
+            face (PathType | np.ndarray): image of the face.
+            extra_space (float, optional): extra space around the bounding box. 0.2 means an extra 20%. Defaults to 1.
+
+        Returns:
+            dict[str, np.ndarray]: left and right eye patches among other face features from __call__
+        """
+        face = image2np(face, 'BGR')
+        face_features = self(face)
+        return face_features | self.face_and_landmarks_to_eyes_crop_with_yaw_dependence(face,
+                                                                                        face_features['landmarks'],
+                                                                                        face_features['headpose'][0],
+                                                                                        yaw_degree_threshold,
+                                                                                        extra_space)
 
 
 ######################################################################################

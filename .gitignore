@@ -5,6 +5,8 @@ data/processed/
 data/example_multispeaker/
 refactor/
 todo/
+test/tmp*
+tmp*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
