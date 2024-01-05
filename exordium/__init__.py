@@ -1,3 +1,4 @@
+import toml
 from os import PathLike
 from pathlib import Path
 
@@ -8,6 +9,9 @@ TOOL_ROOT = PROJECT_ROOT / 'tools'
 RESOURCE_DIR = PROJECT_ROOT / 'resources'
 DATA_DIR = PROJECT_ROOT / 'data'
 WEIGHT_DIR = Path().home() / '.cache' / 'torch' / 'hub' / 'checkpoints'
+
+pyproject_data = toml.load(PROJECT_ROOT / 'pyproject.toml')
+__version__ = pyproject_data['project']['version']
 
 # Type aliases
 PathType = str | PathLike

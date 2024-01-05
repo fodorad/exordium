@@ -1,22 +1,9 @@
-opencv-python
+toml
 Pillow
+opencv-python
+opencv-contrib-python
+scipy
+torch
+decord
 tqdm
 matplotlib
-scipy
-decord
-torch
-transformers
-torchvision
-networkx # exordium.visualization.graph
-opensmile # exordium.audio.smile
-librosa # exordium.audio.spectrogram
-torchaudio # exordium.audio.io
-moviepy # exordium.video.io
-pandas # exordium.video.openface
-einops # exordium.video.r2plus1d
-onnx # exordium.video.tddfa_v2
-onnxruntime # exordium.video.tddfa_v2
-types-PyYAML # mypy exordium.video.tddfa_v2
-deepface # exordium.video.detection
-tensorflow # deepface
-batch-face # exordium.video.facedetector

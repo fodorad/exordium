@@ -46,16 +46,41 @@ Collection of preprocessing functions and deep learning methods.
 * dataframes to images
 
 # Setup
-### Install package from PyPI
+### Install package with all base and optional dependencies from PyPI
+```
+pip install exordium[all]
+```
+### Install package with base dependencies from PyPI
 ```
 pip install exordium
 ```
+### Install optional dependencies for specific modules
+The following extras will install the base and specific dependencies for using TDDFA_V2.
+```
+pip install exordium[tddfa]
+```
+You can install multiple optional dependencies as well.
+```
+pip install exordium[tddfa,audio]
+```
+
+#### Supported extras definitions:
+| extras tag | description |
+| --- | --- |
+| audio | dependencies to process audio data |
+| text | dependency to process textual data |
+| tddfa | dependencies of TDDFA_V2 for landmark and headpose estimation, or related transformations |
+| detection | dependencies for automatic face detection and tracking in videos |
+| video | dependencies for various video feature extraction methods |
+| all | all previously described extras will be installed |
+
+Note: If you are not sure which tag should be used, just go with the all-mighty "all".
 
 ### Install package for development
 ```
 git clone https://github.com/fodorad/exordium
 cd exordium
-pip install .
+pip install -e .[all]
 pip install -U -r requirements.txt
 python -m unittest discover -s test
 ```

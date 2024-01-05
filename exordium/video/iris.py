@@ -1,6 +1,7 @@
 from enum import Enum
 from pathlib import Path
 from typing import Sequence
+import cv2
 import numpy as np
 from scipy.spatial import distance
 import torch
@@ -119,10 +120,10 @@ def calculate_eye_aspect_ratio(landmarks: np.ndarray) -> float:
         lr = distance.euclidean(landmarks[TddfaLandmarks.LEFT.value], landmarks[TddfaLandmarks.RIGHT.value])
         return (tb1 + tb2) / (2.0 * lr)
     else: # FaceMesh
-        tb1 = distance.euclidean(landmarks[FaceMeshLandmarks.TOP_LEFT], landmarks[FaceMeshLandmarks.BOTTOM_LEFT])
-        tb2 = distance.euclidean(landmarks[FaceMeshLandmarks.TOP], landmarks[FaceMeshLandmarks.BOTTOM])
-        tb3 = distance.euclidean(landmarks[FaceMeshLandmarks.TOP_RIGHT], landmarks[FaceMeshLandmarks.BOTTOM_RIGHT])
-        lr = distance.euclidean(landmarks[FaceMeshLandmarks.LEFT], landmarks[FaceMeshLandmarks.RIGHT])
+        tb1 = distance.euclidean(landmarks[FaceMeshLandmarks.TOP_LEFT].squeeze(axis=0), landmarks[FaceMeshLandmarks.BOTTOM_LEFT].squeeze(axis=0))
+        tb2 = distance.euclidean(landmarks[FaceMeshLandmarks.TOP].squeeze(axis=0), landmarks[FaceMeshLandmarks.BOTTOM].squeeze(axis=0))
+        tb3 = distance.euclidean(landmarks[FaceMeshLandmarks.TOP_RIGHT].squeeze(axis=0), landmarks[FaceMeshLandmarks.BOTTOM_RIGHT].squeeze(axis=0))
+        lr = distance.euclidean(landmarks[FaceMeshLandmarks.LEFT].squeeze(axis=0), landmarks[FaceMeshLandmarks.RIGHT].squeeze(axis=0))
         return (tb1 + tb2 + tb3) / (3.0 * lr)
 
 
@@ -144,7 +145,7 @@ class IrisWrapper():
         eye, iris = self.model.predict_on_batch(sample)
         eye = eye.detach().cpu().numpy()[:,:,:2] # (B, 71, 3) -> (B, 71, 2)
         iris = iris.detach().cpu().numpy()[:,:,:2] # (B, 5, 3) -> (B, 5, 2)
-        return eye, iris
+        return eye.squeeze(), iris.squeeze() # (71, 2) and (5, 2)
 
     def eye_to_features(self, eye: PathType | np.ndarray) -> dict:
         """Calculates features from an eye patch.
@@ -165,10 +166,10 @@ class IrisWrapper():
             dict: features as a dictionary
         """
         eye_original = image2np(eye, 'RGB')
-        eye = images2np([eye_original.copy()], 'RGB', (64, 64))
+        eye = cv2.resize(eye_original, (64, 64), interpolation=cv2.INTER_AREA)
 
         # (71, 2) eye landmarks xy, (5, 2) iris landmarks xy
-        eye_landmarks, iris_landmarks = self(eye)
+        eye_landmarks, iris_landmarks = self([eye]) # (B, H, W, C)
 
         # (2,) iris diameters hv
         iris_diameters = calculate_iris_diameters(iris_landmarks)
@@ -178,13 +179,13 @@ class IrisWrapper():
         ear = calculate_eye_aspect_ratio(eye_landmarks)
 
         return {
-            'eye_original': eye_original,
-            'eye': eye,
-            'landmarks': eye_landmarks,
-            'iris_landmarks': iris_landmarks,
-            'iris_diameters': iris_diameters,
-            'eyelid_pupil_distances': eyelid_pupil_distances,
-            'ear': ear
+            'eye_original': eye_original, # (H, W, 3)
+            'eye': eye, # (64, 64, 3)
+            'landmarks': eye_landmarks, # (71, 2)
+            'iris_landmarks': iris_landmarks, # (5, 2)
+            'iris_diameters': iris_diameters, # (2,)
+            'eyelid_pupil_distances': eyelid_pupil_distances, # (2,)
+            'ear': ear, # ()
         }
 
 

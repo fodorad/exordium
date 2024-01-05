@@ -1,9 +1,9 @@
 from pathlib import Path
 import pickle
 from math import cos, atan2, asin, sqrt
+import torch
 import cv2
 import numpy as np
-import torch
 from torch import nn
 import onnxruntime
 from exordium import WEIGHT_DIR, PathType

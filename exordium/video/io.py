@@ -8,7 +8,6 @@ import cv2
 import numpy as np
 from scipy.interpolate import interp1d
 import decord
-import moviepy.editor as mpy
 from exordium import PathType
 
 
@@ -74,7 +73,7 @@ def frames2video(frames: PathType | Sequence[str] | Sequence[np.ndarray],
                  fps: int | float = 25.,
                  extension: str = '.png',
                  overwrite: bool = False) -> None:
-    """Saves frames to a video without audio.
+    """Saves frames to a video without audio using moviepy.
 
     Args:
         frames (PathType | Sequence[str] | Sequence[np.ndarray]): frames or path to the frames.
@@ -83,6 +82,11 @@ def frames2video(frames: PathType | Sequence[str] | Sequence[np.ndarray],
         extension (str, optional): frame file extension. Defaults to '.png'.
         overwrite (bool, optional): if True it overwrites existing file. Defaults to False.
     """
+    try:
+        import moviepy.editor as mpy
+    except:
+        raise ImportError('Package moviepy is missing. Install it first via `pip install moviepy`.')
+
     output_path = Path(output_path)
     if output_path.exists() and not overwrite:
         logging.info(f'Video already exists')
@@ -100,7 +104,7 @@ def frames2video(frames: PathType | Sequence[str] | Sequence[np.ndarray],
     logging.info(f'Video is done: {str(output_path)}')
 
 
-def sequence2video(frames: Sequence[np.ndarray],
+def sequence2video(frames: PathType | Sequence[np.ndarray] | Sequence[PathType],
                    output_path: PathType,
                    fps: int | float = 25,
                    overwrite: bool = True) -> None:
@@ -112,25 +116,40 @@ def sequence2video(frames: Sequence[np.ndarray],
         fps (int | float, optional): frame per sec. Defaults to 25.
         overwrite (bool, optional): if True it overwrites the existing file. Defaults to True.
     """
-    height, width = frames[0].shape[:2]
+    if isinstance(frames, (str, os.PathLike)):
+        frames = sorted([str(elem) for elem in list(Path(frames).iterdir())])
+
+    if isinstance(frames[0], np.ndarray):
+        height, width = frames[0].shape[:2]
+        is_file = False
+    else:
+        height, width = cv2.imread(str(frames[0])).shape[:2]
+        is_file = True
 
     output_path = Path(output_path)
     if output_path.exists() and not overwrite:
         logging.info(f'Video already exists')
         return
 
-    fourcc = cv2.VideoWriter_fourcc(*'avc1') # type: ignore
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v') # avc1') # type: ignore
     output_video = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
 
     for idx in range(len(frames)):
-        frame = cv2.cvtColor(frames[idx], cv2.COLOR_RGB2BGR)
+        if is_file:
+            frame = cv2.imread(str(frames[idx]))
+        else:
+            frame = frames[idx]
         output_video.write(frame)
 
     output_video.release()
     logging.info(f'Video is done: {output_path}')
 
 
-def vr2video(video: decord.VideoReader, output_path: PathType, fps: int | float = 25) -> None:
+def vr2video(video: decord.VideoReader,
+             frame_start: int,
+             frame_end: int,
+             output_path: PathType,
+             fps: int | float = 25) -> None:
     """Saves a video to a .mp4 file without audio.
 
     Args:
@@ -142,7 +161,7 @@ def vr2video(video: decord.VideoReader, output_path: PathType, fps: int | float 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v') # type: ignore
     output_video = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
 
-    for idx in range(len(video)):
+    for idx in range(frame_start, min(frame_end, len(video)), 1):
         frame = video[idx]
         frame = cv2.cvtColor(frame.asnumpy(), cv2.COLOR_RGB2BGR)
         output_video.write(frame)
@@ -150,7 +169,10 @@ def vr2video(video: decord.VideoReader, output_path: PathType, fps: int | float 
     output_video.release()
 
 
-def write_frames_with_audio(video: decord.VideoReader, audio_path: PathType, output_video_path: PathType, fps: int | float = 25) -> None:
+def write_frames_with_audio(video: decord.VideoReader,
+                            audio_path: PathType,
+                            output_video_path: PathType,
+                            fps: int | float = 25) -> None:
     """Write frames to a video file with audio.
 
     Args:

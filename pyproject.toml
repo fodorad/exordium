@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "exordium"
-version = "1.2.3"
+version = "1.2.4"
 description = "Collection of utility tools and deep learning methods."
 keywords = ["preprocess", "audio", "video", "text", "multimodal", "detection", "tracking"]
 authors = [
@@ -27,3 +27,32 @@ Source = "https://github.com/fodorad/exordium"
 
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]
+
+[project.optional-dependencies]
+audio = [
+  "opensmile",
+  "librosa",
+  "torchaudio",
+  "transformers"
+]
+text = [
+  "transformers"
+]
+tddfa = [
+  "onnxruntime",
+  "types-PyYAML"
+]
+detection = [
+  "torchvision",
+  "tensorflow",
+  "deepface",
+  "batch-face"
+]
+video = [
+  "moviepy",
+  "pandas",
+  "einops"
+]
+all = [
+  "exordium[audio,video,text,tddfa,detection]"
+]

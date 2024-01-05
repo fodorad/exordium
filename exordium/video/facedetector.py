@@ -202,7 +202,7 @@ def align_face(image: np.ndarray, bb_xyxy: np.ndarray, landmarks: np.ndarray) ->
         Exception: invalid landmark shape.
 
     Returns:
-        dict[str, np.ndarray]: values are the rotated image, rotated_face, rotated landmarks, rotated bb_xyxy, rotation angle in degree, rotation matrix
+        dict[str, np.ndarray]: values are the rotated image, rotated_face, rotated bb_xyxy, rotation angle in degree, rotation matrix
     """
     if landmarks.shape != (5, 2):
         raise Exception(f'Expected RetinaFace landmarks with shape (5, 2) got instead {landmarks.shape}.')
@@ -214,13 +214,18 @@ def align_face(image: np.ndarray, bb_xyxy: np.ndarray, landmarks: np.ndarray) ->
     dY = right_eye_y - left_eye_y
     dX = right_eye_x - left_eye_x
     rotation_degree = np.degrees(np.arctan2(dY, dX)) - 180
-    center = (int((left_eye_x + right_eye_x) // 2),
-              int((left_eye_y + right_eye_y) // 2))
 
-    R = cv2.getRotationMatrix2D(center, rotation_degree, 1.)
+    height, width = image.shape[:2]
+    image_center = (width//2, height//2)
+    R = cv2.getRotationMatrix2D(image_center, rotation_degree, 1.0)
+    abs_cos = abs(R[0,0])
+    abs_sin = abs(R[0,1])
+    bound_w = int(height * abs_sin + width * abs_cos)
+    bound_h = int(height * abs_cos + width * abs_sin)
+    R[0, 2] += bound_w/2 - image_center[0]
+    R[1, 2] += bound_h/2 - image_center[1]
+    rotated_image = cv2.warpAffine(image, R, (bound_w, bound_h))
 
-    rotated_image = cv2.warpAffine(image, R, (image.shape[1], image.shape[0]), flags=cv2.INTER_CUBIC)
-    rotated_landmarks = rotate_landmarks(landmarks, R)
     rotated_bb_full = rotate_landmarks(xyxy2full(bb_xyxy), R)
     min_x, min_y = np.min(rotated_bb_full, axis=0)
     max_x, max_y = np.max(rotated_bb_full, axis=0)
@@ -230,10 +235,9 @@ def align_face(image: np.ndarray, bb_xyxy: np.ndarray, landmarks: np.ndarray) ->
     return {
         'rotated_image': rotated_image, # (H, W, C)
         'rotated_face': rotated_face, # (H, W, C)
-        'rotated_landmarks': rotated_landmarks, # (5, 2)
         'rotated_bb_xyxy': rotated_bb_xyxy, # (4,)
         'rotation_degree': rotation_degree, # ()
-        'rotation_matrix': R, # (3, 3)
+        'rotation_matrix': R, # (2, 3)
     }
 
 

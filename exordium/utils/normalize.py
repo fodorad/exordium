@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import DataLoader
 
 
-def get_mean_std(loader: DataLoader, ndim: int) -> tuple[torch.Tensor, torch.Tensor]:
+def get_mean_std(dataloader: DataLoader, ndim: int) -> tuple[torch.Tensor, torch.Tensor]:
     """Calculates mean and std values of samples for standardization using a DataLoader object.
 
     VAR[X] = E[X**2] - E[X]**2
@@ -29,9 +29,13 @@ def get_mean_std(loader: DataLoader, ndim: int) -> tuple[torch.Tensor, torch.Ten
         raise NotImplementedError(f'Given ndim {ndim} is not supported.')
 
     dim = ndim_to_dim[ndim]
+    channel_dim = list(set(range(ndim)) - set(dim))[0]
 
-    channels_sum, channels_squared_sum, num_batches = torch.tensor(0), torch.tensor(0), torch.tensor(0)
-    for data, _ in tqdm(loader, total=len(loader)):
+    first_batch, _ = next(iter(dataloader))
+    channel_size = first_batch.shape[channel_dim]
+
+    channels_sum, channels_squared_sum, num_batches = torch.zeros((channel_size,)), torch.zeros((channel_size,)), torch.tensor(0)
+    for data, _ in tqdm(dataloader, total=len(dataloader)):
         channels_sum += torch.mean(data, dim=dim)
         channels_squared_sum += torch.mean(data**2, dim=dim)
         num_batches += 1
