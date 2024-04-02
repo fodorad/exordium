@@ -7,23 +7,57 @@ from scipy.interpolate import interp1d
 from exordium import PathType
 
 
-def read_au(csv_path: PathType) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def read_openface_frame_au(csv_path: PathType, confidence_thr: float = 0.9) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Reads OpenFace output csv file and returns the presence and intensities of facial action units.
 
     Args:
         csv_path (PathType): path to the OpenFace output csv file.
 
     Returns:
-        tuple[np.ndarray, np.ndarray, np.ndarray]: action units of shape (T, 35), timestamps of shape (35,) and success of shape (35,).
+        tuple[np.ndarray, list[str], np.ndarray, np.ndarray]: action units of shape (T, 35), list of action unit names, timestamps of shape (35,) and success of shape (35,).
     """
     if not Path(csv_path).exists():
         raise FileNotFoundError(f'Missing file: {csv_path}')
 
     df = pd.read_csv(csv_path, delimiter=',')
-    data = np.array(df.iloc[:, 679:].values.tolist())
-    timestamp = np.array(df.iloc[:, 2].astype(float).tolist())
-    success = np.array(df.iloc[:, 4].astype(int).tolist())
-    return data, timestamp, success
+    header = df.columns.tolist()
+    au_names = np.array(header[header.index('AU01_r'):])
+    au_values = np.array(df.iloc[:, header.index('AU01_r'):].values.tolist())
+
+    confidence = np.array(df.iloc[:, header.index('confidence')].astype(float).tolist())
+    success = confidence > confidence_thr
+    au_values = au_values[success,:]
+
+    if au_values.shape[0] == 0:
+        print('No valid data... skip')
+        return None, None
+    elif au_values.shape[0] > 1:
+        print('More than one face detected. Select the biggest bb...')
+        x = np.array(df.iloc[:, header.index('x_0'):header.index('x_67')].values.tolist())[success,:]
+        y = np.array(df.iloc[:, header.index('y_0'):header.index('y_67')].values.tolist())[success,:]
+
+        max_ind = 0
+        max_value = 0
+        for i in range(x.shape[0]):
+            x_i = x[i,:]
+            y_i = y[i,:]
+            bb_x_min, bb_x_max = x_i.min(), x_i.max()
+            bb_y_min, bb_y_max = y_i.min(), y_i.max()
+            bb_w = bb_x_max - bb_x_min
+            bb_h = bb_y_max - bb_y_min
+            max_i = max(bb_w, bb_h)
+            if max_value < max_i:
+                max_value = max_i
+                max_ind = i
+
+        au_values = au_values[max_ind,:]
+    else:
+        au_values = au_values[0,:]
+
+    if au_values.shape != (35,):
+        raise ValueError(f'Expected shape is (35,) got instead {au_values.shape}')
+
+    return au_values, au_names
 
 
 def action_unit_interpolation(data: np.ndarray, success: np.ndarray, thr: int = 50) -> np.ndarray:
@@ -96,17 +130,23 @@ def extract_openface_singularity(input_path: PathType,
     """
     if Path(input_path).suffix.lower() in ['.jpeg', '.jpg', '.png']:
         binary = 'FaceLandmarkImg'
+        source = '-f'
+    elif (Path(input_path).is_dir() and any([elem.suffix in ['.jpeg', '.jpg', '.png'] for elem in Path(input_path).glob('*')])):
+        binary = 'FaceLandmarkImg'
+        source = '-fdir'
     elif not single_person:
         binary = 'FaceLandmarkVidMulti'
+        source = '-f'
     else:
         binary = 'FeatureExtraction'
+        source = '-f'
 
     output_dir = Path(output_dir).resolve()
 
     if output_dir.exists():
         return
 
-    CMD = f'singularity exec {singularity_args} {str(singularity_container)} tools/OpenFace/build/bin/{binary} -f {str(input_path)} -nomask -out_dir {str(output_dir)}'
+    CMD = f'singularity exec {singularity_args} {str(singularity_container)} tools/OpenFace/build/bin/{binary} {source} {str(input_path)} -nomask -out_dir {str(output_dir)}'
     logging.info(CMD)
     os.system(CMD)
 

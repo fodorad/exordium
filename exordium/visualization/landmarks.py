@@ -8,13 +8,14 @@ from exordium.video.bb import xywh2xyxy
 from exordium.video.io import frames2video
 from exordium.video.detection import Detection, FrameDetections, VideoDetections, Track
 
+
 AXES_COLOR = [("x", (255, 0, 0)), ("y", (0, 255, 0)), ("z", (0, 0, 255))]
 
 
-def visualize_detection(image: np.ndarray,
-                        bb_xyxy: np.ndarray,
-                        probability: float,
-                        output_path: PathType | None = None) -> np.ndarray:
+def visualize_bb(image: np.ndarray,
+                 bb_xyxy: np.ndarray,
+                 probability: float,
+                 output_path: PathType | None = None) -> np.ndarray:
     if bb_xyxy.shape != (4,):
         raise Exception(f'Expected bounding box with shape (4,) got istead {bb_xyxy.shape}.')
 
@@ -172,7 +173,7 @@ def visualize_detection(detection: Detection,
                         output_path: PathType | None = None,
                         show_indices: bool = False):
     return visualize_landmarks(
-        detection.frame,
+        detection.frame(),
         detection.landmarks,
         output_path,
         show_indices
