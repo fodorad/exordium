@@ -43,6 +43,7 @@ Collection of preprocessing functions and deep learning methods.
 * 3D headpose
 * 2D landmarks
 * gaze
+* saliency maps
 * dataframes to images
 
 # Setup
