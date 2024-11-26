@@ -2,7 +2,7 @@ import unittest
 from exordium.text.bert import BertWrapper
 
 
-class SmileTestCase(unittest.TestCase):
+class BertTestCase(unittest.TestCase):
 
     def setUp(self):
         self.model = BertWrapper()

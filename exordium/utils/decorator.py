@@ -4,9 +4,13 @@ import pickle
 from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Type
+from functools import wraps
 import numpy as np
 from exordium import PathType
 from exordium.video.detection import FrameDetections, VideoDetections, Track
+
+
+TIMING_ENABLED = False
 
 
 def timer(func):
@@ -18,11 +22,17 @@ def timer(func):
 
 
 def timer_with_return(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
-        before = time.time()
-        val = func(*args, **kwargs)
-        print('Function took:', np.round(time.time()-before, decimals=3), 'seconds.')
-        return val
+        if TIMING_ENABLED:
+            start_time = time.time()
+            result = func(*args, **kwargs)
+            end_time = time.time()
+            execution_time = end_time - start_time
+            print(f"Execution time of {func.__name__}: {execution_time:.6f} seconds")
+            return result
+        else:
+            return func(*args, **kwargs)
     return wrapper
 
 

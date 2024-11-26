@@ -1,6 +1,11 @@
-import toml
 from os import PathLike
 from pathlib import Path
+from importlib.metadata import version
+
+try:
+    __version__ = version("exordium")
+except Exception:
+    __version__ = "unknown"
 
 # Module level constants
 PROJECT_ROOT = Path(__file__).parents[1]
@@ -9,9 +14,6 @@ TOOL_ROOT = PROJECT_ROOT / 'tools'
 RESOURCE_DIR = PROJECT_ROOT / 'resources'
 DATA_DIR = PROJECT_ROOT / 'data'
 WEIGHT_DIR = Path().home() / '.cache' / 'torch' / 'hub' / 'checkpoints'
-
-pyproject_data = toml.load(PROJECT_ROOT / 'pyproject.toml')
-__version__ = pyproject_data['project']['version']
 
 # Type aliases
 PathType = str | PathLike

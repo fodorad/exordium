@@ -4,7 +4,7 @@ from exordium.audio.io import load_audio_from_video
 from exordium.audio.wav2vec import Wav2vec2Wrapper
 
 
-class SmileTestCase(unittest.TestCase):
+class Wav2vecTestCase(unittest.TestCase):
 
     def setUp(self):
         self.wav2vec2 = Wav2vec2Wrapper()

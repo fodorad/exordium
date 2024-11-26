@@ -5,7 +5,6 @@ from typing import Callable, Self, Any
 from pathlib import Path
 from tqdm import tqdm
 import numpy as np
-from deepface import DeepFace
 from exordium import PathType
 from exordium.video.io import interpolate_1d, image2np
 from exordium.video.bb import iou_xywh
@@ -181,15 +180,19 @@ class Tracker(ABC):
     def select_topk_biggest_bb_tracks(self, top_k: int = 1) -> Self:
         sorted_tracks: list[tuple[int, Track]] = sorted(
             [(track_id, track) for track_id, track in self.selected_tracks.items()],
-            key=lambda x: x[1].bb_size(),
+            key=lambda x: x[1].bb_size(extra_percent=0.),
             reverse=True
         )
         self._selected_tracks = {track_id: track for track_id, track in sorted_tracks[:top_k]}
         return self
 
-    def get_center_track(self) -> Track:
-        return sorted([track for _, track in self.selected_tracks.items()],
-                       key=lambda x: np.linalg.norm(x.center() - x.first_detection().frame_center()))[0]
+    def get_center_track(self) -> Track | None:
+        sorted_tracks = sorted([track for _, track in self.selected_tracks.items()],
+                                key=lambda x: np.linalg.norm(x.center() - x.first_detection().frame_center()))
+        if len(sorted_tracks) > 0:
+            return sorted_tracks[0]
+        else:
+            return None
 
 
 class IouTracker(Tracker):
@@ -254,6 +257,7 @@ class DeepFaceTracker(Tracker):
         Returns:
             tuple[bool, Track, Track]: whether merge or not, keep track, drop track.
         """
+        from deepface import DeepFace
         no1, no2 = (track_1, track_2) if track_1.is_started_earlier(track_2) else (track_2, track_1)
         detections_1: list[Detection] = no1.sample(self.sample)
         detections_2: list[Detection] = no2.sample(self.sample)

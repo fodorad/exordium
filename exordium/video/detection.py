@@ -64,6 +64,10 @@ class Detection(ABC):
     def bb_crop(self) -> np.ndarray:
         """Crop the bounding box area from the frame."""
 
+    @abstractmethod
+    def bb_crop_wide(self, extra_space: float = 1.5) -> np.ndarray:
+        """Crop a wider bounding box area from the frame."""
+
     def __eq__(self, other) -> bool:
         if not isinstance(other, Detection):
             return False
@@ -93,6 +97,11 @@ class DetectionFromImage(Detection):
                         mid=xywh2midwh(self.bb_xywh)[:2],
                         bb_size=max(self.bb_xywh[2:]))
 
+    def bb_crop_wide(self, extra_space: float = 1.5) -> np.ndarray:
+        return crop_mid(image=self.frame(),
+                        mid=xywh2midwh(self.bb_xywh)[:2],
+                        bb_size=np.rint(max(self.bb_xywh[2:]) * extra_space).astype(int))
+
 
 @dataclass(frozen=True, kw_only=True, eq=False)
 class DetectionFromVideo(Detection):
@@ -111,6 +120,11 @@ class DetectionFromVideo(Detection):
         return crop_mid(image=self.frame(vr),
                         mid=xywh2midwh(self.bb_xywh)[:2],
                         bb_size=max(self.bb_xywh[2:]))
+
+    def bb_crop_wide(self, vr: VideoReader | None = None, extra_space: float = 1.5) -> np.ndarray:
+        return crop_mid(image=self.frame(vr),
+                        mid=xywh2midwh(self.bb_xywh)[:2],
+                        bb_size=np.rint(max(self.bb_xywh[2:]) * extra_space).astype(int))
 
     def frame_center(self, vr: VideoReader | None = None) -> np.ndarray:
         vr = vr or self._create_vr()
@@ -134,7 +148,14 @@ class DetectionFromTensor(Detection):
         return np.rint(np.array([width / 2, height / 2])).astype(int)
 
     def bb_crop(self) -> np.ndarray:
-        return crop_mid(image=self.frame(), mid=xywh2midwh(self.bb_xywh)[:2], bb_size=max(self.bb_xywh[2:]))
+        return crop_mid(image=self.frame(),
+                        mid=xywh2midwh(self.bb_xywh)[:2],
+                        bb_size=max(self.bb_xywh[2:]))
+
+    def bb_crop_wide(self, extra_space: float = 1.5) -> np.ndarray:
+        return crop_mid(image=self.frame(),
+                        mid=xywh2midwh(self.bb_xywh)[:2],
+                        bb_size=np.rint(max(self.bb_xywh[2:]) * extra_space).astype(int))
 
 
 class DetectionFactory:
@@ -471,7 +492,7 @@ class Track:
                f'from {self.first_detection().frame_id} to {self.last_detection().frame_id}.'
 
     def __iter__(self):
-        return self
+        return iter(self.detections)
 
     def __next__(self):
         if self.index < len(self.detections):

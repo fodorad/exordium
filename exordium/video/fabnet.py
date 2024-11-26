@@ -12,7 +12,6 @@ from exordium.utils.ckpt import download_file
 from exordium.video.io import images2np, batch_iterator
 from exordium.video.detection import Track
 from exordium.utils.decorator import load_or_create
-# from exordium.utils.ckpt import download_file
 
 
 class FabNetWrapper:
@@ -28,7 +27,7 @@ class FabNetWrapper:
         self.local_path = WEIGHT_DIR / 'fabnet' / Path(self.remote_path).name
         download_file(self.remote_path, self.local_path)
         self.device = f'cuda:{gpu_id}' if gpu_id >= 0 else 'cpu'
-        state_dict = torch.load(str(self.local_path))
+        state_dict = torch.load(str(self.local_path), weights_only=False)
         self.model = FrontaliseModelMasks_wider()
         self.model.load_state_dict(state_dict['state_dict_model'])
         self.model.to(self.device)
@@ -83,11 +82,11 @@ class FabNetWrapper:
         return ids, features
 
     @load_or_create('pkl')
-    def track_to_feature(self, track: Track, batch_size: int = 30, **kwargs) -> np.ndarray:
+    def track_to_feature(self, track: Track, batch_size: int = 30, **kwargs) -> tuple[list, np.ndarray]:
         ids, features = [], []
         for subset in batch_iterator(track, batch_size):
             ids += [detection.frame_id for detection in subset if not detection.is_interpolated]
-            samples = [detection.bb_crop() for detection in subset if not detection.is_interpolated] # (B, H, W, C)
+            samples = [detection.bb_crop_wide() for detection in subset if not detection.is_interpolated] # (B, H, W, C)
             feature = self(samples)
             features.append(feature)
         features = np.concatenate(features, axis=0)

@@ -14,7 +14,7 @@ class BertWrapper():
                        padding: bool | str = True,
                        max_length: int | None = None,
                        return_tensors='pt'):
-        """Extracts bert hidden states from text.
+        """Extracts BERT hidden states from text.
         https://huggingface.co/transformers/model_doc/bert.html
 
         Args:

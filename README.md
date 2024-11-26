@@ -12,6 +12,7 @@ Collection of preprocessing functions and deep learning methods.
 * openSMILE feature extraction
 * spectrogram calculation
 * Wav2Vec2 feature extraction
+* CLAP feature extraction
 
 ## Video
 * frequently used io for videos and frames
@@ -27,16 +28,25 @@ Collection of preprocessing functions and deep learning methods.
 * FAb-Net feature extraction
 * OpenFace feature extraction
 * R2+1D feature extraction
+* Robust Video Matting background removal
+* SWIN transformer feature extraction
+* FaceMesh landmark estimation
+* CLIP feature extraction
+* OpenGraphAU action unit estimation
+* 
 
 ## Text
 * BERT feature extraction
 * RoBERTa feature extraction
+* XML-RoBERTa feature extraction
+* Whisper fast speech-to-text
 
 ## Utils
 * parallel processing
 * io decorators
 * loss functions
 * normalization
+* padding/truncating
 
 ## Visualization
 * graphs
@@ -100,11 +110,11 @@ LinMulT is trained for Big Five personality trait estimation using the First Imp
 * code: https://github.com/fodorad/PersonalityLinMulT
 
 # What's next
-* Add support for Action Unit detection (OpenGraphAU)
 * Add support for Blink estimation (DenseNet121, LinT, BlinkLinMulT)
 * Add support for Personality trait estimation (PersonalityLinMulT)
 
 # Updates
+* 1.3.0: Add support for OpenGraphAU, FaceMesh, SWIM, RVM, XML-RoBERTa, CLIP, CLAP.
 * 1.2.0: Add support for L2CS-Net gaze estimation.
 * 1.1.0: PyPI publish.
 * 1.0.0: Release version.

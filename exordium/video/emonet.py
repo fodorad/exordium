@@ -30,7 +30,7 @@ class EmoNetWrapper():
         self.remote_path = 'https://github.com/fodorad/exordium/releases/download/v1.0.0/emonet_weights.pth'
         self.local_path = WEIGHT_DIR / 'emonet' / Path(self.remote_path).name
         download_file(self.remote_path, self.local_path)
-        state_dict = torch.load(str(self.local_path), map_location='cpu')
+        state_dict = torch.load(str(self.local_path), map_location='cpu', weights_only=True)
 
         self.device = f'cuda:{gpu_id}' if gpu_id != -1 else 'cpu'
         self.model = EmoNet(n_expression=8)

@@ -2,7 +2,7 @@ import unittest
 from exordium.text.roberta import RobertaWrapper
 
 
-class SmileTestCase(unittest.TestCase):
+class RobertaTestCase(unittest.TestCase):
 
     def setUp(self):
         self.model = RobertaWrapper()
