@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "exordium"
-version = "1.4.0"
+version = "1.4.1"
 description = "Collection of utility tools and deep learning methods."
 keywords = ["preprocess", "audio", "video", "text", "multimodal", "detection", "tracking"]
 authors = [
@@ -58,7 +58,8 @@ video = [
   "pandas",
   "einops",
   "timm",
-  "mediapipe"
+  "mediapipe",
+  "open_clip_torch"
 ]
 all = [
   "exordium[audio,video,text,tddfa,detection]"
