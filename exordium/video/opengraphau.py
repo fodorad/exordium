@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Sequence
 from PIL import Image
+from tqdm import tqdm
+import cv2
 import torch
 import torch.nn as nn
 import math
@@ -131,11 +133,25 @@ class OpenGraphAuWrapper:
         return feature
 
     @load_or_create('pkl')
+    def dir_to_feature(self, img_paths: list[str], batch_size: int = 30, verbose: bool = False, **kwargs) -> np.ndarray:
+        ids, features = [], []
+        load_rgb = lambda image_path: cv2.cvtColor(cv2.imread(str(image_path), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+        for index in tqdm(range(0, len(img_paths), batch_size), total=np.ceil(len(img_paths)/batch_size).astype(int), desc='OpenGraphAU extraction', disable=not verbose):
+            batch_paths = img_paths[index:index+batch_size]
+            ids += [int(p.stem) for p in batch_paths]
+            samples = [load_rgb(image_path) for image_path in batch_paths]
+            feature = self(samples)
+            features.append(feature)
+        features = np.concatenate(features, axis=0)
+        return ids, features
+
+    @load_or_create('pkl')
     def track_to_feature(self, track: Track, batch_size: int = 30, **kwargs) -> tuple[list, np.ndarray]:
         ids, features = [], []
         for subset in batch_iterator(track, batch_size):
             ids += [detection.frame_id for detection in subset if not detection.is_interpolated]
             samples = [detection.bb_crop_wide() for detection in subset if not detection.is_interpolated] # (B, H, W, C)
+            if len(samples) == 0: continue # all samples are interpolated, skip
             feature = self(samples)
             features.append(feature)
         features = np.concatenate(features, axis=0)

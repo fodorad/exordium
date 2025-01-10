@@ -13,6 +13,7 @@ Collection of preprocessing functions and deep learning methods.
 * spectrogram calculation
 * Wav2Vec2 feature extraction
 * CLAP feature extraction
+* WavLM feature extraction
 
 ## Video
 * frequently used io for videos and frames
@@ -33,7 +34,6 @@ Collection of preprocessing functions and deep learning methods.
 * FaceMesh landmark estimation
 * CLIP feature extraction
 * OpenGraphAU action unit estimation
-* 
 
 ## Text
 * BERT feature extraction

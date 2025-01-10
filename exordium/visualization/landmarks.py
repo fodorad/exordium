@@ -58,21 +58,22 @@ def save_detections_to_video(video_detections: VideoDetections, frame_dir: str |
 
 
 
-def save_track_target_to_images(track: Track, output_dir: str | Path, bb_size: int = 224, fps: int = 30, sample_every_n: int = 1, verbose: bool = False) -> None:
+def save_track_target_to_images(track: Track, output_dir: str | Path, bb_size: int = 224, fps: int = 30, sample_every_n: int = 1, save_video: bool = False, verbose: bool = False) -> None:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for i, detection in tqdm(enumerate(track.detections), desc='Save track targets', disable=not verbose):
         if i % sample_every_n != 0: continue
-        image = detection.crop()
+        image = detection.bb_crop()
         if bb_size != -1:
             image = cv2.resize(image, (bb_size, bb_size), interpolation=cv2.INTER_AREA)
         cv2.imwrite(str(output_dir / f'{detection.frame_id:06d}.png'), image)
 
-    frames2video(output_dir, output_dir.parent / f'{output_dir.stem}.mp4', fps)
+    if save_video:
+        frames2video(output_dir, output_dir.parent / f'{output_dir.stem}.mp4', fps)
 
 
-def save_track_with_context_to_video(track: Track, frame_dir: str | Path, output_dir: str | Path, fps: int = 30, sample_every_n: int = 1, verbose: bool = False) -> None:
+def save_track_with_context_to_video(track: Track, frame_dir: str | Path, output_dir: str | Path, fps: int = 30, sample_every_n: int = 1, save_video: bool = False, verbose: bool = False) -> None:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -92,7 +93,8 @@ def save_track_with_context_to_video(track: Track, frame_dir: str | Path, output
         cv2.rectangle(frame, (detection.bb_xyxy[0], detection.bb_xyxy[1]), (detection.bb_xyxy[2], detection.bb_xyxy[3]), (0, 255, 0), 2)
         cv2.imwrite(str(Path(output_dir) / f'{frame_id:06d}.png'), frame)
 
-    frames2video(output_dir, output_dir.parent / f'{output_dir.stem}.mp4', fps)
+    if save_video:
+        frames2video(output_dir, output_dir.parent / f'{output_dir.stem}.mp4', fps)
 
 
 def visualize_landmarks(image: np.ndarray,

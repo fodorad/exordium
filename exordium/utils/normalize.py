@@ -1,9 +1,12 @@
+import json
+from pathlib import Path
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
+from exordium import PathType
 
 
-def get_mean_std(dataloader: DataLoader, ndim: int) -> tuple[torch.Tensor, torch.Tensor]:
+def get_mean_std(dataloader: DataLoader, ndim: int, verbose: bool = True) -> tuple[torch.Tensor, torch.Tensor]:
     """Calculates mean and std values of samples for standardization using a DataLoader object.
 
     VAR[X] = E[X**2] - E[X]**2
@@ -35,7 +38,7 @@ def get_mean_std(dataloader: DataLoader, ndim: int) -> tuple[torch.Tensor, torch
     channel_size = first_batch.shape[channel_dim]
 
     channels_sum, channels_squared_sum, num_batches = torch.zeros((channel_size,)), torch.zeros((channel_size,)), torch.tensor(0)
-    for data, _ in tqdm(dataloader, total=len(dataloader)):
+    for data, _ in tqdm(dataloader, total=len(dataloader), desc='Calculate MEAN/STD values', disable=not verbose):
         channels_sum += torch.mean(data, dim=dim)
         channels_squared_sum += torch.mean(data**2, dim=dim)
         num_batches += 1
@@ -56,4 +59,43 @@ def standardization(x: torch.Tensor, mean: torch.Tensor, std: torch.Tensor) -> t
     Returns:
         torch.Tensor: standardized data.
     """
-    return (torch.FloatTensor(x) - mean) / (std + torch.finfo(torch.float32).eps)
+    return (x - mean) / (std + torch.finfo(torch.float32).eps)
+
+
+def save_params_to_json(mean: torch.Tensor, std: torch.Tensor, file_path: PathType):
+    """
+    Save standardization params to a JSON file.
+
+    Args:
+        mean (torch.Tensor): First vector to save.
+        std (torch.Tensor): Second vector to save.
+        file_path (PathType): Path to the JSON file.
+    """
+    data = {
+        "mean": mean.tolist(),
+        "std": std.tolist()
+    }
+
+    Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+
+    with open(str(file_path), 'w') as f:
+        json.dump(data, f)
+
+
+def load_params_from_json(file_path: PathType) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Load standardization params from a JSON file.
+
+    Args:
+        file_path (PathType): Path to the JSON file.
+
+    Returns:
+        Tuple[torch.Tensor, torch.Tensor]: Loaded params as PyTorch tensors.
+    """
+    with open(str(file_path), 'r') as f:
+        data = json.load(f)
+
+    mean = torch.FloatTensor(data["mean"])
+    std = torch.FloatTensor(data["std"])
+
+    return mean, std

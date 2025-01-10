@@ -67,11 +67,10 @@ class FabNetWrapper:
 
         return feature
 
-    @load_or_create('npy')
-    def dir_to_feature(self, frame_dir: list[str], batch_size: int = 30, verbose: bool = False, **kwargs) -> np.ndarray:
-        img_paths = sorted(list(Path(frame_dir).glob('*.png')))
+    @load_or_create('pkl')
+    def dir_to_feature(self, img_paths: list[str], batch_size: int = 30, verbose: bool = False, **kwargs) -> np.ndarray:
         ids, features = [], []
-        preprocess = lambda image_path: cv2.resize(cv2.imread(str(image_path), cv2.IMREAD_UNCHANGED), (256, 256), interpolation=cv2.INTER_AREA)
+        preprocess = lambda image_path: cv2.resize(cv2.imread(str(image_path), cv2.IMREAD_COLOR), (256, 256), interpolation=cv2.INTER_AREA)
         for index in tqdm(range(0, len(img_paths), batch_size), total=np.ceil(len(img_paths)/batch_size).astype(int), desc='FAb-Net extraction', disable=not verbose):
             batch_paths = img_paths[index:index+batch_size]
             ids += [int(p.stem) for p in batch_paths]
@@ -80,13 +79,14 @@ class FabNetWrapper:
             features.append(feature)
         features = np.concatenate(features, axis=0)
         return ids, features
-
+ 
     @load_or_create('pkl')
     def track_to_feature(self, track: Track, batch_size: int = 30, **kwargs) -> tuple[list, np.ndarray]:
         ids, features = [], []
         for subset in batch_iterator(track, batch_size):
             ids += [detection.frame_id for detection in subset if not detection.is_interpolated]
             samples = [detection.bb_crop_wide() for detection in subset if not detection.is_interpolated] # (B, H, W, C)
+            if len(samples) == 0: continue # all samples are interpolated, skip
             feature = self(samples)
             features.append(feature)
         features = np.concatenate(features, axis=0)
