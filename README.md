@@ -38,6 +38,7 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 pip install exordium          # base only
 pip install exordium[all]     # all optional dependencies
 pip install exordium[audio]   # audio extras only
+pip install exordium[face]    # face extras only
 pip install exordium[video]   # video extras only
 pip install exordium[text]    # text extras only
 ```

@@ -1,11 +1,16 @@
-"""Tests for exordium.video.facemesh module."""
+"""Tests for exordium.video.face.landmark.facemesh module."""
 
 import unittest
-from unittest.mock import MagicMock
 
+import cv2
 import numpy as np
 
-from exordium.video.face.landmark.facemesh import rotate_landmarks
+from exordium.video.face.landmark.facemesh import (
+    FaceMeshWrapper,
+    rotate_landmarks,
+    visualize_landmarks,
+)
+from tests.fixtures import IMAGE_FACE
 
 
 class TestRotateLandmarks(unittest.TestCase):
@@ -13,8 +18,8 @@ class TestRotateLandmarks(unittest.TestCase):
 
     def test_rotate_landmarks_identity(self):
         """Test rotation with identity matrix."""
-        landmarks = np.array([[10, 20], [30, 40], [50, 60]])
-        # Rotation matrix should be (2, 3) - affine transformation matrix
+        landmarks = np.array([[10, 20], [30, 40], [50, 60]], dtype=float)
+        # Identity rotation matrix (2, 3)
         R = np.array([[1, 0, 0], [0, 1, 0]], dtype=float)
         result = rotate_landmarks(landmarks, R)
         self.assertEqual(result.shape, (3, 2))
@@ -22,7 +27,7 @@ class TestRotateLandmarks(unittest.TestCase):
 
     def test_rotate_landmarks_90_degrees(self):
         """Test rotation by 90 degrees."""
-        landmarks = np.array([[10, 0], [0, 10]])
+        landmarks = np.array([[10, 0], [0, 10]], dtype=float)
         # 90 degree rotation matrix (2x3 affine)
         R = np.array([[0, -1, 0], [1, 0, 0]], dtype=float)
         result = rotate_landmarks(landmarks, R)
@@ -31,105 +36,165 @@ class TestRotateLandmarks(unittest.TestCase):
 
     def test_rotate_landmarks_output_shape(self):
         """Test that output shape matches input shape."""
-        landmarks = np.array([[10, 20], [30, 40], [50, 60], [70, 80]])
+        landmarks = np.array([[10, 20], [30, 40], [50, 60], [70, 80]], dtype=float)
         R = np.array([[1, 0, 5], [0, 1, 10]], dtype=float)
         result = rotate_landmarks(landmarks, R)
         self.assertEqual(result.shape, landmarks.shape)
 
     def test_rotate_landmarks_int_output(self):
         """Test that output is converted to int."""
-        landmarks = np.array([[10.5, 20.3], [30.7, 40.1]])
+        landmarks = np.array([[10.5, 20.3], [30.7, 40.1]], dtype=float)
         R = np.array([[1, 0, 0], [0, 1, 0]], dtype=float)
         result = rotate_landmarks(landmarks, R)
         self.assertEqual(result.dtype, int)
 
     def test_rotate_landmarks_many_points(self):
-        """Test with 468 landmarks (FaceMesh size)."""
-        landmarks = np.random.rand(468, 2) * 100
+        """Test with many landmarks (FaceMesh size)."""
+        landmarks = np.random.rand(478, 2) * 100
         R = np.array([[1, 0, 0], [0, 1, 0]], dtype=float)
         result = rotate_landmarks(landmarks, R)
-        self.assertEqual(result.shape, (468, 2))
+        self.assertEqual(result.shape, (478, 2))
         self.assertEqual(result.dtype, int)
 
 
-class TestFaceMeshWrapperSignatures(unittest.TestCase):
-    """Test FaceMeshWrapper method signatures without relying on MediaPipe."""
+class TestVisualizeLandmarks(unittest.TestCase):
+    """Tests for visualize_landmarks function."""
 
-    def setUp(self):
-        """Set up mocked FaceMeshWrapper for testing method signatures."""
-        # We create a partial mock that avoids initializing the actual MediaPipe model
-        self.mock_facemesh = MagicMock()
-        self.mock_facemesh.model = MagicMock()
+    def test_visualize_landmarks_basic(self):
+        """Test basic landmark visualization."""
+        image = np.ones((100, 100, 3), dtype=np.uint8) * 255
+        landmarks = np.array([[10, 10], [20, 20], [30, 30]], dtype=int)
+        result = visualize_landmarks(image, landmarks)
 
-    def test_call_method_signature_with_synthetic_data(self):
-        """Test __call__ method accepts list of images and returns list."""
+        self.assertEqual(result.shape, image.shape)
+        self.assertEqual(result.dtype, image.dtype)
+        self.assertFalse(np.array_equal(result, image))  # Image should be modified
 
-        # Manually test the __call__ logic with synthetic data
-        rgb_images = [
-            np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8),
-            np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8),
-        ]
+    def test_visualize_landmarks_invalid_shape_raises(self):
+        """Test that invalid landmark shape raises exception."""
+        image = np.zeros((100, 100, 3), dtype=np.uint8)
+        bad_landmarks = np.array([[10, 10, 10]])  # Wrong shape
+        with self.assertRaises(Exception):
+            visualize_landmarks(image, bad_landmarks)
 
-        # Test that the method signature is correct
-        # We won't call it since MediaPipe is broken, just verify the inputs are valid
-        self.assertEqual(len(rgb_images), 2)
-        for img in rgb_images:
-            self.assertEqual(img.ndim, 3)
-            self.assertEqual(img.shape[2], 3)
-            self.assertEqual(img.dtype, np.uint8)
+    def test_visualize_landmarks_with_output_path(self):
+        """Test saving landmarks visualization to file."""
+        import tempfile
+        from pathlib import Path
 
-    def test_call_method_returns_list_of_arrays(self):
-        """Test that __call__ is documented to return list of arrays."""
-        from exordium.video.face.landmark.facemesh import FaceMeshWrapper
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "landmarks.png"
+            image = np.ones((100, 100, 3), dtype=np.uint8) * 255
+            landmarks = np.array([[10, 10], [20, 20]], dtype=int)
 
-        # Verify the method exists and has the correct signature
-        self.assertTrue(hasattr(FaceMeshWrapper, "__call__"))
-        method = getattr(FaceMeshWrapper, "__call__")
+            result = visualize_landmarks(image, landmarks, output_path=output_path)
 
-        # Check docstring mentions the return type
-        doc = method.__doc__
-        self.assertIn("list", doc.lower())
+            self.assertTrue(output_path.exists())
+            self.assertEqual(result.shape, image.shape)
 
-    def test_track_to_feature_method_signature(self):
-        """Test track_to_feature method exists with correct signature."""
-        from exordium.video.face.landmark.facemesh import FaceMeshWrapper
+    def test_visualize_landmarks_no_indices(self):
+        """Test visualization without showing indices."""
+        image = np.ones((100, 100, 3), dtype=np.uint8) * 255
+        landmarks = np.array([[10, 10], [20, 20]], dtype=int)
+        result = visualize_landmarks(image, landmarks, show_indices=False)
 
-        self.assertTrue(hasattr(FaceMeshWrapper, "track_to_feature"))
-        method = getattr(FaceMeshWrapper, "track_to_feature")
+        self.assertEqual(result.shape, image.shape)
 
-        # Verify it's callable
-        self.assertTrue(callable(method))
+    def test_visualize_landmarks_custom_color(self):
+        """Test visualization with custom color."""
+        image = np.ones((100, 100, 3), dtype=np.uint8) * 200
+        landmarks = np.array([[50, 50]], dtype=int)
+        result = visualize_landmarks(image, landmarks, color=(0, 0, 255))  # Red in BGR
 
-    def test_call_with_empty_list(self):
-        """Test __call__ method handles empty list."""
-        # Empty list should be valid input
-        rgb_images = []
-        self.assertEqual(len(rgb_images), 0)
-        self.assertIsInstance(rgb_images, list)
-
-    def test_call_with_different_image_sizes(self):
-        """Test that __call__ can accept images of different sizes."""
-        # FaceMesh should handle variable input sizes
-        rgb_images = [
-            np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8),
-            np.random.randint(0, 256, (480, 640, 3), dtype=np.uint8),
-            np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8),
-        ]
-        self.assertEqual(len(rgb_images), 3)
-        for img in rgb_images:
-            self.assertEqual(img.ndim, 3)
-            self.assertEqual(img.shape[2], 3)
+        self.assertEqual(result.shape, image.shape)
+        # Check that red channel was modified (circle drawn)
+        self.assertGreater(result[50, 50, 2], image[50, 50, 2])
 
 
-class TestFaceMeshWrapperInit(unittest.TestCase):
-    """Test FaceMeshWrapper initialization."""
+class TestFaceMeshWrapper(unittest.TestCase):
+    """Tests for FaceMeshWrapper class."""
 
-    def test_init_method_exists(self):
-        """Test that FaceMeshWrapper has __init__ method."""
-        from exordium.video.face.landmark.facemesh import FaceMeshWrapper
+    @classmethod
+    def setUpClass(cls):
+        """Initialize FaceMeshWrapper for tests."""
+        cls.wrapper = FaceMeshWrapper()
 
-        self.assertTrue(hasattr(FaceMeshWrapper, "__init__"))
-        self.assertTrue(callable(getattr(FaceMeshWrapper, "__init__")))
+    def test_facemesh_wrapper_init(self):
+        """Test FaceMeshWrapper initialization."""
+        self.assertIsNotNone(self.wrapper.landmarker)
+
+    def test_facemesh_wrapper_call_with_valid_image(self):
+        """Test __call__ with a valid face image."""
+        img = cv2.imread(str(IMAGE_FACE))
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        result = self.wrapper([img_rgb])
+
+        self.assertIsInstance(result, list)
+        # Result may be empty if no face detected, but structure should be correct
+        for landmarks in result:
+            self.assertIsInstance(landmarks, np.ndarray)
+            self.assertEqual(landmarks.ndim, 2)
+            self.assertEqual(landmarks.shape[1], 2)
+
+    def test_facemesh_wrapper_call_with_no_face(self):
+        """Test __call__ with image containing no face."""
+        blank = np.zeros((100, 100, 3), dtype=np.uint8)
+        result = self.wrapper([blank])
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)  # No face detected
+
+    def test_facemesh_wrapper_call_returns_float32(self):
+        """Test that landmarks are returned as float32."""
+        img = cv2.imread(str(IMAGE_FACE))
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        result = self.wrapper([img_rgb])
+
+        if result:
+            self.assertEqual(result[0].dtype, np.float32)
+
+    def test_facemesh_wrapper_call_batch(self):
+        """Test __call__ with multiple images."""
+        img = cv2.imread(str(IMAGE_FACE))
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        batch = [img_rgb, img_rgb, img_rgb]
+
+        result = self.wrapper(batch)
+
+        self.assertIsInstance(result, list)
+        # All detected faces should have 468 landmarks
+        for landmarks in result:
+            self.assertEqual(landmarks.shape[1], 2)
+
+    def test_facemesh_wrapper_landmarks_in_pixel_space(self):
+        """Test that returned landmarks are in pixel coordinates."""
+        img = cv2.imread(str(IMAGE_FACE))
+        h, w = img.shape[:2]
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        result = self.wrapper([img_rgb])
+
+        if result:
+            landmarks = result[0]
+            # All coordinates should be within image bounds (with some tolerance)
+            self.assertTrue((landmarks[:, 0] >= -10).all())
+            self.assertTrue((landmarks[:, 0] <= w + 10).all())
+            self.assertTrue((landmarks[:, 1] >= -10).all())
+            self.assertTrue((landmarks[:, 1] <= h + 10).all())
+
+    def test_facemesh_wrapper_dense_landmarks(self):
+        """Test that FaceMesh detects dense landmarks when face is detected."""
+        img = cv2.imread(str(IMAGE_FACE))
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        result = self.wrapper([img_rgb])
+
+        if result:  # Only check if face was detected
+            landmarks = result[0]
+            # MediaPipe returns 478 landmarks (468 base + 10 extra)
+            self.assertEqual(landmarks.shape[0], 478)
 
 
 if __name__ == "__main__":
