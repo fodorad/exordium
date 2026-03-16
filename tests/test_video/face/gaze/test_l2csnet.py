@@ -194,7 +194,6 @@ class L2csNetTestCase(unittest.TestCase):
 
         # Face looking at camera
         yaw, pitch = self.model.predict_pipeline([self.face_crop], [self.face_roll])
-        mag = np.sqrt(yaw[0] ** 2 + pitch[0] ** 2)
         images = L2csNetWrapper.visualize([self.face_crop], yaw, pitch, [self.face_roll])
         out_path = self.TMP_DIR / "gaze_face_cam.jpg"
         cv2.imwrite(str(out_path), cv2.cvtColor(images[0], cv2.COLOR_RGB2BGR))
@@ -202,7 +201,6 @@ class L2csNetTestCase(unittest.TestCase):
 
         # Face NOT looking at camera
         yaw, pitch = self.model.predict_pipeline([self.nocam_crop], [self.nocam_roll])
-        mag = np.sqrt(yaw[0] ** 2 + pitch[0] ** 2)
         images = L2csNetWrapper.visualize([self.nocam_crop], yaw, pitch, [self.nocam_roll])
         out_path = self.TMP_DIR / "gaze_face_nocam.jpg"
         cv2.imwrite(str(out_path), cv2.cvtColor(images[0], cv2.COLOR_RGB2BGR))
@@ -210,8 +208,6 @@ class L2csNetTestCase(unittest.TestCase):
 
         # Emma - multiple faces
         yaw, pitch = self.model.predict_pipeline(self.emma_crops, self.emma_rolls)
-        for i in range(len(self.emma_crops)):
-            mag = np.sqrt(yaw[i] ** 2 + pitch[i] ** 2)
         images = L2csNetWrapper.visualize(self.emma_crops, yaw, pitch, self.emma_rolls)
         for i, img in enumerate(images):
             out_path = self.TMP_DIR / f"gaze_emma_{i}.jpg"

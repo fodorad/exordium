@@ -1,3 +1,5 @@
+"""Prosody feature extraction with VAD-gated analysis."""
+
 from collections import deque
 
 import numpy as np
@@ -175,9 +177,9 @@ class ProsodyExtractor:
 
         Args:
             audio_chunk: 1D audio signal (mono).
-            min_speech_duration_ms: Minimum speech segment duration in ms (lower = more sensitive).
+            min_speech_duration_ms: Minimum speech segment duration in ms.
             min_silence_duration_ms: Minimum silence between segments in ms.
-            vad_threshold: Minimum voice_ratio (0-1) to classify as "speech active" (default 0.4 = 40%).
+            vad_threshold: Minimum voice_ratio (0-1) to classify as "speech active".
 
         Returns:
             Dict with smoothed pitch, energy, energy_variance, voice_ratio,

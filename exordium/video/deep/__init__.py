@@ -17,3 +17,21 @@ from exordium.video.deep.swin import (
     swin_transformer_small,
     swin_transformer_tiny,
 )
+
+__all__ = [
+    "VisualModelWrapper",
+    "ClipWrapper",
+    "FabNetWrapper",
+    "ResNet",
+    "ResNetWrapper",
+    "resnet18",
+    "resnet34",
+    "resnet50",
+    "resnet101",
+    "resnet152",
+    "SwinTransformer",
+    "SwinWrapper",
+    "swin_transformer_base",
+    "swin_transformer_small",
+    "swin_transformer_tiny",
+]

@@ -1,3 +1,5 @@
+"""Normalization computation utilities."""
+
 import json
 import os
 from pathlib import Path

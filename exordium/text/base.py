@@ -1,3 +1,5 @@
+"""Base class for text encoding models."""
+
 import torch
 import transformers as tfm
 

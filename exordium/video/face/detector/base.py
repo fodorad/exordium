@@ -1,3 +1,5 @@
+"""Base class for face detectors."""
+
 from abc import ABC, abstractmethod
 from pathlib import Path
 

@@ -1,3 +1,5 @@
+"""FabNet facial feature extractor wrapper."""
+
 import logging
 from collections.abc import Sequence
 from pathlib import Path
@@ -138,7 +140,9 @@ class FrontaliseModelMasks_wider(nn.Module):  # pragma: no cover
             conv8,
         )
 
-    def generate_decoder_layers(self, num_input_channels, num_output_channels=2, num_filters=32) -> nn.Sequential:
+    def generate_decoder_layers(
+        self, num_input_channels, num_output_channels=2, num_filters=32
+    ) -> nn.Sequential:
         """Generate decoder layers for the FAb-Net model.
 
         Args:

@@ -1,3 +1,5 @@
+"""Checkpoint utility functions."""
+
 import logging
 import urllib.request
 from pathlib import Path

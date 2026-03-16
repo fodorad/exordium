@@ -147,7 +147,6 @@ class UnigazeTestCase(unittest.TestCase):
 
         # Face looking at camera
         yaw, pitch = self.model.predict_pipeline([self.face_crop])
-        mag = np.sqrt(yaw[0] ** 2 + pitch[0] ** 2)
         images = UnigazeWrapper.visualize([self.face_crop], yaw, pitch)
         out = self.TMP_DIR / "norot_face_cam.jpg"
         cv2.imwrite(str(out), cv2.cvtColor(images[0], cv2.COLOR_RGB2BGR))
@@ -155,7 +154,6 @@ class UnigazeTestCase(unittest.TestCase):
 
         # Face NOT looking at camera
         yaw, pitch = self.model.predict_pipeline([self.nocam_crop])
-        mag = np.sqrt(yaw[0] ** 2 + pitch[0] ** 2)
         images = UnigazeWrapper.visualize([self.nocam_crop], yaw, pitch)
         out = self.TMP_DIR / "norot_face_nocam.jpg"
         cv2.imwrite(str(out), cv2.cvtColor(images[0], cv2.COLOR_RGB2BGR))
@@ -163,8 +161,6 @@ class UnigazeTestCase(unittest.TestCase):
 
         # Emma - multiple faces
         yaw, pitch = self.model.predict_pipeline(self.emma_crops)
-        for i in range(len(self.emma_crops)):
-            mag = np.sqrt(yaw[i] ** 2 + pitch[i] ** 2)
         images = UnigazeWrapper.visualize(self.emma_crops, yaw, pitch)
         for i, img in enumerate(images):
             out = self.TMP_DIR / f"norot_emma_{i}.jpg"
@@ -176,8 +172,6 @@ class UnigazeTestCase(unittest.TestCase):
 
         # Face looking at camera
         yaw, pitch = self.model.predict_pipeline([self.face_crop], [self.face_roll])
-        mag = np.sqrt(yaw[0] ** 2 + pitch[0] ** 2)
-
         images = UnigazeWrapper.visualize([self.face_crop], yaw, pitch, [self.face_roll])
         out = self.TMP_DIR / "rot_face_cam.jpg"
         cv2.imwrite(str(out), cv2.cvtColor(images[0], cv2.COLOR_RGB2BGR))
@@ -185,8 +179,6 @@ class UnigazeTestCase(unittest.TestCase):
 
         # Face NOT looking at camera
         yaw, pitch = self.model.predict_pipeline([self.nocam_crop], [self.nocam_roll])
-        mag = np.sqrt(yaw[0] ** 2 + pitch[0] ** 2)
-
         images = UnigazeWrapper.visualize([self.nocam_crop], yaw, pitch, [self.nocam_roll])
         out = self.TMP_DIR / "rot_face_nocam.jpg"
         cv2.imwrite(str(out), cv2.cvtColor(images[0], cv2.COLOR_RGB2BGR))
@@ -194,9 +186,6 @@ class UnigazeTestCase(unittest.TestCase):
 
         # Emma - multiple faces
         yaw, pitch = self.model.predict_pipeline(self.emma_crops, self.emma_rolls)
-        for i in range(len(self.emma_crops)):
-            mag = np.sqrt(yaw[i] ** 2 + pitch[i] ** 2)
-
         images = UnigazeWrapper.visualize(self.emma_crops, yaw, pitch, self.emma_rolls)
         for i, img in enumerate(images):
             out = self.TMP_DIR / f"rot_emma_{i}.jpg"

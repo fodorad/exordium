@@ -1,3 +1,5 @@
+"""Wav2Vec2 speech encoding model wrapper."""
+
 from pathlib import Path
 
 import numpy as np

@@ -1,6 +1,15 @@
+"""Gaze estimation utilities and base wrapper class."""
+
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
 import cv2
 import numpy as np
 import torch
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from pathlib import Path
 
 
 def rotate_vector(xy: np.ndarray, rotation_degree: float) -> np.ndarray:
@@ -342,13 +351,6 @@ def visualize_normed_space(
     face_out = cv2.resize(face_out, (target_size, target_size), interpolation=cv2.INTER_AREA)
     image_out[-target_size:, :target_size, :] = face_out
     return image_out
-
-
-# ---------------------------------------------------------------------------
-# GazeWrapper abstract base class
-# ---------------------------------------------------------------------------
-
-from abc import ABC, abstractmethod
 
 
 class GazeWrapper(ABC):

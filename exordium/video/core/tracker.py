@@ -1,3 +1,5 @@
+"""Object tracking utilities."""
+
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path

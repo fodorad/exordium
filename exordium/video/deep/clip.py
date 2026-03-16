@@ -1,3 +1,5 @@
+"""CLIP vision-language model wrapper."""
+
 from collections.abc import Sequence
 
 import numpy as np

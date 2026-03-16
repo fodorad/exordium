@@ -1,3 +1,5 @@
+"""OpenGraphAU action unit detection wrapper."""
+
 import math
 from collections.abc import Sequence
 

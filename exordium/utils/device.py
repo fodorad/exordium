@@ -1,3 +1,5 @@
+"""Device management utilities."""
+
 import torch
 
 

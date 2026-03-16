@@ -1,3 +1,5 @@
+"""Blur detection utilities."""
+
 import os
 
 import cv2

@@ -1,3 +1,5 @@
+"""Concurrent execution utilities."""
+
 import multiprocessing
 import threading
 from collections.abc import Callable, Iterable, Sequence

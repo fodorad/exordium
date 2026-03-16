@@ -1,8 +1,10 @@
-# --------------------------------------------------------
-# Swin Transformer
-# Copyright (c) 2021 Microsoft
-# Licensed under The MIT License [see LICENSE for details]
-# Written by Ze Liu
+"""Swin Transformer model implementation.
+
+Swin Transformer
+Copyright (c) 2021 Microsoft
+Licensed under The MIT License [see LICENSE for details]
+Written by Ze Liu
+"""
 # --------------------------------------------------------
 
 from collections.abc import Sequence

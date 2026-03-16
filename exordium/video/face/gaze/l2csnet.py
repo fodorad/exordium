@@ -1,3 +1,5 @@
+"""L2CS-Net gaze estimation model wrapper."""
+
 from collections.abc import Sequence
 from math import sqrt
 from pathlib import Path

@@ -1,3 +1,5 @@
+"""OpenFace action unit detection wrapper."""
+
 from pathlib import Path
 
 import numpy as np

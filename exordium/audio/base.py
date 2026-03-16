@@ -1,3 +1,5 @@
+"""Base classes for audio feature extraction models."""
+
 from abc import ABC, abstractmethod
 from pathlib import Path
 

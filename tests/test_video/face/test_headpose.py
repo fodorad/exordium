@@ -1,4 +1,7 @@
-"""Tests for exordium.video.face.headpose module (merged from test_video/test_headpose.py and test_utils/test_headpose.py)."""
+"""Tests for exordium.video.face.headpose module.
+
+Tests merged from test_video/test_headpose.py and test_utils/test_headpose.py.
+"""
 
 import unittest
 

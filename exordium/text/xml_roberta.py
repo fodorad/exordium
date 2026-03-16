@@ -1,3 +1,5 @@
+"""XLM-RoBERTa multilingual text encoding wrapper."""
+
 from exordium.text.base import TextModelWrapper
 
 

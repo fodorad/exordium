@@ -1,3 +1,5 @@
+"""Data transformation utilities."""
+
 from collections.abc import Callable, Sequence
 
 import numpy as np
@@ -47,7 +49,9 @@ def spec_augment(
     return spec
 
 
-def crop_and_pad_window(x: np.ndarray, win_size: int, m_freq: int | float, timestep: int | float) -> np.ndarray:
+def crop_and_pad_window(
+    x: np.ndarray, win_size: int, m_freq: int | float, timestep: int | float
+) -> np.ndarray:
     """Crop a window from a spectrogram and pad to target size.
 
     Args:
@@ -91,6 +95,7 @@ def get_random_eraser(
     Returns:
         Function that applies random erasing to an image.
     """
+
     def eraser(input_img: np.ndarray) -> np.ndarray:
         img_h, img_w, img_c = input_img.shape
         p_1 = np.random.rand()

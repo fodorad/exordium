@@ -1,3 +1,5 @@
+"""MediaPipe face detector wrapper."""
+
 import logging
 import urllib.request
 from pathlib import Path

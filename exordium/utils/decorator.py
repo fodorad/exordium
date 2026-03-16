@@ -1,3 +1,5 @@
+"""Decorator utilities for caching and timing."""
+
 import logging
 import pickle
 import time
