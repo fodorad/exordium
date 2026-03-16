@@ -1,68 +1,127 @@
 [build-system]
-requires = ["hatchling", "hatch-requirements-txt"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "exordium"
-version = "1.4.2"
-description = "Collection of utility tools and deep learning methods."
-keywords = ["preprocess", "audio", "video", "text", "multimodal", "detection", "tracking"]
+dynamic = ["version"]
+description = "Collection of utility tools and deep learning methods for multimodal feature extraction."
+keywords = ["preprocess", "audio", "video", "text", "utils", "multimodal", "detection", "tracking"]
 authors = [
-  { name = "fodorad", email = "foauaai@inf.elte.hu" },
+  { name = "fodorad", email = "fodorad201@gmail.com" },
 ]
 readme = {"file" = "README.md", "content-type" = "text/markdown"}
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "MIT"
-dynamic = ["dependencies"]
 classifiers = [
-  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-
-[project.urls]
-Documentation = "https://github.com/fodorad/exordium#readme"
-Issues = "https://github.com/fodorad/exordium/issues"
-Source = "https://github.com/fodorad/exordium"
-
-[tool.hatch.metadata.hooks.requirements_txt]
-files = ["requirements.txt"]
+dependencies = [
+  "numpy",
+  "opencv-python",
+  "pillow",
+  "scipy",
+  "torch",
+  "tqdm",
+  "matplotlib",
+]
 
 [project.optional-dependencies]
 audio = [
   "opensmile",
-  "librosa",
   "torchaudio",
+  "torchcodec",
   "transformers",
-  "msclap",
-  "tf-keras==2.16.0"
 ]
 text = [
   "transformers",
-  "optimum",
-  "accelerate"
+  "faster-whisper",
 ]
-tddfa = [
-  "onnx",
-  "onnxruntime",
-  "types-PyYAML"
-]
-detection = [
+face = [
   "torchvision",
-  "tensorflow",
-  "deepface",
-  "batch-face"
+  "mediapipe",
+  "sixdrepnet",
+  "blinklinmult",
+  "unigaze",
 ]
 video = [
-  "av",
-  "moviepy",
   "pandas",
-  "einops",
   "timm",
-  "decord",
+  "open_clip_torch",
+  "torchcodec",
+  "torchvision",
   "mediapipe",
-  "open_clip_torch"
+]
+dev = [
+  "ruff",
+  "ty",
+  "coverage",
+  "pre-commit",
+]
+docs = [
+  "sphinx>=8.0",
+  "furo",
+  "sphinx-autoapi",
+  "sphinx-autobuild",
+  "myst-parser",
 ]
 all = [
-  "exordium[audio,video,text,tddfa,detection]"
+  "exordium[audio,video,text,face]",
 ]
+
+[project.urls]
+Documentation = "https://fodorad.github.io/exordium/"
+Issues = "https://github.com/fodorad/exordium/issues"
+Source = "https://github.com/fodorad/exordium"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.wheel]
+packages = ["exordium"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "TCH", "ARG", "PIE", "D"]
+ignore = [
+  "D107",  # Missing docstring in __init__ (covered by class docstring)
+  "D203",  # Blank line before class (conflicts with D211)
+  "D213",  # Multi-line summary second line (conflicts with D212)
+]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["D104"]
+"tests/**/test_*.py" = ["D", "S", "ARG"]
+"docs/conf.py" = ["D", "ARG"]
+
+[tool.coverage.run]
+source = ["exordium"]
+omit = [
+  "*/tests/*",
+  "*/__init__.py",
+]
+
+[tool.coverage.report]
+fail_under = 95
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "coverage_html"
+
+[tool.ty.environment]
+python-version = "3.12"

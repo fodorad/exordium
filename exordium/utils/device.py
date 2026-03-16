@@ -1,22 +1,52 @@
 import torch
 
 
-def get_device_str(gpu_id: int | None = None) -> str:
-    if torch.backends.mps.is_available():
+def get_torch_device(device_id: int | None = None) -> torch.device:
+    """Get a PyTorch device based on device ID.
+
+    Args:
+        device_id: Device ID. None or negative returns CPU. Defaults to None.
+
+    Returns:
+        PyTorch device (MPS > CUDA > CPU based on availability).
+    """
+    if device_id is None:
+        return torch.device("cpu")
+
+    if isinstance(device_id, int) and device_id < 0:
+        return torch.device("cpu")
+
+    if torch.mps.is_available():
         # Apple Silicon GPU
-        return "mps" if gpu_id is None else f"mps:{gpu_id}"
-    elif torch.cuda.is_available():
+        return torch.device(f"mps:{device_id}")
+
+    if torch.cuda.is_available():
         # Nvidia GPU
-        if gpu_id is not None and gpu_id < torch.cuda.device_count():
-            return "cuda" if gpu_id is None else f"cuda:{gpu_id}"
-        else:
-            print(f"Warning: cuda device {gpu_id} not available, falling back to cpu.")
-            return "cpu"
-    else:
-        # fallback to CPU
-        return "cpu"
+        return torch.device(f"cuda:{device_id}")
+
+    return torch.device("cpu")
 
 
-def get_torch_device(gpu_id: int | None = None) -> torch.device:
-    return torch.device(get_device_str(gpu_id))
+def get_default_device() -> torch.device:
+    """Get the default device (GPU or CPU).
 
+    Returns:
+        The device with highest priority available: MPS > CUDA > CPU.
+    """
+    if torch.mps.is_available():
+        return torch.device("mps:0")
+    if torch.cuda.is_available():
+        return torch.device("cuda:0")
+    return torch.device("cpu")
+
+
+def get_module_device(module: torch.nn.Module) -> torch.device:
+    """Get the device of a PyTorch module.
+
+    Args:
+        module: PyTorch module.
+
+    Returns:
+        Device of the module's parameters.
+    """
+    return next(module.parameters()).device

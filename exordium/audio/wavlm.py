@@ -1,115 +1,176 @@
-import torchaudio
-import torch
+from pathlib import Path
+
 import numpy as np
-import torchaudio
-import torch.nn.functional as F
-from exordium import PathType
-from exordium.utils.decorator import load_or_create, timer_with_return
+import torch
+from transformers import WavLMModel
 
-from exordium.utils import decorator
-decorator.TIMING_ENABLED = True
+from exordium.audio.base import AudioModelWrapper
+from exordium.utils.decorator import load_or_create
+
+WAVLM_SAMPLE_RATE = 16000  # all WavLM variants operate at 16 kHz
+
+_MODEL_IDS: dict[str, str] = {
+    "base": "microsoft/wavlm-base",
+    "base+": "microsoft/wavlm-base-plus",
+    "large": "microsoft/wavlm-large",
+}
 
 
-class WavlmWrapper():
+class WavlmWrapper(AudioModelWrapper):
+    """Wrapper for WavLM audio feature extraction via HuggingFace Transformers.
 
+    Extracts layer-wise hidden states using Microsoft's WavLM model.
+    Supports base, base+, and large model variants.
 
-    def __init__(self, gpu_id: int = 0, model_name: str = 'base+') -> None:
-        """WavLM wrapper class."""
-        self.device = torch.device(f'cuda:{gpu_id}') if gpu_id >= 0 else torch.device('cpu')
+    Args:
+        device_id: GPU device ID. Use -1 for CPU.
+        model_name: Model variant — ``"base"``, ``"base+"``, or ``"large"``.
+            Defaults to ``"base+"``.
 
-        if model_name not in ('base', 'base+', 'large'):
-            raise ValueError('Invalid model_name')
+    Raises:
+        ValueError: If ``model_name`` is not one of the supported variants.
 
-        if model_name == 'base':
-            self.bundle = torchaudio.pipelines.WAVLM_BASE
-        elif model_name == 'base+':
-            self.bundle = torchaudio.pipelines.WAVLM_BASE_PLUS
-        else: # large
-            self.bundle = torchaudio.pipelines.WAVLM_LARGE
+    """
 
-        self.model = self.bundle.get_model()
+    def __init__(self, device_id: int = -1, model_name: str = "base+") -> None:
+        super().__init__(device_id)
+
+        if model_name not in _MODEL_IDS:
+            raise ValueError(f"Invalid model_name: {model_name!r}. Choose from {list(_MODEL_IDS)}.")
+
+        self.sample_rate = WAVLM_SAMPLE_RATE
+        self.model = WavLMModel.from_pretrained(_MODEL_IDS[model_name])
         self.model.eval()
         self.model.to(self.device)
 
-
-    @load_or_create('pkl')
-    def audio_to_feature(self, audio_path: PathType, **kwargs) -> list[np.ndarray]:
-
-        waveform, sample_rate = torchaudio.load(str(audio_path))
-        
-        if sample_rate != self.bundle.sample_rate: # 16000 for WavLM
-            waveform = torchaudio.functional.resample(waveform, sample_rate, self.bundle.sample_rate)
-
-        # expects a single channel (mono) audio, take the first channel if stereo
-        if waveform.ndim == 2: # (2, T)
-            waveform = waveform[0, :]  # Use the first channel, (T,)
-
-        features = self(waveform)
-
-        features = [feature.detach().cpu().numpy().squeeze(0) for feature in features]
-        return features
-
-
-    @timer_with_return
     def __call__(self, waveform: np.ndarray | torch.Tensor) -> list[torch.Tensor]:
-        """Audio SSL feature extraction.
+        """Extract hidden-state features from a waveform.
 
         Args:
-            waveform (np.ndarray | torch.Tensor): audio signal of shape (T,).
+            waveform: Audio signal of shape ``(T,)`` or ``(B, T)``
+                      at ``WAVLM_SAMPLE_RATE`` Hz.
 
         Returns:
-            list(torch.Tensor): list of layer features of shape (B, T, C) == (1, T, 768)
+            List of hidden-state tensors, one per transformer layer,
+            each of shape ``(B, T', hidden_size)``.
+
+        Raises:
+            ValueError: If waveform has an invalid shape (not 1D or 2D).
+
         """
-        waveform = torch.Tensor(waveform) # (T,)
+        waveform = torch.as_tensor(waveform, dtype=torch.float32)
 
         if waveform.ndim == 1:
-            waveform = waveform.unsqueeze(dim=0) # (B, T)
+            waveform = waveform.unsqueeze(0)
 
         if waveform.ndim != 2:
-            raise Exception(f'Expected shape (B, T) got instead {waveform.shape}.')
+            raise ValueError(f"Expected shape (B, T) or (T,) but got {tuple(waveform.shape)}.")
 
         waveform = waveform.to(self.device)
 
-        with torch.no_grad():
-            features, _ = self.model.extract_features(waveform)
+        with torch.inference_mode():
+            outputs = self.model(input_values=waveform, output_hidden_states=True)
 
-        return features # list[(B, T, C),...]; C==768
+        # hidden_states[0] is the CNN feature extractor output;
+        # [1:] are the transformer layers (12 for base/base+, 24 for large).
+        return list(outputs.hidden_states[1:])
 
+    @load_or_create("pkl")
+    def audio_to_feature(
+        self,
+        audio: Path | str | np.ndarray | torch.Tensor,
+        **_kwargs,
+    ) -> list[np.ndarray]:
+        """Extract WavLM features from a single audio path or waveform.
 
-def pad_wavlm_time_dim(tensor, target_time_dim, pad_value=0):
-    """
-    Pads the time dimension of a tensor and generates a mask.
+        Args:
+            audio: Audio file path, numpy array, or torch tensor.
+                   If a path is given, audio is loaded and resampled to 16 kHz.
+            **kwargs: Passed to :func:`~exordium.utils.decorator.load_or_create`
+                      (``output_path``, ``overwrite``).
 
-    Args:
-        tensor (torch.Tensor): Input tensor of shape (L, N, F).
-        target_time_dim (int): Desired size for the time dimension (N).
-        pad_value (int or float): Value to use for padding (default is 0).
+        Returns:
+            List of layer features as numpy arrays,
+            each of shape ``(T, hidden_size)``.
 
-    Returns:
-        tuple: 
-            - torch.Tensor: Padded tensor with shape (L, target_time_dim, F).
-            - torch.BoolTensor: Mask tensor of shape (target_time_dim,) with `1` for original data and `0` for padding.
-    """
-    _, N, _ = tensor.shape
+        """
+        features = self(self._prepare_waveform(audio, self.sample_rate))
+        return [f.detach().cpu().numpy().squeeze(0) for f in features]
 
-    # Create the mask
-    mask = torch.ones(N, dtype=torch.bool)
-    if N < target_time_dim:
-        # Extend the mask for padding
-        mask = torch.cat([mask, torch.zeros(target_time_dim - N, dtype=torch.bool)], dim=0)
+    def _feat_extract_output_lengths(self, lengths: list[int]) -> list[int]:
+        """Compute output frame counts for given waveform sample lengths.
 
-    if N >= target_time_dim:
-        # No padding needed, crop to target_time_dim
-        return tensor[:, :target_time_dim, :], mask[:target_time_dim]
-    
-    # Calculate padding
-    pad_amount = target_time_dim - N
-    padded_tensor = F.pad(tensor, (0, 0, 0, pad_amount, 0, 0), mode='constant', value=pad_value)
-    return padded_tensor, mask
+        Applies the stride/kernel formula for each CNN layer in the feature
+        extractor, matching what the model computes internally.
 
+        Args:
+            lengths: Waveform lengths in samples.
 
-if __name__ == "__main__":
-    audio_file = "data/sounds/example_multispeaker.wav"
-    wavlm = WavlmWrapper()
-    features = wavlm.audio_to_feature(audio_file)
-    print(len(features), features[0].shape)
+        Returns:
+            Output frame counts, one per input length.
+
+        """
+        out = lengths
+        for layer in self.model.feature_extractor.conv_layers:
+            k = layer.conv.kernel_size[0]
+            s = layer.conv.stride[0]
+            out = [(n - k) // s + 1 for n in out]
+        return out
+
+    def batch_audio_to_features(
+        self,
+        audios: list[Path | str | np.ndarray | torch.Tensor],
+        **_kwargs,
+    ) -> list[list[np.ndarray]]:
+        """Extract WavLM features from multiple audio inputs in one forward pass.
+
+        Variable-length inputs are zero-padded to the longest waveform.
+        Output frames that correspond to padding are trimmed.
+
+        Args:
+            audios: List of audio file paths, numpy arrays, or torch tensors.
+
+        Returns:
+            List of per-file features. Each element is a list of layer numpy
+            arrays, each of shape ``(T_i, hidden_size)``.
+
+        """
+        waveforms = [self._prepare_waveform(a, self.sample_rate) for a in audios]
+        padded, lengths = self._pad_waveforms(waveforms)
+        padded = padded.to(self.device)
+
+        with torch.inference_mode():
+            outputs = self.model(input_values=padded, output_hidden_states=True)
+
+        features = list(outputs.hidden_states[1:])  # list[Tensor(B, T_max, hidden_size)]
+        out_lengths = self._feat_extract_output_lengths(lengths)
+        return [
+            [layer[i, : out_lengths[i]].detach().cpu().numpy() for layer in features]
+            for i in range(len(waveforms))
+        ]
+
+    @torch.inference_mode()
+    def inference(self, waveform: np.ndarray | torch.Tensor) -> list[torch.Tensor]:
+        """Extract features in inference mode.
+
+        Args:
+            waveform: Audio signal of shape ``(T,)`` or ``(B, T)``.
+
+        Returns:
+            List of hidden-state tensors, each of shape ``(B, T', hidden_size)``.
+
+        Raises:
+            ValueError: If waveform has an invalid shape.
+
+        """
+        waveform = torch.as_tensor(waveform, dtype=torch.float32)
+
+        if waveform.ndim == 1:
+            waveform = waveform.unsqueeze(0)
+
+        if waveform.ndim != 2:
+            raise ValueError(f"Expected shape (B, T) or (T,) but got {tuple(waveform.shape)}.")
+
+        waveform = waveform.to(self.device)
+        outputs = self.model(input_values=waveform, output_hidden_states=True)
+        return list(outputs.hidden_states[1:])

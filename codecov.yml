@@ -1,0 +1,18 @@
+coverage:
+  precision: 2
+  round: down
+  range: "80...100"
+  status:
+    project:
+      default:
+        target: auto       # maintain current coverage level
+        threshold: 1%      # allow 1% drop before failing
+    patch:
+      default:
+        target: 80%        # new code in a PR must be ≥80% covered
+        threshold: 5%
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false

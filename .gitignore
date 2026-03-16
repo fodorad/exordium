@@ -1,12 +1,14 @@
 # Project
-.vscode
+.vscode/
 data/tmp/
 data/processed/
 data/example_multispeaker/
 refactor/
 todo/
 test/tmp*
+demo
 tmp*
+.claude
 
 # macOS
 .DS_Store
@@ -38,6 +40,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.ruff_cache
 MANIFEST
 
 # PyInstaller

@@ -1,63 +1,123 @@
+from pathlib import Path
+
 import numpy as np
 import torch
-from transformers import pipeline
-from transformers.utils import is_flash_attn_2_available
-import exordium.utils.decorator as D
+from faster_whisper import WhisperModel
+from faster_whisper.utils import available_models
+
+from exordium.audio.io import load_audio
+from exordium.utils.decorator import timer_with_return
 
 
-class WhisperWrapper():
+class WhisperWrapper:
+    """Wrapper for faster-whisper speech-to-text.
 
-    def __init__(self, model_size: str = "distil-large-v3") -> None:
-        """Whisper wrapper class.
+    Uses CTranslate2-optimized Whisper models for fast inference.
+    Supports all standard and distilled model variants.
 
-        run on GPU with INT8
-            model = WhisperModel(model_size, device="cuda", compute_type="int8_float16")
-        run on CPU with INT8
-            model = WhisperModel(model_size, device="cpu", compute_type="int8")
-        """
-        # self.model = WhisperModel(model_size, device="cpu", compute_type="int8")
-        self.pipe = pipeline(
-            "automatic-speech-recognition",
-            model="openai/whisper-large-v3", # select checkpoint from https://huggingface.co/openai/whisper-large-v3#model-details
-            torch_dtype=torch.float16,
-            device="cuda:0", # or mps for Mac devices
-            model_kwargs={"attn_implementation": "flash_attention_2"} if is_flash_attn_2_available() else {"attn_implementation": "sdpa"},
+    Args:
+        device_id: Device index. Use -1 for CPU, 0+ for GPU.
+            On macOS (no CUDA), always uses CPU regardless of value.
+        model_name: Whisper model variant. See ``WhisperWrapper.available_models()``
+            for the full list. Recommended: ``"distil-large-v3"`` for quality,
+            ``"turbo"`` for speed, ``"tiny"`` for minimal footprint.
+
+    """
+
+    def __init__(self, device_id: int = 0, model_name: str = "turbo") -> None:
+        if model_name not in available_models():
+            raise ValueError(
+                f"Unknown model: {model_name}. Available: {', '.join(available_models())}"
+            )
+
+        device, device_index = self._resolve_device(device_id)
+
+        self.model_name = model_name
+        self.model = WhisperModel(
+            model_name,
+            device=device,
+            device_index=device_index,
+            compute_type="int8",
         )
 
-    @D.timer_with_return
-    def __call__(self, audio_path: str) -> tuple[list[dict], dict]:
-        """Speech-to-Text with Whisper
-        https://github.com/SYSTRAN/faster-whisper
+    @staticmethod
+    def _resolve_device(device_id: int) -> tuple[str, int]:
+        """Map exordium device_id to faster-whisper device/device_index.
+
+        Note: mps is not supported by faster-whisper, so we always return "cpu" on macOS.
+
+        """
+        if device_id < 0:
+            return "cpu", 0
+
+        if torch.cuda.is_available():
+            return "cuda", device_id
+
+        return "cpu", 0
+
+    @staticmethod
+    def available_models() -> list[str]:
+        """Return list of supported model names."""
+        return available_models()
+
+    @timer_with_return
+    def __call__(
+        self,
+        waveform: np.ndarray | torch.Tensor,
+        language: str | None = None,
+        beam_size: int = 5,
+        vad_filter: bool = False,
+        word_timestamps: bool = True,
+    ) -> str:
+        """Transcribe audio waveform to text.
 
         Args:
-            audio_path (str): audio file path
+            waveform: 1D audio signal at 16 kHz, mono.
+            language: Language code (e.g. ``"en"``). ``None`` for auto-detection.
+            beam_size: Beam size for decoding.
+            vad_filter: If True, apply Silero VAD to filter non-speech.
+            word_timestamps: If True, include word-level timestamps in output.
 
         Returns:
-            tuple[list[dict], dict]: segmented text prediction with start and end time in sec, and info about the detected language
+            Transcribed text as a string.
+
         """
-        #segments, info = self.model.transcribe(audio, beam_size=5)
+        if isinstance(waveform, torch.Tensor):
+            waveform = waveform.numpy()
 
-        # print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
-        #print(list(segments))
-        #print(info)
+        waveform = waveform.squeeze().astype(np.float32)
 
-        #for segment in segments:
-        #    print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
-
-        #return segments, info
-        outputs = self.pipe(
-            audio_path,
-            chunk_length_s=30,
-            batch_size=24,
-            return_timestamps=True,
+        segments, info = self.model.transcribe(
+            waveform,
+            language=language,
+            beam_size=beam_size,
+            vad_filter=vad_filter,
+            word_timestamps=word_timestamps,
         )
 
-        return outputs
+        return " ".join(seg.text.strip() for seg in segments if seg.text.strip())
 
+    def transcribe_file(
+        self,
+        audio_path: Path | str,
+        language: str | None = None,
+        beam_size: int = 5,
+        vad_filter: bool = False,
+    ) -> str:
+        """Load an audio file and transcribe it.
 
-if __name__ == "__main__":
-    D.TIMING_ENABLED = True
-    test_video = '/home/fodor/dev/EmotionLinMulT/data/db_processed/MEAD/M003/audio_wav/down-0-1-001.wav'
-    model = WhisperWrapper()
-    out = model(test_video)
-    print(out)
+        Uses ``exordium.audio.io.load_audio`` for loading and resampling
+        to 16 kHz mono.
+
+        Args:
+            audio_path: Path to audio file.
+            language: Language code. ``None`` for auto-detection.
+            beam_size: Beam size for decoding.
+            vad_filter: If True, apply Silero VAD to filter non-speech.
+
+        Returns:
+            Transcribed text.
+
+        """
+        waveform, _ = load_audio(audio_path, target_sample_rate=16000, mono=True, squeeze=True)
+        return self(waveform, language=language, beam_size=beam_size, vad_filter=vad_filter)

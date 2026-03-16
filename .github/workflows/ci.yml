@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        lfs: true
+        fetch-depth: 0  # required for hatch-vcs git describe
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
+
+    - name: Install dependencies
+      run: uv pip install --system -e ".[all,dev,docs]"
+
+    - name: Audit dependencies for vulnerabilities
+      run: uvx pip-audit
+      continue-on-error: true  # torch/mediapipe may have known CVEs; treat as warning
+
+    - name: Ruff Lint
+      run: ruff check .
+
+    - name: Ruff Format
+      run: ruff format --check .
+
+    - name: Type check (ty)
+      run: ty check exordium
+
+    - name: Test & Coverage
+      run: |
+        coverage run -m unittest discover -s tests -v
+        coverage report
+        coverage html
+        coverage xml -o coverage.xml
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Upload coverage HTML
+      uses: actions/upload-artifact@v7
+      with:
+        name: coverage-report-${{ matrix.python-version }}-${{ matrix.os }}
+        path: coverage_html/
+      if: always()
+
+    - name: Build docs
+      run: sphinx-build -b html docs/ site/
+      if: matrix.os == 'ubuntu-latest'

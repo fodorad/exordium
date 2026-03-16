@@ -1,131 +1,304 @@
 from pathlib import Path
-import librosa
-import librosa.display
-import numpy as np
+
 import matplotlib.pyplot as plt
-from exordium import PathType
+import numpy as np
+import torch
+import torchaudio
 
 
-def deltas(feature: np.ndarray) -> np.ndarray:
-    """Calculate differential (delta) and acceleration (deltadelta) features from MFCC or spectrograms.
+def preprocess_audio(
+    waveform: torch.Tensor, waveform_sample_rate: int, target_sample_rate: int
+) -> tuple[torch.Tensor, int]:
+    """Convert waveform to mono and resample if needed.
 
     Args:
-        feature (np.ndarray): MFCC or spectrogram.
+        waveform: Input audio waveform (C, T)
+        waveform_sample_rate: Original sample rate of the waveform
+        target_sample_rate: Target sample rate to resample to
 
     Returns:
-        np.ndarray: tensor of feature, deltas and deltadeltas.
+        Processed waveform and original sample rate
+
     """
-    differential = librosa.feature.delta(feature)
-    acceleration = librosa.feature.delta(feature, order=2)
-    return np.stack([feature, differential, acceleration], axis=2)
+    # Convert to mono
+    if waveform.ndim == 2 and waveform.shape[0] > 1:
+        waveform = waveform.mean(dim=0, keepdim=True)
+
+    # Resample if needed
+    if waveform_sample_rate != target_sample_rate:
+        resampler = torchaudio.transforms.Resample(
+            orig_freq=waveform_sample_rate, new_freq=target_sample_rate
+        )
+        waveform = resampler(waveform)
+
+    return waveform, target_sample_rate
 
 
-def audio2logmelspec(input_path: PathType, output_path: PathType, sr: int, save_fig: bool = False) -> None:
-    """Creates the MFCCs, log mel-spectrogram, delta and deltadelta features from audio files.
+def apply_preemphasis(y: np.ndarray, coef: float = 0.97) -> np.ndarray:
+    """Apply pre-emphasis filter to audio signal.
 
     Args:
-        input_path (PathType): path to the audio file.
-        output_path (PathType): path to the output file.
-        sr (int): sample rate.
-        save_fig (bool, optional). saves the figures. Defaults to False.
+        y: Audio signal
+        coef: Pre-emphasis coefficient
+
+    Returns:
+        Pre-emphasized signal
+
     """
-    n_fft = 2048
-    hop_length = 512
-    n_mfcc = 40
-    max_frequency = 8000
-    output_path = Path(output_path)
+    y_preemph = np.empty_like(y)
+    if y.size > 0:
+        y_preemph[0] = y[0]
+        y_preemph[1:] = y[1:] - coef * y[:-1]
+    return y_preemph
 
-    if output_path.exists():
-        return
 
-    output_path.mkdir(parents=True, exist_ok=True)
-    y, _ = librosa.load(input_path, sr=sr) # sr=22050
+def compute_mfcc(
+    y: np.ndarray,
+    sample_rate: int,
+    n_mfcc: int = 40,
+    log_mels: bool = True,
+    save_fig: bool = False,
+    output_path: Path | str | None = None,
+) -> tuple[np.ndarray, np.ndarray | None]:
+    """Compute MFCC features from audio signal.
 
-    # preemphasis
-    y_preemph = librosa.effects.preemphasis(y, coef=0.97, zi=[y[1]])
+    Args:
+        y: Audio signal (mono, 1D array)
+        sample_rate: Sample rate
+        n_mfcc: Number of MFCC coefficients
+        log_mels: Whether to use log mel spectrogram
+        save_fig: Whether to save figures
+        output_path: Directory to save figures
 
-    # mfcc with differential and acceleration
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
-    mfcc_preemph = librosa.feature.mfcc(y=y_preemph, sr=sr, n_mfcc=n_mfcc)
-    mfcc_tensor = deltas(mfcc)
-    mfcc_preemph_tensor = deltas(mfcc_preemph)
+    Returns:
+        Tuple of (mfcc_features, preemphasized_mfcc_features)
 
-    # save npy
-    np.save(str(output_path / 'mfcc_preemph.npy'), mfcc_preemph_tensor)
+    """
+    # Ensure mono audio
+    if y.ndim > 1:
+        y = y.mean(axis=0)
 
-    # save figures
-    if save_fig:
-        prefix_fig = output_path / 'figures'
+    mfcc_transform = torchaudio.transforms.MFCC(
+        sample_rate=sample_rate, n_mfcc=n_mfcc, log_mels=log_mels
+    )
+
+    # Compute MFCC
+    mfcc = mfcc_transform(torch.from_numpy(y).unsqueeze(0)).squeeze(0).numpy()
+
+    # Compute pre-emphasized MFCC
+    y_preemph = apply_preemphasis(y)
+    mfcc_preemph = mfcc_transform(torch.from_numpy(y_preemph).unsqueeze(0)).squeeze(0).numpy()
+
+    # Save figures if requested
+    if save_fig and output_path:
+        prefix_fig = Path(output_path) / "figures"
         prefix_fig.mkdir(parents=True, exist_ok=True)
-        save_mfcc_specshow(mfcc_tensor[...,0], str(prefix_fig / 'mfcc.png'), 'MFCC')
-        save_mfcc_specshow(mfcc_tensor[...,1], str(prefix_fig / 'mfcc_delta.png'), 'MFCC-Delta')
-        save_mfcc_specshow(mfcc_tensor[...,2], str(prefix_fig / 'mfcc_delta2.png'), 'MFCC-Delta2')
-        save_mfcc_specshow(mfcc_preemph_tensor[...,0], str(prefix_fig / 'mfcc_preemph.png'), 'MFCC preemphasis')
-        save_mfcc_specshow(mfcc_preemph_tensor[...,1], str(prefix_fig / 'mfcc_delta_preemph.png'), 'MFCC-Delta preemphasis')
-        save_mfcc_specshow(mfcc_preemph_tensor[...,2], str(prefix_fig / 'mfcc_delta2_preemph.png'), 'MFCC-Delta2 preemphasis')
+        save_mfcc_specshow(mfcc, str(prefix_fig / "mfcc.png"), "MFCC")
+        save_mfcc_specshow(mfcc_preemph, str(prefix_fig / "mfcc_preemph.png"), "MFCC preemphasis")
 
-    # melspec db
-    for n_mels in [128]: # [80, 128, 224]:
-        melspec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=n_mels, fmax=max_frequency)
-        melspec_dB = librosa.power_to_db(melspec, ref=np.max)
-        melspec_dB_tensor = deltas(melspec_dB)
-
-        melspec_preemph = librosa.feature.melspectrogram(y=y_preemph, sr=sr, n_mels=n_mels, fmax=max_frequency)
-        melspec_preemph_dB = librosa.power_to_db(melspec_preemph, ref=np.max)
-        melspec_preemph_dB_tensor = deltas(melspec_preemph_dB)
-
-        # save npy
-        np.save(str(output_path / f'melspec_dB_{n_mels}_preemph.npy'), melspec_preemph_dB_tensor)
-
-        # save figures
-        if save_fig:
-            save_melspec_specshow(melspec_dB_tensor[...,0], str(prefix_fig / f'melspec_dB_{n_mels}.png'), 'Log-Mel spectrogram', sr=sr)
-            save_melspec_specshow(melspec_dB_tensor[...,1], str(prefix_fig / f'melspec_dB_{n_mels}_delta.png'), 'Log-Mel spectrogram - Delta', is_delta=True)
-            save_melspec_specshow(melspec_dB_tensor[...,2], str(prefix_fig / f'melspec_dB_{n_mels}_delta2.png'), 'Log-Mel spectrogram - Delta2', is_delta=True)
-            save_melspec_specshow(melspec_preemph_dB_tensor[...,0], str(prefix_fig / f'melspec_dB_{n_mels}_preemph.png'), 'Log-Mel spectrogram preemphasis', sr=sr)
-            save_melspec_specshow(melspec_preemph_dB_tensor[...,1], str(prefix_fig / f'melspec_dB_{n_mels}_delta_preemph.png'), 'Log-Mel spectrogram - Delta preemphasis', is_delta=True)
-            save_melspec_specshow(melspec_preemph_dB_tensor[...,2], str(prefix_fig / f'melspec_dB_{n_mels}_delta2_preemph.png'), 'Log-Mel spectrogram - Delta2 preemphasis', is_delta=True)
+    return mfcc, mfcc_preemph
 
 
-def save_mfcc_specshow(data: np.ndarray, output_path: PathType, title: str) -> None:
+def compute_melspec(
+    y: np.ndarray,
+    sample_rate: int,
+    n_mels: int = 128,
+    f_max: int = 8000,
+    save_fig: bool = False,
+    output_path: Path | str | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute Mel spectrogram features from audio signal.
+
+    Args:
+        y: Audio signal (mono, 1D array)
+        sample_rate: Sample rate
+        n_mels: Number of mel bands
+        f_max: Maximum frequency
+        save_fig: Whether to save figures
+        output_path: Directory to save figures
+
+    Returns:
+        Tuple of (melspec_db, melspec_preemph_db)
+
+    """
+    # Ensure mono audio
+    if y.ndim > 1:
+        y = y.mean(axis=0)
+
+    melspec_transform = torchaudio.transforms.MelSpectrogram(
+        sample_rate=sample_rate, n_mels=n_mels, f_max=f_max
+    )
+    to_db = torchaudio.transforms.AmplitudeToDB(stype="power")
+
+    # Compute Mel spectrogram
+    melspec = melspec_transform(torch.from_numpy(y).unsqueeze(0))
+    melspec_db = to_db(melspec).squeeze(0).numpy()
+
+    # Compute pre-emphasized Mel spectrogram
+    y_preemph = apply_preemphasis(y)
+    melspec_pre = melspec_transform(torch.from_numpy(y_preemph).unsqueeze(0))
+    melspec_pre_db = to_db(melspec_pre).squeeze(0).numpy()
+
+    # Save figures if requested
+    if save_fig and output_path:
+        prefix_fig = Path(output_path) / "figures"
+        prefix_fig.mkdir(parents=True, exist_ok=True)
+        save_melspec_specshow(melspec_db, str(prefix_fig / "melspec_dB.png"), "Log-Mel spectrogram")
+        save_melspec_specshow(
+            melspec_pre_db,
+            str(prefix_fig / "melspec_dB_preemph.png"),
+            "Log-Mel spectrogram preemphasis",
+        )
+
+    return melspec_db, melspec_pre_db
+
+
+def compute_deltas(
+    features: np.ndarray, return_all: bool = False
+) -> np.ndarray | tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Compute delta and delta-delta features from input features.
+
+    Args:
+        features: Input features (n_features, time)
+        return_all: Whether to return all delta variants
+
+    Returns:
+        Delta features or tuple of (original, delta, delta2)
+
+    """
+    # Compute deltas
+    deltas = np.zeros_like(features)
+    for t in range(1, features.shape[1] - 1):
+        deltas[:, t] = (features[:, t + 1] - features[:, t - 1]) / 2
+
+    # Compute delta-deltas
+    delta2 = np.zeros_like(features)
+    for t in range(1, deltas.shape[1] - 1):
+        delta2[:, t] = (deltas[:, t + 1] - deltas[:, t - 1]) / 2
+
+    if return_all:
+        return features, deltas, delta2
+    return deltas
+
+
+def save_mfcc_specshow(
+    data: np.ndarray, output_path: str, title: str, figsize: tuple[int, int] = (10, 4)
+) -> None:
     """Save MFCC plot to file.
 
     Args:
-        data (np.ndarray): MFCCs.
-        output_path (PathType): path to the output file.
-        title (str): title of figure.
+        data: MFCC data (n_mfcc, time)
+        output_path: Path to save figure
+        title: Figure title
+        figsize: Figure size
+
     """
-    plt.figure(figsize=(10,4))
-    librosa.display.specshow(data, x_axis='time')
+    plt.figure(figsize=figsize)
     plt.title(title)
+    plt.imshow(data, aspect="auto", origin="lower", interpolation="nearest")
     plt.colorbar()
     plt.savefig(output_path)
     plt.close()
 
 
-def save_melspec_specshow(data: np.ndarray,
-                          output_path: PathType,
-                          title: str,
-                          sr: int = 44100, # 22050,
-                          is_delta: bool = False) -> None:
-    """Save mel-spectrogram, delta, deltadelta plots to a file.
+def save_melspec_specshow(
+    data: np.ndarray,
+    output_path: str,
+    title: str,
+    is_delta: bool = False,
+    figsize: tuple[int, int] = (10, 4),
+) -> None:
+    """Save mel-spectrogram plot to file.
 
     Args:
-        data (np.ndarray): mel-spectrogram or delta or deltadelta.
-        output_path (PathType): path to the output file.
-        title (str): title of figure.
-        sr (int, optional): sample rate. Defaults to 44100.
-        is_delta (bool, optional): data is delta or deltadelta. Defaults to False.
+        data: Mel-spectrogram data (n_mels, time)
+        output_path: Path to save figure
+        title: Figure title
+        is_delta: Whether data is delta/delta2
+        figsize: Figure size
+
     """
-    plt.figure(figsize=(10,4))
+    plt.figure(figsize=figsize)
     plt.title(title)
-
+    plt.imshow(data, aspect="auto", origin="lower", interpolation="nearest")
     if not is_delta:
-        librosa.display.specshow(data, sr=sr, x_axis='time', y_axis='mel',  fmax=8000)
-        plt.colorbar(format='%+2.0f dB')
+        plt.colorbar(format="%+2.0f dB")
     else:
-        librosa.display.specshow(data, x_axis='time', y_axis='mel',  fmax=8000)
         plt.colorbar()
-
     plt.savefig(output_path)
     plt.close()
+
+
+def process_audio_file(
+    input_path: Path | str,
+    output_path: Path | str,
+    sample_rate: int = 44100,
+    save_fig: bool = False,
+    save_npy: bool = True,
+    n_mfcc: int = 40,
+    n_mels: int = 128,
+    f_max: int = 8000,
+) -> dict:
+    """Process audio file and return features.
+
+    Args:
+        input_path: Path to input audio file
+        output_path: Directory to save output files
+        sample_rate: Target sample rate
+        save_fig: Whether to save figures
+        save_npy: Whether to save numpy files
+        n_mfcc: Number of MFCC coefficients
+        n_mels: Number of mel bands
+        f_max: Maximum frequency
+
+    Returns:
+        Dictionary containing all computed features
+
+    """
+    # Initialize output dictionary
+    output = {
+        "input_path": str(input_path),
+        "output_path": str(output_path),
+        "sample_rate": sample_rate,
+        "save_fig": save_fig,
+        "save_npy": save_npy,
+    }
+
+    waveform, waveform_sr = torchaudio.load(input_path)  # (C, T)
+
+    # Load and preprocess audio
+    waveform, waveform_sr = preprocess_audio(
+        waveform=waveform, waveform_sample_rate=waveform_sr, target_sample_rate=sample_rate
+    )
+    y = waveform.squeeze().numpy()
+
+    # Compute features
+    output["mfcc"], output["mfcc_preemph"] = compute_mfcc(
+        y, sample_rate, n_mfcc, save_fig=save_fig, output_path=output_path
+    )
+
+    output["melspec_db"], output["melspec_preemph_db"] = compute_melspec(
+        y, sample_rate, n_mels, f_max, save_fig=save_fig, output_path=output_path
+    )
+
+    # Compute deltas for all features
+    output["mfcc_deltas"] = compute_deltas(output["mfcc"])
+    output["mfcc_preemph_deltas"] = compute_deltas(output["mfcc_preemph"])
+    output["melspec_deltas"] = compute_deltas(output["melspec_db"])
+    output["melspec_preemph_deltas"] = compute_deltas(output["melspec_preemph_db"])
+
+    # Save numpy files if requested
+    if save_npy:
+        output_dir = Path(output_path)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        np.save(output_dir / "mfcc.npy", output["mfcc"])
+        np.save(output_dir / "mfcc_preemph.npy", output["mfcc_preemph"])
+        np.save(output_dir / "melspec_db.npy", output["melspec_db"])
+        np.save(output_dir / "melspec_preemph_db.npy", output["melspec_preemph_db"])
+        np.save(output_dir / "mfcc_deltas.npy", output["mfcc_deltas"])
+        np.save(output_dir / "mfcc_preemph_deltas.npy", output["mfcc_preemph_deltas"])
+        np.save(output_dir / "melspec_deltas.npy", output["melspec_deltas"])
+        np.save(output_dir / "melspec_preemph_deltas.npy", output["melspec_preemph_deltas"])
+
+    return output

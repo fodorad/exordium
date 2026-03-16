@@ -1,8 +1,11 @@
 # exordium
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
-[![python](https://img.shields.io/badge/Python-3.11-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
-[![pytorch](https://img.shields.io/badge/PyTorch-2.0.1-EE4C2C.svg?style=flat&logo=pytorch)](https://pytorch.org)
-[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://www.mypy-lang.org/)
+[![python](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![pytorch](https://img.shields.io/badge/PyTorch-2.10.0-EE4C2C.svg?style=flat&logo=pytorch)](https://pytorch.org)
+
+[![CI](https://github.com/fodorad/exordium/workflows/CI/badge.svg)](https://github.com/fodorad/exordium/actions)
+[![Coverage](https://codecov.io/gh/fodorad/exordium/branch/main/graph/badge.svg)](https://codecov.io/gh/fodorad/exordium)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 Collection of preprocessing functions and deep learning methods.
 
@@ -20,8 +23,6 @@ Collection of preprocessing functions and deep learning methods.
 * bounding box manipulation methods
 * face detection with RetinaFace
 * face landmarks and head pose with 3DDFA_V2
-* body pose estimation with max-human-pose-estimator
-* categorical and dimensional emotion estimation with EmoNet
 * iris and pupil landmark estimation with MediaPipe Iris
 * fine eye landmark estimation with MediaPipe FaceMesh
 * eye gaze vector estimation with L2CS-Net
@@ -39,7 +40,6 @@ Collection of preprocessing functions and deep learning methods.
 * BERT feature extraction
 * RoBERTa feature extraction
 * XML-RoBERTa feature extraction
-* Whisper fast speech-to-text
 
 ## Utils
 * parallel processing
@@ -47,8 +47,6 @@ Collection of preprocessing functions and deep learning methods.
 * loss functions
 * normalization
 * padding/truncating
-
-## Visualization
 * graphs
 * 3D headpose
 * 2D landmarks
@@ -92,7 +90,6 @@ Note: If you are not sure which tag should be used, just go with the all-mighty 
 git clone https://github.com/fodorad/exordium
 cd exordium
 pip install -e .[all]
-pip install -U -r requirements.txt
 python -m unittest discover -s test
 ```
 
@@ -109,15 +106,6 @@ LinMulT is trained for Big Five personality trait estimation using the First Imp
 * paper: Multimodal Sentiment and Personality Perception Under Speech: A Comparison of Transformer-based Architectures ([pdf](https://proceedings.mlr.press/v173/fodor22a/fodor22a.pdf), [website](https://proceedings.mlr.press/v173/fodor22a.html))
 * code: https://github.com/fodorad/PersonalityLinMulT
 
-# What's next
-* Add support for Blink estimation (DenseNet121, LinT, BlinkLinMulT)
-* Add support for Personality trait estimation (PersonalityLinMulT)
-
-# Updates
-* 1.3.0: Add support for OpenGraphAU, FaceMesh, SWIM, RVM, XML-RoBERTa, CLIP, CLAP.
-* 1.2.0: Add support for L2CS-Net gaze estimation.
-* 1.1.0: PyPI publish.
-* 1.0.0: Release version.
 
 # Contact
-* Ádám Fodor (foauaai@inf.elte.hu)
+* Ádám Fodor (fodorad201@gmail.com)
