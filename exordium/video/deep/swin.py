@@ -28,6 +28,87 @@ model_name = {
     "swin_transformer_base": "swin_base_patch4_window7_224.pth",
 }
 
+# num_features = embed_dim * 2^(num_stages-1) = embed_dim * 8
+_SWIN_FEAT_DIM: dict[str, int] = {
+    "tiny": 768,  # embed_dim=96,  96*8
+    "small": 768,  # embed_dim=96,  96*8
+    "base": 1024,  # embed_dim=128, 128*8
+}
+
+_IMAGENET_MEAN = [0.485, 0.456, 0.406]
+_IMAGENET_STD = [0.229, 0.224, 0.225]
+
+
+class SwinWrapper(VisualModelWrapper):
+    """Swin Transformer feature extractor wrapper.
+
+    Loads a pretrained Swin Transformer backbone and extracts global
+    average-pooled patch features, producing a ``(B, D)`` array.
+
+    Feature dimensions by architecture:
+
+    * ``"tiny"`` / ``"small"``: 768-d
+    * ``"base"``: 1024-d
+
+    Args:
+        arch: One of ``"tiny"``, ``"small"``, ``"base"``.
+            Defaults to ``"tiny"``.
+        pretrained: Load ImageNet-pretrained weights. Defaults to ``True``.
+        device_id: GPU device index. ``None`` or negative uses CPU.
+
+    """
+
+    def __init__(
+        self,
+        arch: str = "tiny",
+        pretrained: bool = True,
+        device_id: int | None = None,
+    ) -> None:
+        super().__init__(device_id)
+        if arch not in _SWIN_FACTORY:
+            raise ValueError(f"Unknown arch '{arch}'. Choose from {list(_SWIN_FACTORY)}")
+        self.arch = arch
+        self.feat_dim = _SWIN_FEAT_DIM[arch]
+        self.model = _SWIN_FACTORY[arch](pretrained=pretrained)
+        self.model.eval().to(self.device)
+        self.transform = T.Compose(
+            [
+                T.Resize(256),
+                T.CenterCrop(224),
+                T.ToTensor(),
+                T.Normalize(mean=_IMAGENET_MEAN, std=_IMAGENET_STD),
+            ]
+        )
+
+    def _preprocess(self, frames: Sequence[np.ndarray]) -> torch.Tensor:
+        """Resize, crop and normalise RGB frames to ImageNet convention.
+
+        Args:
+            frames: RGB uint8 arrays each of shape ``(H, W, 3)``.
+
+        Returns:
+            Tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
+
+        """
+        return torch.stack([self.transform(Image.fromarray(f)) for f in frames]).to(self.device)
+
+    def inference(self, tensor: torch.Tensor) -> torch.Tensor:
+        """Swin Transformer forward pass with global average pooling.
+
+        The backbone ``forward`` returns patch tokens of shape
+        ``(B, N, C)``. This method averages over the patch dimension
+        to produce ``(B, C)`` embeddings suitable for downstream tasks.
+
+        Args:
+            tensor: Preprocessed tensor of shape ``(B, 3, 224, 224)``
+                on ``self.device``.
+
+        Returns:
+            Feature tensor of shape ``(B, D)``.
+
+        """
+        return self.model(tensor).mean(dim=1)
+
 
 class Mlp(nn.Module):  # pragma: no cover
     """Multi-layer perceptron module."""
@@ -929,84 +1010,3 @@ _SWIN_FACTORY = {
     "small": swin_transformer_small,
     "base": swin_transformer_base,
 }
-
-# num_features = embed_dim * 2^(num_stages-1) = embed_dim * 8
-_SWIN_FEAT_DIM: dict[str, int] = {
-    "tiny": 768,  # embed_dim=96,  96*8
-    "small": 768,  # embed_dim=96,  96*8
-    "base": 1024,  # embed_dim=128, 128*8
-}
-
-_IMAGENET_MEAN = [0.485, 0.456, 0.406]
-_IMAGENET_STD = [0.229, 0.224, 0.225]
-
-
-class SwinWrapper(VisualModelWrapper):
-    """Swin Transformer feature extractor wrapper.
-
-    Loads a pretrained Swin Transformer backbone and extracts global
-    average-pooled patch features, producing a ``(B, D)`` array.
-
-    Feature dimensions by architecture:
-
-    * ``"tiny"`` / ``"small"``: 768-d
-    * ``"base"``: 1024-d
-
-    Args:
-        arch: One of ``"tiny"``, ``"small"``, ``"base"``.
-            Defaults to ``"tiny"``.
-        pretrained: Load ImageNet-pretrained weights. Defaults to ``True``.
-        device_id: GPU device index. ``None`` or negative uses CPU.
-
-    """
-
-    def __init__(
-        self,
-        arch: str = "tiny",
-        pretrained: bool = True,
-        device_id: int | None = None,
-    ) -> None:
-        super().__init__(device_id)
-        if arch not in _SWIN_FACTORY:
-            raise ValueError(f"Unknown arch '{arch}'. Choose from {list(_SWIN_FACTORY)}")
-        self.arch = arch
-        self.feat_dim = _SWIN_FEAT_DIM[arch]
-        self.model = _SWIN_FACTORY[arch](pretrained=pretrained)
-        self.model.eval().to(self.device)
-        self.transform = T.Compose(
-            [
-                T.Resize(256),
-                T.CenterCrop(224),
-                T.ToTensor(),
-                T.Normalize(mean=_IMAGENET_MEAN, std=_IMAGENET_STD),
-            ]
-        )
-
-    def _preprocess(self, frames: Sequence[np.ndarray]) -> torch.Tensor:
-        """Resize, crop and normalise RGB frames to ImageNet convention.
-
-        Args:
-            frames: RGB uint8 arrays each of shape ``(H, W, 3)``.
-
-        Returns:
-            Tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
-
-        """
-        return torch.stack([self.transform(Image.fromarray(f)) for f in frames]).to(self.device)
-
-    def inference(self, tensor: torch.Tensor) -> torch.Tensor:
-        """Swin Transformer forward pass with global average pooling.
-
-        The backbone ``forward`` returns patch tokens of shape
-        ``(B, N, C)``. This method averages over the patch dimension
-        to produce ``(B, C)`` embeddings suitable for downstream tasks.
-
-        Args:
-            tensor: Preprocessed tensor of shape ``(B, 3, 224, 224)``
-                on ``self.device``.
-
-        Returns:
-            Feature tensor of shape ``(B, D)``.
-
-        """
-        return self.model(tensor).mean(dim=1)

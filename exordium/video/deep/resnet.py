@@ -19,6 +19,7 @@ from exordium import WEIGHT_DIR
 from exordium.utils.ckpt import download_file
 from exordium.video.deep.base import VisualModelWrapper
 
+
 __all__ = [
     "ResNet",
     "resnet18",
@@ -44,6 +45,81 @@ _model_urls: dict[str, str] = {
     "resnet101": "https://download.pytorch.org/models/resnet101-5d3b4d8f.pth",
     "resnet152": "https://download.pytorch.org/models/resnet152-b121ed2d.pth",
 }
+
+_IMAGENET_MEAN = [0.485, 0.456, 0.406]
+_IMAGENET_STD = [0.229, 0.224, 0.225]
+
+
+class ResNetWrapper(VisualModelWrapper):
+    """ResNet feature extractor wrapper.
+
+    Loads a pretrained ResNet backbone and extracts global average-pooled
+    spatial features, producing a ``(B, D)`` array where ``D`` is the
+    channel dimension of the final convolutional stage.
+
+    Feature dimensions by architecture:
+
+    * ``resnet18`` / ``resnet34``: 512-d
+    * ``resnet50`` / ``resnet101`` / ``resnet152``: 2048-d
+
+    Args:
+        arch: One of ``"resnet18"``, ``"resnet34"``, ``"resnet50"``,
+            ``"resnet101"``, ``"resnet152"``. Defaults to ``"resnet50"``.
+        pretrained: Load ImageNet-pretrained weights. Defaults to ``True``.
+        device_id: GPU device index. ``None`` or negative uses CPU.
+
+    """
+
+    def __init__(
+        self,
+        arch: str = "resnet50",
+        pretrained: bool = True,
+        device_id: int | None = None,
+    ) -> None:
+        super().__init__(device_id)
+        if arch not in _FACTORY:
+            raise ValueError(f"Unknown arch '{arch}'. Choose from {list(_FACTORY)}")
+        self.arch = arch
+        self.feat_dim = _FEATURE_DIM[arch]
+        self.model = _FACTORY[arch](pretrained=pretrained)
+        self.model.eval().to(self.device)
+        self.transform = T.Compose(
+            [
+                T.Resize(256),
+                T.CenterCrop(224),
+                T.ToTensor(),
+                T.Normalize(mean=_IMAGENET_MEAN, std=_IMAGENET_STD),
+            ]
+        )
+
+    def _preprocess(self, frames: Sequence[np.ndarray]) -> torch.Tensor:
+        """Resize, crop and normalise RGB frames to ImageNet convention.
+
+        Args:
+            frames: RGB uint8 arrays each of shape ``(H, W, 3)``.
+
+        Returns:
+            Tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
+
+        """
+        return torch.stack([self.transform(Image.fromarray(f)) for f in frames]).to(self.device)
+
+    def inference(self, tensor: torch.Tensor) -> torch.Tensor:
+        """ResNet forward pass with global average pooling.
+
+        The backbone ``forward`` returns spatial features of shape
+        ``(B, spatial, C)``. This method averages over the spatial dimension
+        to produce ``(B, C)`` embeddings suitable for downstream tasks.
+
+        Args:
+            tensor: Preprocessed tensor of shape ``(B, 3, 224, 224)``
+                on ``self.device``.
+
+        Returns:
+            Feature tensor of shape ``(B, D)``.
+
+        """
+        return self.model(tensor).mean(dim=1)
 
 
 def conv3x3(in_planes, out_planes, stride=1):  # pragma: no cover
@@ -332,78 +408,3 @@ _FACTORY = {
     "resnet101": resnet101,
     "resnet152": resnet152,
 }
-
-_IMAGENET_MEAN = [0.485, 0.456, 0.406]
-_IMAGENET_STD = [0.229, 0.224, 0.225]
-
-
-class ResNetWrapper(VisualModelWrapper):
-    """ResNet feature extractor wrapper.
-
-    Loads a pretrained ResNet backbone and extracts global average-pooled
-    spatial features, producing a ``(B, D)`` array where ``D`` is the
-    channel dimension of the final convolutional stage.
-
-    Feature dimensions by architecture:
-
-    * ``resnet18`` / ``resnet34``: 512-d
-    * ``resnet50`` / ``resnet101`` / ``resnet152``: 2048-d
-
-    Args:
-        arch: One of ``"resnet18"``, ``"resnet34"``, ``"resnet50"``,
-            ``"resnet101"``, ``"resnet152"``. Defaults to ``"resnet50"``.
-        pretrained: Load ImageNet-pretrained weights. Defaults to ``True``.
-        device_id: GPU device index. ``None`` or negative uses CPU.
-
-    """
-
-    def __init__(
-        self,
-        arch: str = "resnet50",
-        pretrained: bool = True,
-        device_id: int | None = None,
-    ) -> None:
-        super().__init__(device_id)
-        if arch not in _FACTORY:
-            raise ValueError(f"Unknown arch '{arch}'. Choose from {list(_FACTORY)}")
-        self.arch = arch
-        self.feat_dim = _FEATURE_DIM[arch]
-        self.model = _FACTORY[arch](pretrained=pretrained)
-        self.model.eval().to(self.device)
-        self.transform = T.Compose(
-            [
-                T.Resize(256),
-                T.CenterCrop(224),
-                T.ToTensor(),
-                T.Normalize(mean=_IMAGENET_MEAN, std=_IMAGENET_STD),
-            ]
-        )
-
-    def _preprocess(self, frames: Sequence[np.ndarray]) -> torch.Tensor:
-        """Resize, crop and normalise RGB frames to ImageNet convention.
-
-        Args:
-            frames: RGB uint8 arrays each of shape ``(H, W, 3)``.
-
-        Returns:
-            Tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
-
-        """
-        return torch.stack([self.transform(Image.fromarray(f)) for f in frames]).to(self.device)
-
-    def inference(self, tensor: torch.Tensor) -> torch.Tensor:
-        """ResNet forward pass with global average pooling.
-
-        The backbone ``forward`` returns spatial features of shape
-        ``(B, spatial, C)``. This method averages over the spatial dimension
-        to produce ``(B, C)`` embeddings suitable for downstream tasks.
-
-        Args:
-            tensor: Preprocessed tensor of shape ``(B, 3, 224, 224)``
-                on ``self.device``.
-
-        Returns:
-            Feature tensor of shape ``(B, D)``.
-
-        """
-        return self.model(tensor).mean(dim=1)

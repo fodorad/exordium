@@ -1,105 +1,17 @@
-"""Tests for exordium.utils.transforms module."""
+"""Tests for exordium.video.core.transform module (video transformation classes)."""
 
 import unittest
 
 import numpy as np
 import torch
 
-from exordium.utils.transforms import (
+from exordium.video.core.transform import (
     CenterCrop,
     Denormalize,
     Normalize,
     Resize,
     ToTensor,
-    crop_and_pad_window,
-    get_random_eraser,
-    spec_augment,
 )
-
-
-class TestSpecAugment(unittest.TestCase):
-    """Tests for spec_augment function."""
-
-    def test_spec_augment_basic(self):
-        """Test basic spectrogram augmentation."""
-        spec = np.random.randn(128, 100, 1).astype(np.float32)
-        augmented = spec_augment(spec, num_mask=2)
-
-        self.assertEqual(augmented.shape, spec.shape, "Shape should be preserved")
-        self.assertFalse(np.array_equal(augmented, spec), "Spec should be modified")
-
-    def test_spec_augment_zero_masking(self):
-        """Test with zero masking percentage."""
-        spec = np.random.randn(128, 100, 1).astype(np.float32)
-        augmented = spec_augment(
-            spec, num_mask=1, freq_masking_max_percentage=0.0, time_masking_max_percentage=0.0
-        )
-
-        # With 0% masking, output should be very similar to input
-        np.testing.assert_array_almost_equal(augmented, spec, decimal=5)
-
-    def test_spec_augment_num_masks(self):
-        """Test with different number of masks."""
-        spec = np.random.randn(128, 100, 1).astype(np.float32)
-        augmented = spec_augment(spec, num_mask=5)
-
-        self.assertEqual(augmented.shape, spec.shape, "Shape should be preserved")
-
-    def test_spec_augment_custom_mean(self):
-        """Test with custom mean value."""
-        spec = np.random.randn(128, 100, 1).astype(np.float32)
-        augmented = spec_augment(spec, num_mask=2, mean=-1.0)
-
-        self.assertEqual(augmented.shape, spec.shape, "Shape should be preserved")
-
-
-class TestCropAndPadWindow(unittest.TestCase):
-    """Tests for crop_and_pad_window function."""
-
-    def test_crop_and_pad_window_basic(self):
-        """Test basic cropping and padding."""
-        x = np.random.randn(100, 10)
-        result = crop_and_pad_window(x, win_size=5, m_freq=10, timestep=8)
-
-        expected_height = int(5 * 10)  # win_size * m_freq
-        self.assertEqual(result.shape, (expected_height, 10), "Output shape should match expected")
-
-    def test_crop_and_pad_window_edge_case(self):
-        """Test with timestep at the beginning."""
-        x = np.random.randn(100, 10)
-        result = crop_and_pad_window(x, win_size=3, m_freq=10, timestep=5)
-
-        expected_height = int(3 * 10)  # win_size * m_freq
-        self.assertEqual(result.shape, (expected_height, 10), "Should match expected shape")
-        self.assertEqual(result.shape[1], x.shape[1], "Width should be preserved")
-
-
-class TestGetRandomEraser(unittest.TestCase):
-    """Tests for get_random_eraser function."""
-
-    def test_get_random_eraser_basic(self):
-        """Test basic random eraser."""
-        eraser = get_random_eraser(p=1.0)  # Always erase
-        img = np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8).copy()
-        erased = eraser(img.copy())
-
-        self.assertEqual(erased.shape, img.shape, "Shape should be preserved")
-
-    def test_get_random_eraser_no_erase(self):
-        """Test with p=0 (never erase)."""
-        eraser = get_random_eraser(p=0.0)  # Never erase
-        img = np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8)
-        erased = eraser(img.copy())
-
-        np.testing.assert_array_equal(erased, img, "Image should be unchanged")
-
-    def test_get_random_eraser_pixel_level(self):
-        """Test pixel-level erasing."""
-        eraser = get_random_eraser(p=1.0, pixel_level=True)
-        img = np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8)
-        erased = eraser(img.copy())
-
-        self.assertEqual(erased.shape, img.shape, "Shape should be preserved")
 
 
 class TestToTensor(unittest.TestCase):

@@ -15,7 +15,7 @@ from exordium.utils.ckpt import download_file
 from exordium.utils.device import get_torch_device
 from exordium.video.core.io import images_to_np
 from exordium.video.face.gaze.base import GazeWrapper
-from exordium.video.face.transform import rotate_face
+from exordium.video.core.transform import rotate_face
 
 
 class L2csNetWrapper(GazeWrapper):
@@ -131,7 +131,7 @@ class L2csNetWrapper(GazeWrapper):
 ####################################################################################
 
 
-class L2CS(nn.Module):
+class L2CS(nn.Module):  # pragma: no cover
     """L2CS-Net architecture for gaze estimation."""
 
     def __init__(self, block, layers, num_bins):
@@ -214,7 +214,7 @@ class L2CS(nn.Module):
         return pre_yaw_gaze, pre_pitch_gaze
 
 
-def L2CS_Builder(arch: str = "ResNet50", bins: int = 90):
+def L2CS_Builder(arch: str = "ResNet50", bins: int = 90):  # pragma: no cover
     """Build L2CS-Net model with specified architecture.
 
     Args:

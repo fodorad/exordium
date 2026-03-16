@@ -66,7 +66,7 @@ class L2csNetTestCase(unittest.TestCase):
         import torch.nn.functional as F
 
         from exordium.video.core.io import images_to_np
-        from exordium.video.face.transform import rotate_face
+        from exordium.video.core.transform import rotate_face
 
         faces_rgb = images_to_np([self.face_crop], "RGB", resize=None)
         faces_rgb = [rotate_face(face, self.face_roll)[0] for face in faces_rgb]
@@ -89,7 +89,7 @@ class L2csNetTestCase(unittest.TestCase):
         import torch.nn.functional as F
 
         from exordium.video.core.io import images_to_np
-        from exordium.video.face.transform import rotate_face
+        from exordium.video.core.transform import rotate_face
 
         faces_rgb = images_to_np([self.face_crop, self.nocam_crop], "RGB", resize=None)
         roll_angles = [self.face_roll, self.nocam_roll]
@@ -111,7 +111,7 @@ class L2csNetTestCase(unittest.TestCase):
         import torch.nn.functional as F
 
         from exordium.video.core.io import images_to_np
-        from exordium.video.face.transform import rotate_face
+        from exordium.video.core.transform import rotate_face
 
         faces_rgb = images_to_np([self.face_crop], "RGB", resize=None)
         faces_rgb = [rotate_face(face, self.face_roll)[0] for face in faces_rgb]

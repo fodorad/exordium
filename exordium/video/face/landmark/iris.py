@@ -199,6 +199,70 @@ class IrisWrapper:
         }
 
 
+def visualize_iris(
+    image: np.ndarray,
+    landmarks: np.ndarray,
+    iris_landmarks: np.ndarray,
+    output_path: str | os.PathLike | None = None,
+    show_indices: bool = False,
+) -> np.ndarray:
+    """Draw face landmarks and iris landmarks onto an image.
+
+    Face landmarks are rendered in green and iris landmarks in blue.
+
+    Args:
+        image: Input image of shape ``(H, W, C)``.
+        landmarks: Face landmark coordinates of shape ``(N, 2)``.
+        iris_landmarks: Iris landmark coordinates of shape ``(5, 2)``.
+        output_path: Path to save the output image. ``None`` skips saving.
+        show_indices: Draw landmark indices next to each point.
+
+    Returns:
+        Copy of the image with face and iris landmarks drawn on it.
+
+    """
+    if not (landmarks.ndim == 2 and landmarks.shape[1] == 2):
+        raise Exception(f"Expected landmarks with shape (N, 2) got instead {landmarks.shape}.")
+
+    if not (iris_landmarks.ndim == 2 and iris_landmarks.shape[1] == 2):
+        raise Exception(
+            f"Expected iris_landmarks with shape (5, 2) got instead {iris_landmarks.shape}."
+        )
+
+    image_out = np.copy(image)
+    landmarks = np.rint(landmarks).astype(int)
+    iris_landmarks = np.rint(iris_landmarks).astype(int)
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    for index in range(landmarks.shape[0]):
+        cv2.circle(image_out, landmarks[index, :], 0, (0, 255, 0), 1)
+        if show_indices:
+            cv2.putText(
+                image_out, str(index), landmarks[index, :], font, 0.3, (0, 0, 0), 1, cv2.LINE_AA
+            )
+
+    for index in range(iris_landmarks.shape[0]):
+        cv2.circle(image_out, iris_landmarks[index, :], 0, (255, 0, 0), 1)
+        if show_indices:
+            cv2.putText(
+                image_out,
+                str(index),
+                iris_landmarks[index, :],
+                font,
+                0.3,
+                (0, 0, 0),
+                1,
+                cv2.LINE_AA,
+            )
+
+    if output_path is not None:
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(output_path), image_out)
+
+    return image_out
+
+
 #################################################################################
 #                                                                               #
 #   Code: https://github.com/cedriclmenard/irislandmarks.pytorch                #
@@ -436,67 +500,3 @@ class MediaPipeIris(nn.Module):  # pragma: no cover
         eye, iris = out
 
         return eye.view(-1, 71, 3), iris.view(-1, 5, 3)
-
-
-def visualize_iris(
-    image: np.ndarray,
-    landmarks: np.ndarray,
-    iris_landmarks: np.ndarray,
-    output_path: str | os.PathLike | None = None,
-    show_indices: bool = False,
-) -> np.ndarray:
-    """Draw face landmarks and iris landmarks onto an image.
-
-    Face landmarks are rendered in green and iris landmarks in blue.
-
-    Args:
-        image: Input image of shape ``(H, W, C)``.
-        landmarks: Face landmark coordinates of shape ``(N, 2)``.
-        iris_landmarks: Iris landmark coordinates of shape ``(5, 2)``.
-        output_path: Path to save the output image. ``None`` skips saving.
-        show_indices: Draw landmark indices next to each point.
-
-    Returns:
-        Copy of the image with face and iris landmarks drawn on it.
-
-    """
-    if not (landmarks.ndim == 2 and landmarks.shape[1] == 2):
-        raise Exception(f"Expected landmarks with shape (N, 2) got instead {landmarks.shape}.")
-
-    if not (iris_landmarks.ndim == 2 and iris_landmarks.shape[1] == 2):
-        raise Exception(
-            f"Expected iris_landmarks with shape (5, 2) got instead {iris_landmarks.shape}."
-        )
-
-    image_out = np.copy(image)
-    landmarks = np.rint(landmarks).astype(int)
-    iris_landmarks = np.rint(iris_landmarks).astype(int)
-
-    font = cv2.FONT_HERSHEY_SIMPLEX
-
-    for index in range(landmarks.shape[0]):
-        cv2.circle(image_out, landmarks[index, :], 0, (0, 255, 0), 1)
-        if show_indices:
-            cv2.putText(
-                image_out, str(index), landmarks[index, :], font, 0.3, (0, 0, 0), 1, cv2.LINE_AA
-            )
-
-    for index in range(iris_landmarks.shape[0]):
-        cv2.circle(image_out, iris_landmarks[index, :], 0, (255, 0, 0), 1)
-        if show_indices:
-            cv2.putText(
-                image_out,
-                str(index),
-                iris_landmarks[index, :],
-                font,
-                0.3,
-                (0, 0, 0),
-                1,
-                cv2.LINE_AA,
-            )
-
-    if output_path is not None:
-        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        cv2.imwrite(str(output_path), image_out)
-
-    return image_out

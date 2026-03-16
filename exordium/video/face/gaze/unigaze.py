@@ -12,7 +12,7 @@ from torchvision import transforms
 from exordium.utils.device import get_torch_device
 from exordium.video.core.io import images_to_np
 from exordium.video.face.gaze.base import GazeWrapper
-from exordium.video.face.transform import rotate_face
+from exordium.video.core.transform import rotate_face
 
 
 class UnigazeWrapper(GazeWrapper):

@@ -5,7 +5,7 @@ import unittest
 import cv2
 import numpy as np
 
-from exordium.video.face.transform import align_face, crop_eye_keep_ratio, rotate_face
+from exordium.video.core.transform import align_face, crop_eye_keep_ratio, rotate_face
 from tests.fixtures import IMAGE_FACE
 
 
