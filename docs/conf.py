@@ -6,8 +6,9 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 
 project = "Exordium"
-copyright = "2024, Ádám Fodor"
+copyright = "2024-2026, Ádám Fodor"
 author = "Ádám Fodor"
+release = "latest"
 
 extensions = [
     "autoapi.extension",

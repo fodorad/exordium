@@ -1,111 +1,140 @@
-# exordium
-[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
-[![python](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
-[![pytorch](https://img.shields.io/badge/PyTorch-2.10.0-EE4C2C.svg?style=flat&logo=pytorch)](https://pytorch.org)
+<div align="center">
+
+<img src="https://via.placeholder.com/300x200?text=Exordium" alt="Exordium" width="260"/>
+
+<br/>
+
+**Collection of Preprocessing Functions and Deep Learning Methods for Multimodal Feature Extraction**
 
 [![CI](https://github.com/fodorad/exordium/workflows/CI/badge.svg)](https://github.com/fodorad/exordium/actions)
 [![Coverage](https://codecov.io/gh/fodorad/exordium/branch/main/graph/badge.svg)](https://codecov.io/gh/fodorad/exordium)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Docs](https://img.shields.io/badge/docs-online-blue?logo=githubpages)](https://fodorad.github.io/exordium/)
+[![PyPI](https://img.shields.io/pypi/v/exordium?color=orange)](https://pypi.org/project/exordium/)
+[![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.10%2B-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
+[![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
-Collection of preprocessing functions and deep learning methods.
+</div>
 
-# Supported features
-## Audio
-* frequently used io for audio files
-* openSMILE feature extraction
-* spectrogram calculation
-* Wav2Vec2 feature extraction
-* CLAP feature extraction
-* WavLM feature extraction
+---
 
-## Video
-* frequently used io for videos and frames
-* bounding box manipulation methods
-* face detection with RetinaFace
-* face landmarks and head pose with 3DDFA_V2
-* iris and pupil landmark estimation with MediaPipe Iris
-* fine eye landmark estimation with MediaPipe FaceMesh
-* eye gaze vector estimation with L2CS-Net
-* tracking using IoU and DeepFace
-* FAb-Net feature extraction
-* OpenFace feature extraction
-* R2+1D feature extraction
-* Robust Video Matting background removal
-* SWIN transformer feature extraction
-* FaceMesh landmark estimation
-* CLIP feature extraction
-* OpenGraphAU action unit estimation
+Exordium is a comprehensive toolkit for **multimodal feature extraction** across audio, video, and text modalities. It provides preprocessing functions, utility tools, and deep learning methods for processing and analyzing multimodal data.
 
-## Text
-* BERT feature extraction
-* RoBERTa feature extraction
-* XML-RoBERTa feature extraction
+## Features
 
-## Utils
-* parallel processing
-* io decorators
-* loss functions
-* normalization
-* padding/truncating
-* graphs
-* 3D headpose
-* 2D landmarks
-* gaze
-* saliency maps
-* dataframes to images
+| | |
+|---|---|
+| **Audio Processing** | I/O, OpenSMILE, spectrograms, Wav2Vec2, CLAP, WavLM |
+| **Video Analysis** | Face detection, landmarks, head pose, gaze, iris tracking, action units, feature extraction |
+| **Text Processing** | BERT, RoBERTa, XML-RoBERTa |
+| **Utilities** | Parallel processing, I/O helpers, loss functions, normalization, padding, visualization |
 
-# Setup
-### Install package with all base and optional dependencies from PyPI
-```
-pip install exordium[all]
-```
-### Install package with base dependencies from PyPI
-```
-pip install exordium
-```
-### Install optional dependencies for specific modules
-The following extras will install the base and specific dependencies for using TDDFA_V2.
-```
-pip install exordium[tddfa]
-```
-You can install multiple optional dependencies as well.
-```
-pip install exordium[tddfa,audio]
+---
+
+## Installation
+
+```bash
+pip install exordium          # base only
+pip install exordium[all]     # all optional dependencies
+pip install exordium[audio]   # audio extras only
+pip install exordium[video]   # video extras only
+pip install exordium[text]    # text extras only
 ```
 
-#### Supported extras definitions:
+### Extras
+
 | extras tag | description |
-| --- | --- |
-| audio | dependencies to process audio data |
-| text | dependency to process textual data |
-| tddfa | dependencies of TDDFA_V2 for landmark and headpose estimation, or related transformations |
-| detection | dependencies for automatic face detection and tracking in videos |
-| video | dependencies for various video feature extraction methods |
-| all | all previously described extras will be installed |
+|---|---|
+| `audio` | dependencies to process audio data |
+| `text` | dependency to process textual data |
+| `face` | dependencies for face detection, landmarks, and head pose estimation |
+| `video` | dependencies for various video feature extraction methods |
+| `all` | all previously described extras will be installed |
 
-Note: If you are not sure which tag should be used, just go with the all-mighty "all".
+---
 
-### Install package for development
+## Quick start
+
+### Audio feature extraction (WavLM)
+
+```python
+import numpy as np
+from exordium.audio.wavlm import WavlmWrapper
+
+model = WavlmWrapper(device_id=-1, model_name="base+")
+waveform = np.random.rand(16000).astype(np.float32)
+features = model.audio_to_feature(waveform)
+# list of 12 numpy arrays, each (T, 768)
 ```
+
+### Text feature extraction (BERT)
+
+```python
+from exordium.text.bert import BertWrapper
+
+model = BertWrapper(device_id=-1)
+features = model("Hello, world!", pool=True)
+# torch.Tensor of shape (1, 768)
+```
+
+### Video face detection
+
+```python
+from exordium.video.face import RetinaFaceDetector
+from exordium.video.io import images_to_np
+
+detector = RetinaFaceDetector()
+frames = images_to_np(["frame.jpg"], "RGB")
+detections = detector.detect_image(frames[0])
+```
+
+---
+
+## Development
+
+For development with all dependencies:
+
+```bash
 git clone https://github.com/fodorad/exordium
 cd exordium
-pip install -e .[all]
-python -m unittest discover -s test
+pip install -e ".[all,dev]"
+make check
 ```
 
-# Projects using exordium
+---
 
-### (2023) BlinkLinMulT
-LinMulT is trained for blink presence detection and eye state recognition tasks.
-Our results demonstrate comparable or superior performance compared to state-of-the-art models on 2 tasks, using 7 public benchmark databases.
-* paper: BlinkLinMulT: Transformer-based Eye Blink Detection (accepted, available soon)
-* code: https://github.com/fodorad/BlinkLinMulT
+## Documentation
 
-### (2022) PersonalityLinMulT
-LinMulT is trained for Big Five personality trait estimation using the First Impressions V2 dataset and sentiment estimation using the MOSI and MOSEI datasets.
-* paper: Multimodal Sentiment and Personality Perception Under Speech: A Comparison of Transformer-based Architectures ([pdf](https://proceedings.mlr.press/v173/fodor22a/fodor22a.pdf), [website](https://proceedings.mlr.press/v173/fodor22a.html))
-* code: https://github.com/fodorad/PersonalityLinMulT
+> [API reference](https://fodorad.github.io/exordium/)
 
+---
 
-# Contact
-* Ádám Fodor (fodorad201@gmail.com)
+## Related Projects
+
+### BlinkLinMulT (2023)
+
+Transformer-based eye blink detection and eye state recognition across 7 public benchmark databases.
+
+- Paper: [BlinkLinMulT: Transformer-based Eye Blink Detection](https://www.mdpi.com/2313-433X/9/10/196)
+- Code: [github.com/fodorad/BlinkLinMulT](https://github.com/fodorad/BlinkLinMulT)
+
+### PersonalityLinMulT (2022)
+
+LinMulT trained for Big Five personality trait estimation and sentiment analysis.
+
+- Paper: [Multimodal Sentiment and Personality Perception Under Speech](https://proceedings.mlr.press/v173/fodor22a.html)
+- Code: [github.com/fodorad/PersonalityLinMulT](https://github.com/fodorad/PersonalityLinMulT)
+
+### LinMulT
+
+General-purpose multimodal transformer with linear-complexity attention mechanisms.
+
+- Paper: [LinMulT: Efficient Multimodal Transformers via Linear-Complexity Attention](https://adamfodor.com/LinMulT/)
+- Code: [github.com/fodorad/LinMulT](https://github.com/fodorad/LinMulT)
+
+---
+
+## Contact
+
+**Ádám Fodor** — [adamfodor.com](https://adamfodor.com) · fodorad201@gmail.com
