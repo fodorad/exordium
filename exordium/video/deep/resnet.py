@@ -19,7 +19,6 @@ from exordium import WEIGHT_DIR
 from exordium.utils.ckpt import download_file
 from exordium.video.deep.base import VisualModelWrapper
 
-
 __all__ = [
     "ResNet",
     "resnet18",

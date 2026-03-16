@@ -1,9 +1,10 @@
 """Video transformation and face manipulation utilities."""
 
 from collections.abc import Sequence
+
 import cv2
-import torch
 import numpy as np
+import torch
 
 from exordium.video.core.bb import xyxy2full
 from exordium.video.face.landmark.constants import FaceLandmarks

@@ -1,3 +1,4 @@
+from exordium.video.core.transform import align_face, crop_eye_keep_ratio, rotate_face
 from exordium.video.face.au import (
     AU_REGISTRY,
     AU_ids,
@@ -25,10 +26,6 @@ from exordium.video.face.landmark import (
     visualize_landmarks,
 )
 from exordium.video.face.landmark.constants import FaceLandmarks
-from exordium.video.core.transform import align_face, crop_eye_keep_ratio, rotate_face
-
-# For backwards compatibility, alias BlinkDenseNet121 as BlinkWrapper
-BlinkWrapper = BlinkDenseNet121
 
 __all__ = [
     "AU_REGISTRY",
@@ -37,7 +34,6 @@ __all__ = [
     "OpenGraphAuWrapper",
     "read_openface_au",
     "BlinkDenseNet121",
-    "BlinkWrapper",
     "MediaPipeFaceDetector",
     "GazeWrapper",
     "L2CS_Builder",

@@ -14,8 +14,8 @@ from exordium import WEIGHT_DIR
 from exordium.utils.ckpt import download_file
 from exordium.utils.device import get_torch_device
 from exordium.video.core.io import images_to_np
-from exordium.video.face.gaze.base import GazeWrapper
 from exordium.video.core.transform import rotate_face
+from exordium.video.face.gaze.base import GazeWrapper
 
 
 class L2csNetWrapper(GazeWrapper):

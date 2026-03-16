@@ -1,12 +1,11 @@
 """Tests for exordium.video.facemesh module."""
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import numpy as np
 
 from exordium.video.face.landmark.facemesh import rotate_landmarks
-from exordium.video.core.detection import Detection
 
 
 class TestRotateLandmarks(unittest.TestCase):
@@ -64,7 +63,6 @@ class TestFaceMeshWrapperSignatures(unittest.TestCase):
 
     def test_call_method_signature_with_synthetic_data(self):
         """Test __call__ method accepts list of images and returns list."""
-        from exordium.video.face.landmark.facemesh import FaceMeshWrapper
 
         # Manually test the __call__ logic with synthetic data
         rgb_images = [

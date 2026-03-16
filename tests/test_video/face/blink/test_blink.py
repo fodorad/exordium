@@ -7,13 +7,13 @@ import torch
 
 
 class TestBlinkWrapper(unittest.TestCase):
-    """Tests for BlinkWrapper."""
+    """Tests for BlinkDenseNet121."""
 
     @classmethod
     def setUpClass(cls):
-        from exordium.video.face.blink import BlinkWrapper
+        from exordium.video.face.blink import BlinkDenseNet121
 
-        cls.model = BlinkWrapper(device_id=None)
+        cls.model = BlinkDenseNet121(device_id=None)
 
     def _make_frame(self, h=480, w=640):
         return np.random.randint(0, 256, (h, w, 3), dtype=np.uint8)
