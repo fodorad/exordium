@@ -36,7 +36,8 @@ class ClapWrapper(AudioModelWrapper):
     ) -> None:
         super().__init__(device_id)
         self.model = ClapModel.from_pretrained(model_name)
-        self.model.to(self.device)
+        assert isinstance(self.model, ClapModel)
+        self.model.to(self.device)  # ty: ignore[invalid-argument-type]
         self.model.eval()
         self.processor = ClapProcessor.from_pretrained(model_name)
         self._resamplers: dict[int, torchaudio.transforms.Resample] = {}
@@ -88,7 +89,7 @@ class ClapWrapper(AudioModelWrapper):
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         with torch.inference_mode():
-            return self.model.get_audio_features(**inputs)  # (B, 512)
+            return self.model.get_audio_features(**inputs).pooler_output  # (B, 512)
 
     def inference(self, waveform: np.ndarray | torch.Tensor) -> torch.Tensor:
         """Extract CLAP features from a pre-prepared waveform tensor.

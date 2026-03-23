@@ -36,8 +36,9 @@ class ClipWrapper(VisualModelWrapper):
     ):
         super().__init__(device_id)
         self.model = CLIPVisionModelWithProjection.from_pretrained(model_name)
+        assert isinstance(self.model, CLIPVisionModelWithProjection)
         self.model.eval()
-        self.model.to(self.device)
+        self.model.to(self.device)  # ty: ignore[invalid-argument-type]
         self._mean = torch.tensor(_CLIP_MEAN, dtype=torch.float32, device=self.device).view(
             1, 3, 1, 1
         )

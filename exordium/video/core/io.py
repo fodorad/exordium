@@ -536,9 +536,11 @@ def sequence_to_video(
     # Handle directory input - load all frames as file paths then as numpy
     if isinstance(frames, (str, Path)):
         frame_paths = sorted([str(elem) for elem in list(Path(frames).iterdir())])
-        np_frames: list[np.ndarray] = [
-            cv2.cvtColor(cv2.imread(p), cv2.COLOR_BGR2RGB) for p in frame_paths
-        ]
+        np_frames: list[np.ndarray] = []
+        for p in frame_paths:
+            _f = cv2.imread(p)
+            if _f is not None:
+                np_frames.append(cv2.cvtColor(_f, cv2.COLOR_BGR2RGB))
         save_video(np_frames, output_path, fps=fps, overwrite=overwrite)
         return
 
@@ -546,7 +548,11 @@ def sequence_to_video(
 
     # Handle file paths - load as numpy arrays
     if isinstance(seq[0], (str, Path)):
-        np_frames = [cv2.cvtColor(cv2.imread(str(f)), cv2.COLOR_BGR2RGB) for f in seq]
+        np_frames = []
+        for f in seq:
+            _f = cv2.imread(str(f))
+            if _f is not None:
+                np_frames.append(cv2.cvtColor(_f, cv2.COLOR_BGR2RGB))
         save_video(np_frames, output_path, fps=fps, overwrite=overwrite)
         return
 
@@ -647,6 +653,7 @@ def image_to_np(image: str | Path | np.ndarray, channel_order: str = "RGB") -> n
             raise FileNotFoundError(f"The file cannot be found: {image}")
 
         image_bgr = cv2.imread(str(image), cv2.IMREAD_UNCHANGED)  # BGR
+        assert image_bgr is not None, f"cv2.imread failed to load: {image}"
         image = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)  # RGB
 
     if image.ndim == 3 and image.shape[-1] == 3:

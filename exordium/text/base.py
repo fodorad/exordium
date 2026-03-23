@@ -77,6 +77,7 @@ class TextModelWrapper(ABC):
             ``self.device``.
 
         """
+        assert self.tokenizer is not None
         inputs = self.tokenizer(
             text,
             return_tensors="pt",

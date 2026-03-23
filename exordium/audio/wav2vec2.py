@@ -1,6 +1,7 @@
 """Wav2Vec2 speech encoding model wrapper."""
 
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import torch
@@ -25,7 +26,8 @@ class Wav2vec2Wrapper(AudioModelWrapper):
         super().__init__(device_id)
         self.preprocessor = tfm.Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
         self.model = tfm.Wav2Vec2Model.from_pretrained("facebook/wav2vec2-base-960h")
-        self.model.to(self.device)
+        assert isinstance(self.model, tfm.Wav2Vec2Model)
+        self.model.to(self.device)  # ty: ignore[invalid-argument-type]
         self.model.eval()
 
     def __call__(
@@ -122,9 +124,8 @@ class Wav2vec2Wrapper(AudioModelWrapper):
         ).input_values.to(self.device)
 
         # Compute output lengths to trim padding from each sequence
-        out_lengths = self.model._get_feat_extract_output_lengths(
-            torch.tensor(lengths, dtype=torch.long)
-        ).tolist()
+        lengths_tensor = cast("torch.LongTensor", torch.tensor(lengths, dtype=torch.long))
+        out_lengths = self.model._get_feat_extract_output_lengths(lengths_tensor).tolist()
 
         with torch.inference_mode():
             hidden = self.model(input_values).last_hidden_state  # (B, T_max, 768)

@@ -1,9 +1,9 @@
-.PHONY: install dev install-docs fix lint type-check test docs docs-serve docs-deploy check clean help
+.PHONY: install dev upgrade install-docs fix lint type-check test docs docs-serve docs-deploy check clean help
 
 help:
 	@echo "Dev (modify files):  fix"
 	@echo "Checks (read-only):  lint | type-check | test | docs | check"
-	@echo "Setup:               install | dev | install-docs"
+	@echo "Setup:               install | dev | upgrade | install-docs"
 	@echo "Docs:                docs-serve | docs-deploy"
 	@echo "Cleanup:             clean"
 
@@ -14,6 +14,9 @@ install:
 
 dev:
 	uv pip install -e ".[all,dev]"
+
+upgrade:
+	uv pip install --upgrade -e ".[all,dev,docs]"
 
 install-docs:
 	uv pip install -e ".[docs]"
@@ -31,7 +34,7 @@ lint:
 	ruff format --check .
 
 type-check:
-	ty check exordium
+	ty check exordium --python $(shell which python)
 
 test:
 	coverage run -m unittest discover -s tests

@@ -44,8 +44,9 @@ class WavlmWrapper(AudioModelWrapper):
 
         self.sample_rate = WAVLM_SAMPLE_RATE
         self.model = WavLMModel.from_pretrained(_MODEL_IDS[model_name])
+        assert isinstance(self.model, WavLMModel)
         self.model.eval()
-        self.model.to(self.device)
+        self.model.to(self.device)  # ty: ignore[invalid-argument-type]
 
     def __call__(self, waveform: np.ndarray | torch.Tensor) -> list[torch.Tensor]:
         """Extract hidden-state features from a waveform.
@@ -116,8 +117,8 @@ class WavlmWrapper(AudioModelWrapper):
         """
         out = lengths
         for layer in self.model.feature_extractor.conv_layers:
-            k = layer.conv.kernel_size[0]
-            s = layer.conv.stride[0]
+            k = layer.conv.kernel_size[0]  # ty: ignore[unresolved-attribute, not-subscriptable]
+            s = layer.conv.stride[0]  # ty: ignore[not-subscriptable]
             out = [(n - k) // s + 1 for n in out]
         return out
 

@@ -1122,6 +1122,8 @@ def save_detections_to_video(
         disable=not verbose,
     ):
         frame_bgr = cv2.imread(str(frame_path))  # BGR numpy
+        if frame_bgr is None:
+            continue
         if frame_id in det_ids:
             fd = video_detections.get_frame_detection_with_frame_id(frame_id)
             frame_bgr = add_detections_to_frame(fd, frame_bgr)
@@ -1220,6 +1222,8 @@ def save_track_with_context_to_video(
             continue
 
         frame_bgr = cv2.imread(str(frame_path))  # BGR numpy
+        if frame_bgr is None:
+            continue
         detection = track.get_detection(frame_id)
         bb = detection.bb_xyxy
         x1, y1, x2, y2 = int(bb[0]), int(bb[1]), int(bb[2]), int(bb[3])

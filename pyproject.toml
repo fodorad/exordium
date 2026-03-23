@@ -118,6 +118,10 @@ skip_covered = false
 [tool.coverage.html]
 directory = "coverage_html"
 
+[tool.uv]
+override-dependencies = [
+  "timm>=1.0",  # unigaze is overly strict 
+]
+
 [tool.ty.environment]
 python-version = "3.12"
-
