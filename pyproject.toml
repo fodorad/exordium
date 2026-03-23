@@ -22,38 +22,32 @@ classifiers = [
 dependencies = [
   "numpy",
   "opencv-python",
-  "pillow",
   "scipy",
   "torch",
   "tqdm",
   "matplotlib",
+  "huggingface_hub",
+  "torchcodec",
+  "torchvision",
+  "transformers",
+  "safetensors",
 ]
 
 [project.optional-dependencies]
 audio = [
   "opensmile",
   "torchaudio",
-  "torchcodec",
-  "transformers",
 ]
 text = [
   "transformers",
-  "faster-whisper",
-]
-face = [
-  "torchvision",
-  "mediapipe",
-  "sixdrepnet",
-  "blinklinmult",
-  "unigaze",
+  "torchaudio",
 ]
 video = [
-  "pandas",
-  "timm",
-  "open_clip_torch",
-  "torchcodec",
-  "torchvision",
   "mediapipe",
+  "ultralytics",
+  "blinklinmult",
+  "unigaze",
+  "timm",
 ]
 dev = [
   "ruff",
@@ -69,7 +63,7 @@ docs = [
   "myst-parser",
 ]
 all = [
-  "exordium[audio,video,text,face]",
+  "exordium[audio,video,text]",
 ]
 
 [project.urls]
@@ -107,6 +101,7 @@ convention = "google"
 "__init__.py" = ["D104"]
 "tests/**/test_*.py" = ["D", "S", "ARG"]
 "docs/conf.py" = ["D", "ARG"]
+"examples/*.ipynb" = ["D", "E501", "E741"]
 
 [tool.coverage.run]
 source = ["exordium"]
@@ -125,3 +120,5 @@ directory = "coverage_html"
 
 [tool.ty.environment]
 python-version = "3.12"
+python = "/Users/fodorad/miniconda3/envs/exordium"
+

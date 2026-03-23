@@ -6,26 +6,11 @@ from pathlib import Path
 
 import torch
 
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
 
-def get_logger(name: str, path: Path | str) -> logging.Logger:
-    """Creates and configures a logger with file handler.
-
-    Args:
-        name (str): Name of the logger.
-        path (Path | str): Path to the log file.
-
-    Returns:
-        logging.Logger: Configured logger instance.
-
-    """
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-    log_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    log_handler = logging.FileHandler(path)
-    log_handler.setLevel(logging.DEBUG)
-    log_handler.setFormatter(log_format)
-    logger.addHandler(log_handler)
-    return logger
+_HF_REPO_ID = "fodorad/exordium-weights"
+"""HuggingFace Hub repository ID for exordium model weights."""
 
 
 def download_file(remote_path: str, local_path: Path | str, overwrite: bool = False) -> None:
@@ -44,11 +29,52 @@ def download_file(remote_path: str, local_path: Path | str, overwrite: bool = Fa
     local_path = Path(local_path)
     if not local_path.exists() or overwrite:
         local_path.parent.mkdir(parents=True, exist_ok=True)
-        logging.info(f"Downloading {remote_path} → {local_path}")
+        logger.info(f"Downloading {remote_path} → {local_path}")
         urllib.request.urlretrieve(str(remote_path), str(local_path))
 
     if not local_path.exists():
         raise FileNotFoundError(f"Downloaded file is missing at {local_path}.")
+
+
+def download_weight(
+    filename: str,
+    local_dir: Path | str,
+    repo_id: str = _HF_REPO_ID,
+) -> Path:
+    """Download a model weight file from Hugging Face Hub if not already cached.
+
+    Uses ``huggingface_hub.hf_hub_download`` to fetch ``filename`` from
+    ``repo_id`` and place it directly in ``local_dir``.  Subsequent calls
+    with the same arguments are no-ops (file already present).
+
+    Args:
+        filename: Name of the file in the HF Hub repository (e.g.
+            ``"fabnet_weights.pth"``).
+        local_dir: Local directory where the file will be stored.  The file
+            will be at ``local_dir / filename``.
+        repo_id: Hugging Face Hub repository ID.  Defaults to
+            ``"fodorad/exordium-weights"``.
+
+    Returns:
+        Path to the downloaded (or already cached) local file.
+
+    Raises:
+        FileNotFoundError: If the file is missing after the download attempt.
+
+    """
+    from huggingface_hub import hf_hub_download
+
+    local_dir = Path(local_dir)
+    local_path = local_dir / filename
+    if not local_path.exists():
+        local_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Downloading {repo_id}/{filename} → {local_path}")
+        hf_hub_download(repo_id=repo_id, filename=filename, local_dir=str(local_dir))
+
+    if not local_path.exists():
+        raise FileNotFoundError(f"Weight file missing after download: {local_path}")
+
+    return local_path
 
 
 def remove_token(weights: dict, token: str = "_model.") -> dict:

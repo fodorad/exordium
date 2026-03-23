@@ -12,8 +12,6 @@ from exordium.video.face.gaze.base import (
     softmax_temperature,
     spherical2cartesial,
     vector_to_pitchyaw,
-    visualize_normed_space,
-    visualize_target_gaze,
 )
 from exordium.video.face.gaze.l2csnet import L2CS_Builder, L2csNetWrapper
 from exordium.video.face.gaze.unigaze import UnigazeWrapper
@@ -32,8 +30,6 @@ __all__ = [
     "softmax_temperature",
     "spherical2cartesial",
     "vector_to_pitchyaw",
-    "visualize_normed_space",
-    "visualize_target_gaze",
     "L2CS_Builder",
     "L2csNetWrapper",
     "UnigazeWrapper",

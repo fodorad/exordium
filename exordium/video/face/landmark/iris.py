@@ -1,224 +1,371 @@
 """MediaPipe Iris landmark detector wrapper."""
 
+import math
 import os
-from collections.abc import Sequence
 from pathlib import Path
+from typing import cast
 
 import cv2
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from scipy.spatial import distance
+import torchvision.transforms.functional as TF
 
 from exordium import WEIGHT_DIR
-from exordium.utils.ckpt import download_file
+from exordium.utils.ckpt import download_weight
 from exordium.utils.device import get_torch_device
-from exordium.video.core.io import image_to_np, images_to_np
-from exordium.video.face.landmark.constants import FaceMeshLandmarks, IrisLandmarks, TddfaLandmarks
+from exordium.video.face.landmark.constants import FaceMeshLandmarks, IrisLandmarks
 
 
-def calculate_iris_diameters(iris_landmarks: np.ndarray) -> np.ndarray:
-    """Calculates iris diameters from MediaPipe Iris landmarks.
+def _norm2d(a, b) -> float:
+    """2-D Euclidean distance for numpy arrays or plain scalars — returns ``float``."""
+    dx = float(a[0]) - float(b[0])
+    dy = float(a[1]) - float(b[1])
+    return math.sqrt(dx * dx + dy * dy)
+
+
+def _norm2d_t(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """2-D Euclidean distance for torch tensors — returns scalar ``torch.Tensor``."""
+    return torch.linalg.norm(a.float() - b.float())
+
+
+def calculate_iris_diameters(
+    iris_landmarks: np.ndarray | torch.Tensor,
+) -> np.ndarray | torch.Tensor:
+    """Calculate iris diameters from MediaPipe Iris landmarks.
+
+    Computes the horizontal (left–right) and vertical (top–bottom) diameter
+    of the iris from the 5-point iris landmark set.
+
+    Type-preserving: ``np.ndarray`` input returns ``np.ndarray``; ``torch.Tensor``
+    input returns ``torch.Tensor``.
 
     Args:
-        iris_landmarks (np.ndarray): iris landmarks of shape (5, 2).
+        iris_landmarks: Iris landmarks of shape ``(5, 2)``.
 
     Returns:
-        np.ndarray: vector of shape (2,). Horizontal distance and vertical distance.
+        1-D array / tensor of shape ``(2,)`` containing
+        ``[horizontal_diameter, vertical_diameter]``.
 
     """
+    if isinstance(iris_landmarks, torch.Tensor):
+        il = iris_landmarks.float()
+        return torch.stack(
+            [
+                _norm2d_t(il[IrisLandmarks.LEFT.value], il[IrisLandmarks.RIGHT.value]),
+                _norm2d_t(il[IrisLandmarks.TOP.value], il[IrisLandmarks.BOTTOM.value]),
+            ]
+        )
     return np.array(
         [
-            np.linalg.norm(
-                iris_landmarks[IrisLandmarks.LEFT.value, :]
-                - iris_landmarks[IrisLandmarks.RIGHT.value, :]
+            _norm2d(
+                iris_landmarks[IrisLandmarks.LEFT.value], iris_landmarks[IrisLandmarks.RIGHT.value]
             ),
-            np.linalg.norm(
-                iris_landmarks[IrisLandmarks.TOP.value, :]
-                - iris_landmarks[IrisLandmarks.BOTTOM.value, :]
+            _norm2d(
+                iris_landmarks[IrisLandmarks.TOP.value], iris_landmarks[IrisLandmarks.BOTTOM.value]
             ),
         ]
     )
 
 
 def calculate_eyelid_pupil_distances(
-    iris_landmarks: np.ndarray, eye_landmarks: np.ndarray
-) -> np.ndarray:
-    """Calculates eyelid-pupil distances from MediaPipe Iris and FaceMesh landmarks.
+    iris_landmarks: np.ndarray | torch.Tensor,
+    eye_landmarks: np.ndarray | torch.Tensor,
+) -> np.ndarray | torch.Tensor:
+    """Calculate eyelid-to-pupil distances from iris and eye landmarks.
+
+    Measures the Euclidean distance from the iris centre to the top and
+    bottom eyelid landmarks, giving an estimate of how open the eye is.
+
+    Type-preserving: ``np.ndarray`` inputs return ``np.ndarray``;
+    ``torch.Tensor`` inputs return ``torch.Tensor``.
 
     Args:
-        iris_landmarks (np.ndarray): Iris landmarks of shape (5, 2).
-        eye_landmarks (np.ndarray): FaceMesh landmarks of shape (71, 2) or (16, 2).
+        iris_landmarks: Iris landmarks of shape ``(5, 2)``.
+        eye_landmarks: FaceMesh eye landmarks of shape ``(71, 2)`` or ``(16, 2)``.
 
     Returns:
-        np.ndarray: vector of shape (2,). Top-center distance and bottom-center distance.
+        1-D array / tensor of shape ``(2,)`` containing
+        ``[top_eyelid_distance, bottom_eyelid_distance]``.
 
     """
+    if isinstance(iris_landmarks, torch.Tensor) and isinstance(eye_landmarks, torch.Tensor):
+        center = iris_landmarks[IrisLandmarks.CENTER.value].float()
+        top = eye_landmarks[FaceMeshLandmarks.TOP].squeeze().float()
+        bot = eye_landmarks[FaceMeshLandmarks.BOTTOM].squeeze().float()
+        return torch.stack([_norm2d_t(center, top), _norm2d_t(center, bot)])
+    center = iris_landmarks[IrisLandmarks.CENTER.value]
     return np.array(
         [
-            np.linalg.norm(
-                iris_landmarks[IrisLandmarks.CENTER.value, :]
-                - eye_landmarks[FaceMeshLandmarks.TOP, :]
-            ),
-            np.linalg.norm(
-                iris_landmarks[IrisLandmarks.CENTER.value, :]
-                - eye_landmarks[FaceMeshLandmarks.BOTTOM, :]
-            ),
+            _norm2d(center, eye_landmarks[FaceMeshLandmarks.TOP].squeeze()),
+            _norm2d(center, eye_landmarks[FaceMeshLandmarks.BOTTOM].squeeze()),
         ]
     )
 
 
-def calculate_eye_aspect_ratio(landmarks: np.ndarray) -> float:
-    """Calculates Eye Aspect Ratio feature.
+def calculate_eye_aspect_ratio(
+    landmarks: np.ndarray | torch.Tensor,
+) -> float | torch.Tensor:
+    """Calculate the Eye Aspect Ratio (EAR).
 
-    Usage:
-        ear_left = eye_aspect_ratio(xy_left)
-        ear_right = eye_aspect_ratio(xy_right)
-        ear_mean = (ear_left + ear_right) / 2.0
+    EAR is defined as the mean of three vertical landmark distances divided
+    by the horizontal landmark distance.  A value close to zero indicates
+    a closed eye; typical open-eye values are in the range 0.25–0.40.
+
+    Usage::
+
+        ear_right = calculate_eye_aspect_ratio(right_eye_lmks)
+        ear_left  = calculate_eye_aspect_ratio(left_eye_lmks)
+        ear_mean  = (ear_right + ear_left) / 2.0
+
+    Type-preserving: ``np.ndarray`` input returns ``float``; ``torch.Tensor``
+    input returns a scalar ``torch.Tensor``.
 
     Args:
-        landmarks (np.ndarray): eye landmarks of shape (N, 2).
-            N == 6 if the landmark detector is the 3DDFA_V2.
-            N == 16 if the landmark detector is the FaceMesh.
+        landmarks: Eye landmarks of shape ``(71, 2)`` or ``(16, 2)``.
+            Both shapes correspond to MediaPipe FaceMesh eye subsets.
 
     Returns:
-        float: eye aspect ratio.
+        Eye aspect ratio — ``float`` for numpy input, scalar
+        ``torch.Tensor`` for tensor input.
+
+    Raises:
+        ValueError: If ``landmarks.shape`` is not ``(71, 2)`` or ``(16, 2)``.
 
     """
-    if landmarks.shape not in {(6, 2), (71, 2), (16, 2)}:
+    if landmarks.shape not in {(71, 2), (16, 2)}:
         raise ValueError(
-            "Invalid eye landmarks. Only 3DDFA_V2 or FaceMesh is supported currently."
-            f"Expected (6, 2) or (71, 2) or (16, 2), but got instead {landmarks.shape}"
+            "Invalid eye landmarks. Only FaceMesh is supported. "
+            f"Expected (71, 2) or (16, 2), got {landmarks.shape}"
         )
 
-    if landmarks.shape == (6, 2):  # 3DDFA_V2
-        tb1 = distance.euclidean(
-            landmarks[TddfaLandmarks.TOP_LEFT.value], landmarks[TddfaLandmarks.BOTTOM_LEFT.value]
+    if isinstance(landmarks, torch.Tensor):
+        lm = landmarks.float()
+        tb1 = _norm2d_t(
+            lm[FaceMeshLandmarks.TOP_LEFT].squeeze(), lm[FaceMeshLandmarks.BOTTOM_LEFT].squeeze()
         )
-        tb2 = distance.euclidean(
-            landmarks[TddfaLandmarks.TOP_RIGHT.value], landmarks[TddfaLandmarks.BOTTOM_RIGHT.value]
+        tb2 = _norm2d_t(lm[FaceMeshLandmarks.TOP].squeeze(), lm[FaceMeshLandmarks.BOTTOM].squeeze())
+        tb3 = _norm2d_t(
+            lm[FaceMeshLandmarks.TOP_RIGHT].squeeze(), lm[FaceMeshLandmarks.BOTTOM_RIGHT].squeeze()
         )
-        lr = distance.euclidean(
-            landmarks[TddfaLandmarks.LEFT.value], landmarks[TddfaLandmarks.RIGHT.value]
-        )
-        return (tb1 + tb2) / (2.0 * lr)
-    else:  # FaceMesh
-        tb1 = distance.euclidean(
-            landmarks[FaceMeshLandmarks.TOP_LEFT].squeeze(axis=0),
-            landmarks[FaceMeshLandmarks.BOTTOM_LEFT].squeeze(axis=0),
-        )
-        tb2 = distance.euclidean(
-            landmarks[FaceMeshLandmarks.TOP].squeeze(axis=0),
-            landmarks[FaceMeshLandmarks.BOTTOM].squeeze(axis=0),
-        )
-        tb3 = distance.euclidean(
-            landmarks[FaceMeshLandmarks.TOP_RIGHT].squeeze(axis=0),
-            landmarks[FaceMeshLandmarks.BOTTOM_RIGHT].squeeze(axis=0),
-        )
-        lr = distance.euclidean(
-            landmarks[FaceMeshLandmarks.LEFT].squeeze(axis=0),
-            landmarks[FaceMeshLandmarks.RIGHT].squeeze(axis=0),
-        )
+        lr = _norm2d_t(lm[FaceMeshLandmarks.LEFT].squeeze(), lm[FaceMeshLandmarks.RIGHT].squeeze())
         return (tb1 + tb2 + tb3) / (3.0 * lr)
+
+    tb1 = _norm2d(
+        landmarks[FaceMeshLandmarks.TOP_LEFT].squeeze(),
+        landmarks[FaceMeshLandmarks.BOTTOM_LEFT].squeeze(),
+    )
+    tb2 = _norm2d(
+        landmarks[FaceMeshLandmarks.TOP].squeeze(),
+        landmarks[FaceMeshLandmarks.BOTTOM].squeeze(),
+    )
+    tb3 = _norm2d(
+        landmarks[FaceMeshLandmarks.TOP_RIGHT].squeeze(),
+        landmarks[FaceMeshLandmarks.BOTTOM_RIGHT].squeeze(),
+    )
+    lr = _norm2d(
+        landmarks[FaceMeshLandmarks.LEFT].squeeze(),
+        landmarks[FaceMeshLandmarks.RIGHT].squeeze(),
+    )
+    return (tb1 + tb2 + tb3) / (3.0 * lr)
 
 
 class IrisWrapper:
-    """MediaPipe Iris wrapper class."""
+    """MediaPipe Iris landmark detector wrapper.
 
-    def __init__(self, device_id: int = 0):
-        self.remote_path = (
-            "https://github.com/fodorad/exordium/releases/download/v1.0.0/iris_weights.pth"
-        )
-        self.local_path = WEIGHT_DIR / "iris" / Path(self.remote_path).name
-        download_file(self.remote_path, self.local_path)
+    Detects 71 eye landmarks and 5 iris landmarks from 64×64 eye patches
+    using a PyTorch port of the MediaPipe Iris model.
+
+    Supported input types for :meth:`__call__`:
+
+    * ``torch.Tensor`` — ``(3, H, W)`` or ``(B, 3, H, W)`` uint8 RGB;
+      fastest path, stays on ``self.device`` end-to-end.
+    * ``np.ndarray`` — ``(H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB.
+    * ``Sequence[np.ndarray]`` — list of ``(H, W, 3)`` uint8 arrays.
+    * ``Sequence[str | Path]`` — list of image file paths.
+
+    Design contract:
+
+    * :meth:`preprocess` — convert any input to a ``(B, 3, 64, 64)``
+      float32 tensor in ``[0, 1]`` on ``self.device``.
+    * :meth:`inference` — model forward pass; returns
+      ``(eye_landmarks, iris_landmarks)`` as ``(B, 71, 2)`` and
+      ``(B, 5, 2)`` tensors on ``self.device``.
+    * :meth:`__call__` — chains both under ``torch.inference_mode``.
+
+    Args:
+        device_id: GPU device index.  ``None`` or ``-1`` uses CPU.
+
+    """
+
+    def __init__(self, device_id: int | None = None):
+        self.local_path = download_weight("iris_weights.pth", WEIGHT_DIR / "iris")
         self.device = get_torch_device(device_id)
         self.model = MediaPipeIris()
-        self.model.load_state_dict(torch.load(self.local_path))
+        self.model.load_state_dict(
+            torch.load(self.local_path, map_location=torch.device("cpu"), weights_only=True)
+        )
         self.model.to(self.device)
         self.model.eval()
 
-    def __call__(self, eyes: Sequence[np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
-        """Predict iris landmarks from eye patches.
+    @staticmethod
+    def _to_uint8_tensor(frames) -> torch.Tensor:
+        """Convert any supported input to a uint8 ``(B, 3, H, W)`` CPU tensor.
+
+        Delegates to :func:`~exordium.video.core.io.to_uint8_tensor`.
 
         Args:
-            eyes: Eye patches as RGB numpy arrays.
+            frames: One of:
+
+                * ``torch.Tensor (3, H, W)`` or ``(B, 3, H, W)`` uint8 RGB
+                * ``np.ndarray (H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB
+                * ``str | Path`` — single image file path
+                * ``Sequence[np.ndarray]`` of ``(H, W, 3)`` arrays
+                * ``Sequence[str | Path]`` of image file paths
 
         Returns:
-            Tuple of (eye_landmarks, iris_landmarks) as numpy arrays.
+            uint8 tensor of shape ``(B, 3, H, W)`` on CPU.
 
         """
-        sample = images_to_np(eyes, "RGB", (64, 64))  # (B, H, W, C) == (B, 64, 64, 3)
-        eye, iris = self.model.predict_on_batch(sample)
-        eye = eye.detach().cpu().numpy()[:, :, :2]  # (B, 71, 3) -> (B, 71, 2)
-        iris = iris.detach().cpu().numpy()[:, :, :2]  # (B, 5, 3) -> (B, 5, 2)
-        return eye.squeeze(), iris.squeeze()  # (71, 2) and (5, 2)
+        from exordium.video.core.io import to_uint8_tensor
 
-    def eye_to_features(self, eye: str | Path | np.ndarray) -> dict:
-        """Calculates features from an eye patch.
+        return to_uint8_tensor(frames)
 
-        Features as key-value pairs:
-            'eye': eye image of shape (H, W, 3) == (64, 64, 3) and RGB channel order.
-            'eye_original': eye image of shape (H, W, 3) and RGB channel order.
-            'landmarks': FaceMesh landmarks of shape (71, 2).
-            'iris_landmarks': MediaPipe Iris landmarks of shape (5, 2).
-            'iris_diameter': horizontal and vertical distances of the MediaPipe Iris
-                landmarks of shape (2,).
-            'iris_eyelid_distance': Top and bottom landmarks of MediaPipe Iris to pupil center
-                distances of shape (2,).
-            'ear': eye aspect ratio of shape ().
+    def preprocess(self, frames) -> torch.Tensor:
+        """Resize eye patches to 64×64 and normalise to ``[0, 1]``.
+
+        Accepts variable-size inputs — each patch is resized individually
+        before stacking, so eye crops of different sizes are handled correctly.
 
         Args:
-            eye (os.PathLike | np.ndarray): eye patch image path or np.ndarray of shape (H, W, 3).
+            frames: Any input accepted by :meth:`_to_uint8_tensor`.
 
         Returns:
-            dict: features as a dictionary
+            Float32 tensor of shape ``(B, 3, 64, 64)`` on ``self.device``
+            with values in ``[0, 1]``.
 
         """
-        eye_original = image_to_np(eye, "RGB")
-        eye = cv2.resize(eye_original, (64, 64), interpolation=cv2.INTER_AREA)
+        if isinstance(frames, (list, tuple)) and not isinstance(frames[0], (str, Path)):
+            resized = [
+                TF.resize(self._to_uint8_tensor(f).to(self.device), [64, 64], antialias=True)
+                for f in frames
+            ]
+            x = torch.cat(resized, dim=0)
+        else:
+            x = self._to_uint8_tensor(frames).to(self.device)
+            x = TF.resize(x, [64, 64], antialias=True)
 
-        # (71, 2) eye landmarks xy, (5, 2) iris landmarks xy
-        eye_landmarks, iris_landmarks = self([eye])  # (B, H, W, C)
+        return x.float().div(255.0)
 
-        # (2,) iris diameters hv
-        iris_diameters = calculate_iris_diameters(iris_landmarks)
+    def inference(self, tensor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Run the Iris model and return landmark tensors.
 
-        # (2,) eyelid-pupil distances tb
-        eyelid_pupil_distances = calculate_eyelid_pupil_distances(iris_landmarks, eye_landmarks)
-        ear = calculate_eye_aspect_ratio(eye_landmarks)
+        Args:
+            tensor: Float32 tensor of shape ``(B, 3, 64, 64)`` on
+                ``self.device`` with values in ``[0, 1]``.
+
+        Returns:
+            Tuple of:
+
+            * ``eye_landmarks`` — ``(B, 71, 2)`` float32 tensor containing
+              ``(x, y)`` pixel coordinates of the 71 eye landmarks.
+            * ``iris_landmarks`` — ``(B, 5, 2)`` float32 tensor containing
+              ``(x, y)`` pixel coordinates of the 5 iris landmarks.
+
+            Both tensors are on ``self.device``.
+
+        """
+        eye_raw, iris_raw = self.model(tensor)  # (B, 213), (B, 15)
+        eye = eye_raw.view(-1, 71, 3)[..., :2]  # (B, 71, 2) — drop z
+        iris = iris_raw.view(-1, 5, 3)[..., :2]  # (B, 5,  2)
+        return eye, iris
+
+    def __call__(self, frames) -> tuple[torch.Tensor, torch.Tensor]:
+        """Preprocess and run inference on eye patches.
+
+        Args:
+            frames: Any supported input (see class docstring).
+
+        Returns:
+            Tuple of ``(eye_landmarks, iris_landmarks)`` tensors of shape
+            ``(B, 71, 2)`` and ``(B, 5, 2)`` on ``self.device``.
+
+        """
+        with torch.inference_mode():
+            return self.inference(self.preprocess(frames))
+
+    def eye_to_feature(self, eye: torch.Tensor) -> dict[str, torch.Tensor]:
+        """Compute iris and eye features from a single eye crop.
+
+        Runs the full pipeline — preprocess → inference → metric computation —
+        for a single eye patch and returns all intermediate and derived features
+        as torch tensors.  Landmarks are in 64×64 model space.
+
+        Args:
+            eye: Eye crop of shape ``(3, H, W)`` uint8 RGB.  Any spatial size
+                is accepted; the model resizes to 64×64 internally.
+
+        Returns:
+            Dictionary of torch tensors:
+
+            * ``"eye_original"``          — ``(3, H, W)``  uint8  — original input crop
+            * ``"eye"``                   — ``(3, 64, 64)`` uint8  — 64×64 resized crop
+            * ``"eye_region_landmarks"``  — ``(71, 2)`` float32   — eye landmarks in 64×64 space
+            * ``"iris_landmarks"``        — ``(5, 2)``  float32   — iris landmarks in 64×64 space
+            * ``"iris_diameters"``        — ``(2,)``    float32   — [horizontal, vertical] diameter
+            * ``"eyelid_pupil_distances"`` — ``(2,)`` float32 — [top, bottom] eyelid–pupil dist
+            * ``"ear"``                   — scalar      float32   — eye aspect ratio
+
+        """
+        preprocessed = self.preprocess(eye)  # (1, 3, 64, 64) float32 [0,1]
+        eye_64 = preprocessed[0].mul(255).to(torch.uint8).cpu()  # (3, 64, 64) uint8
+
+        with torch.inference_mode():
+            eye_lmks_b, iris_lmks_b = self.inference(preprocessed)  # (1,71,2), (1,5,2)
+
+        eye_region_lmks = eye_lmks_b[0].cpu()  # (71, 2) float32
+        iris_lmks = iris_lmks_b[0].cpu()  # (5, 2)  float32
 
         return {
-            "eye_original": eye_original,  # (H, W, 3)
-            "eye": eye,  # (64, 64, 3)
-            "landmarks": eye_landmarks,  # (71, 2)
-            "iris_landmarks": iris_landmarks,  # (5, 2)
-            "iris_diameters": iris_diameters,  # (2,)
-            "eyelid_pupil_distances": eyelid_pupil_distances,  # (2,)
-            "ear": ear,  # ()
+            "eye_original": eye,  # (3, H, W) uint8
+            "eye": eye_64,  # (3, 64, 64) uint8
+            "eye_region_landmarks": eye_region_lmks,  # (71, 2) float32
+            "iris_landmarks": iris_lmks,  # (5, 2)  float32
+            "iris_diameters": cast("torch.Tensor", calculate_iris_diameters(iris_lmks)),
+            "eyelid_pupil_distances": cast(
+                "torch.Tensor",
+                calculate_eyelid_pupil_distances(iris_lmks, eye_region_lmks),
+            ),
+            "ear": cast("torch.Tensor", calculate_eye_aspect_ratio(eye_region_lmks)),
         }
 
 
 def visualize_iris(
-    image: np.ndarray,
-    landmarks: np.ndarray,
-    iris_landmarks: np.ndarray,
+    image: np.ndarray | torch.Tensor,
+    landmarks: np.ndarray | torch.Tensor,
+    iris_landmarks: np.ndarray | torch.Tensor,
     output_path: str | os.PathLike | None = None,
     show_indices: bool = False,
-) -> np.ndarray:
+) -> np.ndarray | torch.Tensor:
     """Draw face landmarks and iris landmarks onto an image.
 
     Face landmarks are rendered in green and iris landmarks in blue.
+    Accepts ``(H, W, C)`` numpy arrays or ``(C, H, W)`` uint8 torch tensors;
+    returns the same type.
 
     Args:
-        image: Input image of shape ``(H, W, C)``.
-        landmarks: Face landmark coordinates of shape ``(N, 2)``.
-        iris_landmarks: Iris landmark coordinates of shape ``(5, 2)``.
+        image: Input image — ``np.ndarray (H, W, C)`` or
+            ``torch.Tensor (C, H, W)`` uint8.
+        landmarks: Face landmark coordinates of shape ``(N, 2)`` —
+            ``np.ndarray`` or ``torch.Tensor``.
+        iris_landmarks: Iris landmark coordinates of shape ``(5, 2)`` —
+            ``np.ndarray`` or ``torch.Tensor``.
         output_path: Path to save the output image. ``None`` skips saving.
         show_indices: Draw landmark indices next to each point.
 
     Returns:
-        Copy of the image with face and iris landmarks drawn on it.
+        Copy of the image with face and iris landmarks drawn, same type as input.
 
     """
     if not (landmarks.ndim == 2 and landmarks.shape[1] == 2):
@@ -229,26 +376,36 @@ def visualize_iris(
             f"Expected iris_landmarks with shape (5, 2) got instead {iris_landmarks.shape}."
         )
 
-    image_out = np.copy(image)
-    landmarks = np.rint(landmarks).astype(int)
-    iris_landmarks = np.rint(iris_landmarks).astype(int)
+    if isinstance(image, torch.Tensor):
+        img_np: np.ndarray = image.permute(1, 2, 0).cpu().numpy()
+    else:
+        img_np = cast("np.ndarray", image)
+
+    image_out = img_np.copy()
+    # Convert landmarks to numpy at cv2 boundary
+    lmks = np.rint(
+        landmarks.cpu().numpy() if isinstance(landmarks, torch.Tensor) else landmarks
+    ).astype(int)
+    iris_lmks = np.rint(
+        iris_landmarks.cpu().numpy() if isinstance(iris_landmarks, torch.Tensor) else iris_landmarks
+    ).astype(int)
 
     font = cv2.FONT_HERSHEY_SIMPLEX
 
-    for index in range(landmarks.shape[0]):
-        cv2.circle(image_out, landmarks[index, :], 0, (0, 255, 0), 1)
+    for index in range(lmks.shape[0]):
+        cv2.circle(image_out, tuple(lmks[index, :]), 0, (0, 255, 0), 1)
         if show_indices:
             cv2.putText(
-                image_out, str(index), landmarks[index, :], font, 0.3, (0, 0, 0), 1, cv2.LINE_AA
+                image_out, str(index), tuple(lmks[index, :]), font, 0.3, (0, 0, 0), 1, cv2.LINE_AA
             )
 
-    for index in range(iris_landmarks.shape[0]):
-        cv2.circle(image_out, iris_landmarks[index, :], 0, (255, 0, 0), 1)
+    for index in range(iris_lmks.shape[0]):
+        cv2.circle(image_out, tuple(iris_lmks[index, :].astype(int)), 0, (255, 0, 0), 1)
         if show_indices:
             cv2.putText(
                 image_out,
                 str(index),
-                iris_landmarks[index, :],
+                tuple(iris_lmks[index, :].astype(int)),
                 font,
                 0.3,
                 (0, 0, 0),
@@ -260,6 +417,8 @@ def visualize_iris(
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(output_path), image_out)
 
+    if isinstance(image, torch.Tensor):
+        return torch.from_numpy(image_out).permute(2, 0, 1)
     return image_out
 
 

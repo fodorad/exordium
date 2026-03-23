@@ -5,6 +5,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Generator, Iterable, Sequence
 from itertools import islice
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from torchcodec.decoders import VideoDecoder
 
 import cv2
 import numpy as np
@@ -13,6 +17,9 @@ import torchvision.transforms.functional as TF
 from torch.utils.data import Dataset
 
 from exordium.utils.device import get_torch_device
+
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
 
 
 class VideoBackend(ABC):
@@ -89,7 +96,7 @@ class TorchCodecBackend(VideoBackend):
 
         decoder = VideoDecoder(str(path), device=device)
         metadata = decoder.metadata
-        frames = decoder.get_frames_in_range(0, metadata.num_frames).data
+        frames = decoder.get_frames_in_range(0, int(metadata.num_frames or 0)).data
         return frames
 
     def get_metadata(self, path: str | Path) -> dict:
@@ -99,16 +106,17 @@ class TorchCodecBackend(VideoBackend):
         decoder = VideoDecoder(str(path))
         m = decoder.metadata
         return {
-            "fps": float(m.average_fps),
-            "num_frames": int(m.num_frames),
-            "height": int(m.height),
-            "width": int(m.width),
-            "duration": float(m.num_frames / m.average_fps),
+            "fps": float(m.average_fps or 0),
+            "num_frames": int(m.num_frames or 0),
+            "height": int(m.height or 0),
+            "width": int(m.width or 0),
+            "duration": float((m.num_frames or 0) / (m.average_fps or 1)),
         }
 
 
 # Global backend configuration
 _BACKEND = TorchCodecBackend()
+"""Module-level video decode backend instance (TorchCodec)."""
 
 
 def get_video_metadata(input_path: str | Path) -> dict:
@@ -138,27 +146,46 @@ def load_video(
     crop: tuple[int, int, int, int] | None = None,
     device_id: int | None = None,
 ) -> tuple[torch.Tensor, float]:
-    """Loads video frames as a tensor.
+    """Load a contiguous range of video frames, optionally resampled to a target FPS.
+
+    Use this function when you need sequential frames from a video — the full clip,
+    a temporal window, or a downsampled version at a lower frame rate.  For
+    random-access loading of specific, non-contiguous frame indices use
+    :func:`load_frames` instead.
 
     Args:
-        input_path: Path to the input video.
-        start_frame: Start frame index. Defaults to 0.
-        end_frame: End frame index (exclusive). None means all frames. Defaults to None.
-        fps: Target FPS for frame sampling. If None, uses native FPS. Defaults to None.
-             Example: Native 25fps video with fps=10 → samples every 2.5 frames
-        batch_size: Number of frames to decode at once. Defaults to 32.
-        resize: Resize frames. Can be int (smallest dimension) or (H, W) tuple.
-        crop: Crop bounding box (cy, cx, ch, cw). Applied after resize.
-        device_id: Device ID for decoding. None uses CPU.
+        input_path: Path to the input video file.
+        start_frame: First frame index to include (inclusive). Defaults to 0.
+        end_frame: Last frame index to include (exclusive).  ``None`` reads to the
+            end of the video. Defaults to ``None``.
+        fps: Target frame rate for temporal resampling.  Frames are uniformly
+            sampled from the ``[start_frame, end_frame)`` range so that the output
+            approximates the requested rate.  ``None`` keeps the native FPS and
+            returns every frame in the range. Defaults to ``None``.
+            Example: a 25 fps video with ``fps=5`` returns 1 in every 5 frames.
+        batch_size: Number of frames decoded per internal batch.  Larger values
+            use more memory but reduce decoder overhead. Defaults to 32.
+        resize: Spatial resize applied to every frame before cropping.  An ``int``
+            sets the smaller spatial dimension while preserving aspect ratio; a
+            ``(H, W)`` tuple sets both dimensions explicitly.  ``None`` keeps native
+            resolution. Defaults to ``None``.
+        crop: Bounding box ``(cy, cx, ch, cw)`` applied after resize.  ``None``
+            skips cropping. Defaults to ``None``.
+        device_id: Target device for the output tensor.  ``None`` or a negative
+            value uses CPU. Defaults to ``None``.
 
     Returns:
-        tuple: (frames, actual_fps)
-            - frames: Tensor of shape (T, C, H, W)
-            - actual_fps: The FPS of returned frames
+        Tuple of ``(frames, actual_fps)`` where ``frames`` is a uint8 tensor of
+        shape ``(T, 3, H, W)`` and ``actual_fps`` is the frame rate of the returned
+        sequence (equals ``fps`` when provided, otherwise the native video FPS).
 
     Note:
-        Video decoding currently is only supported on CUDA devices and CPU.
-        MPS decoding is not supported by torchcodec and will raise an error.
+        Video decoding is only supported on CUDA and CPU backends (torchcodec
+        limitation).  Passing an MPS ``device_id`` will raise an error.
+
+    Example:
+        >>> frames, fps = load_video("clip.mp4", fps=5, resize=224)
+        >>> print(frames.shape, fps)  # (T, 3, 224, 224), 5.0
 
     """
     device = get_torch_device(device_id)
@@ -228,7 +255,7 @@ def load_video(
             if resize is not None:
                 frames = TF.resize(
                     frames,
-                    size=resize_shape,
+                    size=list(resize_shape),
                     interpolation=TF.InterpolationMode.BILINEAR,
                     antialias=True,
                 )
@@ -252,23 +279,38 @@ def load_frames(
     crop: tuple[int, int, int, int] | None = None,
     device_id: int | None = None,
 ) -> torch.Tensor:
-    """Loads specific video frames by their IDs as a tensor.
+    """Load specific, non-contiguous video frames by absolute frame index.
+
+    Use this function when you already know exactly which frames you need — for
+    example, frames identified by a detector, sparse keyframes, or a custom
+    sampling scheme.  The output preserves the order of ``frame_ids``.  For
+    sequential or FPS-resampled loading use :func:`load_video` instead.
 
     Args:
-        input_path: Path to the input video.
-        frame_ids: List or array of frame indices to load (relative to start_frame).
-        start_frame: Offset to add to frame_ids. Defaults to 0.
-        batch_size: Number of frames to decode at once. Defaults to 32.
-        resize: Resize frames. Can be int (smallest dimension) or (H, W) tuple.
-        crop: Crop bounding box (cy, cx, ch, cw). Applied after resize.
-        device_id: Device ID for decoding. None uses CPU.
+        input_path: Path to the input video file.
+        frame_ids: Indices of the frames to load.  Values are interpreted relative
+            to ``start_frame``, so the absolute index decoded is
+            ``start_frame + frame_id``.  Duplicates are allowed and will appear
+            multiple times in the output.
+        start_frame: Global offset added to every entry in ``frame_ids``.  Useful
+            when ``frame_ids`` are already relative to a clip start. Defaults to 0.
+        batch_size: Number of frames decoded per internal batch. Defaults to 32.
+        resize: Spatial resize applied to every frame before cropping.  An ``int``
+            sets the smaller spatial dimension while preserving aspect ratio; a
+            ``(H, W)`` tuple sets both dimensions explicitly.  ``None`` keeps native
+            resolution. Defaults to ``None``.
+        crop: Bounding box ``(cy, cx, ch, cw)`` applied after resize.  ``None``
+            skips cropping. Defaults to ``None``.
+        device_id: Target device for the output tensor.  ``None`` or a negative
+            value uses CPU. Defaults to ``None``.
 
     Returns:
-        Tensor of shape (T, C, H, W) containing the requested frames
+        uint8 tensor of shape ``(T, 3, H, W)`` where ``T = len(frame_ids)``,
+        in the same order as the input indices.
 
     Note:
-        Video decoding currently is only supported on CUDA devices and CPU.
-        MPS decoding is not supported by torchcodec and will raise an error.
+        Video decoding is only supported on CUDA and CPU backends (torchcodec
+        limitation).  Passing an MPS ``device_id`` will raise an error.
 
     Example:
         >>> frames = load_frames("video.mp4", frame_ids=[0, 10, 20, 30])
@@ -283,10 +325,7 @@ def load_frames(
     width = metadata["width"]
 
     # Convert frame_ids to absolute indices
-    if isinstance(frame_ids, np.ndarray):
-        frame_indices = frame_ids + start_frame
-    else:
-        frame_indices = np.array(frame_ids) + start_frame
+    frame_indices = np.asarray(frame_ids, dtype=np.intp) + start_frame
 
     # Calculate output dimensions for resize
     aspect_ratio = height / width
@@ -329,7 +368,7 @@ def load_frames(
             if resize is not None:
                 frames = TF.resize(
                     frames,
-                    size=resize_shape,
+                    size=list(resize_shape),
                     interpolation=TF.InterpolationMode.BILINEAR,
                     antialias=True,
                 )
@@ -358,9 +397,8 @@ def video_to_frames(
     """Extracts and saves the frames from a video.
 
     Note:
-        The start_number is preferred to be 0 as more functionalities in this package assumes it.
-        e.g.: 000000.png -> frame_id 0 -> 0. index of extracted features
-            in a (num_frames, feature_dim) tensor.
+        Prefer ``start_number=0`` — most functions in this package assume it
+        (e.g. ``000000.png`` → frame_id 0 → index 0 in a ``(N, D)`` feature tensor).
 
     Args:
         input_path: Path to the input video.
@@ -369,22 +407,21 @@ def video_to_frames(
         fps: Frame per sec. None means that the original fps of the video is used. Defaults to None.
         smallest_dim: Smallest dimension of the frames, height or width.
             None means that the frames is not resized. Defaults to None.
-        crop: Crop bounding box defined by (cy, cx, ch, cw)
-            where cy=top, cx=left, ch=height, cw=width.
-            If crop is given, then first the video will be scaled, then cropped. Defaults to None.
-            [0,0]-[0,w]
-              |     |
-            [h,0]-[h,w]
+        crop: Crop bounding box ``(cy, cx, ch, cw)`` where ``cy`` is the top offset,
+            ``cx`` the left offset, ``ch`` the height, and ``cw`` the width.
+            When set, the video is first scaled then cropped. Defaults to ``None``.
         device_id: GPU device id for decoding. None or -1 means CPU decoding. Defaults to None.
         extension: File extension for saved frames. Defaults to ".png".
         overwrite: If True, overwrites existing output directory. Defaults to False.
 
     """
+    if output_dir is None:
+        raise ValueError("output_dir must be specified")
     output_dir = Path(output_dir).resolve()
 
     # Skip if directory exists and overwrite is False
     if output_dir.exists() and not overwrite:
-        logging.info(f"Output directory already exists, skipping: {output_dir}")
+        logger.info(f"Output directory already exists, skipping: {output_dir}")
         return
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -399,7 +436,7 @@ def video_to_frames(
     )
 
     metadata = get_video_metadata(input_path)
-    logging.info(
+    logger.info(
         f"Extracting frames from {input_path}: "
         f"{metadata['num_frames']} frames at {metadata['fps']:.2f} fps, "
         f"output fps={actual_fps:.2f}, "
@@ -407,7 +444,7 @@ def video_to_frames(
     )
 
     save_frames(frames, output_dir, zfill=6, start_number=start_number, extension=extension)
-    logging.info(f"Extracted {len(frames)} frames to {output_dir}")
+    logger.info(f"Extracted {len(frames)} frames to {output_dir}")
 
 
 def save_video(
@@ -420,11 +457,9 @@ def save_video(
     """Saves frames as a video file.
 
     Args:
-        frames: Video frames. Can be:
-            - torch.Tensor of shape (T, C, H, W) or (T, H, W, C)
-            - numpy array of shape (T, C, H, W) or (T, H, W, C)
-            - Sequence of tensors (C, H, W) or (H, W, C)
-            - Sequence of numpy arrays (H, W, C)
+        frames: Video frames as a ``(T, C, H, W)`` or ``(T, H, W, C)`` tensor or
+            numpy array, or a sequence of per-frame ``(C, H, W)`` / ``(H, W, C)``
+            tensors or numpy arrays.
         output_path: Path to output video file
         fps: Frames per second for output video
         codec: FourCC codec string (e.g., "mp4v", "avc1", "h264")
@@ -438,40 +473,41 @@ def save_video(
     output_path = Path(output_path)
 
     if output_path.exists() and not overwrite:
-        logging.info(f"Video already exists: {output_path}")
+        logger.info(f"Video already exists: {output_path}")
         return
 
     # Convert frames to numpy array (H, W, C) BGR format for cv2
     if isinstance(frames, torch.Tensor):
         # Handle (T, C, H, W) or (T, H, W, C) format
-        if frames.ndim == 4:
-            if frames.shape[1] == 3:  # (T, C, H, W)
-                frames = frames.permute(0, 2, 3, 1)  # → (T, H, W, C)
-            frames = frames.cpu().numpy()
-        frames_list = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in frames]
+        t = frames
+        if t.ndim == 4 and t.shape[1] == 3:
+            t = t.permute(0, 2, 3, 1)  # → (T, H, W, C)
+        np_frames: np.ndarray = t.cpu().numpy()
+        frames_list = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in np_frames]
     elif isinstance(frames, np.ndarray):
         # Handle (T, C, H, W) or (T, H, W, C) format
-        if frames.ndim == 4:
-            if frames.shape[1] == 3:  # (T, C, H, W)
-                frames = frames.transpose(0, 2, 3, 1)  # → (T, H, W, C)
-        frames_list = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in frames]
+        arr = frames
+        if arr.ndim == 4 and arr.shape[1] == 3:
+            arr = arr.transpose(0, 2, 3, 1)  # → (T, H, W, C)
+        frames_list = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in arr]  # ty: ignore[no-matching-overload]
     elif isinstance(frames[0], torch.Tensor):
         # Sequence of (C, H, W) or (H, W, C) tensors
+        tensor_seq = cast("Sequence[torch.Tensor]", frames)
         frames_list = []
-        for f in frames:
-            if f.ndim == 3 and f.shape[0] == 3:
-                f = f.permute(1, 2, 0)  # (C, H, W) → (H, W, C)
-            f = f.cpu().numpy()
-            frames_list.append(cv2.cvtColor(f, cv2.COLOR_RGB2BGR))
+        for ft in tensor_seq:
+            if ft.ndim == 3 and ft.shape[0] == 3:
+                ft = ft.permute(1, 2, 0)  # (C, H, W) → (H, W, C)
+            nf: np.ndarray = ft.cpu().numpy()
+            frames_list.append(cv2.cvtColor(nf, cv2.COLOR_RGB2BGR))
     else:
         # Sequence of numpy arrays (H, W, C)
-        frames_list = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in frames]
+        frames_list = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in frames]  # ty: ignore[no-matching-overload]
 
     # Get dimensions
     height, width = frames_list[0].shape[:2]
 
     # Create video writer
-    fourcc = cv2.VideoWriter_fourcc(*codec)
+    fourcc = cv2.VideoWriter_fourcc(*codec)  # ty: ignore[unresolved-attribute]
     writer = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
 
     # Write frames
@@ -479,7 +515,7 @@ def save_video(
         writer.write(frame)
 
     writer.release()
-    logging.info(f"Saved video to: {output_path} ({len(frames_list)} frames at {fps} fps)")
+    logger.info(f"Saved video to: {output_path} ({len(frames_list)} frames at {fps} fps)")
 
 
 def sequence_to_video(
@@ -497,16 +533,25 @@ def sequence_to_video(
         overwrite (bool, optional): if True it overwrites the existing file. Defaults to True.
 
     """
-    # Handle directory input - load all frames as file paths
+    # Handle directory input - load all frames as file paths then as numpy
     if isinstance(frames, (str, Path)):
-        frames = sorted([str(elem) for elem in list(Path(frames).iterdir())])
+        frame_paths = sorted([str(elem) for elem in list(Path(frames).iterdir())])
+        np_frames: list[np.ndarray] = [
+            cv2.cvtColor(cv2.imread(p), cv2.COLOR_BGR2RGB) for p in frame_paths
+        ]
+        save_video(np_frames, output_path, fps=fps, overwrite=overwrite)
+        return
+
+    seq = cast("Sequence[np.ndarray] | Sequence[Path]", frames)
 
     # Handle file paths - load as numpy arrays
-    if isinstance(frames[0], (str, Path)):
-        frames = [cv2.cvtColor(cv2.imread(str(f)), cv2.COLOR_BGR2RGB) for f in frames]
+    if isinstance(seq[0], (str, Path)):
+        np_frames = [cv2.cvtColor(cv2.imread(str(f)), cv2.COLOR_BGR2RGB) for f in seq]
+        save_video(np_frames, output_path, fps=fps, overwrite=overwrite)
+        return
 
     # Use save_video() for actual encoding
-    save_video(frames, output_path, fps=fps, overwrite=overwrite)
+    save_video(cast("Sequence[np.ndarray]", seq), output_path, fps=fps, overwrite=overwrite)
 
 
 def save_frames(
@@ -630,6 +675,84 @@ def image_to_np(image: str | Path | np.ndarray, channel_order: str = "RGB") -> n
     return image
 
 
+def image_to_tensor(
+    image: str | Path | np.ndarray | torch.Tensor,
+    channel_order: str = "RGB",
+) -> torch.Tensor:
+    """Load or convert a single image to a uint8 ``(3, H, W)`` CPU tensor.
+
+    Wraps :func:`image_to_np` for the file-path and numpy cases, then
+    permutes to channel-first.  If a tensor is supplied it is returned
+    as-is (channel-first assumed) after an optional shape check.
+
+    Args:
+        image: Image source — file path, ``(H, W, 3)`` numpy array, or
+            ``(C, H, W)`` / ``(H, W, C)`` torch tensor.
+        channel_order: Channel order applied when loading from file or
+            converting from numpy.  See :func:`image_to_np` for options.
+            Ignored when ``image`` is already a tensor.
+
+    Returns:
+        uint8 tensor of shape ``(3, H, W)`` on CPU.
+
+    """
+    if isinstance(image, torch.Tensor):
+        if image.ndim == 3 and image.shape[0] not in (1, 3, 4):
+            # (H, W, C) → (C, H, W)
+            image = image.permute(2, 0, 1).contiguous()
+        return image
+
+    arr = image_to_np(image, channel_order)
+    return torch.from_numpy(arr).permute(2, 0, 1).contiguous()
+
+
+def to_uint8_tensor(
+    frames: torch.Tensor | np.ndarray | Sequence,
+) -> torch.Tensor:
+    """Convert any supported input to a uint8 ``(B, 3, H, W)`` CPU tensor.
+
+    Canonical shared implementation used by all model wrappers in the library.
+    Avoids the need to duplicate this logic across multiple wrapper classes.
+
+    Args:
+        frames: One of:
+
+            * ``torch.Tensor (C, H, W)`` or ``(B, C, H, W)`` uint8 RGB
+            * ``np.ndarray (H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB
+            * ``str | Path`` — single image file path
+            * ``Sequence[np.ndarray]`` of ``(H, W, 3)`` arrays
+            * ``Sequence[str | Path]`` of image file paths
+
+    Returns:
+        uint8 tensor of shape ``(B, 3, H, W)`` on CPU.
+
+    Raises:
+        ValueError: If an empty sequence is passed.
+
+    """
+    if isinstance(frames, torch.Tensor):
+        if frames.ndim == 3:
+            frames = frames.unsqueeze(0)
+        return frames
+
+    if isinstance(frames, (str, Path)):
+        img = image_to_np(frames, "RGB")
+        return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).unsqueeze(0)
+
+    if isinstance(frames, np.ndarray):
+        arr = frames if frames.ndim == 4 else np.expand_dims(frames, 0)
+        return torch.from_numpy(np.ascontiguousarray(arr)).permute(0, 3, 1, 2)
+
+    items = list(frames)
+    if not items:
+        raise ValueError("Empty sequence passed to to_uint8_tensor")
+    if isinstance(items[0], (str, Path)):
+        items = [image_to_np(p, "RGB") for p in items]
+    return torch.stack(
+        [torch.from_numpy(np.ascontiguousarray(item)).permute(2, 0, 1) for item in items]
+    )
+
+
 def images_to_np(
     images: Sequence[np.ndarray | str | Path],
     channel_order: str = "RGB",
@@ -671,25 +794,6 @@ def images_to_np(
     return batched_images
 
 
-def check_same_image_dims(images: Sequence) -> None:
-    """Checks that every image in the sequence of images has the same dimensionality.
-
-    Args:
-        images (Sequence): multiple images.
-
-    Raises:
-        ValueError: if the images do not have the same H, W dimensions.
-
-    """
-    h, w = images[0].shape[:2]
-    for index, image in enumerate(images):
-        if image.shape[:2] != (h, w):
-            raise ValueError(
-                f"The {index}. image in the list has different dimensions."
-                f"Expected image of shape {(h, w)} got instead {(image.shape[:2])}"
-            )
-
-
 def interpolate_1d(
     start_index: int, end_index: int, start_data: np.ndarray, end_data: np.ndarray
 ) -> np.ndarray:
@@ -729,7 +833,7 @@ class ImageSequenceReader(Dataset):
         """
         return len(self.files)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):  # ty: ignore[invalid-method-override]
         """Load image at index.
 
         Args:
@@ -770,6 +874,8 @@ class Video:
 
     """
 
+    _decoder: "VideoDecoder"
+
     def __init__(self, path: str | Path, device: str | torch.device | None = None) -> None:
         from torchcodec.decoders import VideoDecoder
 
@@ -784,27 +890,27 @@ class Video:
     @property
     def fps(self) -> float:
         """Average frames per second."""
-        return float(self._metadata.average_fps)
+        return float(self._metadata.average_fps or 0)
 
     @property
     def num_frames(self) -> int:
         """Total number of frames."""
-        return int(self._metadata.num_frames)
+        return int(self._metadata.num_frames or 0)
 
     @property
     def height(self) -> int:
         """Frame height in pixels."""
-        return int(self._metadata.height)
+        return int(self._metadata.height or 0)
 
     @property
     def width(self) -> int:
         """Frame width in pixels."""
-        return int(self._metadata.width)
+        return int(self._metadata.width or 0)
 
     @property
     def duration(self) -> float:
         """Video duration in seconds."""
-        return float(self._metadata.num_frames / self._metadata.average_fps)
+        return float((self._metadata.num_frames or 0) / (self._metadata.average_fps or 1))
 
     def get_batch(self, start: int, stop: int, step: int = 1) -> torch.Tensor:
         """Decode a range of frames.
@@ -926,4 +1032,4 @@ class Video:
 
     def close(self) -> None:
         """Release the decoder."""
-        self._decoder = None
+        self._decoder = None  # ty: ignore[invalid-assignment]

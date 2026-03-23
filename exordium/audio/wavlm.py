@@ -10,12 +10,14 @@ from exordium.audio.base import AudioModelWrapper
 from exordium.utils.decorator import load_or_create
 
 WAVLM_SAMPLE_RATE = 16000  # all WavLM variants operate at 16 kHz
+"""Required audio sample rate for all WavLM variants (16 000 Hz)."""
 
 _MODEL_IDS: dict[str, str] = {
     "base": "microsoft/wavlm-base",
     "base+": "microsoft/wavlm-base-plus",
     "large": "microsoft/wavlm-large",
 }
+"""Mapping of WavLM variant names to HuggingFace model IDs."""
 
 
 class WavlmWrapper(AudioModelWrapper):

@@ -1,17 +1,10 @@
 """UniGaze gaze estimation model wrapper."""
 
-from collections.abc import Sequence
-from pathlib import Path
-
-import numpy as np
 import torch
-import unigaze
-from PIL import Image
-from torchvision import transforms
+import torchvision.transforms.functional as TF
 
 from exordium.utils.device import get_torch_device
-from exordium.video.core.io import images_to_np
-from exordium.video.core.transform import rotate_face
+from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD
 from exordium.video.face.gaze.base import GazeWrapper
 
 
@@ -19,72 +12,65 @@ class UnigazeWrapper(GazeWrapper):
     """UniGaze gaze estimation wrapper.
 
     Predicts gaze direction (pitch and yaw) from face crops using a
-    ViT-based model from the UniGaze family.
+    ViT-based model from the UniGaze family.  Weights are downloaded
+    automatically by the ``unigaze`` package on first use.
 
     Args:
-        model_name: UniGaze model variant.  Available:
-            ``unigaze_b16_joint`` (ViT-B/16, smallest),
-            ``unigaze_l16_joint`` (ViT-L/16),
-            ``unigaze_h14_joint`` (ViT-H/14),
-            ``unigaze_h14_cross_X`` (ViT-H/14 cross-dataset).
+        model_name: UniGaze model variant.  Available options:
+
+            * ``"unigaze_b16_joint"`` — ViT-B/16, smallest and fastest
+            * ``"unigaze_l16_joint"`` — ViT-L/16
+            * ``"unigaze_h14_joint"`` — ViT-H/14
+            * ``"unigaze_h14_cross_X"`` — ViT-H/14, cross-dataset variant
+
         device_id: Device index.  ``None`` or negative for CPU.
 
     """
 
-    def __init__(self, model_name: str = "unigaze_b16_joint", device_id: int | None = None) -> None:
-        self.device = get_torch_device(device_id)
-        self.model = unigaze.load(model_name, device=str(self.device))
-
-        self.transform = transforms.Compose(
-            [
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ]
-        )
-
-    @torch.inference_mode()
-    def __call__(self, samples: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Predict gaze angles from a preprocessed face tensor.
-
-        Args:
-            samples: Preprocessed face tensor of shape ``(B, 3, 224, 224)``
-                on the model device.
-
-        Returns:
-            Tuple of ``(yaw, pitch)`` tensors each of shape ``(B,)`` in
-            radians.
-
-        """
-        output = self.model(samples)
-        pred_gaze = output["pred_gaze"]  # (B, 2) → (pitch, yaw)
-        return pred_gaze[:, 1], pred_gaze[:, 0]  # yaw, pitch
-
-    def predict_pipeline(
+    def __init__(
         self,
-        faces: Sequence[str | Path | Image.Image | np.ndarray],
-        roll_angles: Sequence[float] | None = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Predict gaze from face images with optional head-roll correction.
+        model_name: str = "unigaze_b16_joint",
+        device_id: int | None = None,
+    ) -> None:
+        import unigaze as _unigaze
+
+        self.device = get_torch_device(device_id)
+        self.model = _unigaze.load(model_name, device=str(self.device))
+        self._mean = torch.tensor(_IMAGENET_MEAN, device=self.device).view(1, 3, 1, 1)
+        self._std = torch.tensor(_IMAGENET_STD, device=self.device).view(1, 3, 1, 1)
+
+    def preprocess(self, frames) -> torch.Tensor:
+        """Resize and normalise face crops to UniGaze input convention.
+
+        UniGaze expects 224×224 inputs normalised to ImageNet mean/std.
 
         Args:
-            faces: Face images (paths, PIL images, or RGB numpy arrays).
-            roll_angles: Per-face roll angles in degrees.  If provided each
-                face is rotated to align upright before inference.
+            frames: Any input accepted by :meth:`~GazeWrapper._to_uint8_tensor`.
 
         Returns:
-            Tuple of ``(yaw, pitch)`` numpy arrays each of shape ``(B,)``
-            in radians.
+            Float tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
 
         """
-        faces_rgb = images_to_np(faces, "RGB", resize=(224, 224))
+        x = self._to_uint8_tensor(frames).to(self.device)
+        x = TF.resize(x, [224, 224], antialias=True)
+        x = x.float().div(255)
+        return (x - self._mean) / self._std
 
-        if roll_angles is not None:
-            faces_rgb = [rotate_face(face, roll)[0] for face, roll in zip(faces_rgb, roll_angles)]
+    def inference(self, tensor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Run UniGaze and return ``(yaw, pitch)`` angles in radians.
 
-        samples = torch.stack([self.transform(Image.fromarray(face)) for face in faces_rgb]).to(
-            self.device
-        )
+        Performs the full forward pass and extracts gaze angles from the
+        model output dict.  UniGaze returns ``pred_gaze`` of shape ``(B, 2)``
+        where column 0 is pitch and column 1 is yaw, both in radians.
 
-        yaw, pitch = self(samples)
-        return yaw.detach().cpu().numpy(), pitch.detach().cpu().numpy()
+        Args:
+            tensor: Float tensor of shape ``(B, 3, 224, 224)`` on
+                ``self.device``, normalised to ImageNet mean/std.
+
+        Returns:
+            Tuple of ``(yaw, pitch)`` tensors each of shape ``(B,)``
+            in radians on ``self.device``.
+
+        """
+        pred_gaze = self.model(tensor)["pred_gaze"]  # (B, 2): col 0=pitch, col 1=yaw
+        return pred_gaze[:, 1], pred_gaze[:, 0]

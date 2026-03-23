@@ -12,26 +12,42 @@ Collection of preprocessing functions and deep learning methods for **multimodal
 Features
 --------
 
-.. raw:: html
+**Audio**
 
-   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-     <div>
-       <h4>Audio Processing</h4>
-       <p>I/O, OpenSMILE, spectrograms, Wav2Vec2, CLAP, WavLM</p>
-     </div>
-     <div>
-       <h4>Video Analysis</h4>
-       <p>Face detection, landmarks, head pose, gaze, iris tracking, action units, feature extraction</p>
-     </div>
-     <div>
-       <h4>Text Processing</h4>
-       <p>BERT, RoBERTa, XML-RoBERTa</p>
-     </div>
-     <div>
-       <h4>Utilities</h4>
-       <p>Parallel processing, I/O helpers, loss functions, normalization, padding, visualization</p>
-     </div>
-   </div>
+- I/O utilities — load, save, resample waveforms
+- Spectrograms — MFCC and Mel-spectrogram (with pre-emphasis)
+- Prosody — pitch, energy, voice ratio, engagement
+- OpenSMILE — eGeMAPSv02 low-level descriptors
+- CLAP — contrastive language–audio pre-training embeddings (512-d)
+- Wav2Vec2 — self-supervised speech representations (768-d)
+- WavLM — masked speech modelling, layer-wise hidden states (768-d)
+
+**Video**
+
+- Face detection — YOLOv8-Face, YOLO11-pose, BlazeFace
+- Facial landmarks — YOLO11 5-pt coarse keypoints, FaceMesh 478-pt dense mesh
+- Head pose — SixDRepNet (yaw, pitch, roll in degrees)
+- Gaze direction — L2CS-Net (ResNet-50), UniGaze (ViT), roll correction
+- Iris landmarks — MediaPipe Iris 71 eye pts + 5 iris pts, EAR, iris diameters
+- Blink detection — BlinkDenseNet121 per-eye open/closed probability
+- Action units — OpenGraphAU 41-dim intensity vector
+- Deep visual features — Swin Transformer (768-d), FAb-Net (256-d), CLIP ViT-H/14 (1024-d)
+- IoU tracking — multi-face track assignment and merging across video frames
+
+**Text**
+
+- Whisper — speech-to-text transcription (OpenAI Whisper)
+- BERT — token-level and sentence-level embeddings (768-d)
+- RoBERTa — token-level and sentence-level embeddings (1024-d)
+- XML-RoBERTa — multilingual sentence embeddings (768-d)
+
+**Utilities**
+
+- Concurrent processing — thread- and process-pool helpers
+- Decorators — ``@load_or_create`` caching, retry, timing
+- Normalization — global, per-feature, sliding-window
+- Padding — fixed-length sequence padding and masking
+- Loss functions — MSE, CCC, combined losses
 
 Installation
 ------------
@@ -47,65 +63,79 @@ Installation
 Extras
 ^^^^^^
 
-| ``audio`` | dependencies to process audio data |
-| ``text`` | dependency to process textual data |
-| ``face`` | dependencies for face detection, landmarks, and head pose estimation |
-| ``video`` | dependencies for various video feature extraction methods |
-| ``all`` | all previously described extras will be installed |
+.. list-table::
+   :header-rows: 1
+   :widths: 15 85
 
-Quick start
------------
+   * - Extra
+     - Dependencies
+   * - ``audio``
+     - OpenSMILE, torchaudio — audio feature extraction
+   * - ``text``
+     - transformers, torchaudio — text and speech models
+   * - ``video``
+     - MediaPipe, Ultralytics, blinklinmult, unigaze, timm — face & video models
+   * - ``all``
+     - all previously described extras
 
-Audio feature extraction (WavLM)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Example Notebooks
+-----------------
 
-.. code-block:: python
+Interactive demos for every module are in the ``examples/`` directory.
+All notebooks use fixture files from ``tests/fixtures/`` — model weights are
+downloaded automatically on first run.
 
-   import numpy as np
-   from exordium.audio.wavlm import WavlmWrapper
+.. list-table::
+   :header-rows: 1
+   :widths: 38 62
 
-   model = WavlmWrapper(device_id=-1, model_name="base+")
-   waveform = np.random.rand(16000).astype(np.float32)
-   features = model.audio_to_feature(waveform)
-   # list of 12 numpy arrays, each (T, 768)
-
-Text feature extraction (BERT)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: python
-
-   from exordium.text.bert import BertWrapper
-
-   model = BertWrapper(device_id=-1)
-   features = model("Hello, world!", pool=True)
-   # torch.Tensor of shape (1, 768)
-
-Video face detection
-^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: python
-
-   from exordium.video.face import RetinaFaceDetector
-   from exordium.video.io import images_to_np
-
-   detector = RetinaFaceDetector()
-   frames = images_to_np(["frame.jpg"], "RGB")
-   detections = detector.detect_image(frames[0])
+   * - Notebook
+     - Description
+   * - ``demo_video_io.ipynb``
+     - Video loading, frame iteration, batch access, FPS resampling
+   * - ``demo_video_deep.ipynb``
+     - Deep visual features: SwinT (768-d), FabNet (256-d), CLIP ViT-H/14 (1024-d)
+   * - ``demo_video_face_bb.ipynb``
+     - Face detection: YOLOv8 vs YOLO11 on easy and hard (extreme-pose) images
+   * - ``demo_video_face_landmarks.ipynb``
+     - Landmarks: YOLO11 5-pt keypoints + FaceMesh 478-pt dense mesh
+   * - ``demo_video_face_headpose.ipynb``
+     - Head pose (SixDRepNet) — yaw/pitch/roll with axis and cube overlays
+   * - ``demo_video_face_gaze.ipynb``
+     - Gaze direction: L2CS-Net (ResNet-50) and UniGaze (ViT), roll correction
+   * - ``demo_video_face_blink.ipynb``
+     - Per-eye blink detection on video — frame-wise score plot, patch examples
+   * - ``demo_video_face_iris.ipynb``
+     - Iris landmarks: 71 eye pts + 5 iris pts, EAR, iris diameters (YOLO11 + FaceMesh pipeline)
+   * - ``demo_video_face_action_units.ipynb``
+     - Facial action units with OpenGraphAU — 41-dim AU intensity vector
+   * - ``demo_video_tracking.ipynb``
+     - Multi-face IoU tracking across video frames with track merging
+   * - ``demo_audio.ipynb``
+     - Audio features: spectrogram, prosody, OpenSMILE, CLAP, Wav2Vec2, WavLM
+   * - ``demo_text.ipynb``
+     - Text features: Whisper transcription, BERT, RoBERTa, XML-RoBERTa
 
 Development
 -----------
-
-For development with all dependencies:
 
 .. code-block:: bash
 
    git clone https://github.com/fodorad/exordium
    cd exordium
-   pip install -e ".[all,dev]"
-   make check
+   uv pip install -e ".[all,dev]"
+   make check   # lint + type-check + test + docs
 
 Related Projects
 ----------------
+
+EmotionLinMulT (202X)
+^^^^^^^^^^^^^^^^^^^^^
+
+Efficient, transformer-based, multi-task emotion detection system.
+
+- Paper: not published yet
+- `Code <https://github.com/fodorad/EmotionLinMulT>`_
 
 BlinkLinMulT (2023)
 ^^^^^^^^^^^^^^^^^^^

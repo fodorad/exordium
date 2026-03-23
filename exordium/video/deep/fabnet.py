@@ -1,18 +1,17 @@
 """FabNet facial feature extractor wrapper."""
 
 import logging
-from collections.abc import Sequence
-from pathlib import Path
 
-import numpy as np
 import torch
 import torch.nn as nn
-import torchvision.transforms as T
-from PIL import Image
+import torchvision.transforms.functional as TF
 
 from exordium import WEIGHT_DIR
-from exordium.utils.ckpt import download_file
+from exordium.utils.ckpt import download_weight
 from exordium.video.deep.base import VisualModelWrapper
+
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
 
 
 class FabNetWrapper(VisualModelWrapper):
@@ -26,13 +25,9 @@ class FabNetWrapper(VisualModelWrapper):
 
     """
 
-    def __init__(self, device_id: int = -1):
+    def __init__(self, device_id: int | None = None):
         super().__init__(device_id)
-        self.remote_path = (
-            "https://github.com/fodorad/exordium/releases/download/v1.0.0/fabnet_weights.pth"
-        )
-        self.local_path = WEIGHT_DIR / "fabnet" / Path(self.remote_path).name
-        download_file(self.remote_path, self.local_path)
+        self.local_path = download_weight("fabnet_weights.pth", WEIGHT_DIR / "fabnet")
         state_dict = torch.load(
             str(self.local_path), weights_only=False, map_location=torch.device("cpu")
         )
@@ -41,21 +36,24 @@ class FabNetWrapper(VisualModelWrapper):
         self.model.to(self.device)
         self.model.eval()
 
-        self.transform = T.Compose([T.ToTensor(), T.Resize((256, 256))])
+        logger.info(f"FAb-Net is loaded to {self.device}.")
 
-        logging.info(f"FAb-Net is loaded to {self.device}.")
+    def preprocess(self, frames) -> torch.Tensor:
+        """Resize RGB frames to 256×256 and scale to [0, 1].
 
-    def _preprocess(self, frames: Sequence[np.ndarray]) -> torch.Tensor:
-        """Stack RGB numpy frames into a (B, 3, 256, 256) tensor on self.device.
+        FAb-Net was trained without channel-wise mean/std normalisation.
 
         Args:
-            frames: RGB uint8 arrays each of shape (H, W, 3).
+            frames: Any input supported by
+                :meth:`~exordium.video.deep.base.VisualModelWrapper._to_uint8_tensor`.
 
         Returns:
-            Tensor of shape (B, 3, 256, 256) with values in [0, 1].
+            Float tensor of shape ``(B, 3, 256, 256)`` on ``self.device``.
 
         """
-        return torch.stack([self.transform(Image.fromarray(f)) for f in frames]).to(self.device)
+        x = self._to_uint8_tensor(frames).to(self.device)
+        x = TF.resize(x, [256, 256], antialias=True)
+        return x.float().div(255)
 
     def inference(self, tensor: torch.Tensor) -> torch.Tensor:
         """FAb-Net encoder forward pass.

@@ -18,6 +18,7 @@ class Wav2vec2Wrapper(AudioModelWrapper):
     """
 
     SAMPLE_RATE = 16000
+    """Expected audio sample rate for Wav2Vec2 (16 000 Hz)."""
 
     def __init__(self, device_id: int = -1) -> None:
         """Initialize Wav2Vec2 wrapper with pretrained model."""

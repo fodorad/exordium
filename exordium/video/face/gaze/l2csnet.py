@@ -1,41 +1,37 @@
 """L2CS-Net gaze estimation model wrapper."""
 
-from collections.abc import Sequence
 from math import sqrt
-from pathlib import Path
 
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torchvision import models, transforms
+import torchvision.transforms.functional as TF
+from torchvision import models
 
 from exordium import WEIGHT_DIR
-from exordium.utils.ckpt import download_file
+from exordium.utils.ckpt import download_weight
 from exordium.utils.device import get_torch_device
-from exordium.video.core.io import images_to_np
-from exordium.video.core.transform import rotate_face
+from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD
 from exordium.video.face.gaze.base import GazeWrapper
 
 
 class L2csNetWrapper(GazeWrapper):
     """L2CS-Net gaze estimation wrapper.
 
-    Predicts gaze direction (pitch and yaw) from face crops.
+    Predicts gaze direction (pitch and yaw) from face crops using a
+    ResNet-50 backbone with two 90-bin classification heads.
+
+    Weights are downloaded automatically from ``fodorad/exordium-weights``
+    on Hugging Face Hub on first use.
 
     Args:
-        device_id: Device index. ``None`` or negative for CPU.
+        device_id: Device index.  ``None`` or negative for CPU.
 
     """
 
     def __init__(self, device_id: int | None = None):
         self.device = get_torch_device(device_id)
-        self.remote_path = (
-            "https://github.com/fodorad/exordium/releases/download/v1.0.0/l2csnet_weights.pkl"
-        )
-        self.local_path = WEIGHT_DIR / "l2csnet" / Path(self.remote_path).name
-        download_file(self.remote_path, self.local_path)
-        saved_state_dict = torch.load(self.local_path, map_location=self.device)
+        self.local_path = download_weight("l2csnet_weights.pkl", WEIGHT_DIR / "l2csnet")
+        saved_state_dict = torch.load(self.local_path, map_location=self.device, weights_only=True)
         del saved_state_dict["fc_finetune.weight"]
         del saved_state_dict["fc_finetune.bias"]
 
@@ -44,80 +40,49 @@ class L2csNetWrapper(GazeWrapper):
         self.model.to(self.device)
         self.model.eval()
 
-        self.softmax = nn.Softmax(dim=1)
-        self.idx_tensor = torch.FloatTensor([idx for idx in range(90)]).to(self.device)
+        self._softmax = nn.Softmax(dim=1)
+        self._idx_tensor = torch.arange(90, dtype=torch.float32, device=self.device)
+        self._mean = torch.tensor(_IMAGENET_MEAN, device=self.device).view(1, 3, 1, 1)
+        self._std = torch.tensor(_IMAGENET_STD, device=self.device).view(1, 3, 1, 1)
 
-        self.transform = transforms.Compose(
-            [
-                transforms.Resize(448),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ]
-        )
-        self.transform_inference = transforms.Compose(
-            [
-                transforms.Resize(448),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ]
-        )
+    def preprocess(self, frames) -> torch.Tensor:
+        """Resize and normalise face crops to L2CS-Net input convention.
 
-    @torch.inference_mode()
-    def __call__(self, samples: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Predict gaze angles from a preprocessed face tensor.
+        L2CS-Net expects 448×448 inputs normalised to ImageNet mean/std.
 
         Args:
-            samples: Preprocessed face tensor of shape ``(B, 3, 448, 448)``
-                on the model device.
+            frames: Any input accepted by :meth:`~GazeWrapper._to_uint8_tensor`.
 
         Returns:
-            Tuple of ``(yaw, pitch)`` tensors each of shape ``(B,)`` in
-            radians.
+            Float tensor of shape ``(B, 3, 448, 448)`` on ``self.device``.
 
         """
-        gaze_yaw, gaze_pitch = self.model(samples)
-        yaw_predicted = self.softmax(gaze_yaw)
-        pitch_predicted = self.softmax(gaze_pitch)
+        x = self._to_uint8_tensor(frames).to(self.device)
+        x = TF.resize(x, [448, 448], antialias=True)
+        x = x.float().div(255)
+        return (x - self._mean) / self._std
 
-        pitch_predicted = torch.sum(pitch_predicted.data * self.idx_tensor, dim=1) * 4 - 180
-        yaw_predicted = torch.sum(yaw_predicted.data * self.idx_tensor, dim=1) * 4 - 180
+    def inference(self, tensor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Run L2CS-Net and return ``(yaw, pitch)`` angles in radians.
 
-        pitch_normed = pitch_predicted * np.pi / 180.0
-        yaw_normed = yaw_predicted * np.pi / 180.0
-        return yaw_normed, pitch_normed
-
-    def predict_pipeline(
-        self,
-        faces: Sequence[str | Path | np.ndarray],
-        roll_angles: Sequence[float] | None = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Predict gaze from face images with optional head-roll correction.
+        Performs the full forward pass and converts bin logits to angles:
+        softmax over 90 bins → weighted expected bin index → degrees → radians.
 
         Args:
-            faces: Face images (paths or RGB numpy arrays).
-            roll_angles: Per-face roll angles in degrees.  If provided each
-                face is rotated to align upright before inference.
+            tensor: Float tensor of shape ``(B, 3, 448, 448)`` on
+                ``self.device``, normalised to ImageNet mean/std.
 
         Returns:
-            Tuple of ``(yaw, pitch)`` numpy arrays each of shape ``(B,)``
-            in radians.
+            Tuple of ``(yaw, pitch)`` tensors each of shape ``(B,)``
+            in radians on ``self.device``.
 
         """
-        faces_rgb = images_to_np(faces, "RGB", resize=None)
-
-        if roll_angles is not None:
-            faces_rgb = np.stack(
-                [rotate_face(face, roll)[0] for face, roll in zip(faces_rgb, roll_angles)]
-            )
-
-        samples = (torch.from_numpy(faces_rgb).permute(0, 3, 1, 2).float() / 255.0).to(self.device)
-        samples = F.interpolate(samples, size=(448, 448), mode="bilinear", align_corners=False)
-
-        mean = torch.tensor([0.485, 0.456, 0.406], device=self.device).view(1, 3, 1, 1)
-        std = torch.tensor([0.229, 0.224, 0.225], device=self.device).view(1, 3, 1, 1)
-        samples = (samples - mean) / std
-
-        yaw_normed, pitch_normed = self(samples)
-        return yaw_normed.detach().cpu().numpy(), pitch_normed.detach().cpu().numpy()
+        gaze_yaw, gaze_pitch = self.model(tensor)
+        yaw_prob = self._softmax(gaze_yaw)
+        pitch_prob = self._softmax(gaze_pitch)
+        yaw_deg = torch.sum(yaw_prob * self._idx_tensor, dim=1) * 4 - 180
+        pitch_deg = torch.sum(pitch_prob * self._idx_tensor, dim=1) * 4 - 180
+        return yaw_deg * (torch.pi / 180.0), pitch_deg * (torch.pi / 180.0)
 
 
 ####################################################################################
@@ -158,18 +123,6 @@ class L2CS(nn.Module):  # pragma: no cover
                 m.bias.data.zero_()
 
     def _make_layer(self, block, planes, blocks, stride=1):
-        """Build residual layer.
-
-        Args:
-            block: Building block class.
-            planes: Number of output channels.
-            blocks: Number of blocks in the layer.
-            stride: Stride for the first block. Defaults to 1.
-
-        Returns:
-            Sequential module containing the layer blocks.
-
-        """
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
@@ -190,13 +143,14 @@ class L2CS(nn.Module):  # pragma: no cover
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        """Predict gaze angles from face image.
+        """Predict gaze bin logits from a face image batch.
 
         Args:
-            x: Input face tensor of shape (b, 3, h, w).
+            x: Input tensor of shape ``(B, 3, H, W)``.
 
         Returns:
-            Tuple of (yaw_logits, pitch_logits) tensors of shape (b, num_bins).
+            Tuple of ``(yaw_logits, pitch_logits)`` each of shape
+            ``(B, num_bins)``.
 
         """
         x = self.conv1(x)
@@ -209,37 +163,34 @@ class L2CS(nn.Module):  # pragma: no cover
         x = self.layer4(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        pre_yaw_gaze = self.fc_yaw_gaze(x)
-        pre_pitch_gaze = self.fc_pitch_gaze(x)
-        return pre_yaw_gaze, pre_pitch_gaze
+        return self.fc_yaw_gaze(x), self.fc_pitch_gaze(x)
 
 
 def L2CS_Builder(arch: str = "ResNet50", bins: int = 90):  # pragma: no cover
-    """Build L2CS-Net model with specified architecture.
+    """Build an L2CS-Net model with the specified ResNet backbone.
 
     Args:
-        arch: Architecture name. One of "ResNet18", "ResNet34", "ResNet50",
-            "ResNet101", "ResNet152". Defaults to "ResNet50".
-        bins: Number of gaze angle bins. Defaults to 90.
+        arch: One of ``"ResNet18"``, ``"ResNet34"``, ``"ResNet50"``
+            (default), ``"ResNet101"``, ``"ResNet152"``.
+        bins: Number of gaze angle bins. Defaults to ``90``.
 
     Returns:
-        L2CS model instance.
+        :class:`L2CS` model instance.
 
     Raises:
-        ValueError: If architecture name is invalid.
+        ValueError: If ``arch`` is not a recognised architecture name.
 
     """
     match arch:
         case "ResNet18":
-            model = L2CS(models.resnet.BasicBlock, [2, 2, 2, 2], bins)
+            return L2CS(models.resnet.BasicBlock, [2, 2, 2, 2], bins)
         case "ResNet34":
-            model = L2CS(models.resnet.BasicBlock, [3, 4, 6, 3], bins)
+            return L2CS(models.resnet.BasicBlock, [3, 4, 6, 3], bins)
         case "ResNet50":
-            model = L2CS(models.resnet.Bottleneck, [3, 4, 6, 3], bins)
+            return L2CS(models.resnet.Bottleneck, [3, 4, 6, 3], bins)
         case "ResNet101":
-            model = L2CS(models.resnet.Bottleneck, [3, 4, 23, 3], bins)
+            return L2CS(models.resnet.Bottleneck, [3, 4, 23, 3], bins)
         case "ResNet152":
-            model = L2CS(models.resnet.Bottleneck, [3, 8, 36, 3], bins)
+            return L2CS(models.resnet.Bottleneck, [3, 8, 36, 3], bins)
         case _:
-            raise ValueError("Invalid architecture")
-    return model
+            raise ValueError(f"Invalid L2CS architecture: {arch!r}")

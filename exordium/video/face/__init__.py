@@ -1,13 +1,12 @@
-from exordium.video.core.transform import align_face, crop_eye_keep_ratio, rotate_face
+from exordium.video.core.transform import align_face, rotate_face
 from exordium.video.face.au import (
     AU_REGISTRY,
     AU_ids,
     AU_names,
     OpenGraphAuWrapper,
-    read_openface_au,
 )
 from exordium.video.face.blink import BlinkDenseNet121
-from exordium.video.face.detector.mediapipe import MediaPipeFaceDetector
+from exordium.video.face.detector.yolo11 import YoloFace11Detector
 from exordium.video.face.gaze import (
     GazeWrapper,
     L2CS_Builder,
@@ -18,7 +17,7 @@ from exordium.video.face.gaze import (
     pitchyaw_to_pixel,
     rotate_vector,
 )
-from exordium.video.face.headpose import SixDRepNetWrapper, draw_headpose_axis
+from exordium.video.face.headpose import SixDRepNetWrapper, draw_headpose_axis, draw_headpose_cube
 from exordium.video.face.landmark import (
     FaceMeshWrapper,
     IrisWrapper,
@@ -32,9 +31,8 @@ __all__ = [
     "AU_ids",
     "AU_names",
     "OpenGraphAuWrapper",
-    "read_openface_au",
     "BlinkDenseNet121",
-    "MediaPipeFaceDetector",
+    "YoloFace11Detector",
     "GazeWrapper",
     "L2CS_Builder",
     "L2csNetWrapper",
@@ -45,12 +43,12 @@ __all__ = [
     "rotate_vector",
     "SixDRepNetWrapper",
     "draw_headpose_axis",
+    "draw_headpose_cube",
     "FaceMeshWrapper",
     "IrisWrapper",
     "visualize_iris",
     "visualize_landmarks",
     "FaceLandmarks",
     "align_face",
-    "crop_eye_keep_ratio",
     "rotate_face",
 ]

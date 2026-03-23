@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 
 def get_mean_std(
-    dataloader: DataLoader, ndim: int, verbose: bool = True
+    dataloader: DataLoader, ndim: int, verbose: bool = False
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Calculates mean and std values of samples for standardization using a DataLoader object.
 
@@ -19,7 +19,7 @@ def get_mean_std(
     Args:
         dataloader: DataLoader of samples.
         ndim: Dimensionality of the samples.
-        verbose: Show progress bar. Defaults to True.
+        verbose: Show progress bar. Defaults to False.
 
     Raises:
         NotImplementedError: if given ndim is not supported.

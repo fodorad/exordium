@@ -10,55 +10,30 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import torch
 
-TIMING_ENABLED = False
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
 
 
-def timer(func: Callable[..., Any]) -> Callable[..., None]:
+def timer(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator that prints the execution time of a function.
 
     Args:
         func (Callable[..., Any]): The function to time.
 
     Returns:
-        Callable[..., None]: Wrapped function that prints elapsed time on each
-            call; the original return value is discarded.
-
-    """
-
-    def wrapper(*args, **kwargs):
-        before = time.time()
-        func(*args, **kwargs)
-        print("Function took:", np.round(time.time() - before, decimals=3), "seconds.")
-
-    return wrapper
-
-
-def timer_with_return(func):
-    """Decorator that optionally prints execution time and preserves the return value.
-
-    Timing is only active when the module-level ``TIMING_ENABLED`` flag is True.
-
-    Args:
-        func: The function to wrap.
-
-    Returns:
-        Callable: Wrapped function that returns the original value and
-            conditionally prints elapsed time.
+        Callable[..., Any]: Wrapped function that prints elapsed time on each
+            call and returns the original return value.
 
     """
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        if TIMING_ENABLED:
-            start_time = time.time()
-            result = func(*args, **kwargs)
-            end_time = time.time()
-            execution_time = end_time - start_time
-            print(f"Execution time of {func.__name__}: {execution_time:.6f} seconds")
-            return result
-        else:
-            return func(*args, **kwargs)
+        before = time.time()
+        result = func(*args, **kwargs)
+        logger.debug(f"Function took: {round(time.time() - before, 3)} seconds.")
+        return result
 
     return wrapper
 
@@ -229,10 +204,75 @@ class NpyLoader(Loader):
         np.save(path, data)
 
 
+class SafetensorsLoader(Loader):
+    """Loader implementation using the safetensors format for torch tensors.
+
+    Accepts either a single ``torch.Tensor`` or a ``dict[str, torch.Tensor]``:
+
+    * **Single tensor** — stored under the key ``"data"`` and returned as a
+      plain ``torch.Tensor`` on load, so the round-trip is transparent.
+    * **Dict of tensors** — stored as-is and returned as
+      ``dict[str, torch.Tensor]`` on load.
+
+    Safetensors files are memory-mappable, contain no pickle data, and store
+    only the raw float bytes plus a compact JSON header — making them the
+    smallest and safest option for persisting feature tensors.
+
+    """
+
+    _KEY = "data"
+
+    def load(self, path: str | Path) -> torch.Tensor | dict[str, torch.Tensor]:
+        """Loads tensor(s) from a safetensors file.
+
+        Returns a plain ``torch.Tensor`` if the file was saved from a single
+        tensor, or a ``dict[str, torch.Tensor]`` if saved from a dict.
+
+        Args:
+            path (str | Path): Path to the ``.st`` file.
+
+        Returns:
+            torch.Tensor or dict[str, torch.Tensor].
+
+        """
+        from safetensors.torch import load_file
+
+        tensors = load_file(str(path))
+        if list(tensors.keys()) == [self._KEY]:
+            return tensors[self._KEY]
+        return tensors
+
+    def save(self, data: torch.Tensor | dict[str, torch.Tensor], path: str | Path) -> None:
+        """Saves tensor(s) to a safetensors file.
+
+        Args:
+            data: A single ``torch.Tensor`` or a ``dict[str, torch.Tensor]``.
+                CUDA tensors are moved to CPU automatically before saving.
+            path (str | Path): Destination file path.
+
+        Raises:
+            TypeError: If ``data`` is not a tensor or dict of tensors.
+
+        """
+        from safetensors.torch import save_file
+
+        if isinstance(data, torch.Tensor):
+            tensor_dict = {self._KEY: data.cpu()}
+        elif isinstance(data, dict):
+            tensor_dict = {k: v.cpu() for k, v in data.items()}
+        else:
+            raise TypeError(
+                "SafetensorsLoader expects a torch.Tensor or dict[str, torch.Tensor], "
+                f"got {type(data).__name__}"
+            )
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        save_file(tensor_dict, str(path))
+
+
 class LoaderFactory:
     """Factory that maps file format strings to Loader instances.
 
-    Supported formats: "fdet", "vdet", "track", "npy", "pkl".
+    Supported formats: "fdet", "vdet", "track", "npy", "pkl", "st".
     """
 
     LOADERS: dict[str, type[Loader]] = {
@@ -241,7 +281,9 @@ class LoaderFactory:
         "track": TrackLoader,
         "npy": NpyLoader,
         "pkl": PickleLoader,
+        "st": SafetensorsLoader,
     }
+    """Registry mapping format keys to their :class:`Loader` implementations."""
 
     @classmethod
     def get(cls, format: str) -> Loader:
@@ -274,8 +316,8 @@ def load_or_create(format: str):
     is saved.
 
     Args:
-        format (str): File format key accepted by LoaderFactory (e.g. "npy",
-            "pkl", "fdet", "vdet", "track").
+        format (str): File format key accepted by LoaderFactory (e.g. "st",
+            "npy", "pkl", "fdet", "vdet", "track").
 
     Returns:
         Callable: A decorator that wraps a function with load-or-create
@@ -296,11 +338,11 @@ def load_or_create(format: str):
             ):
                 val = function(*args, **kwargs)
                 if output_path is not None:
-                    logging.info(f"Save to {str(output_path)}...")
+                    logger.info(f"Save to {str(output_path)}...")
                     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
                     loader.save(val, output_path)
             else:
-                logging.info(f"Load from {str(output_path)}...")
+                logger.info(f"Load from {str(output_path)}...")
                 val = loader.load(output_path)
 
             return val

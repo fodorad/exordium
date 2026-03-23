@@ -12,10 +12,15 @@ from exordium.video.core.bb import (
     xyxy2full,
     xyxy2xywh,
 )
-from exordium.video.core.blur import is_blurry, variance_of_laplacian
 from exordium.video.core.detection import (
+    Detection,
+    DetectionFactory,
     DetectionFromImage,
+    DetectionFromNp,
+    DetectionFromTorchTensor,
+    DetectionFromVideo,
     FrameDetections,
+    IouTracker,
     Track,
     VideoDetections,
     add_detections_to_frame,
@@ -28,12 +33,13 @@ from exordium.video.core.io import (
     Video,
     batch_iterator,
     image_to_np,
+    image_to_tensor,
     images_to_np,
     interpolate_1d,
     load_frames,
+    to_uint8_tensor,
     video_to_frames,
 )
-from exordium.video.core.tracker import IouTracker
 
 __all__ = [
     "apply_10_crop",
@@ -48,9 +54,12 @@ __all__ = [
     "xywh2xyxy",
     "xyxy2full",
     "xyxy2xywh",
-    "is_blurry",
-    "variance_of_laplacian",
+    "Detection",
     "DetectionFromImage",
+    "DetectionFromVideo",
+    "DetectionFromNp",
+    "DetectionFromTorchTensor",
+    "DetectionFactory",
     "FrameDetections",
     "Track",
     "VideoDetections",
@@ -62,9 +71,11 @@ __all__ = [
     "Video",
     "batch_iterator",
     "image_to_np",
+    "image_to_tensor",
     "images_to_np",
     "interpolate_1d",
     "load_frames",
+    "to_uint8_tensor",
     "video_to_frames",
     "IouTracker",
 ]

@@ -1,6 +1,7 @@
 """OpenSmile feature extractor wrapper."""
 
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import opensmile
@@ -39,18 +40,20 @@ class OpensmileWrapper:
                 "Supported values are: 'lld', 'functionals'."
             )
 
-        feature_set = (
+        smile_feature_set: opensmile.FeatureSet = (
             opensmile.FeatureSet.eGeMAPSv02
             if feature_set == "egemaps"
             else opensmile.FeatureSet.ComParE_2016
         )
-        feature_level = (
+        smile_feature_level: opensmile.FeatureLevel = (
             opensmile.FeatureLevel.LowLevelDescriptors
             if feature_level == "lld"
             else opensmile.FeatureLevel.Functionals
         )
 
-        self.smile = opensmile.Smile(feature_set=feature_set, feature_level=feature_level)
+        self.smile = opensmile.Smile(
+            feature_set=smile_feature_set, feature_level=smile_feature_level
+        )
 
     @load_or_create("npy")
     def audio_to_feature(self, audio_path: Path | str, **_kwargs) -> np.ndarray:
@@ -65,7 +68,7 @@ class OpensmileWrapper:
 
         """
         feature = self(audio_path)
-        return feature
+        return cast("np.ndarray", feature)
 
     def __call__(
         self,
@@ -87,7 +90,7 @@ class OpensmileWrapper:
         if isinstance(waveform, (np.ndarray, torch.Tensor)):
             feature = np.array(self.smile.process_signal(np.array(waveform), sr))
         else:
-            feature = np.array(self.smile.process_file(waveform))
+            feature = np.array(self.smile.process_file(str(waveform)))
 
         if return_tensors == "pt":
             feature = torch.Tensor(feature)

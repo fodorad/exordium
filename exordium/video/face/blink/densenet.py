@@ -1,5 +1,7 @@
 """Blink detection wrapper using DenseNet121 from blinklinmult."""
 
+from typing import cast
+
 import cv2
 import numpy as np
 import torch
@@ -57,17 +59,18 @@ class BlinkDenseNet121Wrapper:
     @torch.inference_mode()
     def predict_pipeline(
         self,
-        frames: np.ndarray,
+        frames: np.ndarray | torch.Tensor,
         landmarks: np.ndarray,
         headpose: np.ndarray | None = None,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """Predict eye state from frames with landmark-based cropping (batched).
 
         Extracts eye patches from frames using MediaPipe FaceDetector landmarks,
         runs blink detection, and applies occlusion masking based on head pose.
 
         Args:
-            frames: Batch of input frames in RGB format, shape ``(B, H, W, 3)``.
+            frames: Batch of input frames in RGB format — ``np.ndarray (B, H, W, 3)``
+                or ``torch.Tensor (B, 3, H, W)`` uint8.
             landmarks: MediaPipe FaceDetector keypoints, shape ``(B, 6, 2)``.
                 Keypoint order: [right_eye, left_eye, nose, mouth, right_ear, left_ear].
             headpose: Head pose angles, shape ``(B, 3)`` with ``[yaw, pitch, roll]``
@@ -75,25 +78,27 @@ class BlinkDenseNet121Wrapper:
                 on yaw threshold. ``None`` means no occlusion filtering.
 
         Returns:
-            Tuple of 4 arrays, each of shape ``(B,)``:
-                - left_eye_state: Left eye blink probabilities (0-1)
-                - right_eye_state: Right eye blink probabilities (0-1)
-                - left_eye_valid: Boolean mask indicating valid left eye predictions
-                - right_eye_valid: Boolean mask indicating valid right eye predictions
+            Tuple ``(left_state, right_state, left_valid, right_valid)``, each a
+            tensor of shape ``(B,)``. State tensors hold blink probabilities in
+            ``[0, 1]``; valid tensors are boolean masks for usable predictions.
 
         """
+        if isinstance(frames, torch.Tensor):
+            # (B, 3, H, W) -> (B, H, W, 3) numpy for per-frame crop logic below
+            frames = frames.permute(0, 2, 3, 1).cpu().numpy()
+
         B = frames.shape[0]
 
         # Determine visibility masks based on head pose
-        left_eye_valid = np.ones(B, dtype=bool)
-        right_eye_valid = np.ones(B, dtype=bool)
+        left_eye_valid = torch.ones(B, dtype=torch.bool)
+        right_eye_valid = torch.ones(B, dtype=torch.bool)
 
         if headpose is not None:
             yaw = headpose[:, 0]  # (B,) - positive = head turned right
             # If head turned right, left eye occluded by nose
-            left_eye_valid = yaw <= self.yaw_threshold
+            left_eye_valid = torch.from_numpy(yaw <= self.yaw_threshold)
             # If head turned left, right eye occluded
-            right_eye_valid = yaw >= -self.yaw_threshold
+            right_eye_valid = torch.from_numpy(yaw >= -self.yaw_threshold)
 
         # Extract eye coordinates from landmarks
         # MediaPipe FaceDetector: 0=left_eye, 1=right_eye
@@ -132,11 +137,11 @@ class BlinkDenseNet121Wrapper:
 
             if left_crop.size == 0:
                 left_eye_valid[i] = False
-                left_crop = np.zeros((64, 64, 3), dtype=np.uint8)
+                left_eye_patches.append(np.zeros((64, 64, 3), dtype=np.uint8))
             else:
-                left_crop = cv2.resize(left_crop, (64, 64), interpolation=cv2.INTER_CUBIC)
-
-            left_eye_patches.append(left_crop)
+                left_eye_patches.append(
+                    cv2.resize(left_crop, (64, 64), interpolation=cv2.INTER_AREA)
+                )
 
             # Extract right eye patch
             x1 = max(0, right_x - crop_size // 2)
@@ -147,23 +152,19 @@ class BlinkDenseNet121Wrapper:
 
             if right_crop.size == 0:
                 right_eye_valid[i] = False
-                right_crop = np.zeros((64, 64, 3), dtype=np.uint8)
+                right_eye_patches.append(np.zeros((64, 64, 3), dtype=np.uint8))
             else:
-                right_crop = cv2.resize(right_crop, (64, 64), interpolation=cv2.INTER_CUBIC)
+                right_eye_patches.append(
+                    cv2.resize(right_crop, (64, 64), interpolation=cv2.INTER_AREA)
+                )
 
-            right_eye_patches.append(right_crop)
-
-        # Stack all eye patches: (B, H, W, C) -> (B, C, H, W)
-        left_eye_patches = np.stack(left_eye_patches)  # (B, 64, 64, 3)
-        right_eye_patches = np.stack(right_eye_patches)  # (B, 64, 64, 3)
-
-        # Convert to tensors and normalize
+        # Stack patches and convert to tensors: (B, H, W, C) -> (B, C, H, W)
         left_tensor = (
-            torch.from_numpy(left_eye_patches).permute(0, 3, 1, 2).float() / 255.0
-        )  # (B, 3, 64, 64)
+            torch.from_numpy(np.stack(left_eye_patches)).permute(0, 3, 1, 2).float() / 255.0
+        )
         right_tensor = (
-            torch.from_numpy(right_eye_patches).permute(0, 3, 1, 2).float() / 255.0
-        )  # (B, 3, 64, 64)
+            torch.from_numpy(np.stack(right_eye_patches)).permute(0, 3, 1, 2).float() / 255.0
+        )
 
         # Normalize with ImageNet stats
         left_tensor = (left_tensor - self.mean) / self.std
@@ -174,14 +175,14 @@ class BlinkDenseNet121Wrapper:
         right_tensor = right_tensor.to(self.device)
 
         # Run inference
-        left_eye_state = self(left_tensor).cpu().numpy()  # (B,)
-        right_eye_state = self(right_tensor).cpu().numpy()  # (B,)
+        left_eye_state = self(left_tensor).cpu()  # (B,)
+        right_eye_state = self(right_tensor).cpu()  # (B,)
 
         return left_eye_state, right_eye_state, left_eye_valid, right_eye_valid
 
     def predict_frame(
         self,
-        frame: np.ndarray,
+        frame: np.ndarray | torch.Tensor,
         landmarks: np.ndarray,
         headpose: np.ndarray | None = None,
         return_patches: bool = False,
@@ -198,19 +199,18 @@ class BlinkDenseNet121Wrapper:
             return_patches: If ``True``, also return the extracted 64x64 eye patches.
 
         Returns:
-            If ``return_patches=False``:
-                Tuple of 4 values:
-                    - left_eye_state: Left eye blink probability (0-1)
-                    - right_eye_state: Right eye blink probability (0-1)
-                    - left_eye_valid: Boolean indicating valid left eye prediction
-                    - right_eye_valid: Boolean indicating valid right eye prediction
-            If ``return_patches=True``:
-                Tuple of 6 values (4 above plus):
-                    - left_patch: Left eye patch, shape ``(64, 64, 3)`` in RGB
-                    - right_patch: Right eye patch, shape ``(64, 64, 3)`` in RGB
+            Tuple of ``(left_state, right_state, left_valid, right_valid)`` floats and bools.
+            When ``return_patches=True``, two additional arrays are appended:
+            the left and right eye patches of shape ``(64, 64, 3)`` in RGB.
 
         """
-        h, w = frame.shape[:2]
+        # Normalise to (H, W, 3) numpy for patch extraction and batch wrapping
+        if isinstance(frame, torch.Tensor):
+            frame_np = frame.permute(1, 2, 0).cpu().numpy()
+        else:
+            frame_np = frame
+
+        h, w = frame_np.shape[:2]
 
         # Extract eye coordinates
         left_eye_x, left_eye_y = int(landmarks[0, 0]), int(landmarks[0, 1])
@@ -227,9 +227,9 @@ class BlinkDenseNet121Wrapper:
             x2 = min(w, left_eye_x + crop_size // 2)
             y1 = max(0, left_eye_y - crop_size // 2)
             y2 = min(h, left_eye_y + crop_size // 2)
-            left_patch = frame[y1:y2, x1:x2]
-            if left_patch.size > 0:
-                left_patch = cv2.resize(left_patch, (64, 64), interpolation=cv2.INTER_CUBIC)
+            left_patch_crop = frame_np[y1:y2, x1:x2]
+            if left_patch_crop.size > 0:
+                left_patch = cv2.resize(left_patch_crop, (64, 64), interpolation=cv2.INTER_AREA)
             else:
                 left_patch = np.zeros((64, 64, 3), dtype=np.uint8)
 
@@ -238,16 +238,16 @@ class BlinkDenseNet121Wrapper:
             x2 = min(w, right_eye_x + crop_size // 2)
             y1 = max(0, right_eye_y - crop_size // 2)
             y2 = min(h, right_eye_y + crop_size // 2)
-            right_patch = frame[y1:y2, x1:x2]
-            if right_patch.size > 0:
-                right_patch = cv2.resize(right_patch, (64, 64), interpolation=cv2.INTER_CUBIC)
+            right_patch_crop = frame_np[y1:y2, x1:x2]
+            if right_patch_crop.size > 0:
+                right_patch = cv2.resize(right_patch_crop, (64, 64), interpolation=cv2.INTER_AREA)
             else:
                 right_patch = np.zeros((64, 64, 3), dtype=np.uint8)
 
         # Add batch dimension
-        frames = frame[np.newaxis, ...]  # (1, H, W, 3)
-        landmarks_batch = landmarks[np.newaxis, ...]  # (1, 6, 2)
-        headpose_batch = headpose[np.newaxis, ...] if headpose is not None else None  # (1, 3)
+        frames = frame_np[None]  # (1, H, W, 3)
+        landmarks_batch = landmarks[None]  # (1, 6, 2)
+        headpose_batch = headpose[None] if headpose is not None else None  # (1, 3)
 
         # Run batched prediction
         left_state, right_state, left_valid, right_valid = self.predict_pipeline(
@@ -263,17 +263,20 @@ class BlinkDenseNet121Wrapper:
         )
 
         if return_patches:
-            return result + (left_patch, right_patch)
+            return cast(
+                "tuple[float, float, bool, bool, np.ndarray, np.ndarray]",
+                result + (left_patch, right_patch),
+            )
         return result
 
     @staticmethod
     def eyes_open(
-        left_eye_state: np.ndarray,
-        right_eye_state: np.ndarray,
-        left_eye_valid: np.ndarray,
-        right_eye_valid: np.ndarray,
+        left_eye_state: torch.Tensor,
+        right_eye_state: torch.Tensor,
+        left_eye_valid: torch.Tensor,
+        right_eye_valid: torch.Tensor,
         threshold: float = 0.5,
-    ) -> np.ndarray:
+    ) -> torch.Tensor:
         """Determine if eyes are open based on blink predictions.
 
         Args:
@@ -284,12 +287,12 @@ class BlinkDenseNet121Wrapper:
             threshold: Threshold for closed eye. Default: 0.5.
 
         Returns:
-            Boolean array of shape ``(B,)`` indicating if eyes are open.
+            Boolean tensor of shape ``(B,)`` indicating if eyes are open.
             Eyes are considered open if BOTH valid eyes have prob < threshold.
 
         """
         # Start with all True
-        eyes_open = np.ones(len(left_eye_state), dtype=bool)
+        eyes_open = torch.ones(len(left_eye_state), dtype=torch.bool)
 
         # If left eye is valid and closed, mark as not open
         eyes_open &= ~(left_eye_valid & (left_eye_state >= threshold))
@@ -304,29 +307,40 @@ class BlinkDenseNet121Wrapper:
 
     @staticmethod
     def visualize(
-        frames: np.ndarray,
+        frames: np.ndarray | torch.Tensor,
         left_eye_state: np.ndarray,
         right_eye_state: np.ndarray,
         left_eye_valid: np.ndarray,
         right_eye_valid: np.ndarray,
         landmarks: np.ndarray | None = None,
-    ) -> np.ndarray:
+        output_path: str | None = None,
+    ) -> np.ndarray | torch.Tensor:
         """Visualize blink predictions on frames.
 
+        Accepts ``(B, H, W, 3)`` numpy arrays or ``(B, 3, H, W)`` uint8
+        torch tensors; returns the same type.
+
         Args:
-            frames: Input frames in RGB format, shape ``(B, H, W, 3)``.
+            frames: Input frames in RGB format — ``np.ndarray (B, H, W, 3)``
+                or ``torch.Tensor (B, 3, H, W)`` uint8.
             left_eye_state: Left eye blink probabilities, shape ``(B,)``.
             right_eye_state: Right eye blink probabilities, shape ``(B,)``.
             left_eye_valid: Boolean mask for valid left eye predictions, shape ``(B,)``.
             right_eye_valid: Boolean mask for valid right eye predictions, shape ``(B,)``.
             landmarks: Optional MediaPipe landmarks for drawing eye locations, shape ``(B, 6, 2)``.
+            output_path: Path to save the visualized frames. ``None`` skips saving.
 
         Returns:
-            Frames with visualization overlays, shape ``(B, H, W, 3)``.
+            Frames with visualization overlays, same type as input.
 
         """
-        vis_frames = frames.copy()
-        B = frames.shape[0]
+        if isinstance(frames, torch.Tensor):
+            frames_np: np.ndarray = frames.permute(0, 2, 3, 1).cpu().numpy()
+        else:
+            frames_np = cast("np.ndarray", frames)
+
+        vis_frames = frames_np.copy()
+        B = frames_np.shape[0]
 
         for i in range(B):
             frame = vis_frames[i]
@@ -363,4 +377,14 @@ class BlinkDenseNet121Wrapper:
                     color = (255, 0, 0) if right_prob > 0.5 else (0, 255, 0)
                     cv2.circle(frame, (right_x, right_y), 5, color, -1)
 
+        if output_path is not None:
+            import os
+
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            for i, frame in enumerate(vis_frames):
+                p = str(output_path).replace(".png", f"_{i:04d}.png")
+                cv2.imwrite(p, cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+
+        if isinstance(frames, torch.Tensor):
+            return torch.from_numpy(vis_frames).permute(0, 3, 1, 2)
         return vis_frames

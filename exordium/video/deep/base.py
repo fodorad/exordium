@@ -4,37 +4,44 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
 
-import numpy as np
 import torch
 from tqdm import tqdm
 
 from exordium.utils.decorator import load_or_create
 from exordium.utils.device import get_torch_device
 from exordium.video.core.detection import Track
-from exordium.video.core.io import Video, batch_iterator, image_to_np
+from exordium.video.core.io import Video, batch_iterator, to_uint8_tensor
+
+_IMAGENET_MEAN = [0.485, 0.456, 0.406]
+"""ImageNet RGB channel means used for normalisation."""
+_IMAGENET_STD = [0.229, 0.224, 0.225]
+"""ImageNet RGB channel standard deviations used for normalisation."""
 
 
 class VisualModelWrapper(ABC):
     """Abstract base class for frame-wise visual feature extractors.
 
-    Subclasses must implement :meth:`_preprocess` (numpy frames → model
-    tensor) and :meth:`inference` (model tensor → feature tensor).  The
-    shared :meth:`predict`, :meth:`dir_to_feature`, :meth:`track_to_feature`,
-    and :meth:`video_to_feature` methods are provided here.
+    Subclasses must implement :meth:`preprocess` (any supported input →
+    model-ready tensor) and :meth:`inference` (model tensor → feature tensor).
+
+    Supported input types for :meth:`__call__`:
+
+    * ``torch.Tensor`` — ``(C, H, W)`` or ``(B, C, H, W)`` uint8 RGB; fastest
+      path, no copies made until device transfer.
+    * ``np.ndarray`` — ``(H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB.
+    * ``Sequence[np.ndarray]`` — list of ``(H, W, 3)`` uint8 arrays.
+    * ``Sequence[str | Path]`` — list of image file paths.
 
     Design contract:
 
-    * :meth:`__call__` — strict tensor → tensor interface with
-      ``torch.inference_mode`` applied.  The input tensor is moved to
-      ``self.device`` automatically.
-    * :meth:`inference` — abstract model forward pass.  Called by
-      ``__call__`` after device placement.
-    * :meth:`_preprocess` — abstract numpy-to-tensor conversion.  Called
-      by :meth:`predict` before inference.
-    * :meth:`predict` — convenience wrapper: numpy/path inputs → numpy
-      output.  Handles loading, preprocessing, and device transfer.
-    * :meth:`dir_to_feature` / :meth:`track_to_feature` / :meth:`video_to_feature`
-      — cached batch extraction helpers built on top of :meth:`predict`.
+    * :meth:`preprocess` — abstract; converts any supported input to a
+      model-ready float tensor on ``self.device``.
+    * :meth:`inference` — abstract; pure model forward pass; input already on
+      ``self.device``.
+    * :meth:`__call__` — ``preprocess`` → ``inference`` under
+      ``torch.inference_mode``; returns a ``torch.Tensor``.
+    * :meth:`dir_to_feature` / :meth:`track_to_feature` /
+      :meth:`video_to_feature` — cached batch helpers.
 
     Example::
 
@@ -42,45 +49,61 @@ class VisualModelWrapper(ABC):
             def __init__(self, device_id=None):
                 super().__init__(device_id)
                 self.model = ...
-                self.transform = ...
 
-            def _preprocess(self, frames):
-                return torch.stack([self.transform(f) for f in frames]).to(self.device)
+            def preprocess(self, frames):
+                x = self._to_uint8_tensor(frames).to(self.device)
+                return (x.float() / 255.0 - MEAN) / STD
 
             def inference(self, tensor):
                 return self.model(tensor)
 
         model = MyWrapper(device_id=0)
-        tensor_out = model(preprocessed_tensor)          # torch.Tensor
-        array_out  = model.predict(numpy_frames)         # np.ndarray
-        ids, feats = model.dir_to_feature(paths)         # cached
-        ids, feats = model.track_to_feature(track)       # cached
-        ids, feats = model.video_to_feature(video_path)  # cached
+        tensor_out = model(video_tensor)   # torch.Tensor (B, D)
 
     """
 
     def __init__(self, device_id: int | None = None) -> None:
-        """Initialise device.
-
-        Args:
-            device_id: GPU device index. ``None`` or negative uses CPU.
-
-        """
         self.device = get_torch_device(device_id)
 
-    @abstractmethod
-    def _preprocess(self, frames: Sequence[np.ndarray]) -> torch.Tensor:
-        """Convert a list of RGB numpy frames to a model-input tensor.
+    @staticmethod
+    def _to_uint8_tensor(
+        frames: torch.Tensor | Sequence,
+    ) -> torch.Tensor:
+        """Convert any supported input to a uint8 ``(B, 3, H, W)`` CPU tensor.
 
-        The returned tensor should be on ``self.device`` and have whatever
-        shape the concrete model expects (typically ``(B, C, H, W)``).
+        Delegates to :func:`~exordium.video.core.io.to_uint8_tensor`.
 
         Args:
-            frames: Sequence of RGB uint8 arrays, each of shape
-                ``(H, W, 3)``.
+            frames: One of:
+
+                * ``torch.Tensor (C, H, W)`` or ``(B, C, H, W)`` uint8
+                * ``np.ndarray (H, W, 3)`` or ``(B, H, W, 3)`` uint8
+                * ``str | Path`` — single image file path
+                * ``Sequence[np.ndarray]`` of ``(H, W, 3)`` arrays
+                * ``Sequence[str | Path]`` of image file paths
 
         Returns:
-            Preprocessed batch tensor on ``self.device``.
+            uint8 tensor of shape ``(B, 3, H, W)`` on CPU.
+
+        """
+        return to_uint8_tensor(frames)
+
+    @abstractmethod
+    def preprocess(
+        self,
+        frames: torch.Tensor | Sequence,
+    ) -> torch.Tensor:
+        """Convert any supported input to a model-ready tensor.
+
+        Call :meth:`_to_uint8_tensor` first to normalise the input type, then
+        apply model-specific resize, crop, and normalisation as tensor
+        operations.  The returned tensor must be on ``self.device``.
+
+        Args:
+            frames: Any supported input (see class docstring).
+
+        Returns:
+            Preprocessed float tensor on ``self.device``.
 
         """
 
@@ -88,74 +111,44 @@ class VisualModelWrapper(ABC):
     def inference(self, tensor: torch.Tensor) -> torch.Tensor:
         """Model forward pass.
 
-        The input tensor is already on ``self.device``.
+        The input tensor is already on ``self.device`` and preprocessed.
 
         Args:
-            tensor: Preprocessed batch tensor of shape ``(B, …)``.
+            tensor: Float tensor of shape ``(B, …)`` on ``self.device``.
 
         Returns:
             Feature tensor of shape ``(B, D)``.
 
         """
 
-    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
-        """Strict tensor → tensor interface.
-
-        Accepts a single image tensor ``(C, H, W)`` or a batched tensor
-        ``(B, C, H, W)``.  The tensor is moved to ``self.device`` and
-        ``inference`` is run under ``torch.inference_mode``.
-
-        Args:
-            tensor: Image tensor of shape ``(C, H, W)`` or ``(B, C, H, W)``
-                on any device.
-
-        Returns:
-            Feature tensor of shape ``(1, D)`` or ``(B, D)`` on
-            ``self.device``.
-
-        """
-        if tensor.ndim == 3:
-            tensor = tensor.unsqueeze(0)
-        with torch.inference_mode():
-            return self.inference(tensor.to(self.device))
-
-    def predict(
+    def __call__(
         self,
-        frames: np.ndarray | str | Path | Sequence[np.ndarray | str | Path],
-    ) -> np.ndarray:
-        """Numpy / path inputs → numpy feature array.
-
-        Accepts a single image (``np.ndarray`` or path) or a sequence of
-        images.  Loads from disk when paths are provided, preprocesses,
-        runs inference under ``torch.inference_mode``, and returns a CPU
-        numpy array.
+        frames: torch.Tensor | Sequence,
+    ) -> torch.Tensor:
+        """Preprocess and run inference, returning a feature tensor.
 
         Args:
-            frames: A single RGB ``np.ndarray`` ``(H, W, 3)``, a file path,
-                or a sequence of either.
+            frames: Any supported input (see class docstring).
 
         Returns:
-            Feature array of shape ``(B, D)``.
+            Feature tensor of shape ``(B, D)`` on ``self.device``.
 
         """
-        if isinstance(frames, (np.ndarray, str, Path)):
-            frames = [frames]
-        frames_np = [image_to_np(f, "RGB") if isinstance(f, (str, Path)) else f for f in frames]
         with torch.inference_mode():
-            return self.inference(self._preprocess(frames_np)).cpu().numpy()
+            return self.inference(self.preprocess(frames))
 
-    @load_or_create("pkl")
+    @load_or_create("st")
     def dir_to_feature(
         self,
         img_paths: list[str | Path],
         batch_size: int = 30,
         verbose: bool = False,
         **_kwargs,
-    ) -> tuple[list[int], np.ndarray]:
+    ) -> dict[str, torch.Tensor]:
         """Extract features from an ordered list of image files.
 
-        Results are cached: pass ``output_path`` and ``overwrite`` via
-        ``_kwargs`` to control caching behaviour.
+        Results are cached as a safetensors file: pass ``output_path`` and
+        ``overwrite`` via ``_kwargs`` to control caching behaviour.
 
         Args:
             img_paths: Image file paths. Each file stem must be parseable
@@ -165,12 +158,12 @@ class VisualModelWrapper(ABC):
             **_kwargs: Forwarded to ``load_or_create``.
 
         Returns:
-            Tuple of ``(frame_ids, features)`` where ``features`` has shape
-            ``(N, D)``.
+            Dict with keys ``"frame_ids"`` (``(N,)`` long tensor) and
+            ``"features"`` (``(N, D)`` float tensor), both on CPU.
 
         """
         ids: list[int] = []
-        features: list[np.ndarray] = []
+        features: list[torch.Tensor] = []
 
         for i in tqdm(
             range(0, len(img_paths), batch_size),
@@ -180,21 +173,24 @@ class VisualModelWrapper(ABC):
         ):
             batch = img_paths[i : i + batch_size]
             ids += [int(Path(p).stem) for p in batch]
-            features.append(self.predict(batch))
+            features.append(self(batch).cpu())
 
-        return ids, np.concatenate(features, axis=0)
+        return {
+            "frame_ids": torch.tensor(ids, dtype=torch.long),
+            "features": torch.cat(features, dim=0),
+        }
 
-    @load_or_create("pkl")
+    @load_or_create("st")
     def track_to_feature(
         self,
         track: Track,
         batch_size: int = 30,
         **_kwargs,
-    ) -> tuple[list[int], np.ndarray]:
+    ) -> dict[str, torch.Tensor]:
         """Extract features from all non-interpolated detections in a track.
 
-        Results are cached: pass ``output_path`` and ``overwrite`` via
-        ``_kwargs`` to control caching behaviour.
+        Results are cached as a safetensors file: pass ``output_path`` and
+        ``overwrite`` via ``_kwargs`` to control caching behaviour.
 
         Args:
             track: Track containing a sequence of Detection objects.
@@ -202,36 +198,38 @@ class VisualModelWrapper(ABC):
             **_kwargs: Forwarded to ``load_or_create``.
 
         Returns:
-            Tuple of ``(frame_ids, features)`` where ``features`` has shape
-            ``(N, D)``.
+            Dict with keys ``"frame_ids"`` (``(N,)`` long tensor) and
+            ``"features"`` (``(N, D)`` float tensor), both on CPU.
 
         """
         ids: list[int] = []
-        features: list[np.ndarray] = []
+        features: list[torch.Tensor] = []
 
         for subset in batch_iterator(track, batch_size):
-            valid = [d for d in subset if not d.is_interpolated]
-            if not valid:
+            if not subset:
                 continue
-            ids += [d.frame_id for d in valid]
-            features.append(self.predict([d.bb_crop_wide() for d in valid]))
+            ids += [d.frame_id for d in subset]
+            features.append(self([d.crop(square=True, extra_space=1.5) for d in subset]).cpu())
 
-        return ids, np.concatenate(features, axis=0)
+        return {
+            "frame_ids": torch.tensor(ids, dtype=torch.long),
+            "features": torch.cat(features, dim=0),
+        }
 
-    @load_or_create("pkl")
+    @load_or_create("st")
     def video_to_feature(
         self,
         video_path: str | Path,
         batch_size: int = 30,
         verbose: bool = False,
         **_kwargs,
-    ) -> tuple[list[int], np.ndarray]:
+    ) -> dict[str, torch.Tensor]:
         """Extract features for every frame of a video file.
 
         Opens the video once with :class:`~exordium.video.core.io.Video`,
         iterates over batches of decoded frames, and concatenates the results.
-        Results are cached: pass ``output_path`` and ``overwrite`` via
-        ``_kwargs`` to control caching behaviour.
+        Results are cached as a safetensors file: pass ``output_path`` and
+        ``overwrite`` via ``_kwargs`` to control caching behaviour.
 
         Args:
             video_path: Path to the input video file.
@@ -240,13 +238,13 @@ class VisualModelWrapper(ABC):
             **_kwargs: Forwarded to ``load_or_create``.
 
         Returns:
-            Tuple of ``(frame_ids, features)`` where ``frame_ids`` are
-            zero-based indices and ``features`` has shape ``(T, D)``.
+            Dict with keys ``"frame_ids"`` (``(T,)`` long tensor) and
+            ``"features"`` (``(T, D)`` float tensor), both on CPU.
 
         """
         video_path = Path(video_path)
         ids: list[int] = []
-        features: list[np.ndarray] = []
+        features: list[torch.Tensor] = []
         frame_id = 0
 
         with Video(video_path) as video:
@@ -257,10 +255,11 @@ class VisualModelWrapper(ABC):
                 desc=f"{type(self).__name__} extraction",
                 disable=not verbose,
             ):
-                # batch: list of tensors (C, H, W) in uint8 RGB
-                frames = [f.permute(1, 2, 0).cpu().numpy() for f in batch]
-                features.append(self.predict(frames))
-                ids += list(range(frame_id, frame_id + len(frames)))
-                frame_id += len(frames)
+                features.append(self(batch).cpu())
+                ids += list(range(frame_id, frame_id + len(batch)))
+                frame_id += len(batch)
 
-        return ids, np.concatenate(features, axis=0)
+        return {
+            "frame_ids": torch.tensor(ids, dtype=torch.long),
+            "features": torch.cat(features, dim=0),
+        }

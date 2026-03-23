@@ -7,6 +7,9 @@ from pathlib import Path
 import torch
 import torchaudio
 
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
+
 
 def save_audio(audio: torch.Tensor, output_path: Path | str, sr: int = 16000) -> None:
     """Save audio waveform to file using torchaudio.
@@ -20,7 +23,7 @@ def save_audio(audio: torch.Tensor, output_path: Path | str, sr: int = 16000) ->
     if audio.dim() == 1:
         audio = audio.unsqueeze(0)
     torchaudio.save(str(output_path), audio, sr)
-    logging.info(f"Audio is saved: {output_path}")
+    logger.info(f"Audio is saved: {output_path}")
 
 
 def load_audio(

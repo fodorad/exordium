@@ -65,11 +65,17 @@ class AudioModelWrapper(ABC):
         """
 
     @abstractmethod
-    def inference(self, waveform: np.ndarray | torch.Tensor):
-        """Extract features in inference mode, returning torch tensors.
+    def inference(self, waveform: np.ndarray | torch.Tensor) -> torch.Tensor | list[torch.Tensor]:
+        """Extract features from a preprocessed waveform tensor.
+
+        Input is already a float32 tensor at the model's target sample rate.
 
         Args:
-            waveform: Audio waveform as numpy array or torch tensor.
+            waveform: Float32 tensor of shape ``(B, T)`` or ``(T,)`` on any
+                device.
+
+        Returns:
+            Feature tensor on ``self.device``.
 
         """
 

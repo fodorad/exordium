@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://via.placeholder.com/300x200?text=Exordium" alt="Exordium" width="260"/>
+<img src="https://raw.githubusercontent.com/fodorad/exordium/main/docs/assets/logo.svg" alt="Exordium" width="320"/>
 
 <br/>
 
@@ -19,16 +19,69 @@
 
 ---
 
-Exordium is a comprehensive toolkit for **multimodal feature extraction** across audio, video, and text modalities. It provides preprocessing functions, utility tools, and deep learning methods for processing and analyzing multimodal data.
+Exordium is a comprehensive toolkit for **multimodal feature extraction** across audio, video, and text modalities. It provides preprocessing functions, utility tools, and deep learning wrappers for processing and analyzing multimodal data.
 
 ## Features
 
-| | |
-|---|---|
-| **Audio Processing** | I/O, OpenSMILE, spectrograms, Wav2Vec2, CLAP, WavLM |
-| **Video Analysis** | Face detection, landmarks, head pose, gaze, iris tracking, action units, feature extraction |
-| **Text Processing** | BERT, RoBERTa, XML-RoBERTa |
-| **Utilities** | Parallel processing, I/O helpers, loss functions, normalization, padding, visualization |
+### Audio
+
+| Functionality | Model / Method | Output |
+|---|---|---|
+| I/O | load, save, resample | waveform |
+| Spectral features | MFCC, Mel-spectrogram (with pre-emphasis) | spectrogram |
+| Prosody | pitch, energy, voice activity, engagement | low-level descriptors |
+| Low-level descriptors | [OpenSMILE](https://github.com/audeering/opensmile) — eGeMAPSv02 | 88-d vector |
+| Audio–language embeddings | [CLAP](https://github.com/LAION-AI/CLAP) (laion/larger_clap_music_and_speech) | 512-d vector |
+| Speech representations | [Wav2Vec2](https://huggingface.co/facebook/wav2vec2-base-960h) (facebook/wav2vec2-base-960h) | (T, 768) |
+| Speech representations | [WavLM](https://huggingface.co/microsoft/wavlm-base-plus) (microsoft/wavlm-base/base+/large) | (T, 768/1024) per layer |
+
+### Video
+
+#### Face Detection & Tracking
+
+| Functionality | Model / Method | Output |
+|---|---|---|
+| Face detection | [YOLOv8-Face](https://github.com/akanametov/yolo-face) (arnabdhar/YOLOv8-Face-Detection) | bounding boxes |
+| Face detection + keypoints | [YOLO11-pose](https://github.com/zjykzj/YOLO11Face) (yolo11n/s-pose_widerface) | bounding boxes + 5-pt keypoints |
+| Multi-face tracking | IoU-based tracker | track IDs across frames |
+
+#### Face Analysis
+
+| Functionality | Model / Method | Output |
+|---|---|---|
+| Dense facial landmarks | [MediaPipe FaceMesh](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker) (face_landmarker.task) | 478 × (x, y) |
+| Iris landmarks | [MediaPipe Iris](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker) | 71 eye pts + 5 iris pts, EAR, diameters |
+| Head pose | [6DRepNet](https://github.com/thohemp/6DRepNet) (300W-LP + AFLW2000) | yaw, pitch, roll (degrees) |
+| Gaze estimation | [L2CS-Net](https://github.com/Ahmednull/L2CS-Net) (ResNet-50, MPIIFaceGaze) | pitch, yaw (radians) |
+| Gaze estimation | [UniGaze](https://github.com/darijakre/unigaze) (ViT-based) | pitch, yaw (radians) |
+| Eye blink detection | [BlinkDenseNet121](https://github.com/fodorad/BlinkLinMulT) (DenseNet-121) | per-eye open/closed probability |
+| Facial action units | [OpenGraphAU](https://github.com/lingjivoo/OpenGraphAU) (Swin-T backbone) | 41-dim AU intensity vector |
+
+#### Deep Visual Features
+
+| Functionality | Model / Method | Output |
+|---|---|---|
+| Video features | [Swin Transformer](https://github.com/microsoft/Swin-Transformer) (tiny/small/base) | 768-d / 768-d / 1024-d |
+| Face identity features | [FAb-Net](https://www.robots.ox.ac.uk/~vgg/research/unsup_learn_watch_faces/index.html) | 256-d |
+| Vision–language embeddings | [CLIP](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K) (ViT-H/14, laion2B) | 1024-d |
+
+### Text
+
+| Functionality | Model / Method | Output |
+|---|---|---|
+| Speech-to-text | [Whisper](https://github.com/openai/whisper) (OpenAI) | transcript |
+| Contextual embeddings | [BERT](https://huggingface.co/bert-base-uncased) (bert-base-uncased) | (T, 768) |
+| Contextual embeddings | [RoBERTa](https://huggingface.co/roberta-large) (roberta-large) | (T, 1024) |
+| Multilingual embeddings | [XML-RoBERTa](https://huggingface.co/xlm-roberta-base) (xlm-roberta-base) | (T, 768) |
+
+### Utilities
+
+- **Device management** — GPU/CPU selection via `get_torch_device`
+- **Caching** — `@load_or_create` decorator (safetensors, npy, pkl, fdet, vdet, track)
+- **Normalization** — global, per-feature, sliding-window
+- **Padding** — fixed-length sequence padding and masking
+- **Loss functions** — Bell, ecl1 losses
+- **Concurrency** — thread- and process-pool helpers
 
 ---
 
@@ -38,80 +91,47 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 pip install exordium          # base only
 pip install exordium[all]     # all optional dependencies
 pip install exordium[audio]   # audio extras only
-pip install exordium[face]    # face extras only
 pip install exordium[video]   # video extras only
 pip install exordium[text]    # text extras only
 ```
 
 ### Extras
 
-| extras tag | description |
+| Extra | Dependencies |
 |---|---|
-| `audio` | dependencies to process audio data |
-| `text` | dependency to process textual data |
-| `face` | dependencies for face detection, landmarks, and head pose estimation |
-| `video` | dependencies for various video feature extraction methods |
-| `all` | all previously described extras will be installed |
-
----
-
-## Quick start
-
-### Audio feature extraction (WavLM)
-
-```python
-import numpy as np
-from exordium.audio.wavlm import WavlmWrapper
-
-model = WavlmWrapper(device_id=-1, model_name="base+")
-waveform = np.random.rand(16000).astype(np.float32)
-features = model.audio_to_feature(waveform)
-# list of 12 numpy arrays, each (T, 768)
-```
-
-### Text feature extraction (BERT)
-
-```python
-from exordium.text.bert import BertWrapper
-
-model = BertWrapper(device_id=-1)
-features = model("Hello, world!", pool=True)
-# torch.Tensor of shape (1, 768)
-```
-
-### Video face detection
-
-```python
-from exordium.video.face import RetinaFaceDetector
-from exordium.video.io import images_to_np
-
-detector = RetinaFaceDetector()
-frames = images_to_np(["frame.jpg"], "RGB")
-detections = detector.detect_image(frames[0])
-```
+| `audio` | OpenSMILE, torchaudio — audio feature extraction |
+| `text` | transformers, torchaudio — text and speech models |
+| `video` | MediaPipe, Ultralytics, blinklinmult, unigaze, timm — face & video models |
+| `all` | all previously described extras |
 
 ---
 
 ## Development
 
-For development with all dependencies:
-
 ```bash
 git clone https://github.com/fodorad/exordium
 cd exordium
-pip install -e ".[all,dev]"
-make check
+uv pip install -e ".[all,dev]"
+make check   # lint + type-check + test + docs
 ```
 
 ---
 
 ## Documentation
 
-> [API reference](https://fodorad.github.io/exordium/)
+- [API Reference](https://fodorad.github.io/exordium/)
+- [Demo Notebooks](https://github.com/fodorad/exordium/tree/main/examples)
 
 ---
 
 ## Related Projects
+
+### EmotionLinMulT (202X)
+
+Efficient, transformer-based, multi-task emotion detection system.
+
+- Paper: not published yet
+- Code: [github.com/fodorad/EmotionLinMulT](https://github.com/fodorad/EmotionLinMulT)
 
 ### BlinkLinMulT (2023)
 
@@ -131,7 +151,7 @@ LinMulT trained for Big Five personality trait estimation and sentiment analysis
 
 General-purpose multimodal transformer with linear-complexity attention mechanisms.
 
-- Paper: [LinMulT: Efficient Multimodal Transformers via Linear-Complexity Attention](https://adamfodor.com/LinMulT/)
+- Website: [adamfodor.com/LinMulT](https://adamfodor.com/LinMulT/)
 - Code: [github.com/fodorad/LinMulT](https://github.com/fodorad/LinMulT)
 
 ---
