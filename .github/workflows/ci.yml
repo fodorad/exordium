@@ -17,7 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v6
       with:
-        lfs: true
         fetch-depth: 0  # required for hatch-vcs git describe
 
     - name: Set up Python ${{ matrix.python-version }}
