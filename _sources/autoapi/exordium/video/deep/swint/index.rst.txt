@@ -1,0 +1,523 @@
+exordium.video.deep.swint
+=========================
+
+.. py:module:: exordium.video.deep.swint
+
+.. autoapi-nested-parse::
+
+   Swin Transformer model implementation.
+
+   Swin Transformer
+   Copyright (c) 2021 Microsoft
+   Licensed under The MIT License [see LICENSE for details]
+   Written by Ze Liu
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.deep.swint.model_name
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.deep.swint.SwinTWrapper
+   exordium.video.deep.swint.Mlp
+   exordium.video.deep.swint.WindowAttention
+   exordium.video.deep.swint.SwinTransformerBlock
+   exordium.video.deep.swint.PatchMerging
+   exordium.video.deep.swint.BasicLayer
+   exordium.video.deep.swint.PatchEmbed
+   exordium.video.deep.swint.SwinTransformer
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.deep.swint.window_partition
+   exordium.video.deep.swint.window_reverse
+   exordium.video.deep.swint.swin_transformer_tiny
+   exordium.video.deep.swint.swin_transformer_small
+   exordium.video.deep.swint.swin_transformer_base
+
+
+Module Contents
+---------------
+
+.. py:data:: model_name
+
+   Mapping of Swin Transformer variant names to their weight file names.
+
+.. py:class:: SwinTWrapper(arch: str = 'tiny', pretrained: bool = True, device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
+
+
+   Swin Transformer feature extractor wrapper.
+
+   Loads a pretrained Swin Transformer backbone and extracts global
+   average-pooled patch features, producing a ``(B, D)`` array.
+
+   Feature dimensions by architecture:
+
+   * ``"tiny"`` / ``"small"``: 768-d
+   * ``"base"``: 1024-d
+
+   :param arch: One of ``"tiny"``, ``"small"``, ``"base"``.
+                Defaults to ``"tiny"``.
+   :param pretrained: Load ImageNet-pretrained weights. Defaults to ``True``.
+   :param device_id: GPU device index. ``None`` or negative uses CPU.
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+
+      Resize, centre-crop and normalise to ImageNet stats.
+
+      :param frames: Any input supported by
+                     :meth:`~exordium.video.deep.base.VisualModelWrapper._to_uint8_tensor`.
+
+      :returns: Float tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+
+      Swin Transformer forward pass with global average pooling.
+
+      The backbone ``forward`` returns patch tokens of shape
+      ``(B, N, C)``. This method averages over the patch dimension
+      to produce ``(B, C)`` embeddings.
+
+      :param tensor: Preprocessed tensor of shape ``(B, 3, 224, 224)``
+                     on ``self.device``.
+
+      :returns: Feature tensor of shape ``(B, D)``.
+
+
+
+.. py:class:: Mlp(in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.0)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Multi-layer perceptron module.
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:method:: forward(x)
+
+      Forward pass through MLP.
+
+      :param x: Input tensor.
+
+      :returns: Output tensor.
+
+
+
+.. py:function:: window_partition(x, window_size)
+
+   Partition input tensor into non-overlapping windows.
+
+   :param x: Input tensor of shape (B, H, W, C).
+   :param window_size: Window size.
+
+   :returns: Partitioned windows of shape (num_windows*B, window_size, window_size, C).
+
+
+.. py:function:: window_reverse(windows, window_size, H, W)
+
+   Reverse window partitioning to reconstruct the full image.
+
+   :param windows: Partitioned windows of shape (num_windows*B, window_size, window_size, C).
+   :param window_size: Window size.
+   :param H: Height of image.
+   :param W: Width of image.
+
+   :returns: Reconstructed image of shape (B, H, W, C).
+
+
+.. py:class:: WindowAttention(dim, window_size, num_heads, qkv_bias=True, qk_scale=None, attn_drop=0.0, proj_drop=0.0)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Window-based multi-head self-attention with relative position bias.
+
+   Supports both shifted and non-shifted window attention mechanisms.
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:method:: forward(x, mask=None)
+
+      Forward pass of window attention.
+
+      :param x: Input features with shape of (num_windows*B, N, C).
+      :param mask: (0/-inf) mask with shape of (num_windows, Wh*Ww, Wh*Ww) or None.
+
+
+
+   .. py:method:: extra_repr() -> str
+
+      Return string representation with layer parameters.
+
+      :returns: String with dimension, window size and num heads.
+
+
+
+   .. py:method:: flops(N)
+
+      Calculate FLOPs for this attention module.
+
+      :param N: Token length.
+
+      :returns: Number of floating point operations.
+
+
+
+.. py:class:: SwinTransformerBlock(dim, input_resolution, num_heads, window_size=7, shift_size=0, mlp_ratio=4.0, qkv_bias=True, qk_scale=None, drop=0.0, attn_drop=0.0, drop_path=0.0, act_layer=nn.GELU, norm_layer=nn.LayerNorm)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Swin Transformer Block.
+
+   :param dim: Number of input channels.
+   :type dim: int
+   :param input_resolution: Input resulotion.
+   :type input_resolution: tuple[int]
+   :param num_heads: Number of attention heads.
+   :type num_heads: int
+   :param window_size: Window size.
+   :type window_size: int
+   :param shift_size: Shift size for SW-MSA.
+   :type shift_size: int
+   :param mlp_ratio: Ratio of mlp hidden dim to embedding dim.
+   :type mlp_ratio: float
+   :param qkv_bias: If True, add a learnable bias to query, key, value. Default: True
+   :type qkv_bias: bool, optional
+   :param qk_scale: Override default qk scale of head_dim ** -0.5 if set.
+   :type qk_scale: float | None, optional
+   :param drop: Dropout rate. Default: 0.0
+   :type drop: float, optional
+   :param attn_drop: Attention dropout rate. Default: 0.0
+   :type attn_drop: float, optional
+   :param drop_path: Stochastic depth rate. Default: 0.0
+   :type drop_path: float, optional
+   :param act_layer: Activation layer. Default: nn.GELU
+   :type act_layer: nn.Module, optional
+   :param norm_layer: Normalization layer.  Default: nn.LayerNorm
+   :type norm_layer: nn.Module, optional
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:method:: forward(x)
+
+      Forward pass of Swin Transformer block.
+
+      :param x: Input tensor.
+
+      :returns: Output tensor.
+
+
+
+   .. py:method:: extra_repr() -> str
+
+      Return string representation with layer parameters.
+
+      :returns: String with layer parameters.
+
+
+
+   .. py:method:: flops()
+
+      Calculate FLOPs for this layer.
+
+      :returns: Number of floating point operations.
+
+
+
+.. py:class:: PatchMerging(input_resolution, dim, norm_layer=nn.LayerNorm)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Patch Merging Layer.
+
+   :param input_resolution: Resolution of input feature.
+   :type input_resolution: tuple[int]
+   :param dim: Number of input channels.
+   :type dim: int
+   :param norm_layer: Normalization layer.  Default: nn.LayerNorm
+   :type norm_layer: nn.Module, optional
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:method:: forward(x)
+
+      Forward pass merging patches.
+
+      :param x: Input tensor of shape (B, H*W, C).
+
+      :returns: Merged tensor of shape (B, H/2*W/2, 2*C).
+
+
+
+   .. py:method:: extra_repr() -> str
+
+      Return string representation with layer parameters.
+
+      :returns: String with input resolution and dimension.
+
+
+
+   .. py:method:: flops()
+
+      Calculate FLOPs for this layer.
+
+      :returns: Number of floating point operations.
+
+
+
+.. py:class:: BasicLayer(dim, input_resolution, depth, num_heads, window_size, mlp_ratio=4.0, qkv_bias=True, qk_scale=None, drop=0.0, attn_drop=0.0, drop_path=0.0, norm_layer=nn.LayerNorm, downsample=None, use_checkpoint=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   A basic Swin Transformer layer for one stage.
+
+   :param dim: Number of input channels.
+   :type dim: int
+   :param input_resolution: Input resolution.
+   :type input_resolution: tuple[int]
+   :param depth: Number of blocks.
+   :type depth: int
+   :param num_heads: Number of attention heads.
+   :type num_heads: int
+   :param window_size: Local window size.
+   :type window_size: int
+   :param mlp_ratio: Ratio of mlp hidden dim to embedding dim.
+   :type mlp_ratio: float
+   :param qkv_bias: If True, add a learnable bias to query, key, value.
+                    Default: True
+   :type qkv_bias: bool, optional
+   :param qk_scale: Override default qk scale of head_dim ** -0.5 if set.
+   :type qk_scale: float | None, optional
+   :param drop: Dropout rate. Default: 0.0
+   :type drop: float, optional
+   :param attn_drop: Attention dropout rate. Default: 0.0
+   :type attn_drop: float, optional
+   :param drop_path: Stochastic depth rate. Default: 0.0
+   :type drop_path: float | tuple[float], optional
+   :param norm_layer: Normalization layer. Default: nn.LayerNorm
+   :type norm_layer: nn.Module, optional
+   :param downsample: Downsample layer at the end of the layer.
+                      Default: None
+   :type downsample: nn.Module | None, optional
+   :param use_checkpoint: Whether to use checkpointing to save memory. Default: False.
+   :type use_checkpoint: bool
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:method:: forward(x)
+
+      Forward pass through basic layer.
+
+      :param x: Input tensor.
+
+      :returns: Output tensor.
+
+
+
+   .. py:method:: extra_repr() -> str
+
+      Return string representation with layer parameters.
+
+      :returns: String with dimension, resolution and depth.
+
+
+
+   .. py:method:: flops()
+
+      Calculate FLOPs for this layer.
+
+      :returns: Number of floating point operations.
+
+
+
+.. py:class:: PatchEmbed(img_size=224, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Image to Patch Embedding.
+
+   :param img_size: Image size.  Default: 224.
+   :type img_size: int
+   :param patch_size: Patch token size. Default: 4.
+   :type patch_size: int
+   :param in_chans: Number of input image channels. Default: 3.
+   :type in_chans: int
+   :param embed_dim: Number of linear projection output channels. Default: 96.
+   :type embed_dim: int
+   :param norm_layer: Normalization layer. Default: None
+   :type norm_layer: nn.Module, optional
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:method:: forward(x)
+
+      Convert image to patch embeddings.
+
+      :param x: Input tensor of shape (B, C, H, W).
+
+      :returns: Patch embeddings of shape (B, num_patches, embed_dim).
+
+
+
+   .. py:method:: flops()
+
+      Calculate FLOPs for patch embedding.
+
+      :returns: Number of floating point operations.
+
+
+
+.. py:class:: SwinTransformer(img_size=224, patch_size=4, in_chans=3, num_classes=1000, embed_dim=96, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24], window_size=7, mlp_ratio=4.0, qkv_bias=True, qk_scale=None, drop_rate=0.0, attn_drop_rate=0.0, drop_path_rate=0.1, norm_layer=nn.LayerNorm, ape=False, patch_norm=True, use_checkpoint=False, **_kwargs)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Swin Transformer hierarchical vision transformer.
+
+   A PyTorch implementation of:
+   `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`
+   https://arxiv.org/pdf/2103.14030
+
+   :param img_size: Input image size. Default 224
+   :type img_size: int | tuple(int)
+   :param patch_size: Patch size. Default: 4
+   :type patch_size: int | tuple(int)
+   :param in_chans: Number of input image channels. Default: 3
+   :type in_chans: int
+   :param num_classes: Number of classes for classification head. Default: 1000
+   :type num_classes: int
+   :param embed_dim: Patch embedding dimension. Default: 96
+   :type embed_dim: int
+   :param depths: Depth of each Swin Transformer layer.
+   :type depths: tuple(int)
+   :param num_heads: Number of attention heads in different layers.
+   :type num_heads: tuple(int)
+   :param window_size: Window size. Default: 7
+   :type window_size: int
+   :param mlp_ratio: Ratio of mlp hidden dim to embedding dim. Default: 4
+   :type mlp_ratio: float
+   :param qkv_bias: If True, add a learnable bias to query, key, value. Default: True
+   :type qkv_bias: bool
+   :param qk_scale: Override default qk scale of head_dim ** -0.5 if set. Default: None
+   :type qk_scale: float
+   :param drop_rate: Dropout rate. Default: 0
+   :type drop_rate: float
+   :param attn_drop_rate: Attention dropout rate. Default: 0
+   :type attn_drop_rate: float
+   :param drop_path_rate: Stochastic depth rate. Default: 0.1
+   :type drop_path_rate: float
+   :param norm_layer: Normalization layer. Default: nn.LayerNorm.
+   :type norm_layer: nn.Module
+   :param ape: If True, add absolute position embedding to the patch embedding. Default: False
+   :type ape: bool
+   :param patch_norm: If True, add normalization after patch embedding. Default: True
+   :type patch_norm: bool
+   :param use_checkpoint: Whether to use checkpointing to save memory. Default: False
+   :type use_checkpoint: bool
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:method:: no_weight_decay()
+
+      Return set of parameter names that should not have weight decay applied.
+
+      :returns: Set of parameter names.
+
+
+
+   .. py:method:: no_weight_decay_keywords()
+
+      Return keywords for parameters that should not have weight decay applied.
+
+      :returns: Set of keywords.
+
+
+
+   .. py:method:: forward_features(x)
+
+      Extract features using transformer layers.
+
+      :param x: Input tensor.
+
+      :returns: Extracted features.
+
+
+
+   .. py:method:: forward(x)
+
+      Forward pass through Swin Transformer.
+
+      :param x: Input tensor.
+
+      :returns: Output tensor.
+
+
+
+   .. py:method:: flops()
+
+      Calculate FLOPs for the model.
+
+      :returns: Number of floating point operations.
+
+
+
+.. py:function:: swin_transformer_tiny(pretrained=True, **kwargs)
+
+   Create a tiny Swin Transformer model.
+
+   :param pretrained: If True, load ImageNet pre-trained weights. Defaults to True.
+   :param \*\*kwargs: Additional arguments for SwinTransformer.
+
+   :returns: Swin Transformer model.
+
+
+.. py:function:: swin_transformer_small(pretrained=True, **kwargs)
+
+   Create a small Swin Transformer model.
+
+   :param pretrained: If True, load ImageNet pre-trained weights. Defaults to True.
+   :param \*\*kwargs: Additional arguments for SwinTransformer.
+
+   :returns: Swin Transformer model.
+
+
+.. py:function:: swin_transformer_base(pretrained=True, **kwargs)
+
+   Create a base Swin Transformer model.
+
+   :param pretrained: If True, load ImageNet pre-trained weights. Defaults to True.
+   :param \*\*kwargs: Additional arguments for SwinTransformer.
+
+   :returns: Swin Transformer model.
+
+

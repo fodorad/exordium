@@ -1,0 +1,596 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="API Reference" href="autoapi/index.html">
+        <link rel="canonical" href="https://fodorad.github.io/exordium/index.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Exordium latest documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="#"><div class="brand">Exordium latest documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
+  
+  <span class="sidebar-brand-text">Exordium latest documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="autoapi/index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="autoapi/exordium/index.html">exordium</a><input aria-label="Toggle navigation of exordium" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="autoapi/exordium/audio/index.html">exordium.audio</a><input aria-label="Toggle navigation of exordium.audio" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/base/index.html">exordium.audio.base</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/clap/index.html">exordium.audio.clap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/io/index.html">exordium.audio.io</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/prosody/index.html">exordium.audio.prosody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/smile/index.html">exordium.audio.smile</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/spectrogram/index.html">exordium.audio.spectrogram</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/wav2vec2/index.html">exordium.audio.wav2vec2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/wavlm/index.html">exordium.audio.wavlm</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="autoapi/exordium/text/index.html">exordium.text</a><input aria-label="Toggle navigation of exordium.text" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/base/index.html">exordium.text.base</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/bert/index.html">exordium.text.bert</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/roberta/index.html">exordium.text.roberta</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/whisper/index.html">exordium.text.whisper</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/xml_roberta/index.html">exordium.text.xml_roberta</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="autoapi/exordium/utils/index.html">exordium.utils</a><input aria-label="Toggle navigation of exordium.utils" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/utils/ckpt/index.html">exordium.utils.ckpt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/utils/concurrent/index.html">exordium.utils.concurrent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/utils/decorator/index.html">exordium.utils.decorator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/utils/device/index.html">exordium.utils.device</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/utils/loss/index.html">exordium.utils.loss</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/utils/normalize/index.html">exordium.utils.normalize</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/utils/padding/index.html">exordium.utils.padding</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="autoapi/exordium/video/index.html">exordium.video</a><input aria-label="Toggle navigation of exordium.video" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4 has-children"><a class="reference internal" href="autoapi/exordium/video/core/index.html">exordium.video.core</a><input aria-label="Toggle navigation of exordium.video.core" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/core/bb/index.html">exordium.video.core.bb</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/core/detection/index.html">exordium.video.core.detection</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/core/io/index.html">exordium.video.core.io</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/core/transform/index.html">exordium.video.core.transform</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="autoapi/exordium/video/deep/index.html">exordium.video.deep</a><input aria-label="Toggle navigation of exordium.video.deep" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/base/index.html">exordium.video.deep.base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/clip/index.html">exordium.video.deep.clip</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/fabnet/index.html">exordium.video.deep.fabnet</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/swint/index.html">exordium.video.deep.swint</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="autoapi/exordium/video/face/index.html">exordium.video.face</a><input aria-label="Toggle navigation of exordium.video.face" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5 has-children"><a class="reference internal" href="autoapi/exordium/video/face/au/index.html">exordium.video.face.au</a><input aria-label="Toggle navigation of exordium.video.face.au" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/au/opengraphau/index.html">exordium.video.face.au.opengraphau</a></li>
+</ul>
+</li>
+<li class="toctree-l5 has-children"><a class="reference internal" href="autoapi/exordium/video/face/blink/index.html">exordium.video.face.blink</a><input aria-label="Toggle navigation of exordium.video.face.blink" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/blink/densenet/index.html">exordium.video.face.blink.densenet</a></li>
+</ul>
+</li>
+<li class="toctree-l5 has-children"><a class="reference internal" href="autoapi/exordium/video/face/detector/index.html">exordium.video.face.detector</a><input aria-label="Toggle navigation of exordium.video.face.detector" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/detector/base/index.html">exordium.video.face.detector.base</a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/detector/yolo/index.html">exordium.video.face.detector.yolo</a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/detector/yolo11/index.html">exordium.video.face.detector.yolo11</a></li>
+</ul>
+</li>
+<li class="toctree-l5 has-children"><a class="reference internal" href="autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
+</ul>
+</li>
+<li class="toctree-l5 has-children"><a class="reference internal" href="autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/headpose/sixdrepnet/index.html">exordium.video.face.headpose.sixdrepnet</a></li>
+</ul>
+</li>
+<li class="toctree-l5 has-children"><a class="reference internal" href="autoapi/exordium/video/face/landmark/index.html">exordium.video.face.landmark</a><input aria-label="Toggle navigation of exordium.video.face.landmark" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/landmark/constants/index.html">exordium.video.face.landmark.constants</a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/landmark/facemesh/index.html">exordium.video.face.landmark.facemesh</a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/landmark/iris/index.html">exordium.video.face.landmark.iris</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/index.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="exordium">
+<h1>Exordium<a class="headerlink" href="#exordium" title="Link to this heading">¶</a></h1>
+<p>Collection of preprocessing functions and deep learning methods for <strong>multimodal feature extraction</strong> across audio, video, and text modalities.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="autoapi/exordium/index.html">exordium</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
+<p><strong>Audio</strong></p>
+<ul class="simple">
+<li><p>I/O utilities — load, save, resample waveforms</p></li>
+<li><p>Spectrograms — MFCC and Mel-spectrogram (with pre-emphasis)</p></li>
+<li><p>Prosody — pitch, energy, voice ratio, engagement</p></li>
+<li><p>OpenSMILE — eGeMAPSv02 low-level descriptors</p></li>
+<li><p>CLAP — contrastive language–audio pre-training embeddings (512-d)</p></li>
+<li><p>Wav2Vec2 — self-supervised speech representations (768-d)</p></li>
+<li><p>WavLM — masked speech modelling, layer-wise hidden states (768-d)</p></li>
+</ul>
+<p><strong>Video</strong></p>
+<ul class="simple">
+<li><p>Face detection — YOLOv8-Face, YOLO11-pose, BlazeFace</p></li>
+<li><p>Facial landmarks — YOLO11 5-pt coarse keypoints, FaceMesh 478-pt dense mesh</p></li>
+<li><p>Head pose — SixDRepNet (yaw, pitch, roll in degrees)</p></li>
+<li><p>Gaze direction — L2CS-Net (ResNet-50), UniGaze (ViT), roll correction</p></li>
+<li><p>Iris landmarks — MediaPipe Iris 71 eye pts + 5 iris pts, EAR, iris diameters</p></li>
+<li><p>Blink detection — BlinkDenseNet121 per-eye open/closed probability</p></li>
+<li><p>Action units — OpenGraphAU 41-dim intensity vector</p></li>
+<li><p>Deep visual features — Swin Transformer (768-d), FAb-Net (256-d), CLIP ViT-H/14 (1024-d)</p></li>
+<li><p>IoU tracking — multi-face track assignment and merging across video frames</p></li>
+</ul>
+<p><strong>Text</strong></p>
+<ul class="simple">
+<li><p>Whisper — speech-to-text transcription (OpenAI Whisper)</p></li>
+<li><p>BERT — token-level and sentence-level embeddings (768-d)</p></li>
+<li><p>RoBERTa — token-level and sentence-level embeddings (1024-d)</p></li>
+<li><p>XML-RoBERTa — multilingual sentence embeddings (768-d)</p></li>
+</ul>
+<p><strong>Utilities</strong></p>
+<ul class="simple">
+<li><p>Concurrent processing — thread- and process-pool helpers</p></li>
+<li><p>Decorators — <code class="docutils literal notranslate"><span class="pre">&#64;load_or_create</span></code> caching, retry, timing</p></li>
+<li><p>Normalization — global, per-feature, sliding-window</p></li>
+<li><p>Padding — fixed-length sequence padding and masking</p></li>
+<li><p>Loss functions — MSE, CCC, combined losses</p></li>
+</ul>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>exordium<span class="w">          </span><span class="c1"># base only</span>
+pip<span class="w"> </span>install<span class="w"> </span>exordium<span class="o">[</span>all<span class="o">]</span><span class="w">     </span><span class="c1"># all optional dependencies</span>
+pip<span class="w"> </span>install<span class="w"> </span>exordium<span class="o">[</span>audio<span class="o">]</span><span class="w">   </span><span class="c1"># audio extras only</span>
+pip<span class="w"> </span>install<span class="w"> </span>exordium<span class="o">[</span>video<span class="o">]</span><span class="w">   </span><span class="c1"># video extras only</span>
+pip<span class="w"> </span>install<span class="w"> </span>exordium<span class="o">[</span>text<span class="o">]</span><span class="w">    </span><span class="c1"># text extras only</span>
+</pre></div>
+</div>
+<section id="extras">
+<h3>Extras<a class="headerlink" href="#extras" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Extra</p></th>
+<th class="head"><p>Dependencies</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">audio</span></code></p></td>
+<td><p>OpenSMILE, torchaudio — audio feature extraction</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">text</span></code></p></td>
+<td><p>transformers, torchaudio — text and speech models</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">video</span></code></p></td>
+<td><p>MediaPipe, Ultralytics, blinklinmult, unigaze, timm — face &amp; video models</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">all</span></code></p></td>
+<td><p>all previously described extras</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="example-notebooks">
+<h2>Example Notebooks<a class="headerlink" href="#example-notebooks" title="Link to this heading">¶</a></h2>
+<p>Interactive demos for every module are in the <code class="docutils literal notranslate"><span class="pre">examples/</span></code> directory.
+All notebooks use fixture files from <code class="docutils literal notranslate"><span class="pre">tests/fixtures/</span></code> — model weights are
+downloaded automatically on first run.</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38.0%" />
+<col style="width: 62.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Notebook</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_io.ipynb</span></code></p></td>
+<td><p>Video loading, frame iteration, batch access, FPS resampling</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_deep.ipynb</span></code></p></td>
+<td><p>Deep visual features: SwinT (768-d), FabNet (256-d), CLIP ViT-H/14 (1024-d)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_face_bb.ipynb</span></code></p></td>
+<td><p>Face detection: YOLOv8 vs YOLO11 on easy and hard (extreme-pose) images</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_face_landmarks.ipynb</span></code></p></td>
+<td><p>Landmarks: YOLO11 5-pt keypoints + FaceMesh 478-pt dense mesh</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_face_headpose.ipynb</span></code></p></td>
+<td><p>Head pose (SixDRepNet) — yaw/pitch/roll with axis and cube overlays</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_face_gaze.ipynb</span></code></p></td>
+<td><p>Gaze direction: L2CS-Net (ResNet-50) and UniGaze (ViT), roll correction</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_face_blink.ipynb</span></code></p></td>
+<td><p>Per-eye blink detection on video — frame-wise score plot, patch examples</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_face_iris.ipynb</span></code></p></td>
+<td><p>Iris landmarks: 71 eye pts + 5 iris pts, EAR, iris diameters (YOLO11 + FaceMesh pipeline)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_face_action_units.ipynb</span></code></p></td>
+<td><p>Facial action units with OpenGraphAU — 41-dim AU intensity vector</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_tracking.ipynb</span></code></p></td>
+<td><p>Multi-face IoU tracking across video frames with track merging</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">demo_audio.ipynb</span></code></p></td>
+<td><p>Audio features: spectrogram, prosody, OpenSMILE, CLAP, Wav2Vec2, WavLM</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">demo_text.ipynb</span></code></p></td>
+<td><p>Text features: Whisper transcription, BERT, RoBERTa, XML-RoBERTa</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="development">
+<h2>Development<a class="headerlink" href="#development" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/fodorad/exordium
+<span class="nb">cd</span><span class="w"> </span>exordium
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[all,dev]&quot;</span>
+make<span class="w"> </span>check<span class="w">   </span><span class="c1"># lint + type-check + test + docs</span>
+</pre></div>
+</div>
+</section>
+<section id="related-projects">
+<h2>Related Projects<a class="headerlink" href="#related-projects" title="Link to this heading">¶</a></h2>
+<section id="emotionlinmult-202x">
+<h3>EmotionLinMulT (202X)<a class="headerlink" href="#emotionlinmult-202x" title="Link to this heading">¶</a></h3>
+<p>Efficient, transformer-based, multi-task emotion detection system.</p>
+<ul class="simple">
+<li><p>Paper: not published yet</p></li>
+<li><p><a class="reference external" href="https://github.com/fodorad/EmotionLinMulT">Code</a></p></li>
+</ul>
+</section>
+<section id="blinklinmult-2023">
+<h3>BlinkLinMulT (2023)<a class="headerlink" href="#blinklinmult-2023" title="Link to this heading">¶</a></h3>
+<p>Transformer-based eye blink detection and eye state recognition across 7 public benchmark databases.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.mdpi.com/2313-433X/9/10/196">Paper</a></p></li>
+<li><p><a class="reference external" href="https://github.com/fodorad/BlinkLinMulT">Code</a></p></li>
+</ul>
+</section>
+<section id="personalitylinmult-2022">
+<h3>PersonalityLinMulT (2022)<a class="headerlink" href="#personalitylinmult-2022" title="Link to this heading">¶</a></h3>
+<p>LinMulT trained for Big Five personality trait estimation and sentiment analysis.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://proceedings.mlr.press/v173/fodor22a.html">Paper</a></p></li>
+<li><p><a class="reference external" href="https://github.com/fodorad/PersonalityLinMulT">Code</a></p></li>
+</ul>
+</section>
+<section id="linmult">
+<h3>LinMulT<a class="headerlink" href="#linmult" title="Link to this heading">¶</a></h3>
+<p>General-purpose multimodal transformer with linear-complexity attention mechanisms.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://adamfodor.com/LinMulT/">Website</a></p></li>
+<li><p><a class="reference external" href="https://github.com/fodorad/LinMulT">Code</a></p></li>
+</ul>
+</section>
+</section>
+<section id="contact">
+<h2>Contact<a class="headerlink" href="#contact" title="Link to this heading">¶</a></h2>
+<p><strong>Ádám Fodor</strong> — <a class="reference external" href="https://adamfodor.com">adamfodor.com</a> · <a class="reference external" href="mailto:fodorad201&#37;&#52;&#48;gmail&#46;com">fodorad201<span>&#64;</span>gmail<span>&#46;</span>com</a></p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="autoapi/index.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">API Reference</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024-2026, Ádám Fodor
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Exordium</a><ul>
+<li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#installation">Installation</a><ul>
+<li><a class="reference internal" href="#extras">Extras</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#example-notebooks">Example Notebooks</a></li>
+<li><a class="reference internal" href="#development">Development</a></li>
+<li><a class="reference internal" href="#related-projects">Related Projects</a><ul>
+<li><a class="reference internal" href="#emotionlinmult-202x">EmotionLinMulT (202X)</a></li>
+<li><a class="reference internal" href="#blinklinmult-2023">BlinkLinMulT (2023)</a></li>
+<li><a class="reference internal" href="#personalitylinmult-2022">PersonalityLinMulT (2022)</a></li>
+<li><a class="reference internal" href="#linmult">LinMulT</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#contact">Contact</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=c6e86fd7"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

@@ -1,0 +1,163 @@
+exordium.audio.spectrogram
+==========================
+
+.. py:module:: exordium.audio.spectrogram
+
+.. autoapi-nested-parse::
+
+   Audio spectrogram generation utilities.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.audio.spectrogram.preprocess_audio
+   exordium.audio.spectrogram.apply_preemphasis
+   exordium.audio.spectrogram.compute_mfcc
+   exordium.audio.spectrogram.compute_melspec
+   exordium.audio.spectrogram.compute_deltas
+   exordium.audio.spectrogram.save_mfcc_specshow
+   exordium.audio.spectrogram.save_melspec_specshow
+   exordium.audio.spectrogram.process_audio_file
+
+
+Module Contents
+---------------
+
+.. py:function:: preprocess_audio(waveform: torch.Tensor, waveform_sample_rate: int, target_sample_rate: int) -> tuple[torch.Tensor, int]
+
+   Convert waveform to mono and resample if needed.
+
+   :param waveform: Input audio waveform (C, T)
+   :param waveform_sample_rate: Original sample rate of the waveform
+   :param target_sample_rate: Target sample rate to resample to
+
+   :returns: Processed waveform and original sample rate
+
+
+.. py:function:: apply_preemphasis(y: torch.Tensor, coef: float = 0.97) -> torch.Tensor
+
+   Apply pre-emphasis filter to audio signal.
+
+   :param y: 1-D audio waveform tensor.
+   :param coef: Pre-emphasis coefficient. Defaults to 0.97.
+
+   :returns: Pre-emphasized waveform tensor of the same shape.
+
+
+.. py:function:: compute_mfcc(y: torch.Tensor, sample_rate: int, n_mfcc: int = 40, n_mels: int = 80, n_fft: int = 512, hop_length: int = 160, log_mels: bool = True, save_fig: bool = False, output_path: pathlib.Path | str | None = None) -> tuple[numpy.ndarray, numpy.ndarray]
+
+   Compute MFCC features from audio signal.
+
+   Defaults are tuned for speech emotion and sentiment analysis at 16 kHz:
+
+   * ``n_mels=80`` — covers all perceptually relevant speech frequencies
+     (0–8 kHz) without the redundancy of 128 bands, which are better suited
+     to music.  Used by Whisper, WavLM, and most SER benchmarks.
+   * ``n_fft=512`` — 32 ms window gives stable frequency estimates while
+     preserving temporal resolution for fast prosodic changes.
+   * ``hop_length=160`` — 10 ms hop matches the frame rate expected by most
+     pretrained speech models and standard SER evaluation protocols.
+
+   The torchaudio default of ``n_fft=400`` with ``n_mels=128`` produces only
+   201 frequency bins, leaving the highest mel bands empty and triggering a
+   ``UserWarning``.  The chosen ``n_fft=512`` yields 257 bins, which is
+   sufficient for 80 mel bands with no empty filterbanks.
+
+   :param y: 1-D mono waveform tensor.
+   :param sample_rate: Sample rate in Hz.
+   :param n_mfcc: Number of MFCC coefficients. Defaults to 40.
+   :param n_mels: Number of mel filterbanks used internally. Defaults to 80.
+   :param n_fft: FFT size (window length in samples). Defaults to 512.
+   :param hop_length: Hop size between frames in samples. Defaults to 160.
+   :param log_mels: Whether to use log mel spectrogram. Defaults to True.
+   :param save_fig: Whether to save figures. Defaults to False.
+   :param output_path: Directory to save figures.
+
+   :returns: Tuple of ``(mfcc, mfcc_preemph)`` as ``(n_mfcc, T)`` numpy arrays.
+
+
+.. py:function:: compute_melspec(y: torch.Tensor, sample_rate: int, n_mels: int = 80, n_fft: int = 512, hop_length: int = 160, f_max: int = 8000, save_fig: bool = False, output_path: pathlib.Path | str | None = None) -> tuple[numpy.ndarray, numpy.ndarray]
+
+   Compute Mel spectrogram features from audio signal.
+
+   Defaults are tuned for speech emotion and sentiment analysis at 16 kHz:
+
+   * ``n_mels=80`` — covers all perceptually relevant speech frequencies
+     (0–8 kHz) without the redundancy of 128 bands, which are better suited
+     to music.  Used by Whisper, WavLM, and most SER benchmarks.
+   * ``n_fft=512`` — 32 ms window gives stable frequency estimates while
+     preserving temporal resolution for fast prosodic changes.
+   * ``hop_length=160`` — 10 ms hop matches the frame rate expected by most
+     pretrained speech models and standard SER evaluation protocols.
+
+   The torchaudio default of ``n_fft=400`` with ``n_mels=128`` produces only
+   201 frequency bins, leaving the highest mel bands empty and triggering a
+   ``UserWarning``.  The chosen ``n_fft=512`` yields 257 bins, which is
+   sufficient for 80 mel bands with no empty filterbanks.
+
+   :param y: 1-D mono waveform tensor.
+   :param sample_rate: Sample rate in Hz.
+   :param n_mels: Number of mel bands. Defaults to 80.
+   :param n_fft: FFT size (window length in samples). Defaults to 512.
+   :param hop_length: Hop size between frames in samples. Defaults to 160.
+   :param f_max: Maximum frequency in Hz. Defaults to 8000.
+   :param save_fig: Whether to save figures. Defaults to False.
+   :param output_path: Directory to save figures.
+
+   :returns: Tuple of ``(melspec_db, melspec_preemph_db)`` as ``(n_mels, T)``
+             numpy arrays in dB.
+
+
+.. py:function:: compute_deltas(features: numpy.ndarray, return_all: bool = False) -> numpy.ndarray | tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]
+
+   Compute delta and delta-delta features from input features.
+
+   :param features: Input features of shape ``(n_features, T)`` as a numpy array.
+   :param return_all: If True, return ``(features, delta, delta2)``.
+                      Defaults to False.
+
+   :returns: Delta features of shape ``(n_features, T)`` or a tuple of three
+             ``(n_features, T)`` arrays when ``return_all=True``.
+
+
+.. py:function:: save_mfcc_specshow(data: numpy.ndarray, output_path: str, title: str, figsize: tuple[int, int] = (10, 4)) -> None
+
+   Save MFCC plot to file.
+
+   :param data: MFCC data (n_mfcc, time)
+   :param output_path: Path to save figure
+   :param title: Figure title
+   :param figsize: Figure size
+
+
+.. py:function:: save_melspec_specshow(data: numpy.ndarray, output_path: str, title: str, is_delta: bool = False, figsize: tuple[int, int] = (10, 4)) -> None
+
+   Save mel-spectrogram plot to file.
+
+   :param data: Mel-spectrogram data (n_mels, time)
+   :param output_path: Path to save figure
+   :param title: Figure title
+   :param is_delta: Whether data is delta/delta2
+   :param figsize: Figure size
+
+
+.. py:function:: process_audio_file(input_path: pathlib.Path | str, output_path: pathlib.Path | str, sample_rate: int = 44100, save_fig: bool = False, save_npy: bool = True, n_mfcc: int = 40, n_mels: int = 80, f_max: int = 8000) -> dict
+
+   Process audio file and return features.
+
+   :param input_path: Path to input audio file
+   :param output_path: Directory to save output files
+   :param sample_rate: Target sample rate
+   :param save_fig: Whether to save figures
+   :param save_npy: Whether to save numpy files
+   :param n_mfcc: Number of MFCC coefficients
+   :param n_mels: Number of mel bands
+   :param f_max: Maximum frequency
+
+   :returns: Dictionary containing all computed features
+
+

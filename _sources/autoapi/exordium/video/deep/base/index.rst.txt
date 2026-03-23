@@ -1,0 +1,163 @@
+exordium.video.deep.base
+========================
+
+.. py:module:: exordium.video.deep.base
+
+.. autoapi-nested-parse::
+
+   Abstract base class for frame-wise visual feature extractors.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.deep.base.VisualModelWrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: VisualModelWrapper(device_id: int | None = None)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Abstract base class for frame-wise visual feature extractors.
+
+   Subclasses must implement :meth:`preprocess` (any supported input →
+   model-ready tensor) and :meth:`inference` (model tensor → feature tensor).
+
+   Supported input types for :meth:`__call__`:
+
+   * ``torch.Tensor`` — ``(C, H, W)`` or ``(B, C, H, W)`` uint8 RGB; fastest
+     path, no copies made until device transfer.
+   * ``np.ndarray`` — ``(H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB.
+   * ``Sequence[np.ndarray]`` — list of ``(H, W, 3)`` uint8 arrays.
+   * ``Sequence[str | Path]`` — list of image file paths.
+
+   Design contract:
+
+   * :meth:`preprocess` — abstract; converts any supported input to a
+     model-ready float tensor on ``self.device``.
+   * :meth:`inference` — abstract; pure model forward pass; input already on
+     ``self.device``.
+   * :meth:`__call__` — ``preprocess`` → ``inference`` under
+     ``torch.inference_mode``; returns a ``torch.Tensor``.
+   * :meth:`dir_to_feature` / :meth:`track_to_feature` /
+     :meth:`video_to_feature` — cached batch helpers.
+
+   Example::
+
+       class MyWrapper(VisualModelWrapper):
+           def __init__(self, device_id=None):
+               super().__init__(device_id)
+               self.model = ...
+
+           def preprocess(self, frames):
+               x = self._to_uint8_tensor(frames).to(self.device)
+               return (x.float() / 255.0 - MEAN) / STD
+
+           def inference(self, tensor):
+               return self.model(tensor)
+
+       model = MyWrapper(device_id=0)
+       tensor_out = model(video_tensor)   # torch.Tensor (B, D)
+
+
+
+   .. py:method:: preprocess(frames: torch.Tensor | collections.abc.Sequence) -> torch.Tensor
+      :abstractmethod:
+
+
+      Convert any supported input to a model-ready tensor.
+
+      Call :meth:`_to_uint8_tensor` first to normalise the input type, then
+      apply model-specific resize, crop, and normalisation as tensor
+      operations.  The returned tensor must be on ``self.device``.
+
+      :param frames: Any supported input (see class docstring).
+
+      :returns: Preprocessed float tensor on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+      :abstractmethod:
+
+
+      Model forward pass.
+
+      The input tensor is already on ``self.device`` and preprocessed.
+
+      :param tensor: Float tensor of shape ``(B, …)`` on ``self.device``.
+
+      :returns: Feature tensor of shape ``(B, D)``.
+
+
+
+   .. py:method:: __call__(frames: torch.Tensor | collections.abc.Sequence) -> torch.Tensor
+
+      Preprocess and run inference, returning a feature tensor.
+
+      :param frames: Any supported input (see class docstring).
+
+      :returns: Feature tensor of shape ``(B, D)`` on ``self.device``.
+
+
+
+   .. py:method:: dir_to_feature(img_paths: list[str | pathlib.Path], batch_size: int = 30, verbose: bool = False, **_kwargs) -> dict[str, torch.Tensor]
+
+      Extract features from an ordered list of image files.
+
+      Results are cached as a safetensors file: pass ``output_path`` and
+      ``overwrite`` via ``_kwargs`` to control caching behaviour.
+
+      :param img_paths: Image file paths. Each file stem must be parseable
+                        as an integer frame ID.
+      :param batch_size: Images to process per batch. Defaults to 30.
+      :param verbose: Show a progress bar. Defaults to False.
+      :param \*\*_kwargs: Forwarded to ``load_or_create``.
+
+      :returns: Dict with keys ``"frame_ids"`` (``(N,)`` long tensor) and
+                ``"features"`` (``(N, D)`` float tensor), both on CPU.
+
+
+
+   .. py:method:: track_to_feature(track: exordium.video.core.detection.Track, batch_size: int = 30, **_kwargs) -> dict[str, torch.Tensor]
+
+      Extract features from all non-interpolated detections in a track.
+
+      Results are cached as a safetensors file: pass ``output_path`` and
+      ``overwrite`` via ``_kwargs`` to control caching behaviour.
+
+      :param track: Track containing a sequence of Detection objects.
+      :param batch_size: Detections to process per batch. Defaults to 30.
+      :param \*\*_kwargs: Forwarded to ``load_or_create``.
+
+      :returns: Dict with keys ``"frame_ids"`` (``(N,)`` long tensor) and
+                ``"features"`` (``(N, D)`` float tensor), both on CPU.
+
+
+
+   .. py:method:: video_to_feature(video_path: str | pathlib.Path, batch_size: int = 30, verbose: bool = False, **_kwargs) -> dict[str, torch.Tensor]
+
+      Extract features for every frame of a video file.
+
+      Opens the video once with :class:`~exordium.video.core.io.Video`,
+      iterates over batches of decoded frames, and concatenates the results.
+      Results are cached as a safetensors file: pass ``output_path`` and
+      ``overwrite`` via ``_kwargs`` to control caching behaviour.
+
+      :param video_path: Path to the input video file.
+      :param batch_size: Frames to process per batch. Defaults to 30.
+      :param verbose: Show a progress bar. Defaults to False.
+      :param \*\*_kwargs: Forwarded to ``load_or_create``.
+
+      :returns: Dict with keys ``"frame_ids"`` (``(T,)`` long tensor) and
+                ``"features"`` (``(T, D)`` float tensor), both on CPU.
+
+
+

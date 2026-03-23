@@ -1,0 +1,52 @@
+exordium.utils.padding
+======================
+
+.. py:module:: exordium.utils.padding
+
+.. autoapi-nested-parse::
+
+   Padding and cropping utilities.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.utils.padding.pad_or_crop_time_dim
+   exordium.utils.padding.pad_layered_time_dim
+
+
+Module Contents
+---------------
+
+.. py:function:: pad_or_crop_time_dim(tensor: torch.Tensor, target_size: int, pad_value: int | float = 0) -> tuple[torch.Tensor, torch.Tensor]
+
+   Adjust the time dimension (T) of a tensor to a given size and generate a mask.
+
+   Handles tensors of shape ``(T, F)`` or ``(T,)``.
+
+   :param tensor: Input tensor with shape ``(T, F)`` or ``(T,)``.
+   :param target_size: Desired size for the time dimension.
+   :param pad_value: Value to use for padding. Defaults to 0.
+
+   :returns: Tuple of ``(adjusted_tensor, mask)`` where ``mask`` is a bool tensor
+             of shape ``(target_size,)`` with ``True`` for original values and
+             ``False`` for padded positions.
+
+
+.. py:function:: pad_layered_time_dim(tensor: torch.Tensor, target_time_dim: int, pad_value: int | float = 0) -> tuple[torch.Tensor, torch.Tensor]
+
+   Pad the time dimension of a tensor and generate a mask.
+
+   :param tensor: Input tensor of shape ``(L, N, F)``.
+   :param target_time_dim: Desired size for the time dimension ``N``.
+   :param pad_value: Value to use for padding. Defaults to 0.
+
+   :returns: Tuple of ``(padded_tensor, mask)`` where the tensor has shape
+             ``(L, target_time_dim, F)`` and the mask has shape
+             ``(target_time_dim,)`` with ``True`` for original data and ``False``
+             for padding.
+
+

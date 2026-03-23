@@ -1,0 +1,17 @@
+exordium.video.face.gaze
+========================
+
+.. py:module:: exordium.video.face.gaze
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/exordium/video/face/gaze/base/index
+   /autoapi/exordium/video/face/gaze/l2csnet/index
+   /autoapi/exordium/video/face/gaze/unigaze/index
+
+

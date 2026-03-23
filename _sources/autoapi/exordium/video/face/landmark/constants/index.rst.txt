@@ -1,0 +1,353 @@
+exordium.video.face.landmark.constants
+======================================
+
+.. py:module:: exordium.video.face.landmark.constants
+
+.. autoapi-nested-parse::
+
+   Facial landmark definitions and constants.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.landmark.constants.FACEMESH_REGION_COLORS
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.landmark.constants.FaceLandmarks
+   exordium.video.face.landmark.constants.IrisLandmarks
+   exordium.video.face.landmark.constants.FaceMeshLandmarks
+   exordium.video.face.landmark.constants.FaceMesh478Regions
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.face.landmark.constants.build_facemesh_region_colors
+
+
+Module Contents
+---------------
+
+.. py:class:: FaceLandmarks(*args, **kwds)
+
+   Bases: :py:obj:`enum.Enum`
+
+
+   5-point face landmark indices (right_eye, left_eye, nose, mouth_right, mouth_left).
+
+
+   .. py:attribute:: RIGHT_EYE
+      :value: 0
+
+
+      Subject's right eye (viewer's left).
+
+
+   .. py:attribute:: LEFT_EYE
+      :value: 1
+
+
+      Subject's left eye (viewer's right).
+
+
+   .. py:attribute:: NOSE
+      :value: 2
+
+
+      Nose tip.
+
+
+   .. py:attribute:: MOUTH_RIGHT
+      :value: 3
+
+
+      Right mouth corner (subject's right).
+
+
+   .. py:attribute:: MOUTH_LEFT
+      :value: 4
+
+
+      Left mouth corner (subject's left).
+
+
+.. py:class:: IrisLandmarks(*args, **kwds)
+
+   Bases: :py:obj:`enum.Enum`
+
+
+   Defines MediaPipe Iris indices.
+
+   Layout::
+
+         2
+     3   0   1
+         4
+
+
+
+   .. py:attribute:: CENTER
+      :value: 0
+
+
+      Iris center point.
+
+
+   .. py:attribute:: RIGHT
+      :value: 1
+
+
+      Rightmost iris point.
+
+
+   .. py:attribute:: TOP
+      :value: 2
+
+
+      Topmost iris point.
+
+
+   .. py:attribute:: LEFT
+      :value: 3
+
+
+      Leftmost iris point.
+
+
+   .. py:attribute:: BOTTOM
+      :value: 4
+
+
+      Bottommost iris point.
+
+
+.. py:class:: FaceMeshLandmarks
+
+   Defines MediaPipe FaceMesh indices.
+
+   Layout::
+
+         10 11 12 13 14
+       9                15
+     0                     8
+       1                 7
+          2  3  4  5  6
+
+
+
+   .. py:attribute:: EYE
+
+      All 16 iris landmark indices.
+
+
+   .. py:attribute:: BOTTOM_ALL
+
+      Indices for the lower half of the iris contour (positions 1–7).
+
+
+   .. py:attribute:: TOP_ALL
+
+      Indices for the upper half of the iris contour (positions 9–15).
+
+
+   .. py:attribute:: BOTTOM
+      :value: [4]
+
+
+      Index of the bottommost iris point.
+
+
+   .. py:attribute:: TOP
+      :value: [12]
+
+
+      Index of the topmost iris point.
+
+
+   .. py:attribute:: LEFT
+      :value: [0]
+
+
+      Index of the leftmost iris point.
+
+
+   .. py:attribute:: RIGHT
+      :value: [8]
+
+
+      Index of the rightmost iris point.
+
+
+   .. py:attribute:: TOP_LEFT
+      :value: [11]
+
+
+      Index of the upper-left iris point.
+
+
+   .. py:attribute:: TOP_RIGHT
+      :value: [13]
+
+
+      Index of the upper-right iris point.
+
+
+   .. py:attribute:: BOTTOM_LEFT
+      :value: [3]
+
+
+      Index of the lower-left iris point.
+
+
+   .. py:attribute:: BOTTOM_RIGHT
+      :value: [5]
+
+
+      Index of the lower-right iris point.
+
+
+.. py:class:: FaceMesh478Regions
+
+   MediaPipe FaceMesh 478-point landmark index groups by facial region.
+
+   Naming follows MediaPipe's **subject-centric** convention — RIGHT/LEFT refers
+   to the subject's anatomical right/left.  When looking at a frontal face image:
+
+   * Subject's **RIGHT** side → **left** side of the image (viewer's perspective).
+   * Subject's **LEFT** side → **right** side of the image (viewer's perspective).
+
+   Landmark index sources:
+
+   * Eyes / eyebrows: extracted from ``FACEMESH_RIGHT_EYE``,
+     ``FACEMESH_LEFT_EYE``, ``FACEMESH_RIGHT_EYEBROW``,
+     ``FACEMESH_LEFT_EYEBROW`` connection sets.
+   * Mouth: extracted from ``FACEMESH_LIPS`` connection set, split at the
+     vertical midline.  ``MOUTH_LEFT`` contains the viewer's-left half
+     (subject's right commissure, index 61/78) plus the four midline points.
+     ``MOUTH_RIGHT`` contains the viewer's-right half (subject's left
+     commissure, index 291/308).
+   * Nose: tip, alar wings, columella, and bridge.
+   * Face oval: outer silhouette from ``FACEMESH_FACE_OVAL`` connection set.
+
+
+   .. py:attribute:: RIGHT_EYE
+      :type:  list[int]
+      :value: [33, 7, 163, 144, 145, 153, 154, 155, 133, 246, 161, 160, 159, 158, 157, 173]
+
+
+      Subject's right-eye landmark indices (viewer's left side, 16 points).
+
+
+   .. py:attribute:: LEFT_EYE
+      :type:  list[int]
+      :value: [263, 249, 390, 373, 374, 380, 381, 382, 362, 466, 388, 387, 386, 385, 384, 398]
+
+
+      Subject's left-eye landmark indices (viewer's right side, 16 points).
+
+
+   .. py:attribute:: RIGHT_EYEBROW
+      :type:  list[int]
+      :value: [46, 53, 52, 65, 55, 70, 63, 105, 66, 107]
+
+
+      Subject's right-eyebrow landmark indices (viewer's left side, 10 points).
+
+
+   .. py:attribute:: LEFT_EYEBROW
+      :type:  list[int]
+      :value: [276, 283, 282, 295, 285, 300, 293, 334, 296, 336]
+
+
+      Subject's left-eyebrow landmark indices (viewer's right side, 10 points).
+
+
+   .. py:attribute:: NOSE
+      :type:  list[int]
+      :value: [1, 2, 4, 5, 6, 19, 44, 45, 48, 51, 64, 94, 98, 102, 115, 125, 129, 131, 134, 168, 195, 197,...
+
+
+      Nose landmark indices — tip, bridge, alar wings, nostrils (~40 points).
+
+
+   .. py:attribute:: MOUTH_LEFT
+      :type:  list[int]
+      :value: [0, 13, 14, 17, 37, 39, 40, 61, 78, 80, 81, 82, 84, 87, 88, 91, 95, 146, 178, 181, 185, 191]
+
+
+      Viewer's-left mouth landmark indices (subject's right commissure + midline).
+
+
+   .. py:attribute:: MOUTH_RIGHT
+      :type:  list[int]
+      :value: [267, 269, 270, 291, 308, 310, 311, 312, 314, 317, 318, 321, 324, 375, 402, 405, 409, 415]
+
+
+      Viewer's-right mouth landmark indices (subject's left commissure).
+
+
+   .. py:attribute:: FACE_OVAL
+      :type:  list[int]
+      :value: [10, 21, 54, 58, 67, 93, 103, 109, 127, 132, 136, 148, 149, 150, 152, 162, 172, 176, 234, 251,...
+
+
+      Outer face silhouette landmark indices (36 points).
+
+
+.. py:function:: build_facemesh_region_colors(right_eye_color: tuple[int, int, int] = (0, 128, 0), left_eye_color: tuple[int, int, int] = (100, 238, 100), eyebrow_color: tuple[int, int, int] = (180, 0, 180), nose_color: tuple[int, int, int] = (255, 0, 0), mouth_left_color: tuple[int, int, int] = (0, 0, 200), mouth_right_color: tuple[int, int, int] = (50, 150, 200), face_oval_color: tuple[int, int, int] = (50, 50, 50), other_color: tuple[int, int, int] = (220, 220, 220)) -> list[tuple[int, int, int]]
+
+   Build a 478-element per-landmark color list for FaceMesh regional visualization.
+
+   Colours are in **RGB** order (matching the image format used throughout
+   the library).  Pass the result as the ``colors`` argument of
+   :func:`~exordium.video.face.landmark.facemesh.visualize_landmarks`.
+
+   Default color scheme (all RGB):
+
+   * Right eye (viewer's left)    → dark green    ``(0, 128, 0)``
+   * Left eye  (viewer's right)   → light green   ``(100, 238, 100)``
+   * Eyebrows                     → dark magenta  ``(180, 0, 180)``
+   * Nose                         → red           ``(255, 0, 0)``
+   * Mouth left  (viewer's left)  → dark blue     ``(0, 0, 200)``
+   * Mouth right (viewer's right) → light blue    ``(50, 150, 200)``
+   * Face oval                    → dark grey     ``(50, 50, 50)``
+   * All other landmarks          → light grey    ``(220, 220, 220)``
+
+   :param right_eye_color: RGB color for ``FaceMesh478Regions.RIGHT_EYE``.
+   :param left_eye_color: RGB color for ``FaceMesh478Regions.LEFT_EYE``.
+   :param eyebrow_color: RGB color for both eyebrow regions.
+   :param nose_color: RGB color for nose landmarks.
+   :param mouth_left_color: RGB color for viewer's-left mouth half.
+   :param mouth_right_color: RGB color for viewer's-right mouth half.
+   :param face_oval_color: RGB color for outer face silhouette.
+   :param other_color: RGB color for all remaining landmarks.
+
+   :returns: List of 478 ``(R, G, B)`` tuples, one per FaceMesh landmark.
+
+   Example::
+
+       from exordium.video.face.landmark.constants import FACEMESH_REGION_COLORS
+       from exordium.video.face.landmark.facemesh import visualize_landmarks
+
+       vis = visualize_landmarks(crop, landmarks, colors=FACEMESH_REGION_COLORS)
+
+
+
+.. py:data:: FACEMESH_REGION_COLORS
+   :type:  list[tuple[int, int, int]]
+
+   Pre-built default regional color map — 478 RGB tuples, one per landmark.
+
+   See :func:`build_facemesh_region_colors` for the full color scheme.
+

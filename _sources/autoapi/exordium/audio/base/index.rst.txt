@@ -1,0 +1,84 @@
+exordium.audio.base
+===================
+
+.. py:module:: exordium.audio.base
+
+.. autoapi-nested-parse::
+
+   Base classes for audio feature extraction models.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.audio.base.AudioModelWrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: AudioModelWrapper(device_id: int = -1)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Abstract base class for audio feature extraction models.
+
+   Provides shared device setup, waveform preparation, and padding utilities.
+   Subclasses must implement :meth:`audio_to_feature`, :meth:`batch_audio_to_features`,
+   and :meth:`inference`.
+
+   The key shared behaviour is :meth:`_prepare_waveform`, which normalises
+   any input — file path, numpy array, or torch tensor — to a mono 1D
+   waveform tensor at the requested sample rate.
+
+   Initialize with device setup.
+
+   :param device_id: GPU device ID. Use -1 for CPU.
+
+
+   .. py:method:: audio_to_feature(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, **kwargs)
+      :abstractmethod:
+
+
+      Extract features from a single audio path or waveform.
+
+      Subclasses decorate this with
+      :func:`~exordium.utils.decorator.load_or_create` using the appropriate
+      file format (``"npy"`` or ``"pkl"``).
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+      :param \*\*kwargs: Forwarded to the caching decorator
+                         (``output_path``, ``overwrite``).
+
+
+
+   .. py:method:: batch_audio_to_features(audios: list[pathlib.Path | str | numpy.ndarray | torch.Tensor], **kwargs)
+      :abstractmethod:
+
+
+      Extract features from multiple audio inputs in a single forward pass.
+
+      :param audios: List of audio file paths, numpy arrays, or torch tensors.
+      :param \*\*kwargs: Additional arguments.
+
+
+
+   .. py:method:: inference(waveform: numpy.ndarray | torch.Tensor) -> torch.Tensor | list[torch.Tensor]
+      :abstractmethod:
+
+
+      Extract features from a preprocessed waveform tensor.
+
+      Input is already a float32 tensor at the model's target sample rate.
+
+      :param waveform: Float32 tensor of shape ``(B, T)`` or ``(T,)`` on any
+                       device.
+
+      :returns: Feature tensor on ``self.device``.
+
+
+

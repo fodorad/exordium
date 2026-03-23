@@ -1,0 +1,19 @@
+exordium.text
+=============
+
+.. py:module:: exordium.text
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/exordium/text/base/index
+   /autoapi/exordium/text/bert/index
+   /autoapi/exordium/text/roberta/index
+   /autoapi/exordium/text/whisper/index
+   /autoapi/exordium/text/xml_roberta/index
+
+

@@ -1,0 +1,75 @@
+exordium.video.face.gaze.unigaze
+================================
+
+.. py:module:: exordium.video.face.gaze.unigaze
+
+.. autoapi-nested-parse::
+
+   UniGaze gaze estimation model wrapper.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.unigaze.UnigazeWrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: UnigazeWrapper(model_name: str = 'unigaze_b16_joint', device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.face.gaze.base.GazeWrapper`
+
+
+   UniGaze gaze estimation wrapper.
+
+   Predicts gaze direction (pitch and yaw) from face crops using a
+   ViT-based model from the UniGaze family.  Weights are downloaded
+   automatically by the ``unigaze`` package on first use.
+
+   :param model_name: UniGaze model variant.  Available options:
+
+                      * ``"unigaze_b16_joint"`` — ViT-B/16, smallest and fastest
+                      * ``"unigaze_l16_joint"`` — ViT-L/16
+                      * ``"unigaze_h14_joint"`` — ViT-H/14
+                      * ``"unigaze_h14_cross_X"`` — ViT-H/14, cross-dataset variant
+   :param device_id: Device index.  ``None`` or negative for CPU.
+
+
+   .. py:attribute:: device
+
+      Torch device used for model inference (CPU or GPU).
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+
+      Resize and normalise face crops to UniGaze input convention.
+
+      UniGaze expects 224×224 inputs normalised to ImageNet mean/std.
+
+      :param frames: Any input accepted by :meth:`~GazeWrapper._to_uint8_tensor`.
+
+      :returns: Float tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]
+
+      Run UniGaze and return ``(yaw, pitch)`` angles in radians.
+
+      Performs the full forward pass and extracts gaze angles from the
+      model output dict.  UniGaze returns ``pred_gaze`` of shape ``(B, 2)``
+      where column 0 is pitch and column 1 is yaw, both in radians.
+
+      :param tensor: Float tensor of shape ``(B, 3, 224, 224)`` on
+                     ``self.device``, normalised to ImageNet mean/std.
+
+      :returns: Tuple of ``(yaw, pitch)`` tensors each of shape ``(B,)``
+                in radians on ``self.device``.
+
+
+

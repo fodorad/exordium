@@ -1,0 +1,109 @@
+exordium.audio.io
+=================
+
+.. py:module:: exordium.audio.io
+
+.. autoapi-nested-parse::
+
+   Audio input/output utilities.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.audio.io.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.audio.io.AudioLoader
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.audio.io.save_audio
+   exordium.audio.io.load_audio
+   exordium.audio.io.split_audio
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:function:: save_audio(audio: torch.Tensor, output_path: pathlib.Path | str, sr: int = 16000) -> None
+
+   Save audio waveform to file using torchaudio.
+
+   :param audio: Audio tensor of shape (T,) or (C, T).
+   :param output_path: Path where audio file will be saved.
+   :param sr: Sample rate in Hz.
+
+
+.. py:function:: load_audio(audio_path: pathlib.Path | str, target_sample_rate: int | None = 16000, clamp: bool = True, mono: bool = True, squeeze: bool = True) -> tuple[torch.Tensor, int]
+
+   Load audio file with optional resampling and preprocessing.
+
+   :param audio_path: Path to audio file.
+   :param target_sample_rate: Target sample rate in Hz. If None, keeps original sample rate.
+   :param clamp: If True, clamp waveform values to [-1, 1].
+   :param mono: If True and audio is stereo, convert to mono by averaging channels.
+   :param squeeze: If True, remove singleton dimensions from output.
+
+   :returns:
+
+                 - waveform: Audio tensor of shape (T,) if mono and squeezed,
+                            (C, T) if stereo or not squeezed.
+                 - sample_rate: Sample rate in Hz.
+   :rtype: Tuple of (waveform, sample_rate)
+
+
+.. py:function:: split_audio(audio: torch.Tensor, segment_duration: float, sample_rate: int) -> list[torch.Tensor]
+
+   Split audio into fixed-duration segments.
+
+   :param audio: Audio tensor of shape (T,) or (C, T).
+   :param segment_duration: Duration of each segment in seconds.
+   :param sample_rate: Sample rate in Hz.
+
+   :returns: List of audio segments. Last segment may be shorter than segment_duration.
+
+
+.. py:class:: AudioLoader
+
+   Audio loader with caching support for efficient repeated access.
+
+   Caches loaded audio files to avoid redundant I/O operations.
+
+   Initialize AudioLoader with empty cache.
+
+
+   .. py:method:: load_audio(audio_file: pathlib.Path | str, start_time_sec: float | None = None, end_time_sec: float | None = None, target_sample_rate: int | None = None, mono: bool = True, squeeze: bool = True, batch_dim: bool = False) -> tuple[torch.Tensor, int]
+
+      Load audio file with caching, optional time slicing, and format support.
+
+      :param audio_file: Path to audio or video file with audio.
+      :param start_time_sec: Start time in seconds for audio slice. Requires end_time_sec.
+      :param end_time_sec: End time in seconds for audio slice. Requires start_time_sec.
+      :param target_sample_rate: Target sample rate in Hz. Required for .mp4 files.
+      :param mono: If True, convert to mono.
+      :param squeeze: If True, remove singleton dimensions.
+      :param batch_dim: If True, add batch dimension at index 0.
+
+      :returns:     - waveform: Audio tensor.
+                    - sample_rate: Sample rate in Hz.
+      :rtype: Tuple of (waveform, sample_rate)
+
+
+

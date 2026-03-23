@@ -1,0 +1,22 @@
+exordium.audio
+==============
+
+.. py:module:: exordium.audio
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/exordium/audio/base/index
+   /autoapi/exordium/audio/clap/index
+   /autoapi/exordium/audio/io/index
+   /autoapi/exordium/audio/prosody/index
+   /autoapi/exordium/audio/smile/index
+   /autoapi/exordium/audio/spectrogram/index
+   /autoapi/exordium/audio/wav2vec2/index
+   /autoapi/exordium/audio/wavlm/index
+
+

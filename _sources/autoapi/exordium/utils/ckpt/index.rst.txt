@@ -1,0 +1,108 @@
+exordium.utils.ckpt
+===================
+
+.. py:module:: exordium.utils.ckpt
+
+.. autoapi-nested-parse::
+
+   Checkpoint utility functions.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.utils.ckpt.logger
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.utils.ckpt.download_file
+   exordium.utils.ckpt.download_weight
+   exordium.utils.ckpt.remove_token
+   exordium.utils.ckpt.load_checkpoint
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:function:: download_file(remote_path: str, local_path: pathlib.Path | str, overwrite: bool = False) -> None
+
+   Downloads a file to a given local path using urllib.
+
+   :param remote_path: URL of the remote file.
+   :type remote_path: str
+   :param local_path: Destination path for the downloaded file.
+   :type local_path: Path | str
+   :param overwrite: If True, re-downloads even if the file
+                     already exists. Defaults to False.
+   :type overwrite: bool, optional
+
+   :raises FileNotFoundError: If the file is not present after downloading.
+
+
+.. py:function:: download_weight(filename: str, local_dir: pathlib.Path | str, repo_id: str = _HF_REPO_ID) -> pathlib.Path
+
+   Download a model weight file from Hugging Face Hub if not already cached.
+
+   Uses ``huggingface_hub.hf_hub_download`` to fetch ``filename`` from
+   ``repo_id`` and place it directly in ``local_dir``.  Subsequent calls
+   with the same arguments are no-ops (file already present).
+
+   :param filename: Name of the file in the HF Hub repository (e.g.
+                    ``"fabnet_weights.pth"``).
+   :param local_dir: Local directory where the file will be stored.  The file
+                     will be at ``local_dir / filename``.
+   :param repo_id: Hugging Face Hub repository ID.  Defaults to
+                   ``"fodorad/exordium-weights"``.
+
+   :returns: Path to the downloaded (or already cached) local file.
+
+   :raises FileNotFoundError: If the file is missing after the download attempt.
+
+
+.. py:function:: remove_token(weights: dict, token: str = '_model.') -> dict
+
+   Removes a token from the keys of the weight dictionary.
+
+   The ckpt file saves the pytorch_lightning module which includes its child
+   members.  Loading the state_dict with the child called ``_model.`` leads
+   to an error; removing the unnecessary token fixes checkpoint loading.
+
+   :param weights: Loaded torch weights.
+   :type weights: dict
+   :param token: String to be removed. Defaults to ``"_model."``.
+   :type token: str, optional
+
+   :returns: Updated weight dictionary.
+   :rtype: dict
+
+
+.. py:function:: load_checkpoint(path: pathlib.Path | str, strip_prefix: str = 'module.') -> dict
+
+   Load a torch checkpoint and strip DDP/Lightning key prefixes.
+
+   Handles both raw ``state_dict`` files and Lightning checkpoint files that
+   store the state dict under a ``"state_dict"`` key.  Keys starting with
+   ``strip_prefix`` have that prefix removed so the dict can be passed
+   directly to ``model.load_state_dict()``.
+
+   :param path: Path to the ``.pth`` or ``.ckpt`` file.
+   :type path: Path | str
+   :param strip_prefix: Prefix to remove from each key.
+                        Defaults to ``"module."`` (DDP convention).
+   :type strip_prefix: str, optional
+
+   :returns: Cleaned state dict ready for ``model.load_state_dict()``.
+   :rtype: dict
+
+

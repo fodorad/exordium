@@ -1,0 +1,48 @@
+exordium.text.bert
+==================
+
+.. py:module:: exordium.text.bert
+
+.. autoapi-nested-parse::
+
+   BERT text encoding model wrapper.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.text.bert.BertWrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: BertWrapper(device_id: int = -1)
+
+   Bases: :py:obj:`exordium.text.base.TextModelWrapper`
+
+
+   BERT (bert-base-uncased) token-level encoder. Hidden size: 768.
+
+   Returns all token hidden states of shape ``(B, T, 768)``.  BERT is not a
+   sentence-transformer — it was not fine-tuned for semantic similarity, so
+   mean-pooling its outputs does not produce meaningful sentence embeddings.
+   Use the ``[CLS]`` token (index 0) for sequence-level tasks, or use a
+   dedicated sentence-transformer such as
+   :class:`~exordium.text.xml_roberta.XmlRobertaWrapper` instead.
+
+
+
+   .. py:method:: inference(inputs: dict[str, torch.Tensor]) -> torch.Tensor
+
+      Run BERT forward pass.
+
+      :param inputs: Tokenizer output dict on ``self.device``.
+
+      :returns: Token embeddings of shape ``(B, T, 768)``.
+
+
+

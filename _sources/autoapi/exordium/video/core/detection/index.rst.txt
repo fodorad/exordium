@@ -1,0 +1,899 @@
+exordium.video.core.detection
+=============================
+
+.. py:module:: exordium.video.core.detection
+
+.. autoapi-nested-parse::
+
+   Detection and tracking data structures.
+
+   All ``Detection.frame()`` methods return a ``torch.Tensor (3, H, W)`` uint8
+   **RGB** tensor (channel-first).  Visualization helpers accept both tensors and
+   numpy arrays and convert to BGR numpy internally before writing with cv2.
+
+   Bounding-box fields (``bb_xywh``, ``landmarks``) are always
+   ``torch.Tensor``; format-conversion functions in
+   :mod:`exordium.video.core.bb` handle them transparently.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.core.detection.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.core.detection.Detection
+   exordium.video.core.detection.DetectionFromImage
+   exordium.video.core.detection.DetectionFromVideo
+   exordium.video.core.detection.DetectionFromNp
+   exordium.video.core.detection.DetectionFromTorchTensor
+   exordium.video.core.detection.DetectionFactory
+   exordium.video.core.detection.FrameDetections
+   exordium.video.core.detection.VideoDetections
+   exordium.video.core.detection.Track
+   exordium.video.core.detection.Tracker
+   exordium.video.core.detection.IouTracker
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.core.detection.add_detections_to_frame
+   exordium.video.core.detection.save_detections_to_video
+   exordium.video.core.detection.save_track_target_to_images
+   exordium.video.core.detection.save_track_with_context_to_video
+   exordium.video.core.detection.visualize_detection
+   exordium.video.core.detection.visualize_detection_crop
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: Detection
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Abstract base class for a single face detection.
+
+
+   .. py:attribute:: frame_id
+      :type:  int
+
+      Zero-based index of the frame within its source.
+
+
+   .. py:attribute:: source
+      :type:  str | pathlib.Path | torch.Tensor
+
+      Origin of the detection — a file path, an in-memory numpy array, or a torch tensor.
+
+
+   .. py:attribute:: score
+      :type:  float
+
+      Detector confidence score in ``[0, 1]``.
+
+
+   .. py:attribute:: bb_xywh
+      :type:  torch.Tensor
+
+      Bounding box ``[x_min, y_min, width, height]`` as a ``(4,)`` long tensor.
+
+
+   .. py:attribute:: landmarks
+      :type:  torch.Tensor
+
+      Five facial keypoints as a ``(5, 2)`` long tensor of ``(x, y)`` pixel coords.
+
+
+   .. py:property:: bb_xyxy
+      :type: torch.Tensor
+
+
+      Bounding box in xyxy format.  Type mirrors ``bb_xywh``.
+
+
+   .. py:property:: bb_center
+      :type: torch.Tensor
+
+
+      Bounding box center ``[x, y]``.  Type mirrors ``bb_xywh``.
+
+
+   .. py:method:: crop(square: bool = False, extra_space: float = 1.0) -> torch.Tensor
+
+      Crop a region around this detection from the source frame.
+
+      For the square path delegates to
+      :func:`~exordium.video.core.bb.crop_mid` which computes a square
+      region centered on the bounding-box midpoint.  For the non-square path
+      delegates to :func:`~exordium.video.core.bb.crop_xyxy` which clips a
+      rectangular region to image bounds.
+
+      Returns a ``(3, H', W')`` uint8 RGB tensor.
+
+      :param square: If ``False`` (default), crop the detected bounding box
+                     exactly using :attr:`bb_xyxy`.  If ``True``, compute the
+                     bounding-box center and use ``max(w, h) * extra_space`` as
+                     the side length to produce a square crop.
+      :param extra_space: Scale multiplier for the square side length.  Only
+                          applies when ``square=True``; ignored for rectangular crops.
+                          ``1.0`` (default) = tight square, no padding.
+
+      :returns: ``(3, H', W')`` uint8 RGB torch tensor.
+
+      Examples::
+
+          crop = det.crop()                              # exact BB
+          crop = det.crop(square=True)                   # square, tight
+          crop = det.crop(square=True, extra_space=1.5)  # square + 50 % pad
+
+
+
+
+   .. py:method:: crop_landmarks(square: bool = False, extra_space: float = 1.0) -> torch.Tensor
+
+      Landmark coordinates projected into the :meth:`crop` coordinate space.
+
+      Returns the keypoints expressed relative to the top-left corner of the
+      region that :meth:`crop` would extract with the same arguments.  Use
+      these coordinates to overlay landmarks on the cropped image without
+      access to the original frame.
+
+      The parameters must match the :meth:`crop` call you intend to visualize::
+
+          crop_img = det.crop(square=True, extra_space=1.2)
+          lm       = det.crop_landmarks(square=True, extra_space=1.2)
+          # lm is correctly positioned inside crop_img
+
+      :param square: Must match the ``square`` argument passed to :meth:`crop`.
+                     Default: ``False``.
+      :param extra_space: Must match the ``extra_space`` argument passed to
+                          :meth:`crop`.  Default: ``1.0``.
+
+      :returns: ``(N, 2)`` ``torch.long`` tensor of ``(x, y)`` coordinates in
+                crop-local pixel space, where ``N`` is the number of landmarks
+                stored in :attr:`landmarks``.
+
+
+
+   .. py:method:: save_header() -> list[str]
+      :classmethod:
+
+
+      CSV column names for :meth:`save_record`.
+
+
+
+   .. py:method:: save_record() -> list[str]
+
+      Serialise to a flat list of strings for CSV export.
+
+      Only detections whose ``source`` is a file path (``str``) can be
+      round-tripped through CSV; in-memory sources are stored as ``None``.
+
+
+
+   .. py:method:: frame() -> torch.Tensor
+      :abstractmethod:
+
+
+      Load the source frame.
+
+      :returns: ``(3, H, W)`` uint8 **RGB** torch tensor (channel-first).
+
+
+
+   .. py:method:: frame_center() -> torch.Tensor
+      :abstractmethod:
+
+
+      Centre of the source frame in pixel coordinates.
+
+      :returns: ``(2,)`` long tensor ``[x, y]``.
+
+
+
+   .. py:method:: __eq__(other) -> bool
+
+      Return True if two detections are equal.
+
+
+
+.. py:class:: DetectionFromImage
+
+   Bases: :py:obj:`Detection`
+
+
+   Detection from a single image file on disk.
+
+   ``source`` is the path to the image.  ``frame()`` loads and returns it as
+   a ``(3, H, W)`` uint8 RGB tensor on the fly using
+   :func:`~exordium.video.core.io.image_to_tensor`.
+
+
+   .. py:attribute:: source
+      :type:  str | pathlib.Path
+
+      Path to the image file on disk.
+
+
+   .. py:method:: frame() -> torch.Tensor
+
+      Load the image file as a ``(3, H, W)`` uint8 RGB tensor.
+
+
+
+   .. py:method:: frame_center() -> torch.Tensor
+
+      Frame centre as ``(2,)`` long tensor ``[x, y]``.
+
+
+
+.. py:class:: DetectionFromVideo
+
+   Bases: :py:obj:`Detection`
+
+
+   Detection from a video file on disk.
+
+   ``source`` is the path to the video.  ``frame()`` loads the single frame
+   at ``frame_id`` on the fly using
+   :func:`~exordium.video.core.io.load_frames` (CPU decode, no GPU
+   round-trip) and returns it as a ``(3, H, W)`` uint8 RGB tensor.
+
+
+   .. py:attribute:: source
+      :type:  str | pathlib.Path
+
+      Path to the video file on disk.
+
+
+   .. py:method:: frame() -> torch.Tensor
+
+      Load ``frame_id`` from the video as a ``(3, H, W)`` uint8 RGB tensor.
+
+      Uses CPU-side torchcodec decoding; no numpy conversion.
+
+
+
+   .. py:method:: frame_center() -> torch.Tensor
+
+      Frame centre as ``(2,)`` long tensor ``[x, y]``.
+
+
+
+.. py:class:: DetectionFromNp
+
+   Bases: :py:obj:`Detection`
+
+
+   Detection from an in-memory numpy frame array.
+
+   ``source`` is an ``(H, W, C)`` uint8 **RGB** numpy array.
+   ``frame()`` converts it to a ``(3, H, W)`` uint8 RGB tensor without a
+   data copy (uses :func:`torch.from_numpy` + permute).
+
+
+   .. py:attribute:: source
+      :type:  numpy.ndarray
+
+      In-memory ``(H, W, C)`` uint8 RGB numpy array.
+
+
+   .. py:method:: frame() -> torch.Tensor
+
+      Return the in-memory frame as a ``(3, H, W)`` uint8 RGB tensor.
+
+
+
+   .. py:method:: frame_center() -> torch.Tensor
+
+      Frame centre as ``(2,)`` long tensor ``[x, y]``.
+
+
+
+.. py:class:: DetectionFromTorchTensor
+
+   Bases: :py:obj:`Detection`
+
+
+   Detection from an in-memory torch tensor frame.
+
+   ``source`` is a ``(3, H, W)`` uint8 **RGB** torch tensor (channel-first).
+   This is the preferred subclass for the fully tensor-native detection
+   pipeline (e.g. YOLO on GPU).
+
+
+   .. py:attribute:: source
+      :type:  torch.Tensor
+
+      In-memory ``(3, H, W)`` uint8 RGB torch tensor.
+
+
+   .. py:method:: frame() -> torch.Tensor
+
+      Return the in-memory ``(3, H, W)`` uint8 RGB tensor directly.
+
+
+
+   .. py:method:: frame_center() -> torch.Tensor
+
+      Frame centre as ``(2,)`` long tensor ``[x, y]``.
+
+
+
+.. py:class:: DetectionFactory
+
+   Factory for creating the appropriate :class:`Detection` subclass.
+
+   Routes creation based on the type of ``source``:
+
+   * ``torch.Tensor``         → :class:`DetectionFromTorchTensor`
+   * ``np.ndarray``           → :class:`DetectionFromNp`
+   * path with video suffix   → :class:`DetectionFromVideo`
+   * path with image suffix   → :class:`DetectionFromImage`
+
+
+
+   .. py:attribute:: VIDEO_EXTENSIONS
+
+      Supported video file extensions for routing to :class:`DetectionFromVideo`.
+
+
+   .. py:attribute:: IMAGE_EXTENSIONS
+
+      Supported image file extensions for routing to :class:`DetectionFromImage`.
+
+
+   .. py:method:: create_detection(**kwargs) -> Detection
+      :classmethod:
+
+
+      Create a Detection instance from keyword arguments.
+
+      :param \*\*kwargs: Must include all fields of :class:`Detection`.
+
+      :returns: Appropriate :class:`Detection` subclass instance.
+
+      :raises KeyError: If required fields are missing.
+      :raises ValueError: If the file extension is not supported or the source
+          type is unrecognised.
+
+
+
+.. py:class:: FrameDetections
+
+   Face detections for a single video frame.
+
+
+   .. py:property:: frame_id
+      :type: int
+
+
+      Frame index of all contained detections.
+
+
+   .. py:property:: source
+      :type: str | pathlib.Path | numpy.ndarray | torch.Tensor
+
+
+      Source of the contained detections.
+
+
+   .. py:method:: add_dict(detection: dict) -> FrameDetections
+
+      Create and append a :class:`Detection` from a keyword dict.
+
+
+
+   .. py:method:: add(detection: Detection) -> FrameDetections
+
+      Append an existing :class:`Detection` instance.
+
+
+
+   .. py:method:: __len__() -> int
+
+      Return the number of detections in this frame.
+
+
+
+   .. py:method:: __getitem__(idx: int) -> Detection
+
+      Return the detection at the given index.
+
+
+
+   .. py:method:: __iter__()
+
+      Iterate over detections in this frame.
+
+
+
+   .. py:method:: __eq__(other) -> bool
+
+      Return True if two FrameDetections instances are equal.
+
+
+
+   .. py:method:: get_detection_with_biggest_bb() -> Detection
+
+      Return the detection with the largest bounding-box side.
+
+
+
+   .. py:method:: get_detection_with_highest_score() -> Detection
+
+      Return the detection with the highest confidence score.
+
+
+
+   .. py:method:: save_records() -> list[list[str]]
+
+      Serialise all detections for CSV export.
+
+
+
+   .. py:method:: save(output_file: str | pathlib.Path) -> None
+
+      Write detections to a CSV file.
+
+      :param output_file: Destination path.
+
+
+
+   .. py:method:: load(input_file: str | pathlib.Path) -> FrameDetections
+
+      Load detections from a CSV file.
+
+      :param input_file: Source path.
+
+      :returns: Self (mutated in-place).
+
+
+
+.. py:class:: VideoDetections
+
+   Face detections for an entire video (collection of :class:`FrameDetections`).
+
+
+   .. py:method:: add(fdet: FrameDetections) -> VideoDetections
+
+      Append a non-empty :class:`FrameDetections`.
+
+
+
+   .. py:method:: merge(vdet: VideoDetections) -> VideoDetections
+
+      Merge all frame detections from another :class:`VideoDetections`.
+
+
+
+   .. py:method:: frame_ids() -> list[int]
+
+      Return the sorted list of frame indices with detections.
+
+
+
+   .. py:method:: get_frame_detection_with_frame_id(frame_id: int) -> FrameDetections
+
+      Return the :class:`FrameDetections` for a given frame index.
+
+
+
+   .. py:method:: __getitem__(index: int) -> FrameDetections
+
+      Return the FrameDetections at the given index.
+
+
+
+   .. py:method:: __len__() -> int
+
+      Return the number of frames with detections.
+
+
+
+   .. py:method:: __iter__()
+
+      Iterate over FrameDetections objects.
+
+
+
+   .. py:method:: __eq__(other) -> bool
+
+      Return True if two VideoDetections instances are equal.
+
+
+
+   .. py:method:: save(output_file: str | pathlib.Path) -> None
+
+      Write all detections to a CSV file.
+
+      :param output_file: Destination path.
+
+
+
+   .. py:method:: load(input_file: str | pathlib.Path) -> VideoDetections
+
+      Load detections from a CSV file.
+
+      :param input_file: Source path.
+
+      :returns: Self (mutated in-place).
+
+
+
+.. py:class:: Track(track_id: int = -1, detection: Detection | None = None)
+
+   A sequence of :class:`Detection` objects spanning multiple frames.
+
+   Represents a single face track produced by a :class:`Tracker`.
+
+
+   .. py:method:: frame_ids() -> list[int]
+
+      Sorted list of frame indices in this track.
+
+
+
+   .. py:method:: get_detection(frame_id: int) -> Detection
+
+      Return the :class:`Detection` at a specific frame index.
+
+
+
+   .. py:method:: add(detection: Detection) -> Track
+
+      Append a detection and keep the track sorted by frame index.
+
+
+
+   .. py:method:: merge(other: Track) -> Track
+
+      Merge all detections from another track into this one.
+
+
+
+   .. py:method:: is_started_earlier(other: Track) -> bool
+
+      Return ``True`` if this track starts before ``other``.
+
+
+
+   .. py:method:: frame_distance(other: Track) -> int
+
+      Gap in frames between this track and ``other``.
+
+      Returns 0 for overlapping tracks.
+
+
+
+   .. py:method:: last_detection() -> Detection
+
+      The last detection in the track (by frame index).
+
+
+
+   .. py:method:: first_detection() -> Detection
+
+      The first detection in the track (by frame index).
+
+
+
+   .. py:method:: sample(num: int = 5) -> list[Detection]
+
+      Randomly sample up to ``num`` detections from the track.
+
+      :param num: Maximum number of detections to return.
+
+      :returns: Randomly sampled detections (all of them if ``len < num``).
+
+
+
+   .. py:method:: center() -> numpy.ndarray
+
+      Mean centre point of all detections in the track.
+
+      :returns: ``(2,)`` float numpy array ``[x, y]``.
+
+
+
+   .. py:method:: bb_size(extra_percent: float = 0.2) -> int
+
+      Largest bounding-box dimension across all detections, with padding.
+
+      :param extra_percent: Fractional padding to add (e.g. ``0.2`` → +20 %).
+
+      :returns: Integer pixel size.
+
+
+
+   .. py:method:: __len__() -> int
+
+      Return the number of detections in this track.
+
+
+
+   .. py:method:: __getitem__(index: int) -> Detection
+
+      Return the detection at the given index.
+
+
+
+   .. py:method:: __iter__()
+
+      Iterate over detections in this track.
+
+
+
+   .. py:method:: __str__() -> str
+
+      Return a human-readable string representation of this track.
+
+
+
+   .. py:method:: save(output_file: str | pathlib.Path) -> None
+
+      Write track detections to a CSV file.
+
+      :param output_file: Destination path.
+
+
+
+   .. py:method:: load(input_file: str | pathlib.Path) -> Track
+
+      Load track detections from a CSV file.
+
+      :param input_file: Source path.
+
+      :returns: Self (mutated in-place).
+
+
+
+.. py:class:: Tracker(verbose: bool = False)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Abstract base class for multi-object face trackers.
+
+   Implements IoU-based frame-to-track assignment via :meth:`label` and
+   optional track merging via :meth:`merge`.  Subclasses implement the
+   :meth:`merge_rule`.
+
+
+   .. py:property:: selected_tracks
+      :type: dict[int, Track]
+
+
+      Active track selection, or all tracks if none selected.
+
+
+   .. py:method:: label(detections: VideoDetections, min_score: float = 0.7, max_lost: int = 30, iou_threshold: float = 0.2) -> Tracker
+
+      Assign per-frame detections to persistent tracks.
+
+      Iterates over all :class:`FrameDetections` in ``detections`` and
+      greedily assigns each detection to the open track whose last detection
+      has the highest IoU, subject to ``max_lost`` and ``iou_threshold``
+      constraints.  Detections below ``min_score`` are skipped.  A new track
+      is started whenever no suitable candidate is found.
+
+      :param detections: Per-frame detection results.
+      :param min_score: Minimum detection confidence to consider.
+      :param max_lost: Maximum frame gap to keep a track open.
+      :param iou_threshold: Minimum IoU required to continue a track.
+
+      :returns: Self (tracks stored in :attr:`tracks`).
+
+
+
+   .. py:method:: merge_rule(track_1: Track, track_2: Track) -> tuple[bool, Track, Track]
+      :abstractmethod:
+
+
+      Determine whether two tracks should be merged.
+
+      :param track_1: First track.
+      :param track_2: Second track.
+
+      :returns: Tuple ``(should_merge, keep_track, drop_track)``.
+
+
+
+   .. py:method:: merge() -> Tracker
+
+      Merge tracks that satisfy :meth:`merge_rule`.
+
+      :returns: Self (tracks updated in-place).
+
+
+
+   .. py:method:: select_long_tracks(min_length: int = 250) -> Tracker
+
+      Select tracks with at least ``min_length`` detections.
+
+      :param min_length: Minimum number of detections.
+
+      :returns: Self with ``_selected_tracks`` updated.
+
+
+
+   .. py:method:: select_topk_long_tracks(top_k: int = 1) -> Tracker
+
+      Select the ``top_k`` longest tracks.
+
+      :param top_k: Number of tracks to keep.
+
+      :returns: Self with ``_selected_tracks`` updated.
+
+
+
+   .. py:method:: select_topk_biggest_bb_tracks(top_k: int = 1) -> Tracker
+
+      Select the ``top_k`` tracks with the largest average bounding boxes.
+
+      :param top_k: Number of tracks to keep.
+
+      :returns: Self with ``_selected_tracks`` updated.
+
+
+
+   .. py:method:: get_center_track() -> Track | None
+
+      Return the track whose mean position is closest to the frame centre.
+
+      :returns: Closest :class:`Track`, or ``None`` if no tracks are selected.
+
+
+
+.. py:class:: IouTracker(verbose: bool = False, max_lost: int = -1, iou_threshold: float = 0.2)
+
+   Bases: :py:obj:`Tracker`
+
+
+   IoU-based tracker for faces without large inter-frame displacements.
+
+   :param verbose: Show tqdm progress bar during labelling.
+   :param max_lost: Maximum frame gap to keep a track open.  ``-1`` means
+                    unlimited.
+   :param iou_threshold: Minimum IoU to continue an existing track.
+
+
+   .. py:method:: merge_rule(track_1: Track, track_2: Track) -> tuple[bool, Track, Track]
+
+      Merge two tracks if they satisfy the max-lost and IoU constraints.
+
+      :param track_1: First track.
+      :param track_2: Second track.
+
+      :returns: ``(should_merge, keep_track, drop_track)`` where the earlier track
+                is always kept.
+
+
+
+.. py:function:: add_detections_to_frame(frame_detections: FrameDetections, frame: numpy.ndarray | torch.Tensor | None = None) -> numpy.ndarray
+
+   Overlay detection bounding boxes and scores onto a video frame.
+
+   :param frame_detections: Detections for a single frame.
+   :param frame: Image to draw on.  Accepted formats:
+
+                 * ``None`` — loaded from the first detection via
+                   :meth:`~Detection.frame` (returns RGB tensor, converted here).
+                 * ``np.ndarray (H, W, C)`` uint8 — assumed **BGR** (cv2 convention).
+                 * ``torch.Tensor (3, H, W)`` uint8 **RGB** — converted to BGR numpy.
+
+   :returns: ``(H, W, C)`` BGR numpy array with detection annotations.
+
+
+.. py:function:: save_detections_to_video(video_detections: VideoDetections, frame_dir: str | pathlib.Path, output_dir: str | pathlib.Path, verbose: bool = False) -> None
+
+   Save annotated frame images with detection overlays to a directory.
+
+   Source frames are read from ``frame_dir`` via ``cv2.imread`` (BGR numpy),
+   annotated with :func:`add_detections_to_frame`, and written as PNG files.
+
+   :param video_detections: Per-frame detection results.
+   :param frame_dir: Directory containing source frames named with zero-padded
+                     integer stems (e.g. ``000000.png``).
+   :param output_dir: Directory to write annotated PNG images to.
+   :param verbose: Show a tqdm progress bar.
+
+
+.. py:function:: save_track_target_to_images(track: Track, output_dir: str | pathlib.Path, bb_size: int = 224, fps: int = 30, sample_every_n: int = 1, save_video: bool = False, verbose: bool = False) -> None
+
+   Save cropped face images for each detection in a track.
+
+   Crops are produced by :meth:`~Detection.crop` (returns RGB tensor),
+   then resized and saved as BGR PNG files via cv2.
+
+   :param track: Track containing the face detections.
+   :param output_dir: Directory to write cropped PNG images to.
+   :param bb_size: Target side length to resize each crop.  ``-1`` skips
+                   resizing.
+   :param fps: Frame rate for the optional output video.
+   :param sample_every_n: Save every n-th detection.
+   :param save_video: Also assemble saved frames into an MP4.
+   :param verbose: Show a tqdm progress bar.
+
+
+.. py:function:: save_track_with_context_to_video(track: Track, frame_dir: str | pathlib.Path, output_dir: str | pathlib.Path, fps: int = 30, sample_every_n: int = 1, save_video: bool = False, verbose: bool = False) -> None
+
+   Save full-frame images annotated with the track bounding box and score.
+
+   Source frames are loaded from ``frame_dir`` via cv2 (BGR numpy).
+
+   :param track: Track containing the face detections.
+   :param frame_dir: Directory containing source frames named with zero-padded
+                     integer stems.
+   :param output_dir: Directory to write annotated PNG images to.
+   :param fps: Frame rate for the optional output video.
+   :param sample_every_n: Process every n-th frame.
+   :param save_video: Also assemble saved frames into an MP4.
+   :param verbose: Show a tqdm progress bar.
+
+
+.. py:function:: visualize_detection(detection: Detection, output_path: str | pathlib.Path | None = None, show_indices: bool = False) -> numpy.ndarray
+
+   Visualize the landmarks of a single detection on its source frame.
+
+   Landmarks are drawn in **full-image** pixel coordinates, so the returned
+   image shows the entire source frame with keypoints overlaid.
+
+   :param detection: Detection to visualize.
+   :param output_path: Path to save the output image.  ``None`` skips saving.
+   :param show_indices: Draw landmark index numbers next to each point.
+
+   :returns: ``(H, W, C)`` RGB numpy array with landmarks drawn on it.
+
+
+.. py:function:: visualize_detection_crop(detection: Detection, square: bool = True, extra_space: float = 1.0, output_path: str | pathlib.Path | None = None, show_indices: bool = False, radius: int = 3, color: tuple[int, int, int] = (0, 255, 0)) -> numpy.ndarray
+
+   Visualize the landmarks of a single detection on its face crop.
+
+   Unlike :func:`visualize_detection` (which draws on the full source frame),
+   this function draws the keypoints on the face crop returned by
+   :meth:`~Detection.crop`.  The landmark coordinates are automatically
+   projected into crop-local space via :meth:`~Detection.crop_landmarks`.
+
+   Example::
+
+       from exordium.video.core.detection import visualize_detection_crop
+       import cv2
+
+       crop_vis = visualize_detection_crop(det, square=True, show_indices=True)
+       # crop_vis is (H', W', 3) RGB numpy array
+       cv2.imshow("face", cv2.cvtColor(crop_vis, cv2.COLOR_RGB2BGR))
+
+   :param detection: Detection to visualize.
+   :param square: If ``True`` (default), produce a square crop centered on the
+                  bounding-box midpoint.  If ``False``, use the original bounding-box
+                  aspect ratio.
+   :param extra_space: Multiplier applied to the bounding-box side(s).
+                       ``1.0`` (default) = tight crop.
+   :param output_path: Path to save the output image.  ``None`` skips saving.
+   :param show_indices: Draw landmark index numbers next to each point.
+   :param radius: Circle radius for each keypoint in pixels.  Default: 3.
+   :param color: BGR/RGB color tuple for the keypoints.  Default: green
+                 ``(0, 255, 0)``.
+
+   :returns: ``(H', W', 3)`` RGB numpy array — the face crop with landmarks drawn.
+
+

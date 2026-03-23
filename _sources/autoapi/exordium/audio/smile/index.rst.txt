@@ -1,0 +1,60 @@
+exordium.audio.smile
+====================
+
+.. py:module:: exordium.audio.smile
+
+.. autoapi-nested-parse::
+
+   OpenSmile feature extractor wrapper.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.audio.smile.OpensmileWrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: OpensmileWrapper(feature_set: str = 'egemaps', feature_level: str = 'lld')
+
+   Extract acoustic features using OpenSmile.
+
+   Wrapper for OpenSmile feature extraction with support for multiple
+   predefined feature sets and levels.
+
+   OpenSmile wrapper class.
+
+   :param feature_set: Predefined feature set. Supported values are 'egemaps' and 'compare'.
+   :param feature_level: Predefined feature level. Supported values are 'lld' and 'functionals'.
+
+   :raises ValueError: If feature_set or feature_level is invalid.
+
+
+   .. py:method:: audio_to_feature(audio_path: pathlib.Path | str, **_kwargs) -> numpy.ndarray
+
+      Extract OpenSmile features from audio file.
+
+      :param audio_path: Path to audio file.
+      :param \*\*kwargs: Additional arguments (unused, for decorator compatibility).
+
+      :returns: Feature array from OpenSmile processing.
+
+
+
+   .. py:method:: __call__(waveform: pathlib.Path | str | numpy.ndarray | torch.Tensor, sr: int = 16000, return_tensors: str = 'npy') -> numpy.ndarray | torch.Tensor
+
+      Extract OpenSmile features from waveform or audio file.
+
+      :param waveform: Path to audio file or audio signal array.
+      :param sr: Sample rate in Hz (used if waveform is array).
+      :param return_tensors: Return format - "npy" for numpy array, "pt" for torch tensor.
+
+      :returns: Feature array as numpy array or torch tensor based on return_tensors.
+
+
+

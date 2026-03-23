@@ -1,0 +1,111 @@
+exordium.audio.wavlm
+====================
+
+.. py:module:: exordium.audio.wavlm
+
+.. autoapi-nested-parse::
+
+   WavLM speech encoding model wrapper.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.audio.wavlm.WAVLM_SAMPLE_RATE
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.audio.wavlm.WavlmWrapper
+
+
+Module Contents
+---------------
+
+.. py:data:: WAVLM_SAMPLE_RATE
+   :value: 16000
+
+
+   Required audio sample rate for all WavLM variants (16 000 Hz).
+
+.. py:class:: WavlmWrapper(device_id: int = -1, model_name: str = 'base+')
+
+   Bases: :py:obj:`exordium.audio.base.AudioModelWrapper`
+
+
+   Wrapper for WavLM audio feature extraction via HuggingFace Transformers.
+
+   Extracts layer-wise hidden states using Microsoft's WavLM model.
+   Supports base, base+, and large model variants.
+
+   :param device_id: GPU device ID. Use -1 for CPU.
+   :param model_name: Model variant — ``"base"``, ``"base+"``, or ``"large"``.
+                      Defaults to ``"base+"``.
+
+   :raises ValueError: If ``model_name`` is not one of the supported variants.
+
+   Initialize with device setup.
+
+   :param device_id: GPU device ID. Use -1 for CPU.
+
+
+   .. py:method:: __call__(waveform: numpy.ndarray | torch.Tensor) -> list[torch.Tensor]
+
+      Extract hidden-state features from a waveform.
+
+      :param waveform: Audio signal of shape ``(T,)`` or ``(B, T)``
+                       at ``WAVLM_SAMPLE_RATE`` Hz.
+
+      :returns: List of hidden-state tensors, one per transformer layer,
+                each of shape ``(B, T', hidden_size)``.
+
+      :raises ValueError: If waveform has an invalid shape (not 1D or 2D).
+
+
+
+   .. py:method:: audio_to_feature(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, **_kwargs) -> list[numpy.ndarray]
+
+      Extract WavLM features from a single audio path or waveform.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+                    If a path is given, audio is loaded and resampled to 16 kHz.
+      :param \*\*kwargs: Passed to :func:`~exordium.utils.decorator.load_or_create`
+                         (``output_path``, ``overwrite``).
+
+      :returns: List of layer features as numpy arrays,
+                each of shape ``(T, hidden_size)``.
+
+
+
+   .. py:method:: batch_audio_to_features(audios: list[pathlib.Path | str | numpy.ndarray | torch.Tensor], **_kwargs) -> list[list[numpy.ndarray]]
+
+      Extract WavLM features from multiple audio inputs in one forward pass.
+
+      Variable-length inputs are zero-padded to the longest waveform.
+      Output frames that correspond to padding are trimmed.
+
+      :param audios: List of audio file paths, numpy arrays, or torch tensors.
+
+      :returns: List of per-file features. Each element is a list of layer numpy
+                arrays, each of shape ``(T_i, hidden_size)``.
+
+
+
+   .. py:method:: inference(waveform: numpy.ndarray | torch.Tensor) -> list[torch.Tensor]
+
+      Extract features in inference mode.
+
+      :param waveform: Audio signal of shape ``(T,)`` or ``(B, T)``.
+
+      :returns: List of hidden-state tensors, each of shape ``(B, T', hidden_size)``.
+
+      :raises ValueError: If waveform has an invalid shape.
+
+
+

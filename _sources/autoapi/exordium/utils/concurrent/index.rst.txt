@@ -1,0 +1,50 @@
+exordium.utils.concurrent
+=========================
+
+.. py:module:: exordium.utils.concurrent
+
+.. autoapi-nested-parse::
+
+   Concurrent execution utilities.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.utils.concurrent.processes_eval
+   exordium.utils.concurrent.threads_eval
+
+
+Module Contents
+---------------
+
+.. py:function:: processes_eval(fcn: collections.abc.Callable[Ellipsis, Any], data: collections.abc.Iterable[collections.abc.Iterable[Any]], use_mp: bool = True, verbose: bool = False) -> list
+
+   Eval function using multiple processes.
+
+   :param fcn: function.
+   :type fcn: Callable[..., Any]
+   :param data: list of function args.
+   :type data: Iterable[Iterable[Any]]
+   :param use_mp: use multiprocessing. Defaults to True.
+   :type use_mp: bool, optional
+   :param verbose: show progress bar. Defaults to False.
+   :type verbose: bool, optional
+
+   :returns: return values of fcn.
+   :rtype: list
+
+
+.. py:function:: threads_eval(fcn: collections.abc.Callable[Ellipsis, Any], data: collections.abc.Sequence[Any], *args, **kwargs) -> None
+
+   Eval function using multiple threads.
+
+   :param fcn: Function to evaluate.
+   :param data: Data to be split between threads.
+   :param \*args: Additional positional arguments passed to fcn.
+   :param \*\*kwargs: Additional keyword arguments passed to fcn.
+
+

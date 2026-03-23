@@ -1,0 +1,334 @@
+exordium.video.face.gaze.base
+=============================
+
+.. py:module:: exordium.video.face.gaze.base
+
+.. autoapi-nested-parse::
+
+   Gaze estimation base class and shared utility functions.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.base.GazeWrapper
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.base.rotate_vector
+   exordium.video.face.gaze.base.pitchyaw_to_pixel
+   exordium.video.face.gaze.base.vector_to_pitchyaw
+   exordium.video.face.gaze.base.gazeto3d
+   exordium.video.face.gaze.base.spherical2cartesial
+   exordium.video.face.gaze.base.compute_angular_error
+   exordium.video.face.gaze.base.softmax_temperature
+   exordium.video.face.gaze.base.draw_vector
+   exordium.video.face.gaze.base.convert_rotate_draw_vector
+   exordium.video.face.gaze.base.convert_draw_vector
+   exordium.video.face.gaze.base.looking_at_camera_yaw_pitch
+   exordium.video.face.gaze.base.looking_at_camera_xy
+
+
+Module Contents
+---------------
+
+.. py:function:: rotate_vector(xy: tuple[float, float] | numpy.ndarray, rotation_degree: float) -> tuple[float, float]
+
+   Rotate a 2D gaze vector by an angle.
+
+   :param xy: Vector represented as XY coordinates, shape ``(2,)``.
+   :param rotation_degree: Rotation in degrees (counter-clockwise).
+
+   :returns: Rotated ``(x, y)`` tuple.
+
+
+.. py:function:: pitchyaw_to_pixel(pitch: float, yaw: float, length: float = 1.0) -> tuple[float, float]
+
+   Convert gaze pitch and yaw angles to a 2D XY direction vector.
+
+   :param pitch: Pitch angle (vertical gaze) in radians.
+   :param yaw: Yaw angle (horizontal gaze) in radians.
+   :param length: Scale factor applied to the unit vector. Defaults to ``1.0``.
+
+   :returns: ``(dx, dy)`` direction tuple.
+
+
+.. py:function:: vector_to_pitchyaw(vectors: torch.Tensor | numpy.ndarray) -> torch.Tensor
+
+   Convert normalised 3D gaze vectors to ``(pitch, yaw)`` angles in radians.
+
+   :param vectors: Gaze vectors of shape ``(N, 3)`` — torch tensor or numpy array.
+
+   :returns: Tensor of shape ``(N, 2)`` containing ``(pitch, yaw)`` in radians.
+
+
+.. py:function:: gazeto3d(gaze: numpy.ndarray) -> numpy.ndarray
+
+   Convert ``(pitch, yaw)`` angles to a 3D unit vector.
+
+   :param gaze: Array of shape ``(2,)`` containing ``(pitch, yaw)`` in radians.
+
+   :returns: 3D unit vector of shape ``(3,)``.
+
+   :raises ValueError: If ``gaze`` does not have shape ``(2,)``.
+
+
+.. py:function:: spherical2cartesial(x: torch.Tensor) -> torch.Tensor
+
+   Convert spherical ``(pitch, yaw)`` angles to 3D Cartesian unit vectors.
+
+   :param x: Tensor of shape ``(N, 2)`` containing ``(pitch, yaw)`` in radians.
+
+   :returns: Tensor of shape ``(N, 3)`` containing ``(x, y, z)`` unit vectors.
+
+
+.. py:function:: compute_angular_error(input: torch.Tensor, target: torch.Tensor) -> torch.Tensor
+
+   Compute mean angular error between predicted and target gaze directions.
+
+   :param input: Predicted gaze angles of shape ``(N, 2)`` in radians ``(pitch, yaw)``.
+   :param target: Ground-truth gaze angles of shape ``(N, 2)`` in radians ``(pitch, yaw)``.
+
+   :returns: Scalar mean angular error in degrees.
+
+
+.. py:function:: softmax_temperature(tensor: torch.Tensor, temperature: float) -> torch.Tensor
+
+   Apply temperature-scaled softmax along dimension 1.
+
+   :param tensor: Input logits of shape ``(N, C)``.
+   :param temperature: Scaling factor. Values < 1 sharpen; values > 1 flatten.
+
+   :returns: Temperature-scaled softmax probabilities of shape ``(N, C)``.
+
+
+.. py:function:: draw_vector(image: numpy.ndarray | torch.Tensor, origin, end_point) -> numpy.ndarray | torch.Tensor
+
+   Draw a gaze arrow onto an image.
+
+   Accepts ``(H, W, 3)`` uint8 RGB numpy arrays or ``(3, H, W)`` uint8
+   RGB torch tensors; returns the same type.
+
+   :param image: RGB image — ``np.ndarray (H, W, 3)`` or
+                 ``torch.Tensor (3, H, W)`` uint8.
+   :param origin: Arrow origin as XY pixel coordinates ``(x, y)``.
+   :param end_point: Arrow tip offset as XY ``(dx, dy)``.  The actual tip
+                     is drawn at ``origin + end_point``.
+
+   :returns: Copy of the image with the arrow drawn in red, same type as input.
+
+
+.. py:function:: convert_rotate_draw_vector(image: numpy.ndarray | torch.Tensor, yaw: float, pitch: float, rotation_degree: float, origin, length: float = 400) -> numpy.ndarray | torch.Tensor
+
+   Convert gaze angles to XY, rotate, then draw onto an image.
+
+   Accepts ``(H, W, 3)`` uint8 RGB numpy arrays or ``(3, H, W)`` uint8
+   RGB torch tensors; returns the same type.
+
+   :param image: RGB image — ``np.ndarray (H, W, 3)`` or
+                 ``torch.Tensor (3, H, W)`` uint8.
+   :param yaw: Yaw angle in radians.
+   :param pitch: Pitch angle in radians.
+   :param rotation_degree: Degrees to rotate the gaze vector (for roll correction).
+   :param origin: Arrow origin as XY pixel coordinates.
+   :param length: Arrow length in pixels. Defaults to ``400``.
+
+   :returns: Copy of the image with the rotated gaze arrow, same type as input.
+
+
+.. py:function:: convert_draw_vector(image: numpy.ndarray | torch.Tensor, yaw: float, pitch: float, origin, length: float = 200) -> numpy.ndarray | torch.Tensor
+
+   Convert gaze angles to XY and draw onto an image.
+
+   Accepts ``(H, W, 3)`` uint8 RGB numpy arrays or ``(3, H, W)`` uint8
+   RGB torch tensors; returns the same type.
+
+   :param image: RGB image — ``np.ndarray (H, W, 3)`` or
+                 ``torch.Tensor (3, H, W)`` uint8.
+   :param yaw: Yaw angle in radians.
+   :param pitch: Pitch angle in radians.
+   :param origin: Arrow origin as XY pixel coordinates.
+   :param length: Arrow length in pixels. Defaults to ``200``.
+
+   :returns: Copy of the image with the gaze arrow, same type as input.
+
+
+.. py:function:: looking_at_camera_yaw_pitch(yaw: float, pitch: float, thr: float = 0.5) -> bool
+
+   Check whether a gaze direction points toward the camera.
+
+   :param yaw: Yaw angle in radians.
+   :param pitch: Pitch angle in radians.
+   :param thr: Distance threshold in normalised gaze space. Defaults to ``0.5``.
+
+   :returns: ``True`` if the gaze is directed at the camera.
+
+
+.. py:function:: looking_at_camera_xy(xy: tuple[float, float] | numpy.ndarray, thr: float = 0.5) -> bool
+
+   Check whether a 2D gaze vector points toward the camera.
+
+   :param xy: 2D gaze vector ``(x, y)``.
+   :param thr: Magnitude threshold. Defaults to ``0.5``.
+
+   :returns: ``True`` if the L2 norm of ``xy`` is less than ``thr``.
+
+
+.. py:class:: GazeWrapper
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Abstract base class for gaze estimation wrappers.
+
+   Subclasses must implement :meth:`preprocess`, :meth:`inference`, and
+   :meth:`postprocess`.  The shared :meth:`__call__`, :meth:`predict`,
+   :meth:`looking_at_camera`, and :meth:`visualize` are provided here so
+   that :class:`~exordium.video.face.gaze.l2csnet.L2csNetWrapper` and
+   :class:`~exordium.video.face.gaze.unigaze.UnigazeWrapper` are
+   interchangeable.
+
+   Supported input types for :meth:`__call__` and :meth:`predict`:
+
+   * ``torch.Tensor`` — ``(C, H, W)`` or ``(B, C, H, W)`` uint8 RGB; fastest
+     path, no copies until device transfer.
+   * ``np.ndarray`` — ``(H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB.
+   * ``Sequence[np.ndarray]`` — list of ``(H, W, 3)`` uint8 arrays.
+   * ``Sequence[str | Path]`` — list of image file paths.
+
+   Design contract:
+
+   * :meth:`preprocess` — convert any input to a model-ready float tensor on
+     ``self.device``.
+   * :meth:`inference` — model forward pass **plus** all output conversion
+     (softmax, bin mapping, unit conversion); returns ``(yaw, pitch)`` in
+     radians on ``self.device``.
+   * :meth:`__call__` — chains the two above under ``torch.inference_mode``;
+     returns ``(yaw, pitch)`` tensors.
+   * :meth:`predict` — same as :meth:`__call__` but returns numpy arrays;
+     accepts an optional ``roll_angles`` list for head-roll correction.
+
+
+
+   .. py:attribute:: device
+      :type:  torch.device
+
+      Torch device used for model inference (CPU or GPU).
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+      :abstractmethod:
+
+
+      Convert any supported input to a model-ready tensor on ``self.device``.
+
+      Call :meth:`_to_uint8_tensor` first to normalise the input type, then
+      apply model-specific resize and normalisation as tensor operations.
+
+      :param frames: Any supported input (see class docstring).
+
+      :returns: Preprocessed float tensor on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]
+      :abstractmethod:
+
+
+      Run the model and return ``(yaw, pitch)`` angles in radians.
+
+      Receives a preprocessed float tensor from :meth:`preprocess`, runs
+      the model forward pass, converts the raw output to angles, and
+      returns the final result.  All conversion logic (softmax, bin
+      mapping, dict extraction, unit conversion) belongs here.
+
+      :param tensor: Float tensor of shape ``(B, 3, H, W)`` on ``self.device``,
+                     already resized and normalised by :meth:`preprocess`.
+
+      :returns: Tuple of ``(yaw, pitch)`` tensors each of shape ``(B,)`` in
+                radians on ``self.device``.
+
+
+
+   .. py:method:: __call__(frames) -> tuple[torch.Tensor, torch.Tensor]
+
+      Preprocess and run inference, returning gaze tensors.
+
+      :param frames: Any supported input (see class docstring).
+
+      :returns: Tuple of ``(yaw, pitch)`` tensors each of shape ``(B,)`` in
+                radians on ``self.device``.
+
+
+
+   .. py:method:: predict(frames, roll_angles: collections.abc.Sequence[float] | None = None) -> tuple[torch.Tensor, torch.Tensor]
+
+      Predict gaze angles with optional roll correction, returning tensors.
+
+      When ``roll_angles`` is given each face is rotated by ``-roll`` on
+      ``self.device`` before inference so no numpy roundtrip is needed.
+
+      :param frames: Any supported input (see class docstring).
+      :param roll_angles: Per-face roll angles in degrees.  Each face is
+                          rotated by ``-roll`` to align upright before inference.
+                          ``None`` skips correction. Defaults to ``None``.
+
+      :returns: Tuple of ``(yaw, pitch)`` tensors each of shape ``(B,)``
+                in radians on ``self.device``.
+
+
+
+   .. py:method:: looking_at_camera(yaw: torch.Tensor | numpy.ndarray, pitch: torch.Tensor | numpy.ndarray, thr: float = 0.3) -> torch.Tensor
+      :staticmethod:
+
+
+      Determine whether each face is looking at the camera.
+
+      :param yaw: Yaw angles in radians, shape ``(B,)`` — tensor or numpy array.
+      :param pitch: Pitch angles in radians, shape ``(B,)`` — numpy array or tensor.
+      :param thr: Angle magnitude threshold in radians.  Smaller is stricter.
+                  Defaults to ``0.3``.
+
+      :returns: Boolean tensor of shape ``(B,)``.
+
+
+
+   .. py:method:: visualize(faces, yaw: numpy.ndarray | torch.Tensor, pitch: numpy.ndarray | torch.Tensor, roll_angles: collections.abc.Sequence[float] | None = None, thr: float = 0.3, output_path: str | pathlib.Path | None = None) -> list[numpy.ndarray] | list[torch.Tensor]
+      :staticmethod:
+
+
+      Draw gaze vectors on face crops.
+
+      Accepts any supported face input (tensor, ndarray, list of images or
+      paths).  For each face draws:
+
+      * A red outer circle for the maximum gaze magnitude.
+      * A green inner circle for the looking-at-camera threshold.
+      * A red arrow for the gaze direction (rotated back into the original
+        orientation when ``roll_angles`` are supplied).
+
+      :param faces: Any input accepted by :meth:`_to_uint8_tensor` — uint8
+                    ``(B, 3, H, W)`` tensor, ``(B, H, W, 3)`` ndarray, or a list
+                    of images / file paths.
+      :param yaw: Yaw angles in radians, shape ``(B,)`` — tensor or numpy.
+      :param pitch: Pitch angles in radians, shape ``(B,)`` — tensor or numpy.
+      :param roll_angles: Per-face roll angles in degrees.  The gaze arrow is
+                          rotated back by ``+roll`` to account for the upright
+                          alignment done before inference.  ``None`` means no rotation.
+      :param thr: Threshold fraction for the inner circle radius. Defaults to
+                  ``0.3``.
+      :param output_path: Path to save a grid of annotated faces (numpy/cv2
+                          write).  ``None`` skips saving.
+
+      :returns: List of annotated RGB images — ``(3, H, W)`` uint8 tensors when the
+                input was a tensor batch, ``(H, W, 3)`` uint8 numpy arrays otherwise.
+
+
+

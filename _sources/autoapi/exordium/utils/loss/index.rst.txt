@@ -1,0 +1,54 @@
+exordium.utils.loss
+===================
+
+.. py:module:: exordium.utils.loss
+
+.. autoapi-nested-parse::
+
+   Loss function utilities.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.utils.loss.bell_l2_l1_loss
+   exordium.utils.loss.ecl1
+
+
+Module Contents
+---------------
+
+.. py:function:: bell_l2_l1_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor
+
+   Bell + L2 + L1 loss.
+
+   :param y_pred: prediction of shape (N, M).
+   :type y_pred: torch.Tensor
+   :param y_true: ground truth of shape (N, M).
+   :type y_true: torch.Tensor
+
+   :returns: scalar loss value
+   :rtype: torch.Tensor
+
+
+.. py:function:: ecl1(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor
+
+   Error Consistent MAE loss function.
+
+   Implementation is based on paper:
+       Süleyman Aslan, Uğur Güdükbay, Hamdi Dibeklioğlu; Multimodal assessment of apparent
+       personality using feature attention and error consistency constraint,
+       Image and Vision Computing, Volume 110, 104163, 2021
+
+   :param y_pred: prediction of shape (N, M).
+   :type y_pred: torch.Tensor
+   :param y_true: ground truth of shape (N, M).
+   :type y_true: torch.Tensor
+
+   :returns: scalar loss value.
+   :rtype: torch.Tensor
+
+

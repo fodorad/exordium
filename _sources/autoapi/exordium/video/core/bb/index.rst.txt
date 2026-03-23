@@ -1,0 +1,217 @@
+exordium.video.core.bb
+======================
+
+.. py:module:: exordium.video.core.bb
+
+.. autoapi-nested-parse::
+
+   Bounding box utility functions for format conversion, cropping and IoU computation.
+
+   Tensor format conventions
+   --------------------------
+   * ``torch.Tensor`` images: shape ``(C, H, W)`` uint8 RGB — **channel-first**.
+   * ``np.ndarray`` images:   shape ``(H, W, C)`` uint8 RGB — **channel-last**.
+
+   Bounding box format notation
+   ------------------------------
+   * ``xyxy``  — ``[x_min, y_min, x_max, y_max]`` pixel coords (top-left / bottom-right).
+   * ``xywh``  — ``[x_min, y_min, width, height]``.
+   * ``midwh`` — ``[x_center, y_center, width, height]``.
+
+   All format-conversion functions are **type-preserving**: a numpy input returns
+   numpy, a torch tensor input returns a torch tensor of the same device.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.core.bb.crop_mid
+   exordium.video.core.bb.crop_xyxy
+   exordium.video.core.bb.center_crop
+   exordium.video.core.bb.apply_10_crop
+   exordium.video.core.bb.iou_xywh
+   exordium.video.core.bb.iou_xyxy
+   exordium.video.core.bb.xyxy2xywh
+   exordium.video.core.bb.xywh2xyxy
+   exordium.video.core.bb.midwh2xywh
+   exordium.video.core.bb.xywh2midwh
+   exordium.video.core.bb.xyxy2full
+   exordium.video.core.bb.visualize_bb
+
+
+Module Contents
+---------------
+
+.. py:function:: crop_mid(image: numpy.ndarray | torch.Tensor, mid: numpy.ndarray | torch.Tensor, bb_size: int) -> numpy.ndarray | torch.Tensor
+
+   Crop a square region from an image using a center point.
+
+   Input type is preserved: numpy in → numpy out, tensor in → tensor out.
+
+   :param image: ``(H, W, C)`` uint8 RGB numpy array **or** ``(C, H, W)`` uint8
+                 RGB torch tensor.
+   :param mid: Center point ``[x, y]`` of shape ``(2,)``.
+   :param bb_size: Side length of the square crop in pixels.
+
+   :returns: Cropped image in the same format as the input, clipped to image bounds.
+
+
+.. py:function:: crop_xyxy(image: numpy.ndarray | torch.Tensor, bb_xyxy: numpy.ndarray | torch.Tensor) -> numpy.ndarray | torch.Tensor
+
+   Crop a region from an image using xyxy bounding box coordinates.
+
+   Input type is preserved: numpy in → numpy out, tensor in → tensor out.
+
+   :param image: ``(H, W, C)`` uint8 RGB numpy array **or** ``(C, H, W)`` uint8
+                 RGB torch tensor.
+   :param bb_xyxy: Bounding box ``[x_min, y_min, x_max, y_max]`` of shape ``(4,)``.
+
+   :returns: Cropped image in the same format as the input, clipped to image bounds.
+
+
+.. py:function:: center_crop(img: numpy.ndarray | torch.Tensor, crop_size: tuple[int, int]) -> numpy.ndarray | torch.Tensor
+
+   Apply a center crop to an image.
+
+   Input type is preserved: numpy in → numpy out, tensor in → tensor out.
+
+   :param img: ``(H, W, C)`` uint8 RGB numpy array **or** ``(C, H, W)`` uint8
+               RGB torch tensor.
+   :param crop_size: Target ``(height, width)`` in pixels.
+
+   :returns: Center-cropped image in the same format as the input.
+
+
+.. py:function:: apply_10_crop(img: numpy.ndarray | torch.Tensor, crop_size: tuple[int, int]) -> numpy.ndarray | torch.Tensor
+
+   Apply 10-crop augmentation to an image.
+
+   Produces four corner crops plus a center crop, each for the original and
+   its horizontal mirror — 10 crops in total.
+
+   Input type is preserved: numpy in → numpy out, tensor in → tensor out.
+
+   :param img: ``(H, W, C)`` uint8 RGB numpy array **or** ``(C, H, W)`` uint8
+               RGB torch tensor.
+   :param crop_size: Target ``(height, width)`` for each crop.
+
+   :returns: ``(10, C, crop_h, crop_w)``
+             * numpy:  ``(10, crop_h, crop_w, C)``
+   :rtype: * tensor
+
+
+.. py:function:: iou_xywh(bb_xywh1: numpy.ndarray | torch.Tensor, bb_xywh2: numpy.ndarray | torch.Tensor) -> float
+
+   Calculate IoU for two bounding boxes in xywh format.
+
+   Accepts both numpy arrays and torch tensors; always returns a Python float.
+
+   :param bb_xywh1: First bounding box ``[x_min, y_min, width, height]`` of
+                    shape ``(4,)``.
+   :param bb_xywh2: Second bounding box ``[x_min, y_min, width, height]`` of
+                    shape ``(4,)``.
+
+   :returns: Intersection-over-Union in ``[0.0, 1.0]``.
+
+
+.. py:function:: iou_xyxy(bb_xyxy1: numpy.ndarray | torch.Tensor, bb_xyxy2: numpy.ndarray | torch.Tensor) -> float
+
+   Calculate IoU for two bounding boxes in xyxy format.
+
+   Accepts both numpy arrays and torch tensors; always returns a Python float.
+
+   :param bb_xyxy1: First bounding box ``[x_min, y_min, x_max, y_max]`` of
+                    shape ``(4,)``.
+   :param bb_xyxy2: Second bounding box ``[x_min, y_min, x_max, y_max]`` of
+                    shape ``(4,)``.
+
+   :returns: Intersection-over-Union in ``[0.0, 1.0]``.
+
+
+.. py:function:: xyxy2xywh(bb_xyxy: numpy.ndarray | torch.Tensor) -> numpy.ndarray | torch.Tensor
+
+   Convert bounding box coordinates from xyxy to xywh format.
+
+   The output type mirrors the input type (numpy or torch tensor).
+
+   :param bb_xyxy: Bounding box ``[x_min, y_min, x_max, y_max]``.
+                   Shape ``(4,)`` for a single box or ``(N, 4)`` for a batch.
+
+   :returns: Bounding box ``[x_min, y_min, width, height]`` with the same
+             shape and type as the input.
+
+
+.. py:function:: xywh2xyxy(bb_xywh: numpy.ndarray | torch.Tensor) -> numpy.ndarray | torch.Tensor
+
+   Convert bounding box coordinates from xywh to xyxy format.
+
+   The output type mirrors the input type (numpy or torch tensor).
+
+   :param bb_xywh: Bounding box ``[x_min, y_min, width, height]``.
+                   Shape ``(4,)`` for a single box or ``(N, 4)`` for a batch.
+
+   :returns: Bounding box ``[x_min, y_min, x_max, y_max]`` with the same
+             shape and type as the input.
+
+
+.. py:function:: midwh2xywh(bb_midwh: numpy.ndarray | torch.Tensor) -> numpy.ndarray | torch.Tensor
+
+   Convert bounding box coordinates from midwh to xywh format.
+
+   The output type mirrors the input type (numpy or torch tensor).
+
+   :param bb_midwh: Bounding box ``[x_center, y_center, width, height]``.
+                    Shape ``(4,)`` for a single box or ``(N, 4)`` for a batch.
+
+   :returns: Bounding box ``[x_min, y_min, width, height]`` with the same
+             shape and type as the input.
+
+
+.. py:function:: xywh2midwh(bb_xywh: numpy.ndarray | torch.Tensor) -> numpy.ndarray | torch.Tensor
+
+   Convert bounding box coordinates from xywh to midwh format.
+
+   The output type mirrors the input type (numpy or torch tensor).
+
+   :param bb_xywh: Bounding box ``[x_min, y_min, width, height]``.
+                   Shape ``(4,)`` for a single box or ``(N, 4)`` for a batch.
+
+   :returns: Bounding box ``[x_center, y_center, width, height]`` with the same
+             shape and type as the input.
+
+
+.. py:function:: xyxy2full(bb_xyxy: numpy.ndarray | torch.Tensor) -> numpy.ndarray | torch.Tensor
+
+   Convert a bounding box to all four corner coordinates.
+
+   The output type mirrors the input type (numpy or torch tensor).
+
+   :param bb_xyxy: Bounding box ``[x_tl, y_tl, x_br, y_br]`` of shape ``(4,)``.
+
+   :returns: Four corner points ``[[x_tl, y_tl], [x_tr, y_tr], [x_bl, y_bl], [x_br, y_br]]``
+             of shape ``(4, 2)``.
+
+
+.. py:function:: visualize_bb(image: numpy.ndarray | torch.Tensor, bb_xyxy: numpy.ndarray | torch.Tensor, probability: float, output_path: os.PathLike | None = None) -> numpy.ndarray | torch.Tensor
+
+   Draw a bounding box and detection confidence score on an image.
+
+   Accepts both numpy arrays and torch tensors; returns the same type as
+   the input.  cv2 drawing is performed on an intermediate BGR numpy array.
+
+   :param image: Input image — ``np.ndarray (H, W, C)`` uint8 **BGR** or
+                 ``torch.Tensor (C, H, W)`` uint8 **RGB**.
+   :param bb_xyxy: Bounding box ``[x_min, y_min, x_max, y_max]`` of shape ``(4,)``.
+                   Both numpy arrays and torch tensors are accepted.
+   :param probability: Detection confidence score to display as a label.
+   :param output_path: Path to save the annotated image.  ``None`` skips saving.
+
+   :returns: Annotated image — same type as ``image``.  Tensor output is
+             ``(C, H, W)`` uint8 **RGB**; numpy output is ``(H, W, C)`` uint8 **BGR**.
+
+   :raises ValueError: If ``bb_xyxy`` does not have shape ``(4,)``.
+
+

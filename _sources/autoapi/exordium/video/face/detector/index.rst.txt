@@ -1,0 +1,17 @@
+exordium.video.face.detector
+============================
+
+.. py:module:: exordium.video.face.detector
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/exordium/video/face/detector/base/index
+   /autoapi/exordium/video/face/detector/yolo/index
+   /autoapi/exordium/video/face/detector/yolo11/index
+
+

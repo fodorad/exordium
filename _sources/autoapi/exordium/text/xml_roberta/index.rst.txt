@@ -1,0 +1,45 @@
+exordium.text.xml_roberta
+=========================
+
+.. py:module:: exordium.text.xml_roberta
+
+.. autoapi-nested-parse::
+
+   XLM-RoBERTa multilingual text encoding wrapper.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.text.xml_roberta.XmlRobertaWrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: XmlRobertaWrapper(device_id: int = -1)
+
+   Bases: :py:obj:`exordium.text.base.TextModelWrapper`
+
+
+   XLM-RoBERTa sentence-transformer wrapper. Hidden size: 768.
+
+   Returns mean-pooled sentence embeddings of shape ``(B, 768)``.
+   This model is a sentence-transformer fine-tuned for semantic similarity,
+   so mean pooling is applied internally by :meth:`inference`.
+
+
+
+   .. py:method:: inference(inputs: dict[str, torch.Tensor]) -> torch.Tensor
+
+      Run XLM-RoBERTa forward pass with mean pooling.
+
+      :param inputs: Tokenizer output dict on ``self.device``.
+
+      :returns: Sentence embeddings of shape ``(B, 768)``.
+
+
+

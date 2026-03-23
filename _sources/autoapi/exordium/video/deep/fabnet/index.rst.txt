@@ -1,0 +1,108 @@
+exordium.video.deep.fabnet
+==========================
+
+.. py:module:: exordium.video.deep.fabnet
+
+.. autoapi-nested-parse::
+
+   FabNet facial feature extractor wrapper.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.deep.fabnet.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.deep.fabnet.FabNetWrapper
+   exordium.video.deep.fabnet.FrontaliseModelMasks_wider
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: FabNetWrapper(device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
+
+
+   FAb-Net face encoder wrapper.
+
+   Produces a 256-dimensional identity-preserving feature vector from a face
+   crop.  Model weights are downloaded automatically on first use.
+
+   :param device_id: GPU device index. ``None`` or negative uses CPU.
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+
+      Resize RGB frames to 256×256 and scale to [0, 1].
+
+      FAb-Net was trained without channel-wise mean/std normalisation.
+
+      :param frames: Any input supported by
+                     :meth:`~exordium.video.deep.base.VisualModelWrapper._to_uint8_tensor`.
+
+      :returns: Float tensor of shape ``(B, 3, 256, 256)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+
+      FAb-Net encoder forward pass.
+
+      :param tensor: Preprocessed face tensor of shape (B, 3, 256, 256)
+                     on self.device with values in [0, 1].
+
+      :returns: Identity feature tensor of shape (B, 256).
+
+
+
+.. py:class:: FrontaliseModelMasks_wider(inner_nc=256, num_additional_ids=32)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   FAb-Net model architecture with mask prediction branch.
+
+   Code: https://github.com/oawiles/FAb-Net
+   Authors: Olivia Wiles, A. Sophia Koepke, Andrew Zisserman
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:method:: generate_encoder_layers(output_size=128, num_filters=64) -> torch.nn.Sequential
+
+      Generate encoder layers for the FAb-Net model.
+
+      :param output_size: Size of the bottleneck output. Defaults to 128.
+      :param num_filters: Number of base filters. Defaults to 64.
+
+      :returns: Sequential module containing the encoder layers.
+
+
+
+   .. py:method:: generate_decoder_layers(num_input_channels, num_output_channels=2, num_filters=32) -> torch.nn.Sequential
+
+      Generate decoder layers for the FAb-Net model.
+
+      :param num_input_channels: Number of input channels.
+      :param num_output_channels: Number of output channels. Defaults to 2.
+      :param num_filters: Number of base filters. Defaults to 32.
+
+      :returns: Sequential module containing the decoder layers.
+
+
+

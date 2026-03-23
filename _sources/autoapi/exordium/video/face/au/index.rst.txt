@@ -1,0 +1,15 @@
+exordium.video.face.au
+======================
+
+.. py:module:: exordium.video.face.au
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/exordium/video/face/au/opengraphau/index
+
+

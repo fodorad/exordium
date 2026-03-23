@@ -1,0 +1,50 @@
+exordium.utils.device
+=====================
+
+.. py:module:: exordium.utils.device
+
+.. autoapi-nested-parse::
+
+   Device management utilities.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.utils.device.get_torch_device
+   exordium.utils.device.get_default_device
+   exordium.utils.device.get_module_device
+
+
+Module Contents
+---------------
+
+.. py:function:: get_torch_device(device_id: int | None = None) -> torch.device
+
+   Get a PyTorch device based on device ID.
+
+   :param device_id: Device ID. None or negative returns CPU. Defaults to None.
+
+   :returns: PyTorch device (MPS > CUDA > CPU based on availability).
+
+
+.. py:function:: get_default_device() -> torch.device
+
+   Get the default device (GPU or CPU).
+
+   :returns: MPS > CUDA > CPU.
+   :rtype: The device with highest priority available
+
+
+.. py:function:: get_module_device(module: torch.nn.Module) -> torch.device
+
+   Get the device of a PyTorch module.
+
+   :param module: PyTorch module.
+
+   :returns: Device of the module's parameters.
+
+

@@ -1,0 +1,15 @@
+exordium.video.face.blink
+=========================
+
+.. py:module:: exordium.video.face.blink
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/exordium/video/face/blink/densenet/index
+
+

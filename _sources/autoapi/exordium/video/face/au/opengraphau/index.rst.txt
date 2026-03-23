@@ -1,0 +1,110 @@
+exordium.video.face.au.opengraphau
+==================================
+
+.. py:module:: exordium.video.face.au.opengraphau
+
+.. autoapi-nested-parse::
+
+   OpenGraphAU action unit detection wrapper.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.au.opengraphau.AU_REGISTRY
+   exordium.video.face.au.opengraphau.AU_ids
+   exordium.video.face.au.opengraphau.AU_names
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.au.opengraphau.OpenGraphAuWrapper
+
+
+Module Contents
+---------------
+
+.. py:data:: AU_REGISTRY
+   :type:  list[tuple[str, str]]
+   :value: [('1', 'Inner brow raiser'), ('2', 'Outer brow raiser'), ('4', 'Brow lowerer'), ('5', 'Upper lid...
+
+
+   Registry of all 41 Action Units — list of ``(au_id, display_name)`` tuples.
+
+.. py:data:: AU_ids
+   :type:  list[str]
+
+   Ordered list of AU code strings (``'1'``, ``'2'``, ... ``'L1'``, ``'R1'``, ...).
+
+.. py:data:: AU_names
+   :type:  list[str]
+
+   Ordered list of AU display names aligned with :data:`AU_ids`.
+
+.. py:class:: OpenGraphAuWrapper(stage: int = 2, device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
+
+
+   OpenGraphAU facial action unit detection wrapper.
+
+   Detects 41 facial action units (27 main + 14 sub) using a graph neural
+   network on top of a Swin Transformer Tiny backbone.
+
+   Two pre-trained weight variants are available, both trained on the hybrid
+   BP4D + DISFA dataset:
+
+   * ``stage=1`` — ANFL: Adaptive Node Feature Learning with a dynamic
+     sparse graph (``opengraphau-swint-1s_weights.pth``)
+   * ``stage=2`` — MEFL: Multi-dimensional Edge Feature Learning with a
+     gated GCN over full n×n edge features, higher accuracy
+     (``opengraphau-swint-2s_weights.pth``)
+
+   Weights are downloaded automatically from
+   ``fodorad/exordium-weights`` on Hugging Face Hub on first use.
+
+   :param stage: Training stage variant, ``1`` or ``2``.  Defaults to ``2``.
+   :param device_id: GPU device index.  ``None`` or negative uses CPU.
+
+   :raises ValueError: If ``stage`` is not ``1`` or ``2``.
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+
+      Resize, centre-crop and normalise to ImageNet stats.
+
+      :param frames: Any input supported by
+                     :meth:`~exordium.video.deep.base.VisualModelWrapper._to_uint8_tensor`.
+
+      :returns: Float tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+
+      OpenGraphAU forward pass.
+
+      :param tensor: Preprocessed face tensor of shape ``(B, 3, 224, 224)``
+                     on ``self.device``.
+
+      :returns: Action unit intensity tensor of shape ``(B, 41)`` with values
+                roughly in ``[0, 1]``.
+
+
+
+   .. py:method:: predict_au(frames) -> torch.Tensor
+
+      Preprocess and run inference, returning AU intensities as a tensor.
+
+      :param frames: Any input supported by :meth:`preprocess`.
+
+      :returns: AU intensity tensor of shape ``(B, 41)``.
+
+
+

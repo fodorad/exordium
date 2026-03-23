@@ -1,0 +1,132 @@
+exordium.video.face.detector.base
+=================================
+
+.. py:module:: exordium.video.face.detector.base
+
+.. autoapi-nested-parse::
+
+   Base class for face detectors.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.detector.base.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.detector.base.FaceDetector
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: FaceDetector(batch_size: int = 32, verbose: bool = False)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Abstract base class for face detectors.
+
+   Coordinate convention:
+       y is row (height), x is column (width)::
+
+           (0,0)---(0,w)
+             |       |
+           (h,0)---(h,w)
+
+       Bounding box: ``(x_min, y_min, x_max, y_max)``
+
+   All public methods accept images as:
+
+   * ``np.ndarray`` ``(H, W, 3)`` uint8 RGB
+   * ``torch.Tensor`` ``(3, H, W)`` uint8 RGB
+   * ``str | Path`` — loaded via :func:`~exordium.video.core.io.image_to_tensor`
+
+   Subclasses must implement :meth:`run_detector`, which receives
+   ``list[torch.Tensor (3, H, W) uint8 RGB]`` and returns detections in the
+   standard format with torch tensor bounding boxes and landmarks.
+
+
+
+   .. py:method:: run_detector(images: list[torch.Tensor]) -> list[list[tuple[torch.Tensor, torch.Tensor, float]]]
+      :abstractmethod:
+
+
+      Run the face detector on a list of ``(3, H, W)`` uint8 RGB tensors.
+
+      Subclasses receive tensors directly and are responsible for any
+      conversion to numpy or other formats required by the underlying model.
+
+      :param images: List of ``(3, H, W)`` uint8 RGB ``torch.Tensor`` objects.
+
+      :returns: One inner list per input image.  Each detection is a tuple
+                ``(bb_xyxy, landmarks, score)`` where:
+
+                * ``bb_xyxy``   — ``torch.Tensor float32 (4,)`` ``[x_min, y_min, x_max, y_max]``
+                * ``landmarks`` — ``torch.Tensor float32 (5, 2)`` ``(x, y)`` pixel coords
+                * ``score``     — confidence in ``[0, 1]``
+
+                Empty inner list when no face is detected in that image.
+
+
+
+   .. py:method:: detect_image_path(image_path: str | pathlib.Path, **kwargs) -> exordium.video.core.detection.FrameDetections
+
+      Run detector on a single image given by its path.
+
+      :param image_path: Path to the image file.
+      :param \*\*kwargs: Forwarded to :meth:`detect_image` (e.g. ``output_path``).
+
+      :returns: :class:`~exordium.video.core.detection.FrameDetections` with all
+                faces found in the image.
+
+
+
+   .. py:method:: detect_image(image: numpy.ndarray | torch.Tensor, **kwargs) -> exordium.video.core.detection.FrameDetections
+
+      Run detector on a single image.
+
+      :param image: Input image as ``np.ndarray (H, W, 3)`` uint8 RGB or
+                    ``torch.Tensor (3, H, W)`` uint8 RGB.
+      :param \*\*kwargs: Optional keyword arguments, including ``image_path``
+                         used as the cache key.
+
+      :returns: :class:`~exordium.video.core.detection.FrameDetections` with all
+                faces found in the image.
+
+
+
+   .. py:method:: detect_frame_dir(frame_dir: str | pathlib.Path, **_kwargs) -> exordium.video.core.detection.VideoDetections
+
+      Run detector on ordered frames of a video in a single folder.
+
+      :param frame_dir: Path to the frame directory.
+
+      :returns: :class:`~exordium.video.core.detection.VideoDetections` with all
+                detections.
+
+
+
+   .. py:method:: detect_video(video_path: str | pathlib.Path, **_kwargs) -> exordium.video.core.detection.VideoDetections
+
+      Run detector on a video given by its path.
+
+      :param video_path: Path to the video file.
+
+      :returns: :class:`~exordium.video.core.detection.VideoDetections` with all
+                detections.
+
+
+

@@ -1,0 +1,20 @@
+exordium.video.face.headpose
+============================
+
+.. py:module:: exordium.video.face.headpose
+
+.. autoapi-nested-parse::
+
+   Head pose estimation.
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/exordium/video/face/headpose/sixdrepnet/index
+
+

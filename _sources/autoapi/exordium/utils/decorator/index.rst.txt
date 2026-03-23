@@ -1,0 +1,346 @@
+exordium.utils.decorator
+========================
+
+.. py:module:: exordium.utils.decorator
+
+.. autoapi-nested-parse::
+
+   Decorator utilities for caching and timing.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.utils.decorator.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.utils.decorator.Loader
+   exordium.utils.decorator.PickleLoader
+   exordium.utils.decorator.FrameDetLoader
+   exordium.utils.decorator.VideoDetLoader
+   exordium.utils.decorator.TrackLoader
+   exordium.utils.decorator.NpyLoader
+   exordium.utils.decorator.SafetensorsLoader
+   exordium.utils.decorator.LoaderFactory
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.utils.decorator.timer
+   exordium.utils.decorator.load_or_create
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:function:: timer(func: collections.abc.Callable[Ellipsis, Any]) -> collections.abc.Callable[Ellipsis, Any]
+
+   Decorator that prints the execution time of a function.
+
+   :param func: The function to time.
+   :type func: Callable[..., Any]
+
+   :returns:
+
+             Wrapped function that prints elapsed time on each
+                 call and returns the original return value.
+   :rtype: Callable[..., Any]
+
+
+.. py:class:: Loader
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Abstract base class for serialization helpers.
+
+
+   .. py:method:: load(path: str | pathlib.Path)
+      :abstractmethod:
+
+
+      Loads and returns data from the given path.
+
+      :param path: File path to load from.
+      :type path: str | Path
+
+      :returns: Deserialized data.
+      :rtype: Any
+
+
+
+   .. py:method:: save(data, path: str | pathlib.Path)
+      :abstractmethod:
+
+
+      Serializes data and writes it to the given path.
+
+      :param data: Data to serialize.
+      :param path: Destination file path.
+      :type path: str | Path
+
+
+
+.. py:class:: PickleLoader
+
+   Bases: :py:obj:`Loader`
+
+
+   Loader implementation using Python's pickle serialization format.
+
+
+   .. py:method:: load(path: str | pathlib.Path)
+
+      Loads a pickled object from the given file.
+
+      :param path: Path to the pickle file.
+      :type path: str | Path
+
+      :returns: Deserialized Python object.
+      :rtype: Any
+
+
+
+   .. py:method:: save(data, path: str | pathlib.Path)
+
+      Saves a Python object as a pickle file.
+
+      :param data: Object to serialize.
+      :param path: Destination file path.
+      :type path: str | Path
+
+
+
+.. py:class:: FrameDetLoader
+
+   Bases: :py:obj:`Loader`
+
+
+   Loader implementation for FrameDetections objects.
+
+
+   .. py:method:: load(path: str | pathlib.Path)
+
+      Loads a FrameDetections object from the given file.
+
+      :param path: Path to the serialized FrameDetections file.
+      :type path: str | Path
+
+      :returns: Loaded detections for a single frame.
+      :rtype: FrameDetections
+
+
+
+   .. py:method:: save(data, path: str | pathlib.Path)
+
+      Saves a FrameDetections object to the given file.
+
+      :param data: FrameDetections instance to serialize.
+      :param path: Destination file path.
+      :type path: str | Path
+
+
+
+.. py:class:: VideoDetLoader
+
+   Bases: :py:obj:`Loader`
+
+
+   Loader implementation for VideoDetections objects.
+
+
+   .. py:method:: load(path: str | pathlib.Path)
+
+      Loads a VideoDetections object from the given file.
+
+      :param path: Path to the serialized VideoDetections file.
+      :type path: str | Path
+
+      :returns: Loaded detections for a video.
+      :rtype: VideoDetections
+
+
+
+   .. py:method:: save(data, path: str | pathlib.Path)
+
+      Saves a VideoDetections object to the given file.
+
+      :param data: VideoDetections instance to serialize.
+      :param path: Destination file path.
+      :type path: str | Path
+
+
+
+.. py:class:: TrackLoader
+
+   Bases: :py:obj:`Loader`
+
+
+   Loader implementation for Track objects.
+
+
+   .. py:method:: load(path: str | pathlib.Path)
+
+      Loads a Track object from the given file.
+
+      :param path: Path to the serialized Track file.
+      :type path: str | Path
+
+      :returns: Loaded track.
+      :rtype: Track
+
+
+
+   .. py:method:: save(data, path: str | pathlib.Path)
+
+      Saves a Track object to the given file.
+
+      :param data: Track instance to serialize.
+      :param path: Destination file path.
+      :type path: str | Path
+
+
+
+.. py:class:: NpyLoader
+
+   Bases: :py:obj:`Loader`
+
+
+   Loader implementation for NumPy .npy files.
+
+
+   .. py:method:: load(path: str | pathlib.Path)
+
+      Loads a NumPy array from the given .npy file.
+
+      :param path: Path to the .npy file.
+      :type path: str | Path
+
+      :returns: Loaded array.
+      :rtype: np.ndarray
+
+
+
+   .. py:method:: save(data, path: str | pathlib.Path)
+
+      Saves a NumPy array to the given .npy file.
+
+      :param data: Array-like data to save.
+      :param path: Destination file path.
+      :type path: str | Path
+
+
+
+.. py:class:: SafetensorsLoader
+
+   Bases: :py:obj:`Loader`
+
+
+   Loader implementation using the safetensors format for torch tensors.
+
+   Accepts either a single ``torch.Tensor`` or a ``dict[str, torch.Tensor]``:
+
+   * **Single tensor** — stored under the key ``"data"`` and returned as a
+     plain ``torch.Tensor`` on load, so the round-trip is transparent.
+   * **Dict of tensors** — stored as-is and returned as
+     ``dict[str, torch.Tensor]`` on load.
+
+   Safetensors files are memory-mappable, contain no pickle data, and store
+   only the raw float bytes plus a compact JSON header — making them the
+   smallest and safest option for persisting feature tensors.
+
+
+
+   .. py:method:: load(path: str | pathlib.Path) -> torch.Tensor | dict[str, torch.Tensor]
+
+      Loads tensor(s) from a safetensors file.
+
+      Returns a plain ``torch.Tensor`` if the file was saved from a single
+      tensor, or a ``dict[str, torch.Tensor]`` if saved from a dict.
+
+      :param path: Path to the ``.st`` file.
+      :type path: str | Path
+
+      :returns: torch.Tensor or dict[str, torch.Tensor].
+
+
+
+   .. py:method:: save(data: torch.Tensor | dict[str, torch.Tensor], path: str | pathlib.Path) -> None
+
+      Saves tensor(s) to a safetensors file.
+
+      :param data: A single ``torch.Tensor`` or a ``dict[str, torch.Tensor]``.
+                   CUDA tensors are moved to CPU automatically before saving.
+      :param path: Destination file path.
+      :type path: str | Path
+
+      :raises TypeError: If ``data`` is not a tensor or dict of tensors.
+
+
+
+.. py:class:: LoaderFactory
+
+   Factory that maps file format strings to Loader instances.
+
+   Supported formats: "fdet", "vdet", "track", "npy", "pkl", "st".
+
+
+   .. py:attribute:: LOADERS
+      :type:  dict[str, type[Loader]]
+
+      Registry mapping format keys to their :class:`Loader` implementations.
+
+
+   .. py:method:: get(format: str) -> Loader
+      :classmethod:
+
+
+      Returns a Loader instance for the specified file format.
+
+      :param format: File format key. One of "fdet", "vdet", "track",
+                     "npy", or "pkl".
+      :type format: str
+
+      :returns: Loader instance for the given format.
+      :rtype: Loader
+
+      :raises NotImplementedError: If format is not a recognised key.
+
+
+
+.. py:function:: load_or_create(format: str)
+
+   Decorator factory that caches function results to disk.
+
+   If the wrapped function is called with an ``output_path`` keyword argument
+   and the file already exists (and ``overwrite`` is False), the cached value
+   is loaded and returned instead of calling the function.  If ``output_path``
+   is None or the file does not exist, the function is executed and its result
+   is saved.
+
+   :param format: File format key accepted by LoaderFactory (e.g. "st",
+                  "npy", "pkl", "fdet", "vdet", "track").
+   :type format: str
+
+   :returns:
+
+             A decorator that wraps a function with load-or-create
+                 caching behaviour.
+   :rtype: Callable
+
+

@@ -1,0 +1,113 @@
+exordium.video.face.gaze.l2csnet
+================================
+
+.. py:module:: exordium.video.face.gaze.l2csnet
+
+.. autoapi-nested-parse::
+
+   L2CS-Net gaze estimation model wrapper.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.l2csnet.L2csNetWrapper
+   exordium.video.face.gaze.l2csnet.L2CS
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.l2csnet.L2CS_Builder
+
+
+Module Contents
+---------------
+
+.. py:class:: L2csNetWrapper(device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.face.gaze.base.GazeWrapper`
+
+
+   L2CS-Net gaze estimation wrapper.
+
+   Predicts gaze direction (pitch and yaw) from face crops using a
+   ResNet-50 backbone with two 90-bin classification heads.
+
+   Weights are downloaded automatically from ``fodorad/exordium-weights``
+   on Hugging Face Hub on first use.
+
+   :param device_id: Device index.  ``None`` or negative for CPU.
+
+
+   .. py:attribute:: device
+
+      Torch device used for model inference (CPU or GPU).
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+
+      Resize and normalise face crops to L2CS-Net input convention.
+
+      L2CS-Net expects 448×448 inputs normalised to ImageNet mean/std.
+
+      :param frames: Any input accepted by :meth:`~GazeWrapper._to_uint8_tensor`.
+
+      :returns: Float tensor of shape ``(B, 3, 448, 448)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]
+
+      Run L2CS-Net and return ``(yaw, pitch)`` angles in radians.
+
+      Performs the full forward pass and converts bin logits to angles:
+      softmax over 90 bins → weighted expected bin index → degrees → radians.
+
+      :param tensor: Float tensor of shape ``(B, 3, 448, 448)`` on
+                     ``self.device``, normalised to ImageNet mean/std.
+
+      :returns: Tuple of ``(yaw, pitch)`` tensors each of shape ``(B,)``
+                in radians on ``self.device``.
+
+
+
+.. py:class:: L2CS(block, layers, num_bins)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   L2CS-Net architecture for gaze estimation.
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:method:: forward(x)
+
+      Predict gaze bin logits from a face image batch.
+
+      :param x: Input tensor of shape ``(B, 3, H, W)``.
+
+      :returns: Tuple of ``(yaw_logits, pitch_logits)`` each of shape
+                ``(B, num_bins)``.
+
+
+
+.. py:function:: L2CS_Builder(arch: str = 'ResNet50', bins: int = 90)
+
+   Build an L2CS-Net model with the specified ResNet backbone.
+
+   :param arch: One of ``"ResNet18"``, ``"ResNet34"``, ``"ResNet50"``
+                (default), ``"ResNet101"``, ``"ResNet152"``.
+   :param bins: Number of gaze angle bins. Defaults to ``90``.
+
+   :returns: :class:`L2CS` model instance.
+
+   :raises ValueError: If ``arch`` is not a recognised architecture name.
+
+

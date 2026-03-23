@@ -1,0 +1,200 @@
+exordium.text.base
+==================
+
+.. py:module:: exordium.text.base
+
+.. autoapi-nested-parse::
+
+   Abstract base classes for text and speech-to-text models.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.text.base.TextModelWrapper
+   exordium.text.base.SpeechToText
+   exordium.text.base.StreamingMixin
+
+
+Module Contents
+---------------
+
+.. py:class:: TextModelWrapper(model_name: str, device_id: int = -1)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Abstract base class for HuggingFace encoder-only transformer models.
+
+   Handles device placement and provides the standard
+   ``preprocess → inference → __call__`` pipeline used by all text wrappers
+   in this library (mirrors :class:`~exordium.video.deep.base.VisualModelWrapper`
+   and :class:`~exordium.audio.base.AudioModelWrapper`).
+
+   Subclasses must implement :meth:`inference`, which receives the tokenizer
+   output dict (already on ``self.device``) and returns a tensor.
+
+   Typical patterns:
+
+   * Token-level features — return ``outputs.last_hidden_state`` ``(B, T, H)``
+   * Sentence-level features — return :meth:`_mean_pool` applied to
+     ``last_hidden_state`` ``(B, H)``
+   * CLS-token only — return ``outputs.last_hidden_state[:, 0]`` ``(B, H)``
+
+   :param model_name: HuggingFace model identifier (e.g. ``"bert-base-uncased"``).
+   :param device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU.
+
+   Example::
+
+       class BertWrapper(TextModelWrapper):
+           def __init__(self, device_id=-1):
+               super().__init__("bert-base-uncased", device_id)
+
+           def inference(self, inputs):
+               return self.model(**inputs).last_hidden_state  # (B, T, 768)
+
+       model = BertWrapper()
+       hidden = model("Hello world")          # torch.Tensor (1, T, 768)
+       feats  = model.predict(["a", "b"])     # np.ndarray  (2, T, 768)
+
+
+
+   .. py:method:: preprocess(text: str | list[str], max_length: int | None = None, padding: bool | str = True) -> dict[str, torch.Tensor]
+
+      Tokenize text and move tensors to ``self.device``.
+
+      :param text: Single string or list of strings.
+      :param max_length: Maximum sequence length; truncates if exceeded.
+                         ``None`` uses the tokenizer's default.
+      :param padding: Padding strategy forwarded to the tokenizer.
+                      ``True`` / ``"longest"`` pads to the longest sequence in the
+                      batch; ``"max_length"`` pads to ``max_length``.
+
+      :returns: Dict of tensors (``input_ids``, ``attention_mask``, …) on
+                ``self.device``.
+
+
+
+   .. py:method:: inference(inputs: dict[str, torch.Tensor]) -> torch.Tensor
+      :abstractmethod:
+
+
+      Model forward pass.
+
+      Receives the tokenizer output dict (already on ``self.device``) and
+      returns the feature tensor.  All extraction logic (which output to use,
+      whether to pool, etc.) belongs here.
+
+      :param inputs: Dict returned by :meth:`preprocess` — ``input_ids``,
+                     ``attention_mask``, and optionally ``token_type_ids``.
+
+      :returns:
+
+                * ``(B, T, H)`` for token-level encoders
+                * ``(B, H)`` for sentence-level encoders (pooled)
+      :rtype: Feature tensor, shape depends on the subclass
+
+
+
+   .. py:method:: __call__(text: str | list[str], max_length: int | None = None, padding: bool | str = True) -> torch.Tensor
+
+      Tokenize and encode text, returning a feature tensor.
+
+      :param text: Single string or list of strings.
+      :param max_length: Maximum sequence length. ``None`` uses tokenizer default.
+      :param padding: Padding strategy. Default: ``True`` (pad to longest).
+
+      :returns: Feature tensor on ``self.device``.  Shape is determined by
+                :meth:`inference` (token-level or sentence-level).
+
+
+
+   .. py:method:: predict(text: str | list[str], max_length: int | None = None, padding: bool | str = True) -> numpy.ndarray
+
+      Tokenize and encode text, returning a numpy feature array.
+
+      :param text: Single string or list of strings.
+      :param max_length: Maximum sequence length.
+      :param padding: Padding strategy.
+
+      :returns: Feature array. Shape is determined by :meth:`inference`.
+
+
+
+.. py:class:: SpeechToText
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Abstract base class for speech-to-text models.
+
+   Defines the standard ``preprocess → inference → __call__`` pipeline.
+   Subclasses must implement :meth:`preprocess` and :meth:`inference`.
+
+
+
+   .. py:method:: preprocess(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor) -> object
+      :abstractmethod:
+
+
+      Convert any audio input to model-ready features.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+
+      :returns: Model-ready input (type depends on the backend).
+
+
+
+   .. py:method:: inference(inputs: object, **kwargs: object) -> str
+      :abstractmethod:
+
+
+      Run the model and return the full transcript.
+
+      :param inputs: Output of :meth:`preprocess`.
+      :param \*\*kwargs: Optional backend-specific keyword arguments.
+
+      :returns: Transcribed text as a plain string.
+
+
+
+   .. py:method:: __call__(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor) -> str
+
+      Preprocess and transcribe, returning the full transcript.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+
+      :returns: Transcribed text as a plain string.
+
+
+
+.. py:class:: StreamingMixin
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Mixin for STT backends that support word-by-word streaming output.
+
+   Add this mixin alongside :class:`SpeechToText` for backends where the
+   model decodes incrementally and can yield tokens as they are produced::
+
+       class WhisperWrapper(StreamingMixin, SpeechToText):
+           ...
+
+
+
+   .. py:method:: stream(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor) -> collections.abc.Iterator[str]
+      :abstractmethod:
+
+
+      Transcribe audio and yield decoded text chunks incrementally.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+
+      :Yields: Decoded text chunks (words or sub-word tokens) as they are produced.
+
+
+

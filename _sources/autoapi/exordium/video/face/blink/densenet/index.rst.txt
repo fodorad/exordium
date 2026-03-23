@@ -1,0 +1,124 @@
+exordium.video.face.blink.densenet
+==================================
+
+.. py:module:: exordium.video.face.blink.densenet
+
+.. autoapi-nested-parse::
+
+   Blink detection wrapper using DenseNet121 from blinklinmult.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.blink.densenet.BlinkDenseNet121Wrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: BlinkDenseNet121Wrapper(device_id: int | None = None, yaw_threshold: float = 40.0)
+
+   Blink detection wrapper using BlinkDenseNet121.
+
+   Predicts eye state (open/closed) from eye patch crops using a DenseNet121
+   model trained for blink detection. Handles self-occlusion based on head pose.
+
+   :param model_name: Model variant from blinklinmult. Default: ``'densenet121-union'``.
+   :param device_id: Device index. ``None`` or negative for CPU.
+   :param yaw_threshold: Head yaw angle (degrees) beyond which an eye
+                         is considered occluded. Default: 40.0.
+
+
+   .. py:method:: __call__(samples: torch.Tensor) -> torch.Tensor
+
+      Predict eye state from preprocessed eye patch tensors.
+
+      :param samples: Preprocessed eye patch tensor of shape ``(B, 3, 64, 64)``.
+
+      :returns: Blink probabilities of shape ``(B,)``.
+                Values in [0, 1] where >0.5 indicates closed/blinking.
+
+
+
+   .. py:method:: predict_pipeline(frames: numpy.ndarray | torch.Tensor, landmarks: numpy.ndarray, headpose: numpy.ndarray | None = None) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+
+      Predict eye state from frames with landmark-based cropping (batched).
+
+      Extracts eye patches from frames using MediaPipe FaceDetector landmarks,
+      runs blink detection, and applies occlusion masking based on head pose.
+
+      :param frames: Batch of input frames in RGB format — ``np.ndarray (B, H, W, 3)``
+                     or ``torch.Tensor (B, 3, H, W)`` uint8.
+      :param landmarks: MediaPipe FaceDetector keypoints, shape ``(B, 6, 2)``.
+                        Keypoint order: [right_eye, left_eye, nose, mouth, right_ear, left_ear].
+      :param headpose: Head pose angles, shape ``(B, 3)`` with ``[yaw, pitch, roll]``
+                       in degrees. If provided, masks predictions for occluded eyes based
+                       on yaw threshold. ``None`` means no occlusion filtering.
+
+      :returns: Tuple ``(left_state, right_state, left_valid, right_valid)``, each a
+                tensor of shape ``(B,)``. State tensors hold blink probabilities in
+                ``[0, 1]``; valid tensors are boolean masks for usable predictions.
+
+
+
+   .. py:method:: predict_frame(frame: numpy.ndarray | torch.Tensor, landmarks: numpy.ndarray, headpose: numpy.ndarray | None = None, return_patches: bool = False) -> tuple[float, float, bool, bool] | tuple[float, float, bool, bool, numpy.ndarray, numpy.ndarray]
+
+      Predict eye state from a single frame (convenience method).
+
+      :param frame: Single input frame in RGB format, shape ``(H, W, 3)``.
+      :param landmarks: MediaPipe FaceDetector keypoints, shape ``(6, 2)``.
+                        Keypoint order: [right_eye, left_eye, nose, mouth, right_ear, left_ear].
+      :param headpose: Head pose angles ``[yaw, pitch, roll]`` in degrees.
+                       If provided, masks predictions for occluded eyes based on yaw.
+                       ``None`` means no occlusion filtering.
+      :param return_patches: If ``True``, also return the extracted 64x64 eye patches.
+
+      :returns: Tuple of ``(left_state, right_state, left_valid, right_valid)`` floats and bools.
+                When ``return_patches=True``, two additional arrays are appended:
+                the left and right eye patches of shape ``(64, 64, 3)`` in RGB.
+
+
+
+   .. py:method:: eyes_open(left_eye_state: torch.Tensor, right_eye_state: torch.Tensor, left_eye_valid: torch.Tensor, right_eye_valid: torch.Tensor, threshold: float = 0.5) -> torch.Tensor
+      :staticmethod:
+
+
+      Determine if eyes are open based on blink predictions.
+
+      :param left_eye_state: Left eye blink probabilities, shape ``(B,)``.
+      :param right_eye_state: Right eye blink probabilities, shape ``(B,)``.
+      :param left_eye_valid: Boolean mask for valid left eye predictions, shape ``(B,)``.
+      :param right_eye_valid: Boolean mask for valid right eye predictions, shape ``(B,)``.
+      :param threshold: Threshold for closed eye. Default: 0.5.
+
+      :returns: Boolean tensor of shape ``(B,)`` indicating if eyes are open.
+                Eyes are considered open if BOTH valid eyes have prob < threshold.
+
+
+
+   .. py:method:: visualize(frames: numpy.ndarray | torch.Tensor, left_eye_state: numpy.ndarray, right_eye_state: numpy.ndarray, left_eye_valid: numpy.ndarray, right_eye_valid: numpy.ndarray, landmarks: numpy.ndarray | None = None, output_path: str | None = None) -> numpy.ndarray | torch.Tensor
+      :staticmethod:
+
+
+      Visualize blink predictions on frames.
+
+      Accepts ``(B, H, W, 3)`` numpy arrays or ``(B, 3, H, W)`` uint8
+      torch tensors; returns the same type.
+
+      :param frames: Input frames in RGB format — ``np.ndarray (B, H, W, 3)``
+                     or ``torch.Tensor (B, 3, H, W)`` uint8.
+      :param left_eye_state: Left eye blink probabilities, shape ``(B,)``.
+      :param right_eye_state: Right eye blink probabilities, shape ``(B,)``.
+      :param left_eye_valid: Boolean mask for valid left eye predictions, shape ``(B,)``.
+      :param right_eye_valid: Boolean mask for valid right eye predictions, shape ``(B,)``.
+      :param landmarks: Optional MediaPipe landmarks for drawing eye locations, shape ``(B, 6, 2)``.
+      :param output_path: Path to save the visualized frames. ``None`` skips saving.
+
+      :returns: Frames with visualization overlays, same type as input.
+
+
+

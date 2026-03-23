@@ -1,0 +1,585 @@
+exordium.video.core.io
+======================
+
+.. py:module:: exordium.video.core.io
+
+.. autoapi-nested-parse::
+
+   Video input/output utilities.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.core.io.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.core.io.VideoBackend
+   exordium.video.core.io.TorchCodecBackend
+   exordium.video.core.io.ImageSequenceReader
+   exordium.video.core.io.Video
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.core.io.get_video_metadata
+   exordium.video.core.io.load_video
+   exordium.video.core.io.load_frames
+   exordium.video.core.io.video_to_frames
+   exordium.video.core.io.save_video
+   exordium.video.core.io.sequence_to_video
+   exordium.video.core.io.save_frames
+   exordium.video.core.io.save_frames_with_ids
+   exordium.video.core.io.batch_iterator
+   exordium.video.core.io.image_to_np
+   exordium.video.core.io.image_to_tensor
+   exordium.video.core.io.to_uint8_tensor
+   exordium.video.core.io.images_to_np
+   exordium.video.core.io.interpolate_1d
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: VideoBackend
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Abstract interface for video decoding backends.
+
+
+   .. py:method:: decode_frames(path: str | pathlib.Path, indices: list[int] | numpy.ndarray, device: torch.device) -> torch.Tensor
+      :abstractmethod:
+
+
+      Decode frames at specific indices.
+
+      :param path: Video file path
+      :param indices: Frame indices to decode
+      :param device: torch.device for decoding
+
+      :returns: Tensor of shape (T, C, H, W) with decoded frames
+
+
+
+   .. py:method:: decode_all(path: str | pathlib.Path, device: torch.device) -> torch.Tensor
+      :abstractmethod:
+
+
+      Decode entire video.
+
+      :param path: Video file path
+      :param device: torch.device for decoding
+
+      :returns: Tensor of shape (T, C, H, W) with all frames
+
+
+
+   .. py:method:: get_metadata(path: str | pathlib.Path) -> dict
+      :abstractmethod:
+
+
+      Get video metadata.
+
+      :param path: Video file path
+
+      :returns: fps, num_frames, height, width, duration
+      :rtype: dict with keys
+
+
+
+.. py:class:: TorchCodecBackend
+
+   Bases: :py:obj:`VideoBackend`
+
+
+   TorchCodec implementation of VideoBackend.
+
+
+   .. py:method:: decode_frames(path: str | pathlib.Path, indices: list[int] | numpy.ndarray, device: str | torch.device | None = None) -> torch.Tensor
+
+      Decode frames at specific indices using torchcodec.
+
+
+
+   .. py:method:: decode_all(path: str | pathlib.Path, device: str | torch.device | None = None) -> torch.Tensor
+
+      Decode entire video using torchcodec.
+
+
+
+   .. py:method:: get_metadata(path: str | pathlib.Path) -> dict
+
+      Get video metadata from torchcodec.
+
+
+
+.. py:function:: get_video_metadata(input_path: str | pathlib.Path) -> dict
+
+   Get video metadata using the configured backend.
+
+   :param input_path: Path to video file
+
+   :returns: fps, num_frames, height, width, duration
+   :rtype: dict with keys
+
+   .. rubric:: Example
+
+   >>> meta = get_video_metadata("video.mp4")
+   >>> print(f"Video: {meta['num_frames']} frames at {meta['fps']} fps")
+
+
+.. py:function:: load_video(input_path: str | pathlib.Path, start_frame: int = 0, end_frame: int | None = None, fps: int | float | None = None, batch_size: int = 32, resize: int | tuple[int, int] | None = None, crop: tuple[int, int, int, int] | None = None, device_id: int | None = None) -> tuple[torch.Tensor, float]
+
+   Load a contiguous range of video frames, optionally resampled to a target FPS.
+
+   Use this function when you need sequential frames from a video — the full clip,
+   a temporal window, or a downsampled version at a lower frame rate.  For
+   random-access loading of specific, non-contiguous frame indices use
+   :func:`load_frames` instead.
+
+   :param input_path: Path to the input video file.
+   :param start_frame: First frame index to include (inclusive). Defaults to 0.
+   :param end_frame: Last frame index to include (exclusive).  ``None`` reads to the
+                     end of the video. Defaults to ``None``.
+   :param fps: Target frame rate for temporal resampling.  Frames are uniformly
+               sampled from the ``[start_frame, end_frame)`` range so that the output
+               approximates the requested rate.  ``None`` keeps the native FPS and
+               returns every frame in the range. Defaults to ``None``.
+               Example: a 25 fps video with ``fps=5`` returns 1 in every 5 frames.
+   :param batch_size: Number of frames decoded per internal batch.  Larger values
+                      use more memory but reduce decoder overhead. Defaults to 32.
+   :param resize: Spatial resize applied to every frame before cropping.  An ``int``
+                  sets the smaller spatial dimension while preserving aspect ratio; a
+                  ``(H, W)`` tuple sets both dimensions explicitly.  ``None`` keeps native
+                  resolution. Defaults to ``None``.
+   :param crop: Bounding box ``(cy, cx, ch, cw)`` applied after resize.  ``None``
+                skips cropping. Defaults to ``None``.
+   :param device_id: Target device for the output tensor.  ``None`` or a negative
+                     value uses CPU. Defaults to ``None``.
+
+   :returns: Tuple of ``(frames, actual_fps)`` where ``frames`` is a uint8 tensor of
+             shape ``(T, 3, H, W)`` and ``actual_fps`` is the frame rate of the returned
+             sequence (equals ``fps`` when provided, otherwise the native video FPS).
+
+   .. note::
+
+      Video decoding is only supported on CUDA and CPU backends (torchcodec
+      limitation).  Passing an MPS ``device_id`` will raise an error.
+
+   .. rubric:: Example
+
+   >>> frames, fps = load_video("clip.mp4", fps=5, resize=224)
+   >>> print(frames.shape, fps)  # (T, 3, 224, 224), 5.0
+
+
+.. py:function:: load_frames(input_path: str | pathlib.Path, frame_ids: list[int] | numpy.ndarray, start_frame: int = 0, batch_size: int = 32, resize: int | tuple[int, int] | None = None, crop: tuple[int, int, int, int] | None = None, device_id: int | None = None) -> torch.Tensor
+
+   Load specific, non-contiguous video frames by absolute frame index.
+
+   Use this function when you already know exactly which frames you need — for
+   example, frames identified by a detector, sparse keyframes, or a custom
+   sampling scheme.  The output preserves the order of ``frame_ids``.  For
+   sequential or FPS-resampled loading use :func:`load_video` instead.
+
+   :param input_path: Path to the input video file.
+   :param frame_ids: Indices of the frames to load.  Values are interpreted relative
+                     to ``start_frame``, so the absolute index decoded is
+                     ``start_frame + frame_id``.  Duplicates are allowed and will appear
+                     multiple times in the output.
+   :param start_frame: Global offset added to every entry in ``frame_ids``.  Useful
+                       when ``frame_ids`` are already relative to a clip start. Defaults to 0.
+   :param batch_size: Number of frames decoded per internal batch. Defaults to 32.
+   :param resize: Spatial resize applied to every frame before cropping.  An ``int``
+                  sets the smaller spatial dimension while preserving aspect ratio; a
+                  ``(H, W)`` tuple sets both dimensions explicitly.  ``None`` keeps native
+                  resolution. Defaults to ``None``.
+   :param crop: Bounding box ``(cy, cx, ch, cw)`` applied after resize.  ``None``
+                skips cropping. Defaults to ``None``.
+   :param device_id: Target device for the output tensor.  ``None`` or a negative
+                     value uses CPU. Defaults to ``None``.
+
+   :returns: uint8 tensor of shape ``(T, 3, H, W)`` where ``T = len(frame_ids)``,
+             in the same order as the input indices.
+
+   .. note::
+
+      Video decoding is only supported on CUDA and CPU backends (torchcodec
+      limitation).  Passing an MPS ``device_id`` will raise an error.
+
+   .. rubric:: Example
+
+   >>> frames = load_frames("video.mp4", frame_ids=[0, 10, 20, 30])
+   >>> print(frames.shape)  # (4, 3, H, W)
+
+
+.. py:function:: video_to_frames(input_path: str | pathlib.Path, output_dir: str | pathlib.Path | None = None, start_number: int = 0, fps: int | float | None = None, smallest_dim: int | None = None, crop: tuple[int, int, int, int] | None = None, device_id: int | None = None, extension: str = '.png', overwrite: bool = False) -> None
+
+   Extracts and saves the frames from a video.
+
+   .. note::
+
+      Prefer ``start_number=0`` — most functions in this package assume it
+      (e.g. ``000000.png`` → frame_id 0 → index 0 in a ``(N, D)`` feature tensor).
+
+   :param input_path: Path to the input video.
+   :param output_dir: Path to the output directory.
+   :param start_number: Start index of the extracted frames. Defaults to 0.
+   :param fps: Frame per sec. None means that the original fps of the video is used. Defaults to None.
+   :param smallest_dim: Smallest dimension of the frames, height or width.
+                        None means that the frames is not resized. Defaults to None.
+   :param crop: Crop bounding box ``(cy, cx, ch, cw)`` where ``cy`` is the top offset,
+                ``cx`` the left offset, ``ch`` the height, and ``cw`` the width.
+                When set, the video is first scaled then cropped. Defaults to ``None``.
+   :param device_id: GPU device id for decoding. None or -1 means CPU decoding. Defaults to None.
+   :param extension: File extension for saved frames. Defaults to ".png".
+   :param overwrite: If True, overwrites existing output directory. Defaults to False.
+
+
+.. py:function:: save_video(frames: torch.Tensor | numpy.ndarray | collections.abc.Sequence[torch.Tensor] | collections.abc.Sequence[numpy.ndarray], output_path: str | pathlib.Path, fps: int | float = 25, codec: str = 'mp4v', overwrite: bool = True) -> None
+
+   Saves frames as a video file.
+
+   :param frames: Video frames as a ``(T, C, H, W)`` or ``(T, H, W, C)`` tensor or
+                  numpy array, or a sequence of per-frame ``(C, H, W)`` / ``(H, W, C)``
+                  tensors or numpy arrays.
+   :param output_path: Path to output video file
+   :param fps: Frames per second for output video
+   :param codec: FourCC codec string (e.g., "mp4v", "avc1", "h264")
+   :param overwrite: If True, overwrites existing file
+
+   .. rubric:: Example
+
+   >>> frames, fps = load_video("input.mp4")
+   >>> save_video(frames, "output.mp4", fps=30)
+
+
+.. py:function:: sequence_to_video(frames: pathlib.Path | collections.abc.Sequence[numpy.ndarray] | collections.abc.Sequence[pathlib.Path], output_path: pathlib.Path, fps: int | float = 25, overwrite: bool = True) -> None
+
+   Saves a video to a .mp4 file without audio.
+
+   :param frames: sequence of frames of shape (H, W, 3) and RGB channel order.
+   :type frames: Sequence[np.ndarray]
+   :param output_path: path to the output file.
+   :type output_path: Path
+   :param fps: frame per sec. Defaults to 25.
+   :type fps: int | float, optional
+   :param overwrite: if True it overwrites the existing file. Defaults to True.
+   :type overwrite: bool, optional
+
+
+.. py:function:: save_frames(frames: torch.Tensor | numpy.ndarray | collections.abc.Sequence[torch.Tensor] | collections.abc.Sequence[numpy.ndarray], output_dir: str | pathlib.Path, start_number: int = 0, zfill: int = 6, extension: str = '.jpg') -> None
+
+   Saves a sequence of frames to individual image files in a directory.
+
+   :param frames: frames to save, either as a single tensor of shape (T, C, H, W)
+                  or a sequence of tensors of shape (C, H, W) or numpy arrays of shape (H, W, C).
+   :type frames: torch.Tensor | np.ndarray | Sequence[torch.Tensor] | Sequence[np.ndarray]
+   :param output_dir: directory to save the frames.
+   :type output_dir: str | Path
+   :param start_number: starting index for frame file names. Defaults to 0.
+   :type start_number: int, optional
+   :param zfill: zero-padding width for frame file names. Defaults to 6.
+   :type zfill: int, optional
+   :param extension: file extension for saved frames. Defaults to ".jpg".
+   :type extension: str, optional
+
+
+.. py:function:: save_frames_with_ids(frames: torch.Tensor | numpy.ndarray | collections.abc.Sequence[torch.Tensor] | collections.abc.Sequence[numpy.ndarray], frame_ids: collections.abc.Sequence[int] | numpy.ndarray, output_dir: pathlib.Path, zfill: int = 6, extension: str = '.jpg') -> None
+
+   Saves a sequence of frames to individual image files in a directory, using frame IDs.
+
+   :param frames: frames to save, either as a single tensor of shape (T, C, H, W)
+                  or a sequence of tensors of shape (C, H, W) or numpy arrays of shape (H, W, C).
+   :type frames: torch.Tensor | np.ndarray | Sequence[torch.Tensor] | Sequence[np.ndarray]
+   :param frame_ids: frame IDs for each frame.
+   :type frame_ids: Sequence[int] | np.ndarray
+   :param output_dir: directory to save the frames.
+   :type output_dir: Path
+   :param zfill: zero-padding width for frame file names. Defaults to 6.
+   :type zfill: int, optional
+   :param extension: file extension for saved frames. Defaults to ".jpg".
+   :type extension: str, optional
+
+
+.. py:function:: batch_iterator(iterable: collections.abc.Iterable, batch_size: int) -> collections.abc.Generator[list, None, None]
+
+   Yields batch size list of objects from an iterable.
+
+
+.. py:function:: image_to_np(image: str | pathlib.Path | numpy.ndarray, channel_order: str = 'RGB') -> numpy.ndarray
+
+   Converts commonly used image formats to standardized numpy array.
+
+   Converts image of shape (H, W) or (H, W, 1) or (H, W, 3) and BGR channel order
+   to image of shape (H, W, 3) and RGB channel order.
+
+   :param image: image or path to the image.
+   :type image: np.ndarray | str | Path
+   :param channel_order: channel order. Supported values are 'RGB', 'BGR', 'HSV',
+                         'LAB' and 'GRAY'. Defaults to RGB.
+   :type channel_order: str, optional
+
+   :returns: image of shape (H, W, 3) and RGB channel order.
+   :rtype: np.ndarray
+
+
+.. py:function:: image_to_tensor(image: str | pathlib.Path | numpy.ndarray | torch.Tensor, channel_order: str = 'RGB') -> torch.Tensor
+
+   Load or convert a single image to a uint8 ``(3, H, W)`` CPU tensor.
+
+   Wraps :func:`image_to_np` for the file-path and numpy cases, then
+   permutes to channel-first.  If a tensor is supplied it is returned
+   as-is (channel-first assumed) after an optional shape check.
+
+   :param image: Image source — file path, ``(H, W, 3)`` numpy array, or
+                 ``(C, H, W)`` / ``(H, W, C)`` torch tensor.
+   :param channel_order: Channel order applied when loading from file or
+                         converting from numpy.  See :func:`image_to_np` for options.
+                         Ignored when ``image`` is already a tensor.
+
+   :returns: uint8 tensor of shape ``(3, H, W)`` on CPU.
+
+
+.. py:function:: to_uint8_tensor(frames: torch.Tensor | numpy.ndarray | collections.abc.Sequence) -> torch.Tensor
+
+   Convert any supported input to a uint8 ``(B, 3, H, W)`` CPU tensor.
+
+   Canonical shared implementation used by all model wrappers in the library.
+   Avoids the need to duplicate this logic across multiple wrapper classes.
+
+   :param frames: One of:
+
+                  * ``torch.Tensor (C, H, W)`` or ``(B, C, H, W)`` uint8 RGB
+                  * ``np.ndarray (H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB
+                  * ``str | Path`` — single image file path
+                  * ``Sequence[np.ndarray]`` of ``(H, W, 3)`` arrays
+                  * ``Sequence[str | Path]`` of image file paths
+
+   :returns: uint8 tensor of shape ``(B, 3, H, W)`` on CPU.
+
+   :raises ValueError: If an empty sequence is passed.
+
+
+.. py:function:: images_to_np(images: collections.abc.Sequence[numpy.ndarray | str | pathlib.Path], channel_order: str = 'RGB', resize: tuple[int, int] | None = None) -> numpy.ndarray
+
+   Converts multiple images to a single np.ndarray of shape (H, W, 3) and RGB channel order.
+
+   :param images: multiple images or image paths.
+   :type images: Sequence[np.ndarray | str | Path]
+   :param channel_order: channel order. Supported values are 'RGB', 'BGR', 'HSV',
+                         'LAB' and 'GRAY'. Defaults to RGB.
+   :type channel_order: str, optional
+   :param resize: resize images to a common H x W size.
+                  None means that the resize is applied. Defaults to None.
+   :type resize: tuple[int, int] | None, optional
+
+   :raises ValueError: if the images do not have the same H, W dimensions.
+
+   :returns: images of shape (N, H, W, 3) and RGB channel order.
+   :rtype: np.ndarray
+
+
+.. py:function:: interpolate_1d(start_index: int, end_index: int, start_data: numpy.ndarray, end_data: numpy.ndarray) -> numpy.ndarray
+
+   Interpolates data using a range.
+
+   :param start_index: start index.
+   :type start_index: int
+   :param end_index: end index.
+   :type end_index: int
+   :param start_data: start data.
+   :type start_data: np.ndarray
+   :param end_data: end data.
+   :type end_data: np.ndarray
+
+   :returns: interpolated data between start and end data.
+   :rtype: np.ndarray
+
+
+.. py:class:: ImageSequenceReader(frames_dir: str | pathlib.Path, transform=None)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   PyTorch Dataset for loading image sequences from a directory.
+
+
+   .. py:method:: __len__()
+
+      Return number of frames in sequence.
+
+      :returns: Number of frames.
+
+
+
+   .. py:method:: __getitem__(idx: int)
+
+      Load image at index.
+
+      :param idx: Frame index.
+
+      :returns: Image as numpy array or transformed tensor.
+
+
+
+.. py:class:: Video(path: str | pathlib.Path, device: str | torch.device | None = None)
+
+   Stateful video reader that keeps the decoder open across operations.
+
+   Wraps torchcodec.VideoDecoder with a persistent handle for efficient
+   batch-wise iteration over long videos without reopening the file.
+
+   :param path: Path to the video file.
+   :param device: Device for decoded tensors (e.g., "cpu", "cuda:0").
+                  Defaults to None (CPU).
+
+   .. note::
+
+      Video decoding is only supported on CUDA devices and CPU.
+      MPS decoding is not supported by torchcodec.
+
+   .. rubric:: Example
+
+   >>> with Video("long_video.mp4") as v:
+   ...     print(f"{v.num_frames} frames at {v.fps} fps")
+   ...     for batch in v.iter_batches(batch_size=64):
+   ...         process(batch)  # batch is (T, C, H, W)
+
+
+   .. py:property:: fps
+      :type: float
+
+
+      Average frames per second.
+
+
+   .. py:property:: num_frames
+      :type: int
+
+
+      Total number of frames.
+
+
+   .. py:property:: height
+      :type: int
+
+
+      Frame height in pixels.
+
+
+   .. py:property:: width
+      :type: int
+
+
+      Frame width in pixels.
+
+
+   .. py:property:: duration
+      :type: float
+
+
+      Video duration in seconds.
+
+
+   .. py:method:: get_batch(start: int, stop: int, step: int = 1) -> torch.Tensor
+
+      Decode a range of frames.
+
+      :param start: Start frame index (inclusive).
+      :param stop: Stop frame index (exclusive).
+      :param step: Step between frame indices.
+
+      :returns: Tensor of shape (T, C, H, W).
+
+
+
+   .. py:method:: get_frames_at(indices: list[int]) -> torch.Tensor
+
+      Decode frames at specific indices.
+
+      :param indices: List of frame indices to decode.
+
+      :returns: Tensor of shape (T, C, H, W).
+
+
+
+   .. py:method:: iter_batches(batch_size: int = 32) -> collections.abc.Generator[torch.Tensor, None, None]
+
+      Iterate over all frames in fixed-size batches.
+
+      :param batch_size: Number of frames per batch.
+
+      :Yields: Tensor of shape (T, C, H, W) where T <= batch_size.
+
+
+
+   .. py:method:: __len__() -> int
+
+      Return total number of frames.
+
+      :returns: Number of frames in video.
+
+
+
+   .. py:method:: __getitem__(key: int | slice) -> torch.Tensor
+
+      Get frame(s) by index or slice.
+
+      :param key: Frame index (int) or slice of frame indices.
+
+      :returns: Tensor of shape (C, H, W) for single frame or (T, C, H, W) for slice.
+
+      :raises IndexError: If frame index is out of bounds.
+      :raises TypeError: If key is not int or slice.
+
+
+
+   .. py:method:: __repr__() -> str
+
+      Return string representation of video.
+
+      :returns: String with video metadata.
+
+
+
+   .. py:method:: __enter__() -> Video
+
+      Enter context manager.
+
+      :returns: Video instance.
+
+
+
+   .. py:method:: __exit__(exc_type, exc_val, exc_tb) -> None
+
+      Exit context manager.
+
+      :param exc_type: Exception type if an error occurred.
+      :param exc_val: Exception value if an error occurred.
+      :param exc_tb: Exception traceback if an error occurred.
+
+
+
+   .. py:method:: close() -> None
+
+      Release the decoder.
+
+
+

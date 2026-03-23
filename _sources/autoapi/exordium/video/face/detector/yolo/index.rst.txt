@@ -1,0 +1,109 @@
+exordium.video.face.detector.yolo
+=================================
+
+.. py:module:: exordium.video.face.detector.yolo
+
+.. autoapi-nested-parse::
+
+   YOLOv8 face detector wrapper (bounding-box detection only).
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.detector.yolo.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.detector.yolo.YoloFaceV8Detector
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: YoloFaceV8Detector(model_name: str = _DEFAULT_MODEL, device_id: int = 0, conf: float = 0.5, batch_size: int = 32, verbose: bool = False)
+
+   Bases: :py:obj:`exordium.video.face.detector.base.FaceDetector`
+
+
+   Face detector using YOLOv8 — **bounding-box detection only**.
+
+   Uses ``arnabdhar/YOLOv8-Face-Detection`` (``task=detect``) by default.
+   This model outputs only bounding boxes and confidence scores; it has no
+   keypoint head.  Facial landmark fields in the returned
+   :class:`~exordium.video.core.detection.Detection` objects will always be
+   zero tensors.  Use :class:`YoloFace11Detector` for 5-point facial landmarks.
+
+   Accepts ``(3, H, W)`` uint8 RGB ``torch.Tensor`` objects throughout.
+   Numpy conversion to BGR is performed internally inside
+   :meth:`run_detector` where Ultralytics requires it.
+
+   :param model_name: HuggingFace model ID (``"owner/repo"``) or local path to
+                      a YOLOv8 ``.pt`` file.  Hub models are downloaded once and cached
+                      under :data:`~exordium.WEIGHT_DIR`.
+   :param device_id: Device index.  ``-1`` / ``None`` → CPU; ``0+`` →
+                     MPS / CUDA.
+   :param conf: Minimum detection confidence threshold.
+   :param batch_size: Frames per inference batch.
+   :param verbose: Show tqdm progress bars.
+
+   Example::
+
+       detector = YoloFaceV8Detector(device_id=None)
+
+       # single image (tensor input)
+       dets = detector.detect_image(rgb_tensor)  # (3, H, W) uint8 RGB
+
+       # full video
+       vdets = detector.detect_video("input.mp4", output_path="dets.vdet")
+
+
+
+   .. py:method:: run_detector(images: list[torch.Tensor]) -> list[list[tuple[torch.Tensor, torch.Tensor, float]]]
+
+      Run YOLO on a list of ``(3, H, W)`` uint8 RGB tensors.
+
+      Converts each tensor to a ``(H, W, 3)`` uint8 **BGR** numpy array
+      internally (Ultralytics numpy convention), runs batched inference,
+      and returns detections as torch tensors.
+
+      :param images: List of ``(3, H, W)`` uint8 RGB ``torch.Tensor`` objects.
+
+      :returns: One inner list per image.  Each detection is a tuple
+                ``(bb_xyxy, landmarks, score)`` — see :meth:`_parse_results`.
+
+
+
+   .. py:method:: detect_video(video_path: str | pathlib.Path, **_kwargs) -> exordium.video.core.detection.VideoDetections
+
+      Run detector on a video — fully tensor-native, no numpy conversion on hot path.
+
+      Frames are decoded by :class:`~exordium.video.core.io.Video` as
+      ``(T, 3, H, W)`` uint8 **RGB** tensors.  Each batch is normalised to
+      ``float32 [0, 1]`` and fed directly to YOLO.  Bounding boxes and
+      keypoints are kept as tensors throughout.
+
+      Input format to YOLO: ``(B, 3, H, W)`` float32 **RGB** ``[0, 1]``.
+
+      :param video_path: Path to the video file.
+      :param \*\*_kwargs: Forwarded to ``load_or_create`` (e.g. ``output_path``,
+                          ``overwrite``).
+
+      :returns: :class:`~exordium.video.core.detection.VideoDetections` with all
+                detections.
+
+      :raises FileNotFoundError: If ``video_path`` does not exist.
+
+
+

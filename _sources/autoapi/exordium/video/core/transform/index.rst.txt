@@ -1,0 +1,171 @@
+exordium.video.core.transform
+=============================
+
+.. py:module:: exordium.video.core.transform
+
+.. autoapi-nested-parse::
+
+   Video transformation and face manipulation utilities.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.core.transform.ToTensor
+   exordium.video.core.transform.Resize
+   exordium.video.core.transform.CenterCrop
+   exordium.video.core.transform.Normalize
+   exordium.video.core.transform.Denormalize
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.core.transform.rotate_face
+   exordium.video.core.transform.align_face
+
+
+Module Contents
+---------------
+
+.. py:function:: rotate_face(face: numpy.ndarray | torch.Tensor, rotation_degree: float) -> tuple[numpy.ndarray | torch.Tensor, numpy.ndarray]
+
+   Rotate a face image by an explicit angle.
+
+   Accepts either a numpy array or a torch tensor and returns the same type,
+   avoiding unnecessary device transfers or dtype conversions.
+
+   * **numpy** ``(H, W, 3)`` uint8 — uses ``cv2.warpAffine``; fast on CPU.
+   * **torch** ``(C, H, W)`` or ``(B, C, H, W)`` — uses
+     ``torchvision.transforms.functional.rotate``; stays on the original
+     device and dtype.
+
+   :param face: Face image as ``np.ndarray (H, W, 3)`` or
+                ``torch.Tensor (C, H, W)`` / ``(B, C, H, W)``.
+   :param rotation_degree: Counter-clockwise rotation in degrees.
+
+   :returns: Tuple of ``(rotated_face, rotation_matrix)`` where ``rotated_face``
+             has the same type and shape as the input and ``rotation_matrix`` is
+             the ``(2, 3)`` affine matrix used for numpy rotation (or ``np.eye(2)``
+             for the zero-rotation fast-path and tensor inputs).
+
+
+.. py:function:: align_face(image: numpy.ndarray | torch.Tensor, bb_xyxy: numpy.ndarray | torch.Tensor, landmarks: numpy.ndarray) -> dict
+
+   Align face image to canonical orientation using landmarks.
+
+   Aligns the x-axis of the Head Coordinate System (HCS) to the
+   x-axis of the Camera Coordinate System (CCS). The face is rotated
+   based on the eye positions to align it horizontally.
+
+   Accepts ``(H, W, C)`` numpy arrays or ``(C, H, W)`` uint8 torch tensors.
+   The ``"rotated_image"`` and ``"rotated_face"`` entries in the returned
+   dictionary preserve the input type.
+
+   :param image: Input image — ``np.ndarray (H, W, C)`` or
+                 ``torch.Tensor (C, H, W)`` uint8.
+   :param bb_xyxy: Bounding box of shape ``(4,)`` — numpy or tensor.
+   :param landmarks: Landmark coordinates of shape ``(5, 2)`` — numpy array.
+
+   :raises ValueError: If landmarks do not have shape ``(5, 2)``.
+
+   :returns:
+
+             * ``"rotated_image"`` — same type as ``image``
+             * ``"rotated_face"`` — same type as ``image``
+             * ``"rotated_bb_xyxy"`` — ``np.ndarray (4,)`` int
+             * ``"rotation_degree"`` — float
+             * ``"rotation_matrix"`` — ``np.ndarray (2, 3)`` affine matrix
+   :rtype: Dictionary with keys
+
+
+.. py:class:: ToTensor
+
+   Converts np.ndarray with value range [0..255] to torch Tensor with value range [0..1].
+
+   Video processing class, similar to torchvision but for videos.
+
+
+   .. py:method:: __call__(x: numpy.ndarray) -> torch.Tensor
+
+      Convert numpy array to normalized torch tensor.
+
+      :param x: Input numpy array with value range [0..255].
+
+      :returns: Torch tensor with value range [0..1].
+
+
+
+.. py:class:: Resize(size: int | None, mode: str = 'bilinear')
+
+   Resizes video represented as a torch Tensor of shape (C, T, H, W).
+
+   Video processing class, similar to torchvision but for videos.
+
+
+   .. py:method:: __call__(video: torch.Tensor) -> torch.Tensor
+
+      Resize video tensor.
+
+      :param video: Input tensor of shape (C, T, H, W).
+
+      :returns: Resized tensor.
+
+
+
+.. py:class:: CenterCrop(size: int | tuple[int, int])
+
+   Center crops a video represented as a torch Tensor of shape (C, T, H, W).
+
+   Video processing class, similar to torchvision but for videos.
+
+
+   .. py:method:: __call__(video: torch.Tensor) -> torch.Tensor
+
+      Center crop video tensor.
+
+      :param video: Input tensor of shape (C, T, H, W).
+
+      :returns: Center-cropped tensor.
+
+
+
+.. py:class:: Normalize(mean: collections.abc.Sequence[float], std: collections.abc.Sequence[float])
+
+   Standardizes a video represented as a torch Tensor of shape (C, T, H, W).
+
+   Video processing class, similar to torchvision but for videos.
+
+
+   .. py:method:: __call__(video: torch.Tensor) -> torch.Tensor
+
+      Standardize video tensor using mean and std.
+
+      :param video: Input tensor of shape (C, T, H, W).
+
+      :returns: Standardized tensor.
+
+
+
+.. py:class:: Denormalize(mean: collections.abc.Sequence[float], std: collections.abc.Sequence[float])
+
+   Reverses the standardization of a video represented as a torch Tensor of shape (C, T, H, W).
+
+   Video processing class, similar to torchvision but for videos.
+
+
+   .. py:method:: __call__(video: torch.Tensor) -> torch.Tensor
+
+      Reverse standardization on video tensor.
+
+      :param video: Input tensor of shape (C, T, H, W).
+
+      :returns: Denormalized tensor.
+
+
+

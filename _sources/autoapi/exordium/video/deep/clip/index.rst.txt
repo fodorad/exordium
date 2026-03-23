@@ -1,0 +1,67 @@
+exordium.video.deep.clip
+========================
+
+.. py:module:: exordium.video.deep.clip
+
+.. autoapi-nested-parse::
+
+   CLIP vision-language model wrapper using HuggingFace Transformers.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.deep.clip.ClipWrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: ClipWrapper(model_name: str = _DEFAULT_CLIP_MODEL, device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
+
+
+   Wrapper for CLIP image feature extraction via HuggingFace Transformers.
+
+   Loads a CLIP vision encoder and extracts L2-normalised image embeddings.
+   The default checkpoint is ``laion/CLIP-ViT-H-14-laion2B-s32B-b79K``
+   (ViT-H/14, 1024-d).
+
+   :param model_name: HuggingFace model ID for a CLIP vision encoder.
+                      Defaults to ``"laion/CLIP-ViT-H-14-laion2B-s32B-b79K"``.
+   :param device_id: GPU device index. ``None`` or negative uses CPU.
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+
+      Resize and normalise frames to CLIP input convention.
+
+      Applies bicubic resize to 224×224 and normalises with CLIP's
+      mean/std (different from ImageNet).
+
+      :param frames: Any input supported by
+                     :meth:`~exordium.video.deep.base.VisualModelWrapper._to_uint8_tensor`.
+
+      :returns: Float tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+
+      CLIP vision encoder forward pass.
+
+      Runs the vision transformer, projects to the shared embedding space,
+      and L2-normalises the result.
+
+      :param tensor: Preprocessed image tensor of shape ``(B, 3, 224, 224)``
+                     on ``self.device``.
+
+      :returns: L2-normalised feature tensor of shape ``(B, D)`` where ``D``
+                depends on the model (1024 for ViT-H-14).
+
+
+

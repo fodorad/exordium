@@ -1,0 +1,17 @@
+exordium.video
+==============
+
+.. py:module:: exordium.video
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/exordium/video/core/index
+   /autoapi/exordium/video/deep/index
+   /autoapi/exordium/video/face/index
+
+

@@ -1,0 +1,17 @@
+exordium.video.face.landmark
+============================
+
+.. py:module:: exordium.video.face.landmark
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/exordium/video/face/landmark/constants/index
+   /autoapi/exordium/video/face/landmark/facemesh/index
+   /autoapi/exordium/video/face/landmark/iris/index
+
+

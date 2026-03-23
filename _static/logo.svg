@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 90" width="200" height="90">
+  <!-- Background -->
+  <rect width="200" height="90" rx="20" fill="#1a1a2e"/>
+
+  <!-- Accent bar -->
+  <rect x="16" y="18" width="4" height="60" rx="2" fill="#4f8ef7"/>
+
+  <!-- Full name: exordium -->
+  <text x="30" y="50" font-family="'Segoe UI', Arial, sans-serif" font-size="32" font-weight="700">
+    <tspan fill="#e8eaf6">exordium</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="30" y="70" font-family="'Segoe UI', Arial, sans-serif" font-size="12"
+        fill="#7986cb" letter-spacing="0.5">audio · video · text · utils</text>
+</svg>

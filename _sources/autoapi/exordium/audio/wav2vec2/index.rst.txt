@@ -1,0 +1,93 @@
+exordium.audio.wav2vec2
+=======================
+
+.. py:module:: exordium.audio.wav2vec2
+
+.. autoapi-nested-parse::
+
+   Wav2Vec2 speech encoding model wrapper.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.audio.wav2vec2.Wav2vec2Wrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: Wav2vec2Wrapper(device_id: int = -1)
+
+   Bases: :py:obj:`exordium.audio.base.AudioModelWrapper`
+
+
+   Wrapper for Wav2Vec2 audio feature extraction.
+
+   Extracts self-supervised learning features from audio using Facebook's
+   wav2vec2-base-960h model. Expects 16kHz mono audio input.
+
+   Initialize Wav2Vec2 wrapper with pretrained model.
+
+
+   .. py:attribute:: SAMPLE_RATE
+      :value: 16000
+
+
+      Expected audio sample rate for Wav2Vec2 (16 000 Hz).
+
+
+   .. py:method:: __call__(waveform: numpy.ndarray | torch.Tensor) -> torch.Tensor
+
+      Extract audio features from a waveform.
+
+      :param waveform: Mono audio signal of shape ``(T,)`` (single) or
+                       ``(B, T)`` (batch of same-length signals).
+
+      :returns: Feature tensor of shape ``(T, 768)`` for 1D input, or
+                ``(B, T, 768)`` for 2D input.
+
+      :raises ValueError: If waveform is not 1D or 2D.
+
+
+
+   .. py:method:: audio_to_feature(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, **_kwargs) -> numpy.ndarray
+
+      Extract Wav2Vec2 features from an audio path or waveform.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+                    If a path is given, audio is loaded and resampled to 16kHz.
+      :param \*\*kwargs: Passed to :func:`~exordium.utils.decorator.load_or_create`
+                         (``output_path``, ``overwrite``).
+
+      :returns: Feature array of shape ``(T, 768)`` where T is time frames.
+
+
+
+   .. py:method:: batch_audio_to_features(audios: list[pathlib.Path | str | numpy.ndarray | torch.Tensor], **_kwargs) -> list[numpy.ndarray]
+
+      Extract Wav2Vec2 features from multiple audio inputs in one forward pass.
+
+      Supports variable-length inputs: each waveform is padded to the maximum
+      length in the batch. Output frames corresponding to padding are
+      discarded using the model's own feature-length calculation.
+
+      :param audios: List of audio file paths, numpy arrays, or torch tensors.
+
+      :returns: List of feature arrays, each of shape ``(T_i, 768)``.
+
+
+
+   .. py:method:: inference(waveform: numpy.ndarray | torch.Tensor) -> torch.Tensor
+
+      Extract features in inference mode, returning a tensor.
+
+      :param waveform: Mono audio signal of shape ``(T,)``.
+
+      :returns: Feature tensor of shape ``(T, 768)``.
+
+
+

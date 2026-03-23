@@ -1,0 +1,166 @@
+exordium.video.face.headpose.sixdrepnet
+=======================================
+
+.. py:module:: exordium.video.face.headpose.sixdrepnet
+
+.. autoapi-nested-parse::
+
+   Head pose estimation via SixDRepNet (6D rotation representation).
+
+   Vendored inference components from the 6DRepNet repository are embedded
+   directly in this module to avoid the packaging bugs in the ``sixdrepnet``
+   PyPI package (bare script-style ``import utils`` that break when the
+   package is imported normally).  Only the pieces required for inference are
+   included: the RepVGG-B1g2 backbone, the SixDRepNet head, and the 6D-rotation
+   math utilities.
+
+   Weights for ``SixDRepNetWrapper`` are downloaded automatically on first use.
+
+   Example::
+
+       wrapper = SixDRepNetWrapper(device_id=0)
+       headpose = wrapper(face_tensor)   # (B, 3) tensor — [yaw, pitch, roll] degrees
+
+   Vendored source: https://github.com/thohemp/6DRepNet
+   Vendored author: Thorsten Hempel
+   Vendored license: MIT
+   Reference: Hempel et al., "6D Rotation Representation For Unconstrained Head Pose Estimation",
+   ICASSP 2022.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.headpose.sixdrepnet.SixDRepNetWrapper
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.face.headpose.sixdrepnet.draw_headpose_axis
+   exordium.video.face.headpose.sixdrepnet.draw_headpose_cube
+
+
+Module Contents
+---------------
+
+.. py:class:: SixDRepNetWrapper(device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
+
+
+   6D rotation representation head pose estimator.
+
+   Calls the underlying ``nn.Module`` directly with a batched float tensor
+   for efficient GPU/CPU inference, bypassing the slow single-image PIL loop
+   of the original ``SixDRepNet_Detector.predict()``.
+
+   Supported input types for :meth:`__call__`:
+
+   * ``torch.Tensor`` — ``(C, H, W)`` or ``(B, C, H, W)`` uint8 RGB
+   * ``np.ndarray`` — ``(H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB
+   * ``Sequence[np.ndarray]`` — list of ``(H, W, 3)`` uint8 arrays
+   * ``Sequence[str | Path]`` — list of image file paths
+
+   Design contract:
+
+   * :meth:`preprocess` — resize/normalise to ImageNet 224×224; stays on
+     ``self.device``; returns ``(B, 3, 224, 224)`` float32.
+   * :meth:`inference` — single batched forward pass through the RepVGG
+     backbone + Euler conversion; returns ``(B, 3)`` ``[yaw, pitch, roll]``
+     in degrees on ``self.device``.
+   * :meth:`__call__` — chains both under ``torch.inference_mode``
+     (inherited from :class:`~exordium.video.deep.base.VisualModelWrapper`).
+
+   :param device_id: GPU device index.  ``None`` or ``-1`` uses CPU.
+
+   .. note::
+
+      Based on `6DRepNet <https://github.com/thohemp/6DRepNet>`_ —
+      "6D Rotation Representation For Unconstrained Head Pose Estimation",
+      Hempel et al., ICASSP 2022.
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+
+      Resize and normalise face crops to SixDRepNet input convention.
+
+      SixDRepNet expects 224×224 inputs normalised to ImageNet mean/std.
+      Face crops in a batch commonly have different spatial sizes (each
+      detection is a different-sized region); this method resizes every
+      crop individually before stacking so no prior alignment is needed.
+
+      :param frames: Any input accepted by
+                     :meth:`~exordium.video.deep.base.VisualModelWrapper._to_uint8_tensor`.
+                     When ``frames`` is a ``Sequence[np.ndarray]``, crops may have
+                     different ``(H, W)`` sizes.
+
+      :returns: Float tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+
+      Run a single batched forward pass and return Euler angles in degrees.
+
+      :param tensor: Float tensor of shape ``(B, 3, 224, 224)`` on
+                     ``self.device``, normalised to ImageNet mean/std.
+
+      :returns: Float tensor of shape ``(B, 3)`` containing
+                ``[yaw, pitch, roll]`` in degrees on ``self.device``.
+
+
+
+.. py:function:: draw_headpose_axis(img: numpy.ndarray | torch.Tensor, headpose: tuple[float, float, float] | numpy.ndarray | torch.Tensor, tdx: int | None = None, tdy: int | None = None, size: int = 100, output_path: str | pathlib.Path | None = None) -> numpy.ndarray | torch.Tensor
+
+   Draw 3D head-pose axes (X/Y/Z) projected onto a 2D RGB image.
+
+   Accepts ``(H, W, 3)`` uint8 RGB numpy arrays or ``(3, H, W)`` uint8
+   RGB torch tensors; returns the same type.
+
+   :param img: Input RGB image — ``np.ndarray (H, W, 3)`` or
+               ``torch.Tensor (3, H, W)`` uint8.
+   :param headpose: Head pose angles ``(yaw, pitch, roll)`` in degrees.
+                    Accepts a tuple, numpy array, or 1-D / 1-row torch tensor.
+   :param tdx: X-coordinate of the axis origin. ``None`` uses the image centre.
+   :param tdy: Y-coordinate of the axis origin. ``None`` uses the image centre.
+   :param size: Axis length in pixels. Defaults to 100.
+   :param output_path: Path to save the annotated image. ``None`` skips saving.
+
+   :returns: Copy of ``img`` (RGB) with head-pose axes drawn, same type as input
+             (red=X/yaw, green=Y/pitch, blue=Z/roll).
+
+
+.. py:function:: draw_headpose_cube(img: numpy.ndarray | torch.Tensor, headpose: tuple[float, float, float] | numpy.ndarray | torch.Tensor, tdx: int | None = None, tdy: int | None = None, size: int = 100, output_path: str | pathlib.Path | None = None) -> numpy.ndarray | torch.Tensor
+
+   Draw a 3D head-pose cube projected onto a 2D RGB image.
+
+   The cube visualises head orientation in the style of the original
+   SixDRepNet repository: the **back face** (away from viewer) is drawn in
+   red, the **pillars** connecting back to front in blue, and the **front
+   face** (where the person looks) in green.
+
+   Uses the same rotation convention as :func:`draw_headpose_axis`:
+   ``yaw_r = -yaw * π/180``.
+
+   Accepts ``(H, W, 3)`` uint8 RGB numpy arrays or ``(3, H, W)`` uint8
+   RGB torch tensors; returns the same type.
+
+   :param img: Input RGB image — ``np.ndarray (H, W, 3)`` or
+               ``torch.Tensor (3, H, W)`` uint8.
+   :param headpose: Head pose angles ``(yaw, pitch, roll)`` in degrees.
+                    Accepts a tuple, numpy array, or 1-D / 1-row torch tensor.
+   :param tdx: X-coordinate of the cube anchor (centre of the back face).
+               ``None`` uses the image centre.
+   :param tdy: Y-coordinate of the cube anchor. ``None`` uses image centre.
+   :param size: Cube edge length in pixels. Defaults to 100.
+   :param output_path: Path to save the annotated image. ``None`` skips saving.
+
+   :returns: Copy of ``img`` (RGB) with the head-pose cube drawn, same type as input.
+
+

@@ -1,0 +1,59 @@
+exordium.audio.prosody
+======================
+
+.. py:module:: exordium.audio.prosody
+
+.. autoapi-nested-parse::
+
+   Prosody feature extraction with VAD-gated analysis.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.audio.prosody.ProsodyExtractor
+
+
+Module Contents
+---------------
+
+.. py:class:: ProsodyExtractor(sr: int = 16000, buffer_size: int = 50)
+
+   Prosody feature extractor with VAD-gated analysis.
+
+   Uses Silero VAD to detect speech regions in each audio chunk,
+   then computes pitch, energy, and energy variance only on the voiced
+   segments.  A voice ratio (fraction of speech) is derived from the
+   VAD timestamps and feeds into the final engagement score.
+
+   :param sr: Sample rate in Hz.  Must be 8000 or 16000 (Silero VAD requirement).
+   :param buffer_size: Number of past chunks to smooth over.
+
+
+   .. py:method:: reset() -> None
+
+      Clear all smoothing buffers and reset VAD state.
+
+
+
+   .. py:method:: extract(audio_chunk: numpy.ndarray | torch.Tensor, min_speech_duration_ms: int = 100, min_silence_duration_ms: int = 100, vad_threshold: float = 0.4) -> dict[str, float | bool]
+
+      Extract prosody features from an audio chunk.
+
+      VAD is applied first to isolate speech regions.  Pitch, energy,
+      and energy variance are computed only on the voiced segments.
+      When no speech is detected, prosody features are 0.0.
+
+      :param audio_chunk: 1D audio signal (mono).
+      :param min_speech_duration_ms: Minimum speech segment duration in ms.
+      :param min_silence_duration_ms: Minimum silence between segments in ms.
+      :param vad_threshold: Minimum voice_ratio (0-1) to classify as "speech active".
+
+      :returns: Dict with smoothed pitch, energy, energy_variance, voice_ratio,
+                pitch_variance (over buffer), engagement score, and is_speech_active (binary).
+
+
+

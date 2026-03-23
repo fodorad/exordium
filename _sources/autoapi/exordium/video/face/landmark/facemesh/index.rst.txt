@@ -1,0 +1,214 @@
+exordium.video.face.landmark.facemesh
+=====================================
+
+.. py:module:: exordium.video.face.landmark.facemesh
+
+.. autoapi-nested-parse::
+
+   MediaPipe FaceMesh landmark detector wrapper using latest tasks API.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.landmark.facemesh.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.landmark.facemesh.FaceMeshWrapper
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.face.landmark.facemesh.crop_eye_regions
+   exordium.video.face.landmark.facemesh.rotate_landmarks
+   exordium.video.face.landmark.facemesh.visualize_landmarks
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: FaceMeshWrapper(min_detection_confidence: float = 0.5, min_tracking_confidence: float = 0.5)
+
+   Wrapper for the MediaPipe FaceMesh landmark detector.
+
+   Detects 478 dense facial landmarks using MediaPipe's latest tasks API.
+   Returns pixel-space coordinates for all face keypoints.
+
+   :param min_detection_confidence: Minimum confidence threshold for face
+                                    detection. Default: 0.5.
+   :param min_tracking_confidence: Minimum confidence threshold for tracking.
+                                   Default: 0.5.
+
+   .. rubric:: Example
+
+   >>> import numpy as np
+   >>> from exordium.video.face.landmark.facemesh import FaceMeshWrapper
+   >>> wrapper = FaceMeshWrapper()
+   >>> face_image = np.random.randint(0, 256, (480, 640, 3), dtype=np.uint8)
+   >>> landmarks = wrapper([face_image])  # list of detected faces
+   >>> if landmarks:
+   ...     print(landmarks[0].shape)  # (478, 2) — 478 landmarks, x,y coords
+
+   Initialize FaceMeshWrapper with MediaPipe face mesh model.
+
+   :param min_detection_confidence: Minimum confidence for face detection.
+   :param min_tracking_confidence: Minimum confidence for landmark tracking.
+
+
+   .. py:method:: __call__(images: collections.abc.Sequence[numpy.ndarray | torch.Tensor | str | pathlib.Path]) -> list[torch.Tensor]
+
+      Detect 478 dense facial landmarks for a sequence of face images.
+
+      Accepts numpy arrays, torch tensors, or file paths.  MediaPipe
+      processes each image individually; results for images with no
+      detected face are silently excluded.
+
+      :param images: Sequence of face images in any of the following formats:
+
+                     * ``np.ndarray (H, W, 3)`` uint8 RGB
+                     * ``torch.Tensor (3, H, W)`` or ``(H, W, 3)`` uint8 RGB
+                     * ``str | Path`` — image file path
+
+      :returns: List of ``(478, 2)`` float32 tensors, one per image with a
+                detected face, containing ``(x, y)`` pixel coordinates.
+
+      .. rubric:: Example
+
+      >>> face_crop = np.random.randint(0, 256, (256, 256, 3), dtype=np.uint8)
+      >>> landmarks_list = wrapper([face_crop])
+      >>> if landmarks_list:
+      ...     lmks = landmarks_list[0]  # shape (478, 2) torch.Tensor
+      ...     print(f"Detected {len(lmks)} landmarks")
+
+
+
+   .. py:method:: track_to_feature(track: exordium.video.core.detection.Track, batch_size: int = 30, **_kwargs) -> dict[str, torch.Tensor]
+
+      Extract FaceMesh landmarks for all non-interpolated detections in a track.
+
+      Processes detections in batches and caches results using the
+      ``load_or_create`` decorator.
+
+      :param track: Track containing a sequence of Detection objects.
+      :param batch_size: Number of detections to process per batch. Default: 30.
+      :param \*\*_kwargs: Additional keyword arguments forwarded to
+                          ``load_or_create`` (e.g. ``output_path``, ``overwrite``).
+
+      :returns: Dict with keys ``"frame_ids"`` (``(N,)`` long tensor) and
+                ``"features"`` (``(N, 478, 2)`` float tensor), both on CPU.
+
+
+
+   .. py:method:: __del__() -> None
+
+      Clean up landmarker resources.
+
+
+
+.. py:function:: crop_eye_regions(image: numpy.ndarray | torch.Tensor, landmarks: numpy.ndarray | torch.Tensor, scale: float = 1.5) -> dict[str, numpy.ndarray | torch.Tensor]
+
+   Crop right and left eye regions from a face image.
+
+   Supports both coarse **YOLO11 5-point** keypoints and dense
+   **FaceMesh 478-point** landmarks.  The square crop side length is derived
+   from the Euclidean inter-eye distance multiplied by *scale*, so the result
+   adapts automatically to any face size.
+
+   :param image: Face image — ``(H, W, 3)`` uint8 numpy **or**
+                 ``(3, H, W)`` uint8 torch tensor.
+   :param landmarks: Facial landmark coordinates in pixel space:
+
+                     * ``(5, 2)``   — YOLO11 coarse keypoints.
+                       Index ``0`` = right eye (subject's right, viewer's left),
+                       index ``1`` = left eye.
+                     * ``(478, 2)`` — FaceMesh dense landmarks.
+                       Eye centroids are computed as the mean of
+                       :data:`~exordium.video.face.landmark.constants.FaceMesh478Regions.RIGHT_EYE`
+                       and
+                       :data:`~exordium.video.face.landmark.constants.FaceMesh478Regions.LEFT_EYE`
+                       indices.
+
+                     Either ``np.ndarray`` or ``torch.Tensor``.
+   :param scale: Multiplier applied to the inter-eye distance to set the square
+                 crop side length.  Default ``1.5``.
+
+   :returns:
+
+             * ``"eye_region_right"`` — right-eye crop (subject's right, viewer's left).
+             * ``"eye_region_left"``  — left-eye crop  (subject's left, viewer's right).
+   :rtype: Dict with two keys, both in the same format as *image*
+
+   :raises ValueError: If *landmarks* does not have shape ``(5, 2)`` or ``(478, 2)``.
+
+   Example::
+
+       # --- coarse (YOLO11) ---
+       from exordium.video.face.detector.yolo11 import YoloFace11Detector
+       from exordium.video.face.landmark.facemesh import crop_eye_regions
+
+       det   = detector.detect_image_path(path)[0]
+       crop  = det.crop(square=True, extra_space=1.3)   # (3, H, W) tensor
+       eyes  = crop_eye_regions(crop, det.landmarks)    # 5-pt keypoints
+       right = eyes["eye_region_right"]                 # (3, bb, bb) tensor
+
+       # --- dense (FaceMesh) ---
+       lmks  = facemesh([crop])[0]                      # (478, 2) tensor
+       eyes  = crop_eye_regions(crop, lmks)
+       right = eyes["eye_region_right"]
+
+
+
+.. py:function:: rotate_landmarks(landmarks: numpy.ndarray, R: numpy.ndarray) -> numpy.ndarray
+
+   Rotate landmarks using a transformation matrix.
+
+   :param landmarks: Landmark coordinates of shape ``(N, 2)``.
+   :param R: Rotation/transformation matrix of shape ``(2, 3)``.
+
+   :returns: Rotated landmarks of shape ``(N, 2)`` as integers.
+
+
+.. py:function:: visualize_landmarks(image: numpy.ndarray | torch.Tensor, landmarks: numpy.ndarray | torch.Tensor, output_path: str | pathlib.Path | None = None, show_indices: bool = True, radius: int = 1, color: tuple[int, int, int] = (255, 0, 0), colors: list[tuple[int, int, int]] | None = None, thickness: int = -1, font: int = cv2.FONT_HERSHEY_SIMPLEX, fontScale: float = 0.5, font_thickness: int = 1) -> numpy.ndarray | torch.Tensor
+
+   Draw 2D landmarks onto an image.
+
+   Accepts ``(H, W, C)`` numpy arrays or ``(C, H, W)`` uint8 torch tensors;
+   returns the same type as the input.  Colors are interpreted in the
+   channel order of the input (RGB for tensors, BGR for numpy).
+
+   :param image: Input image — ``np.ndarray (H, W, C)`` or
+                 ``torch.Tensor (C, H, W)`` uint8.
+   :param landmarks: Landmark coordinates of shape ``(N, 2)``.
+   :param output_path: Path to save the output image. ``None`` skips saving.
+   :param show_indices: Draw landmark indices next to each point. Default: True.
+   :param radius: Radius of each landmark circle. Default: 1.
+   :param color: Fallback color for landmarks when ``colors`` is not provided.
+                 Default: ``(255, 0, 0)`` (red in RGB).
+   :param colors: Per-landmark color list of length ``N``.  When provided and
+                  ``len(colors) == N``, each landmark is drawn in its own color.
+                  ``None`` falls back to ``color``.
+   :param thickness: Circle border thickness. Default: 2.
+   :param font: OpenCV font type. Default: cv2.FONT_HERSHEY_SIMPLEX.
+   :param fontScale: Font scale for index labels. Default: 0.3.
+   :param font_thickness: Thickness of index label text. Default: 1.
+
+   :returns: Copy of the image with landmarks drawn, same type as input.
+
+   :raises Exception: If ``landmarks`` does not have shape ``(N, 2)``.
+
+

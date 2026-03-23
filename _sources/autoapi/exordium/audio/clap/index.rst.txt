@@ -1,0 +1,121 @@
+exordium.audio.clap
+===================
+
+.. py:module:: exordium.audio.clap
+
+.. autoapi-nested-parse::
+
+   CLAP audio embedding model wrapper.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.audio.clap.CLAP_MODEL_ID
+   exordium.audio.clap.CLAP_SAMPLE_RATE
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.audio.clap.ClapWrapper
+
+
+Module Contents
+---------------
+
+.. py:data:: CLAP_MODEL_ID
+   :value: 'laion/larger_clap_music_and_speech'
+
+
+   HuggingFace model ID for the LAION CLAP music-and-speech checkpoint.
+
+.. py:data:: CLAP_SAMPLE_RATE
+   :value: 48000
+
+
+   Required audio sample rate for CLAP inference (48 000 Hz).
+
+.. py:class:: ClapWrapper(model_name: str = CLAP_MODEL_ID, device_id: int = -1)
+
+   Bases: :py:obj:`exordium.audio.base.AudioModelWrapper`
+
+
+   Wrapper for LAION CLAP audio embedding model via HuggingFace Transformers.
+
+   Extracts 512-dimensional audio embeddings using the
+   ``laion/larger_clap_music_and_speech`` checkpoint.  Input audio at any
+   sample rate is resampled to 48 kHz before feature extraction.
+
+   :param model_name: HuggingFace model identifier. Defaults to
+                      ``"laion/larger_clap_music_and_speech"``.
+   :param device_id: GPU device index. ``None`` or negative uses CPU.
+
+   Initialize with device setup.
+
+   :param device_id: GPU device ID. Use -1 for CPU.
+
+
+   .. py:method:: __call__(waveforms: torch.Tensor, sample_rate: int = CLAP_SAMPLE_RATE) -> torch.Tensor
+
+      Extract CLAP embeddings from audio waveforms.
+
+      :param waveforms: Input audio of shape ``(B, T)`` or ``(T,)`` as a
+                        float32 tensor at ``sample_rate`` Hz.
+      :param sample_rate: Sample rate of the input waveforms. Defaults to
+                          ``CLAP_SAMPLE_RATE`` (48 kHz).
+
+      :returns: Audio embeddings of shape ``(B, 512)``.
+
+      :raises ValueError: If input waveform has an invalid shape.
+
+
+
+   .. py:method:: inference(waveform: numpy.ndarray | torch.Tensor) -> torch.Tensor
+
+      Extract CLAP features from a pre-prepared waveform tensor.
+
+      :param waveform: Float tensor of shape ``(B, T)`` or ``(T,)`` at
+                       ``CLAP_SAMPLE_RATE`` (48 kHz).
+
+      :returns: Audio embeddings of shape ``(B, 512)``.
+
+
+
+   .. py:method:: audio_to_feature(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, **kwargs) -> torch.Tensor
+
+      Extract CLAP embeddings from a single audio file or waveform.
+
+      File paths are loaded and resampled to 48 kHz automatically via
+      :meth:`~exordium.audio.base.AudioModelWrapper._prepare_waveform`.
+      Pre-loaded tensors are assumed to be at ``sample_rate``; set
+      ``sample_rate`` accordingly so resampling is applied when needed.
+
+      :param audio: Audio file path or pre-loaded 1-D float tensor.
+      :param sample_rate: Sample rate of a pre-loaded tensor (ignored for
+                          file paths, which are loaded at their native rate and
+                          resampled). Defaults to ``CLAP_SAMPLE_RATE``.
+      :param \*\*kwargs: Ignored; reserved for ``load_or_create`` compatibility.
+
+      :returns: Embeddings tensor of shape ``(1, 512)``.
+
+
+
+   .. py:method:: batch_audio_to_features(audios: list, **kwargs) -> torch.Tensor
+
+      Extract CLAP embeddings from multiple audio inputs in one forward pass.
+
+      :param audios: List of audio file paths or pre-loaded 1-D tensors.
+      :param sample_rate: Sample rate of pre-loaded tensors. Ignored for file
+                          paths. Defaults to ``CLAP_SAMPLE_RATE``.
+      :param \*\*kwargs: Ignored; reserved for ``load_or_create`` compatibility.
+
+      :returns: Embeddings tensor of shape ``(B, 512)``.
+
+
+

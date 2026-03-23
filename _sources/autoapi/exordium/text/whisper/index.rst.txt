@@ -1,0 +1,141 @@
+exordium.text.whisper
+=====================
+
+.. py:module:: exordium.text.whisper
+
+.. autoapi-nested-parse::
+
+   Whisper speech-to-text model wrapper.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.text.whisper.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.text.whisper.WhisperWrapper
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: WhisperWrapper(model_name: str = 'distil-whisper/distil-large-v3', device_id: int = 0, dtype: torch.dtype | None = None)
+
+   Bases: :py:obj:`exordium.text.base.StreamingMixin`, :py:obj:`exordium.text.base.SpeechToText`
+
+
+   Wrapper for HuggingFace Whisper speech-to-text models.
+
+   Uses ``transformers`` for native MPS/CUDA/CPU support with optional
+   word-by-word streaming via :class:`~transformers.TextIteratorStreamer`.
+
+   The pipeline:
+
+   * :meth:`preprocess` — converts any audio input to a feature dict ready
+     for the model.
+   * :meth:`inference` — runs ``model.generate`` and returns the decoded
+     string.  For streaming, use :meth:`stream` instead.
+   * :meth:`__call__` — chains ``preprocess`` + ``inference``; returns the
+     full transcript as a string.
+   * :meth:`stream` — chains ``preprocess`` + streaming generation; yields
+     text chunks word-by-word as they are decoded.
+
+   :param model_name: HuggingFace model identifier. Recommended:
+                      ``"distil-whisper/distil-large-v3"`` for quality/speed on GPU,
+                      ``"openai/whisper-large-v3-turbo"`` for highest quality.
+   :param device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.
+   :param dtype: Torch dtype for the model weights. Defaults to
+                 ``torch.float16`` on GPU/MPS, ``torch.float32`` on CPU.
+
+   Example — full transcript::
+
+       wrapper = WhisperWrapper()
+       text = wrapper(waveform)
+       text = wrapper("audio.wav")
+
+   Example — streaming word-by-word::
+
+       for chunk in wrapper.stream(waveform):
+           print(chunk, end="", flush=True)
+
+
+
+   .. py:method:: preprocess(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, sample_rate: int = 16000) -> dict[str, torch.Tensor]
+
+      Convert any audio input to model-ready input features on ``self.device``.
+
+      :param audio: One of:
+
+                    * ``str | Path`` — loaded via torchaudio, resampled to 16 kHz.
+                    * ``np.ndarray`` — float32, 1-D or ``(1, T)``, 16 kHz mono.
+                    * ``torch.Tensor`` — same shape/dtype as ndarray.
+      :param sample_rate: Sample rate of the input waveform when passing an
+                          array or tensor directly. Ignored for file paths (detected
+                          automatically). Defaults to 16000.
+
+      :returns: Dict with ``input_features`` on ``self.device``.
+
+
+
+   .. py:method:: inference(inputs: object, **kwargs: object) -> str
+
+      Run greedy/beam-search decoding and return the full transcript.
+
+      :param inputs: Feature dict from :meth:`preprocess` on ``self.device``.
+      :param \*\*kwargs: Optional ``language`` (str) and ``beam_size`` (int).
+
+      :returns: Transcribed text as a plain string.
+
+
+
+   .. py:method:: __call__(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, language: str | None = None, beam_size: int = 5, sample_rate: int = 16000) -> str
+
+      Transcribe audio and return the full text as a plain string.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+      :param language: Language code or ``None`` for auto-detection.
+      :param beam_size: Decoder beam width.
+      :param sample_rate: Sample rate of the input waveform (ignored for paths).
+
+      :returns: Transcribed text.
+
+
+
+   .. py:method:: stream(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, language: str | None = None, beam_size: int = 1, sample_rate: int = 16000) -> collections.abc.Iterator[str]
+
+      Transcribe audio with word-by-word streaming output.
+
+      Runs ``model.generate`` in a background thread and yields decoded text
+      chunks to the caller as they are produced — no need to wait for the
+      full transcript.  Beam size defaults to ``1`` (greedy) for lowest
+      latency; increase for better quality at the cost of first-token delay.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+      :param language: Language code or ``None`` for auto-detection.
+      :param beam_size: Decoder beam width. Defaults to ``1`` for streaming.
+      :param sample_rate: Sample rate of the input waveform (ignored for paths).
+
+      :Yields: Decoded text chunks (words or sub-word tokens) as strings.
+
+      Example::
+
+          for chunk in wrapper.stream("audio.wav"):
+              print(chunk, end="", flush=True)
+          print()  # newline after full transcript
+
+
+
+

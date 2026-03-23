@@ -1,0 +1,103 @@
+exordium.video.face.detector.yolo11
+===================================
+
+.. py:module:: exordium.video.face.detector.yolo11
+
+.. autoapi-nested-parse::
+
+   YOLO11 face detector wrapper — bounding-box + 5-point facial keypoints.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.detector.yolo11.logger
+   exordium.video.face.detector.yolo11.YOLO11_FACE_MODELS
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.detector.yolo11.YoloFace11Detector
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:data:: YOLO11_FACE_MODELS
+   :type:  dict[str, str]
+
+   Mapping of model names to download URLs for available YOLO11-face weights.
+
+.. py:class:: YoloFace11Detector(model_name: str = _DEFAULT_MODEL, device_id: int = 0, conf: float = 0.25, batch_size: int = 32, verbose: bool = False)
+
+   Bases: :py:obj:`exordium.video.face.detector.base.FaceDetector`
+
+
+   Face detector using YOLO11-pose — **bounding-box + 5 facial keypoints**.
+
+   Uses models from `zjykzj/YOLO11Face
+   <https://github.com/zjykzj/YOLO11Face>`_ trained on WIDERFace with
+   RetinaFace keypoint annotations.  Weights are downloaded automatically
+   on first use and cached under :data:`~exordium.WEIGHT_DIR`.
+
+   Available models (``model_name`` values):
+
+   * ``"yolo11n-pose_widerface"`` — nano, fastest (default)
+   * ``"yolo11s-pose_widerface"`` — small, best accuracy
+   * ``"yolov8n-pose_widerface"`` — YOLOv8-nano backbone
+   * ``"yolov8s-pose_widerface"`` — YOLOv8-small backbone
+
+   Keypoint order (5 points, pixel ``(x, y)``):
+   right eye, left eye, nose tip, mouth right, mouth left.
+
+   Accepts ``(3, H, W)`` uint8 RGB ``torch.Tensor`` objects throughout.
+   Numpy conversion to BGR is performed internally inside
+   :meth:`run_detector` where Ultralytics requires it.
+
+   :param model_name: One of the keys in :data:`YOLO11_FACE_MODELS`, or a local
+                      path to a ``.pt`` file.
+   :param device_id: Device index.  ``-1`` / ``None`` → CPU; ``0+`` →
+                     MPS / CUDA.
+   :param conf: Minimum detection confidence threshold.
+   :param batch_size: Frames per inference batch.
+   :param verbose: Show tqdm progress bars.
+
+   Example::
+
+       detector = YoloFace11Detector(device_id=None)
+
+       # single image (tensor input)
+       dets = detector.detect_image(rgb_tensor)  # (3, H, W) uint8 RGB
+       for det in dets:
+           print(det.bb_xyxy, det.landmarks)  # landmarks (5, 2) non-zero
+
+       # full video
+       vdets = detector.detect_video("input.mp4", output_path="dets.vdet")
+
+
+
+   .. py:method:: run_detector(images: list[torch.Tensor]) -> list[list[tuple[torch.Tensor, torch.Tensor, float]]]
+
+      Run YOLO11-pose on a list of ``(3, H, W)`` uint8 RGB tensors.
+
+      Converts each tensor to a ``(H, W, 3)`` uint8 **BGR** numpy array
+      internally (Ultralytics numpy convention), runs batched inference,
+      and returns detections and 5-point face keypoints as torch tensors.
+
+      :param images: List of ``(3, H, W)`` uint8 RGB ``torch.Tensor`` objects.
+
+      :returns: One inner list per image.  Each detection is a tuple
+                ``(bb_xyxy, landmarks, score)`` — see :meth:`_parse_results`.
+
+
+

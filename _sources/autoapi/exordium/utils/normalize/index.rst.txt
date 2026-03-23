@@ -1,0 +1,78 @@
+exordium.utils.normalize
+========================
+
+.. py:module:: exordium.utils.normalize
+
+.. autoapi-nested-parse::
+
+   Normalization computation utilities.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.utils.normalize.get_mean_std
+   exordium.utils.normalize.standardization
+   exordium.utils.normalize.save_params_to_json
+   exordium.utils.normalize.load_params_from_json
+
+
+Module Contents
+---------------
+
+.. py:function:: get_mean_std(dataloader: torch.utils.data.DataLoader, ndim: int, verbose: bool = False) -> tuple[torch.Tensor, torch.Tensor]
+
+   Calculates mean and std values of samples for standardization using a DataLoader object.
+
+   VAR[X] = E[X**2] - E[X]**2
+
+   :param dataloader: DataLoader of samples.
+   :param ndim: Dimensionality of the samples.
+   :param verbose: Show progress bar. Defaults to False.
+
+   :raises NotImplementedError: if given ndim is not supported.
+
+   :returns: Tuple of mean and std tensors.
+
+
+.. py:function:: standardization(x: torch.Tensor, mean: torch.Tensor, std: torch.Tensor) -> torch.Tensor
+
+   Applies standardization to a given torch.Tensor.
+
+   :param x: input data of shape (B, F) or (B, T, F).
+   :type x: torch.Tensor
+   :param mean: mean value.
+   :type mean: torch.Tensor
+   :param std: std value.
+   :type std: torch.Tensor
+
+   :returns: standardized data.
+   :rtype: torch.Tensor
+
+
+.. py:function:: save_params_to_json(mean: torch.Tensor, std: torch.Tensor, file_path: os.PathLike)
+
+   Save standardization params to a JSON file.
+
+   :param mean: First vector to save.
+   :type mean: torch.Tensor
+   :param std: Second vector to save.
+   :type std: torch.Tensor
+   :param file_path: Path to the JSON file.
+   :type file_path: os.PathLike
+
+
+.. py:function:: load_params_from_json(file_path: os.PathLike) -> tuple[torch.Tensor, torch.Tensor]
+
+   Load standardization params from a JSON file.
+
+   :param file_path: Path to the JSON file.
+   :type file_path: os.PathLike
+
+   :returns: Loaded params as PyTorch tensors.
+   :rtype: Tuple[torch.Tensor, torch.Tensor]
+
+

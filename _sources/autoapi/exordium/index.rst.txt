@@ -1,0 +1,61 @@
+exordium
+========
+
+.. py:module:: exordium
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/exordium/audio/index
+   /autoapi/exordium/text/index
+   /autoapi/exordium/utils/index
+   /autoapi/exordium/video/index
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.__version__
+   exordium.PROJECT_ROOT
+   exordium.PACKAGE_ROOT
+   exordium.RESOURCE_DIR
+   exordium.TEST_DIR
+   exordium.FIXTURE_DIR
+   exordium.WEIGHT_DIR
+
+
+Package Contents
+----------------
+
+.. py:data:: __version__
+
+.. py:data:: PROJECT_ROOT
+
+   Root directory of the repository (parent of the ``exordium`` package).
+
+.. py:data:: PACKAGE_ROOT
+
+   Root directory of the ``exordium`` package source tree.
+
+.. py:data:: RESOURCE_DIR
+
+   Path to bundled resource files shipped with the package.
+
+.. py:data:: TEST_DIR
+
+   Path to the test suite directory.
+
+.. py:data:: FIXTURE_DIR
+
+   Path to test fixture files — sample images, audio clips, and short videos.
+
+.. py:data:: WEIGHT_DIR
+
+   Default cache directory for downloaded model weights (``~/.cache/torch/hub/checkpoints``).
+
