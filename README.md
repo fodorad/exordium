@@ -9,9 +9,10 @@
 [![CI](https://github.com/fodorad/exordium/workflows/CI/badge.svg)](https://github.com/fodorad/exordium/actions)
 [![Coverage](https://codecov.io/gh/fodorad/exordium/branch/main/graph/badge.svg)](https://codecov.io/gh/fodorad/exordium)
 [![Docs](https://img.shields.io/badge/docs-online-blue?logo=githubpages)](https://fodorad.github.io/exordium/)
-[![PyPI](https://img.shields.io/pypi/v/exordium?color=orange)](https://pypi.org/project/exordium/)
+[![GitHub Release](https://img.shields.io/github/v/release/fodorad/exordium?color=purple)](https://github.com/fodorad/exordium/releases)
+[![PyPI](https://img.shields.io/pypi/v/exordium?color=purple)](https://pypi.org/project/exordium/)
 [![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.9.1%2B-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.9.1-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 

@@ -37,7 +37,14 @@ jobs:
 
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
-      run: brew install ffmpeg || true
+      run: |
+        # torchcodec 0.9.1 ships one dylib per FFmpeg major version (core4…core7)
+        # and selects the right one at runtime by searching for libavutil.X.dylib.
+        # Homebrew places its libraries in a non-standard prefix that is NOT in
+        # the default rpath chain, so we must expose it via DYLD_LIBRARY_PATH.
+        # Writing to $GITHUB_ENV makes it available to every subsequent step.
+        brew install ffmpeg || true
+        echo "DYLD_LIBRARY_PATH=$(brew --prefix ffmpeg)/lib:${DYLD_LIBRARY_PATH}" >> "$GITHUB_ENV"
 
     - name: Install dependencies
       run: uv pip install --system -e ".[all,dev,docs]"
