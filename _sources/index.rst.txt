@@ -16,7 +16,6 @@ Features
 
 - I/O utilities — load, save, resample waveforms
 - Spectrograms — MFCC and Mel-spectrogram (with pre-emphasis)
-- Prosody — pitch, energy, voice ratio, engagement
 - OpenSMILE — eGeMAPSv02 low-level descriptors
 - CLAP — contrastive language–audio pre-training embeddings (512-d)
 - Wav2Vec2 — self-supervised speech representations (768-d)
