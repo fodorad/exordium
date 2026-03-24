@@ -199,7 +199,6 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../../autoapi/exordium/audio/base/index.html">exordium.audio.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../autoapi/exordium/audio/clap/index.html">exordium.audio.clap</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../autoapi/exordium/audio/io/index.html">exordium.audio.io</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../../autoapi/exordium/audio/prosody/index.html">exordium.audio.prosody</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../autoapi/exordium/audio/smile/index.html">exordium.audio.smile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../autoapi/exordium/audio/spectrogram/index.html">exordium.audio.spectrogram</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../autoapi/exordium/audio/wav2vec2/index.html">exordium.audio.wav2vec2</a></li>
@@ -351,8 +350,9 @@
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">CLIPVisionModelWithProjection</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">CLIPVisionModelWithProjection</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># ty: ignore[invalid-argument-type]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">_CLIP_MEAN</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
             <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
         <span class="p">)</span>

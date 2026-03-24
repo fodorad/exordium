@@ -199,7 +199,6 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/base/index.html">exordium.audio.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/clap/index.html">exordium.audio.clap</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/io/index.html">exordium.audio.io</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/prosody/index.html">exordium.audio.prosody</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/smile/index.html">exordium.audio.smile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/spectrogram/index.html">exordium.audio.spectrogram</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/wav2vec2/index.html">exordium.audio.wav2vec2</a></li>
@@ -394,6 +393,7 @@
 <span class="sd">            ``self.device``.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">(</span>
             <span class="n">text</span><span class="p">,</span>
             <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>

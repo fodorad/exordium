@@ -112,7 +112,7 @@ downloaded automatically on first run.
    * - ``demo_video_tracking.ipynb``
      - Multi-face IoU tracking across video frames with track merging
    * - ``demo_audio.ipynb``
-     - Audio features: spectrogram, prosody, OpenSMILE, CLAP, Wav2Vec2, WavLM
+     - Audio features: spectrogram, OpenSMILE, CLAP, Wav2Vec2, WavLM
    * - ``demo_text.ipynb``
      - Text features: Whisper transcription, BERT, RoBERTa, XML-RoBERTa
 
