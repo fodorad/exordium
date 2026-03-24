@@ -7,7 +7,7 @@
 **Collection of Preprocessing Functions and Deep Learning Methods for Multimodal Feature Extraction**
 
 [![CI](https://github.com/fodorad/exordium/workflows/CI/badge.svg)](https://github.com/fodorad/exordium/actions)
-[![Coverage](https://codecov.io/gh/fodorad/exordium/branch/main/graph/badge.svg)](https://codecov.io/gh/fodorad/exordium)
+[![codecov](https://codecov.io/gh/fodorad/exordium/graph/badge.svg?token=SW94492IHY)](https://codecov.io/gh/fodorad/exordium)
 [![Docs](https://img.shields.io/badge/docs-online-blue?logo=githubpages)](https://fodorad.github.io/exordium/)
 [![GitHub Release](https://img.shields.io/github/v/release/fodorad/exordium?color=purple)](https://github.com/fodorad/exordium/releases)
 [![PyPI](https://img.shields.io/pypi/v/exordium?color=purple)](https://pypi.org/project/exordium/)
