@@ -11,7 +11,7 @@
 [![Docs](https://img.shields.io/badge/docs-online-blue?logo=githubpages)](https://fodorad.github.io/exordium/)
 [![PyPI](https://img.shields.io/pypi/v/exordium?color=orange)](https://pypi.org/project/exordium/)
 [![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.10%2B-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.9.1%2B-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
@@ -87,12 +87,23 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 
 ## Installation
 
+> **Requires [uv](https://docs.astral.sh/uv/).**
+> The `video` extras include `unigaze`, which pins `timm==0.3.2` (broken with modern PyTorch).
+> `uv`'s `override-dependencies` in `pyproject.toml` silently upgrades it to `timm>=1.0`.
+> Plain `pip` has no equivalent override mechanism and will fail to resolve this conflict.
+
 ```bash
-pip install exordium          # base only
-pip install exordium[all]     # all optional dependencies
-pip install exordium[audio]   # audio extras only
-pip install exordium[video]   # video extras only
-pip install exordium[text]    # text extras only
+uv pip install exordium          # base only
+uv pip install exordium[all]     # all optional dependencies
+uv pip install exordium[audio]   # audio extras only
+uv pip install exordium[video]   # video extras only
+uv pip install exordium[text]    # text extras only
+```
+
+Install uv if you don't have it yet:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### Extras

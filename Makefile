@@ -10,16 +10,16 @@ help:
 # ── Setup ──────────────────────────────────────────────────────────────────────
 
 install:
-	uv pip install "exordium[all]"
+	uv pip install --python $(shell which python) "exordium[all]"
 
 dev:
-	uv pip install -e ".[all,dev]"
+	uv pip install --python $(shell which python) -e ".[all,dev]"
 
 upgrade:
-	uv pip install --upgrade -e ".[all,dev,docs]"
+	uv pip install --python $(shell which python) --upgrade -e ".[all,dev,docs]"
 
 install-docs:
-	uv pip install -e ".[docs]"
+	uv pip install --python $(shell which python) -e ".[docs]"
 
 # ── Dev helpers (modify files) ─────────────────────────────────────────────────
 

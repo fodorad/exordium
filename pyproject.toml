@@ -23,12 +23,32 @@ dependencies = [
   "numpy",
   "opencv-python",
   "scipy",
-  "torch>=2.10",
+  # ── PyTorch ecosystem version pins ───────────────────────────────────────────
+  # torch, torchaudio, torchvision, and torchcodec must all be pinned together.
+  #
+  # torchcodec ships pre-compiled native extensions (.so / .dylib) that are
+  # linked against a specific c10::MessageLogger C++ ABI from libc10.  This ABI
+  # is NOT stable across PyTorch minor releases:
+  #
+  #   torch 2.6 – 2.9  →  MessageLogger(const char*, int, int)          ← PKcii
+  #   torch 2.10 PyPI   →  MessageLogger(c10::SourceLocation, int, bool) ← incompatible
+  #   torch 2.11 PyPI   →  MessageLogger(c10::SourceLocation, int, bool) ← incompatible
+  #
+  # torchcodec 0.9.x was compiled against the 2.9 ABI (PKcii) and works with
+  # PyPI torch 2.9.1.  torchcodec 0.10.x targets a non-PyPI whl-index build of
+  # torch 2.10 that has a fourth bool parameter (PKciib) — it does NOT match
+  # the standard PyPI torch 2.10 or 2.11 releases.
+  #
+  # To upgrade: wait for a torchcodec release that explicitly targets a stable
+  # PyPI torch ≥ 2.10, then bump all four pins together.
+  # ─────────────────────────────────────────────────────────────────────────────
+  "torch==2.9.1",
+  "torchaudio==2.9.1",
+  "torchvision==0.24.1",
+  "torchcodec==0.9.1",
   "tqdm",
   "matplotlib",
   "huggingface_hub",
-  "torchcodec>=0.10",
-  "torchvision",
   "transformers",
   "safetensors",
 ]
@@ -120,7 +140,7 @@ directory = "coverage_html"
 
 [tool.uv]
 override-dependencies = [
-  "timm>=1.0",  # unigaze is overly strict 
+  "timm>=1.0",  # unigaze pins timm==0.3.2; override it
 ]
 
 [tool.ty.environment]
