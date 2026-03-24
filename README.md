@@ -30,7 +30,6 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 |---|---|---|
 | I/O | load, save, resample | waveform |
 | Spectral features | MFCC, Mel-spectrogram (with pre-emphasis) | spectrogram |
-| Prosody | pitch, energy, voice activity, engagement | low-level descriptors |
 | Low-level descriptors | [OpenSMILE](https://github.com/audeering/opensmile) — eGeMAPSv02 | 88-d vector |
 | Audio–language embeddings | [CLAP](https://github.com/LAION-AI/CLAP) (laion/larger_clap_music_and_speech) | 512-d vector |
 | Speech representations | [Wav2Vec2](https://huggingface.co/facebook/wav2vec2-base-960h) (facebook/wav2vec2-base-960h) | (T, 768) |
