@@ -8,7 +8,7 @@ from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD, VisualModelW
 
 _MODEL_IDS: dict[str, str] = {
     "small": "facebook/dinov2-small",
-    "base":  "facebook/dinov2-base",
+    "base": "facebook/dinov2-base",
     "large": "facebook/dinov2-large",
     "giant": "facebook/dinov2-giant",
 }
@@ -16,7 +16,7 @@ _MODEL_IDS: dict[str, str] = {
 
 _FEATURE_DIMS: dict[str, int] = {
     "small": 384,
-    "base":  768,
+    "base": 768,
     "large": 1024,
     "giant": 1536,
 }
@@ -63,9 +63,7 @@ class DINOv2Wrapper(VisualModelWrapper):
         device_id: int | None = None,
     ) -> None:
         if model_name not in _MODEL_IDS:
-            raise ValueError(
-                f"Invalid model_name: {model_name!r}. Choose from {list(_MODEL_IDS)}."
-            )
+            raise ValueError(f"Invalid model_name: {model_name!r}. Choose from {list(_MODEL_IDS)}.")
         super().__init__(device_id)
         self.feature_dim = _FEATURE_DIMS[model_name]
         self.model = Dinov2Model.from_pretrained(_MODEL_IDS[model_name])
