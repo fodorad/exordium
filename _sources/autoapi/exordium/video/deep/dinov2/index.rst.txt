@@ -1,0 +1,85 @@
+exordium.video.deep.dinov2
+==========================
+
+.. py:module:: exordium.video.deep.dinov2
+
+.. autoapi-nested-parse::
+
+   DINOv2 vision encoder wrapper using HuggingFace Transformers.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.deep.dinov2.DINOv2Wrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: DINOv2Wrapper(model_name: str = _DEFAULT_DINOV2_MODEL, device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
+
+
+   Wrapper for DINOv2 frame-wise feature extraction via HuggingFace Transformers.
+
+   Loads a DINOv2 vision encoder and extracts L2-normalised CLS-token embeddings.
+   DINOv2 is a self-supervised ViT trained without language supervision, which
+   makes it particularly effective for dense visual tasks such as emotion
+   recognition from faces and body pose.
+
+   The default variant is ``"base"`` (ViT-B/14, 768-d, ~86M parameters),
+   offering approximately 5–7× faster inference than CLIP ViT-H/14 at
+   competitive representation quality.
+
+   :param model_name: DINOv2 variant — ``"small"`` (384-d), ``"base"`` (768-d),
+                      ``"large"`` (1024-d), or ``"giant"`` (1536-d).
+                      Defaults to ``"base"``.
+   :param device_id: GPU device index. ``None`` or negative uses CPU.
+
+   :raises ValueError: If ``model_name`` is not one of the supported variants.
+
+   Example::
+
+       from exordium.video.deep.dinov2 import DINOv2Wrapper
+
+       model = DINOv2Wrapper(model_name="base", device_id=0)
+       result = model.video_to_feature("clip.mp4")
+       # result["features"]: (T, 768) — one embedding per frame
+
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+
+      Resize and normalise frames to DINOv2 input convention.
+
+      Applies bicubic resize to 224×224 and normalises with ImageNet
+      mean/std as used during DINOv2 pre-training.
+
+      :param frames: Any input supported by
+                     :meth:`~exordium.video.deep.base.VisualModelWrapper._to_uint8_tensor`.
+
+      :returns: Float tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+
+      DINOv2 encoder forward pass.
+
+      Runs the vision transformer and extracts the CLS token from
+      ``last_hidden_state[:, 0, :]``, then L2-normalises the result.
+
+      :param tensor: Preprocessed image tensor of shape ``(B, 3, 224, 224)``
+                     on ``self.device``.
+
+      :returns: L2-normalised CLS-token tensor of shape ``(B, D)`` where ``D``
+                is the feature dimension of the selected variant (e.g. 768 for
+                ``"base"``).
+
+
+

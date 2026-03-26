@@ -30,7 +30,7 @@ Features
 - Iris landmarks — MediaPipe Iris 71 eye pts + 5 iris pts, EAR, iris diameters
 - Blink detection — BlinkDenseNet121 per-eye open/closed probability
 - Action units — OpenGraphAU 41-dim intensity vector
-- Deep visual features — Swin Transformer (768-d), FAb-Net (256-d), CLIP ViT-H/14 (1024-d)
+- Deep visual features — Swin Transformer (768-d), FAb-Net (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384 / 768 / 1024 / 1536-d)
 - IoU tracking — multi-face track assignment and merging across video frames
 
 **Text**
@@ -93,7 +93,7 @@ downloaded automatically on first run.
    * - ``demo_video_io.ipynb``
      - Video loading, frame iteration, batch access, FPS resampling
    * - ``demo_video_deep.ipynb``
-     - Deep visual features: SwinT (768-d), FabNet (256-d), CLIP ViT-H/14 (1024-d)
+     - Deep visual features: SwinT (768-d), FabNet (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384–1536-d)
    * - ``demo_video_face_bb.ipynb``
      - Face detection: YOLOv8 vs YOLO11 on easy and hard (extreme-pose) images
    * - ``demo_video_face_landmarks.ipynb``
