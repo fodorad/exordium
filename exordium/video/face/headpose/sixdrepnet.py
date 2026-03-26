@@ -453,12 +453,12 @@ class _RepVGGBlock(nn.Module):  # pragma: no cover
         if branch is None:
             return 0, 0
         if isinstance(branch, nn.Sequential):
-            kernel = branch.conv.weight  # type: ignore[union-attr]
-            rm = branch.bn.running_mean  # type: ignore[union-attr]
-            rv = branch.bn.running_var  # type: ignore[union-attr]
-            gamma = branch.bn.weight  # type: ignore[union-attr]
-            beta = branch.bn.bias  # type: ignore[union-attr]
-            eps = branch.bn.eps  # type: ignore[union-attr]
+            kernel = branch.conv.weight  # ty: ignore[unresolved-attribute]
+            rm = branch.bn.running_mean  # ty: ignore[unresolved-attribute]
+            rv = branch.bn.running_var  # ty: ignore[unresolved-attribute]
+            gamma = branch.bn.weight  # ty: ignore[unresolved-attribute]
+            beta = branch.bn.bias  # ty: ignore[unresolved-attribute]
+            eps = branch.bn.eps  # ty: ignore[unresolved-attribute]
         else:
             assert isinstance(branch, nn.BatchNorm2d)
             if not hasattr(self, "id_tensor"):
