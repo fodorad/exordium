@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0](https://github.com/fodorad/exordium/compare/v2.0.0...v2.1.0) (2026-03-26)
+
+
+### Features
+
+* add DINOv2 as deep feature extractor, update demo and docs ([c7ccc27](https://github.com/fodorad/exordium/commit/c7ccc27550da2af4b238675d996fdabb1aafff83))
+
 ## [2.1.0] — 2026-03-26
 
 ### Added
