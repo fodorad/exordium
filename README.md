@@ -64,6 +64,7 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Video features | [Swin Transformer](https://github.com/microsoft/Swin-Transformer) (tiny/small/base) | 768-d / 768-d / 1024-d |
 | Face identity features | [FAb-Net](https://www.robots.ox.ac.uk/~vgg/research/unsup_learn_watch_faces/index.html) | 256-d |
 | Vision–language embeddings | [CLIP](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K) (ViT-H/14, laion2B) | 1024-d |
+| Self-supervised visual features | [DINOv2](https://huggingface.co/facebook/dinov2-base) (small/base/large/giant) | 384 / 768 / 1024 / 1536-d |
 
 ### Text
 

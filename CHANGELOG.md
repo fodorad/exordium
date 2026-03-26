@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] — 2026-03-26
+
+### Added
+- DINOv2 wrapper (`DINOv2Wrapper`) — HuggingFace Transformers-based ViT encoder with four variants: small (384-d), base (768-d), large (1024-d), giant (1536-d); L2-normalised CLS-token embeddings
+
+---
+
 ## [2.0.0] — 2026-03-23
 
 ### Added
