@@ -34,6 +34,7 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Audio–language embeddings | [CLAP](https://github.com/LAION-AI/CLAP) (laion/larger_clap_music_and_speech) | 512-d vector |
 | Speech representations | [Wav2Vec2](https://huggingface.co/facebook/wav2vec2-base-960h) (facebook/wav2vec2-base-960h) | (T, 768) |
 | Speech representations | [WavLM](https://huggingface.co/microsoft/wavlm-base-plus) (microsoft/wavlm-base/base+/large) | (T, 768/1024) per layer |
+| Speech emotion features | [emotion2vec+](https://github.com/ddlBoJack/emotion2vec) (emotion2vec_plus_seed) | (T, 768) |
 
 ### Video
 

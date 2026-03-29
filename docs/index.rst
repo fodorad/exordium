@@ -20,6 +20,7 @@ Features
 - CLAP — contrastive language–audio pre-training embeddings (512-d)
 - Wav2Vec2 — self-supervised speech representations (768-d)
 - WavLM — masked speech modelling, layer-wise hidden states (768-d)
+- emotion2vec+ — speech emotion features at ~50 Hz (768-d)
 
 **Video**
 
@@ -111,7 +112,7 @@ downloaded automatically on first run.
    * - ``demo_video_tracking.ipynb``
      - Multi-face IoU tracking across video frames with track merging
    * - ``demo_audio.ipynb``
-     - Audio features: spectrogram, OpenSMILE, CLAP, Wav2Vec2, WavLM
+     - Audio features: spectrogram, OpenSMILE, CLAP, Wav2Vec2, WavLM, emotion2vec+
    * - ``demo_text.ipynb``
      - Text features: Whisper transcription, BERT, RoBERTa, XML-RoBERTa
 
