@@ -33,6 +33,7 @@ from exordium.video.core import (
 from exordium.video.deep import (
     ClipWrapper,
     DINOv2Wrapper,
+    EmotiEffNetWrapper,
     FabNetWrapper,
     SwinTransformer,
     SwinTWrapper,
@@ -100,6 +101,7 @@ __all__ = [
     "VisualModelWrapper",
     "ClipWrapper",
     "DINOv2Wrapper",
+    "EmotiEffNetWrapper",
     "FabNetWrapper",
     "SwinTransformer",
     "SwinTWrapper",
