@@ -39,6 +39,8 @@ class TestBlinkDenseNet121Wrapper(unittest.TestCase):
     def setUpClass(cls):
         cls.model = BlinkDenseNet121Wrapper(device_id=None)
 
+    # --- __call__ ---
+
     def test_call_single_returns_prob(self):
         img = torch.rand(1, 3, 64, 64, dtype=torch.float32)
         probs = self.model(img)
@@ -68,7 +70,7 @@ class TestBlinkDenseNet121Wrapper(unittest.TestCase):
         self.assertTrue(result[0])  # both open
         self.assertFalse(result[1])  # both closed
 
-    def test_predict_pipeline(self):
+    def test_predict_pipeline_478_landmarks(self):
         B = 3
         frames = np.random.randint(0, 255, (B, 224, 224, 3), dtype=np.uint8)
         landmarks = _make_landmarks_478(B)
@@ -83,11 +85,7 @@ class TestBlinkDenseNet121Wrapper(unittest.TestCase):
         result = self.model.predict_frame(frame, landmarks[0])
         self.assertIsNotNone(result)
 
-
-class TestBlinkPredictPipeline(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.model = BlinkDenseNet121Wrapper(device_id=None)
+    # --- predict_pipeline (6-point landmarks) ---
 
     def test_predict_pipeline_returns_4_arrays(self):
         B = 4
@@ -127,14 +125,10 @@ class TestBlinkPredictPipeline(unittest.TestCase):
         self.assertIsInstance(result, np.ndarray)
         self.assertEqual(result.shape[0], B)
 
-
-class TestBlinkDenseNetCoverage(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.model = BlinkDenseNet121Wrapper(device_id=None)
+    # --- coverage branches ---
 
     def test_predict_pipeline_tensor_input(self):
-        """torch.Tensor (B, 3, H, W) input → line 90: frames.permute(...).cpu().numpy()."""
+        """torch.Tensor (B, 3, H, W) input."""
         B = 2
         frames_t = torch.randint(0, 255, (B, 3, 224, 224), dtype=torch.uint8)
         lmks = _make_landmarks_6(B)
@@ -145,7 +139,7 @@ class TestBlinkDenseNetCoverage(unittest.TestCase):
             self.assertEqual(t.shape[0], B)
 
     def test_predict_pipeline_with_headpose(self):
-        """headpose not None → lines 99-103: yaw-based masking of valid eyes."""
+        """headpose not None → yaw-based masking of valid eyes."""
         B = 2
         frames = np.random.randint(0, 255, (B, 224, 224, 3), dtype=np.uint8)
         lmks = _make_landmarks_6(B)
@@ -157,7 +151,7 @@ class TestBlinkDenseNetCoverage(unittest.TestCase):
         self.assertFalse(right_valid[1])
 
     def test_predict_pipeline_empty_left_crop(self):
-        """Left eye far outside right edge of frame → lines 141-142: left crop empty."""
+        """Left eye far outside right edge of frame → left crop empty."""
         B = 1
         frames = np.random.randint(0, 255, (B, 224, 224, 3), dtype=np.uint8)
         lmks = _make_landmarks_6(B, left_x=500, left_y=112, right_x=510, right_y=112)
@@ -166,14 +160,14 @@ class TestBlinkDenseNetCoverage(unittest.TestCase):
         self.assertFalse(right_valid[0])
 
     def test_predict_frame_tensor_input(self):
-        """torch.Tensor (3, H, W) frame → line 218: frame.permute(1,2,0).cpu().numpy()."""
+        """torch.Tensor (3, H, W) frame."""
         frame_t = torch.randint(0, 255, (3, 224, 224), dtype=torch.uint8)
         lmks_2d = _make_landmarks_6(1)[0]  # (6, 2)
         result = self.model.predict_frame(frame_t, lmks_2d)
         self.assertEqual(len(result), 4)
 
     def test_predict_frame_return_patches_true(self):
-        """return_patches=True → lines 235-254, 275: left/right patch extracted."""
+        """return_patches=True → left/right patch extracted."""
         frame = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)
         lmks_2d = _make_landmarks_6(1)[0]  # (6, 2)
         result = self.model.predict_frame(frame, lmks_2d, return_patches=True)
@@ -183,7 +177,7 @@ class TestBlinkDenseNetCoverage(unittest.TestCase):
         self.assertEqual(right_patch.shape, (64, 64, 3))
 
     def test_visualize_tensor_input_returns_tensor(self):
-        """torch.Tensor frames → line 347: permute, line 398: return tensor."""
+        """torch.Tensor frames → return tensor."""
         B = 2
         frames_t = torch.randint(0, 255, (B, 3, 112, 112), dtype=torch.uint8)
         left_state = np.array([0.3, 0.7])
@@ -197,7 +191,7 @@ class TestBlinkDenseNetCoverage(unittest.TestCase):
         self.assertEqual(result.shape[0], B)
 
     def test_visualize_with_landmarks(self):
-        """landmarks not None → lines 376-387: draw circles at eye locations."""
+        """landmarks not None → draw circles at eye locations."""
         B = 2
         frames = np.random.randint(0, 255, (B, 112, 112, 3), dtype=np.uint8)
         left_state = np.array([0.3, 0.7])
@@ -211,7 +205,7 @@ class TestBlinkDenseNetCoverage(unittest.TestCase):
         self.assertIsInstance(result, np.ndarray)
 
     def test_visualize_with_output_path(self):
-        """output_path not None → lines 390-395: save each frame."""
+        """output_path not None → save each frame."""
         B = 2
         frames = np.random.randint(0, 255, (B, 112, 112, 3), dtype=np.uint8)
         left_state = np.array([0.3, 0.7])

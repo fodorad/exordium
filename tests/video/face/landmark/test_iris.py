@@ -20,6 +20,9 @@ class TestIrisWrapper(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = IrisWrapper(device_id=None)
+        cls.eye = torch.randint(0, 255, (3, 80, 120), dtype=torch.uint8)
+
+    # --- __call__ ---
 
     def test_call_single_eye_patch_numpy(self):
         eye_patch = np.random.randint(0, 255, (64, 64, 3), dtype=np.uint8)
@@ -33,18 +36,19 @@ class TestIrisWrapper(unittest.TestCase):
         self.assertEqual(eye_lmks.shape, (4, 71, 2))
         self.assertEqual(iris_lmks.shape, (4, 5, 2))
 
+    def test_list_of_numpy_arrays(self):
+        patches = [
+            np.random.randint(0, 255, (64, 64, 3), dtype=np.uint8),
+            np.random.randint(0, 255, (64, 64, 3), dtype=np.uint8),
+        ]
+        eye_lmks, iris_lmks = self.model(patches)
+        self.assertEqual(eye_lmks.shape, (2, 71, 2))
+        self.assertEqual(iris_lmks.shape, (2, 5, 2))
 
-class TestEyeToFeature(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.model = IrisWrapper(device_id=None)
-        cls.eye = torch.randint(0, 255, (3, 80, 120), dtype=torch.uint8)
-
-    def _result(self):
-        return self.model.eye_to_feature(self.eye)
+    # --- eye_to_feature ---
 
     def test_returns_all_keys(self):
-        result = self._result()
+        result = self.model.eye_to_feature(self.eye)
         for key in (
             "eye_original",
             "eye",
@@ -57,38 +61,38 @@ class TestEyeToFeature(unittest.TestCase):
             self.assertIn(key, result)
 
     def test_all_values_are_tensors(self):
-        result = self._result()
+        result = self.model.eye_to_feature(self.eye)
         for key, val in result.items():
             self.assertIsInstance(val, torch.Tensor, msg=f'"{key}" is not a torch.Tensor')
 
     def test_eye_original_preserves_input(self):
-        result = self._result()
-        self.assertIs(result["eye_original"], self.eye)  # same object, no copy
+        result = self.model.eye_to_feature(self.eye)
+        self.assertIs(result["eye_original"], self.eye)
         self.assertEqual(result["eye_original"].shape, (3, 80, 120))
 
     def test_eye_is_64x64_uint8(self):
-        result = self._result()
+        result = self.model.eye_to_feature(self.eye)
         self.assertEqual(result["eye"].shape, (3, 64, 64))
         self.assertEqual(result["eye"].dtype, torch.uint8)
 
     def test_eye_region_landmarks_shape(self):
-        result = self._result()
+        result = self.model.eye_to_feature(self.eye)
         self.assertEqual(result["eye_region_landmarks"].shape, (71, 2))
 
     def test_iris_landmarks_shape(self):
-        result = self._result()
+        result = self.model.eye_to_feature(self.eye)
         self.assertEqual(result["iris_landmarks"].shape, (5, 2))
 
     def test_iris_diameters_shape(self):
-        result = self._result()
+        result = self.model.eye_to_feature(self.eye)
         self.assertEqual(result["iris_diameters"].shape, (2,))
 
     def test_eyelid_pupil_distances_shape(self):
-        result = self._result()
+        result = self.model.eye_to_feature(self.eye)
         self.assertEqual(result["eyelid_pupil_distances"].shape, (2,))
 
     def test_ear_is_scalar(self):
-        result = self._result()
+        result = self.model.eye_to_feature(self.eye)
         self.assertEqual(result["ear"].ndim, 0)
 
 
@@ -107,8 +111,6 @@ class TestIrisUtilsTypePreserving(unittest.TestCase):
     def _t_eye(self):
         return torch.rand(71, 2)
 
-    # --- calculate_iris_diameters ---
-
     def test_iris_diameters_numpy_in_numpy_out(self):
         out = calculate_iris_diameters(self._np_iris())
         self.assertIsInstance(out, np.ndarray)
@@ -118,8 +120,6 @@ class TestIrisUtilsTypePreserving(unittest.TestCase):
         out = calculate_iris_diameters(self._t_iris())
         self.assertIsInstance(out, torch.Tensor)
         self.assertEqual(out.shape, (2,))
-
-    # --- calculate_eyelid_pupil_distances ---
 
     def test_eyelid_distances_numpy_in_numpy_out(self):
         out = calculate_eyelid_pupil_distances(self._np_iris(), self._np_eye())
@@ -131,8 +131,6 @@ class TestIrisUtilsTypePreserving(unittest.TestCase):
         self.assertIsInstance(out, torch.Tensor)
         self.assertEqual(out.shape, (2,))
 
-    # --- calculate_eye_aspect_ratio ---
-
     def test_ear_numpy_in_float_out(self):
         out = calculate_eye_aspect_ratio(self._np_eye())
         self.assertIsInstance(out, float)
@@ -140,7 +138,7 @@ class TestIrisUtilsTypePreserving(unittest.TestCase):
     def test_ear_tensor_in_tensor_out(self):
         out = calculate_eye_aspect_ratio(self._t_eye())
         self.assertIsInstance(out, torch.Tensor)
-        self.assertEqual(out.ndim, 0)  # scalar
+        self.assertEqual(out.ndim, 0)
 
     def test_ear_invalid_shape_raises(self):
         with self.assertRaises(ValueError):
@@ -217,21 +215,6 @@ class TestVisualizeIris(unittest.TestCase):
                 self._np_img(), self._eye_lmks(), self._iris_lmks(), output_path=out_path
             )
             self.assertTrue(out_path.exists())
-
-
-class TestIrisWrapperPreprocessList(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.model = IrisWrapper(device_id=None)
-
-    def test_list_of_numpy_arrays(self):
-        patches = [
-            np.random.randint(0, 255, (64, 64, 3), dtype=np.uint8),
-            np.random.randint(0, 255, (64, 64, 3), dtype=np.uint8),
-        ]
-        eye_lmks, iris_lmks = self.model(patches)
-        self.assertEqual(eye_lmks.shape, (2, 71, 2))
-        self.assertEqual(iris_lmks.shape, (2, 5, 2))
 
 
 if __name__ == "__main__":

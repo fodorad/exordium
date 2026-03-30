@@ -6,7 +6,6 @@ import numpy as np
 import torch
 
 from exordium.audio.base import AudioModelWrapper
-from exordium.audio.wavlm import WavlmWrapper
 
 
 class _MinimalWrapper(AudioModelWrapper):
@@ -25,7 +24,7 @@ class _MinimalWrapper(AudioModelWrapper):
 class TestAudioModelWrapperPadWaveforms(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = WavlmWrapper(device_id=None)
+        cls.wrapper = _MinimalWrapper(device_id=-1)
 
     def test_pad_waveforms_pads_to_same_length(self):
         wv1 = torch.zeros(100)
@@ -42,7 +41,7 @@ class TestAudioModelWrapperPadWaveforms(unittest.TestCase):
 
     def test_prepare_waveform_returns_tensor(self):
         audio = torch.zeros(16000)
-        result = self.model._prepare_waveform(audio, sample_rate=16000)
+        result = self.wrapper._prepare_waveform(audio, sample_rate=16000)
         self.assertIsInstance(result, torch.Tensor)
 
 

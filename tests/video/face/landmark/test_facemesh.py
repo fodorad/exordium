@@ -31,6 +31,8 @@ class TestFaceMeshWrapper(unittest.TestCase):
     def setUpClass(cls):
         cls.model = FaceMeshWrapper()
 
+    # --- __call__ ---
+
     def test_call_with_image_path(self):
         result = self.model([IMAGE_FACE])
         self.assertIsInstance(result, list)
@@ -83,29 +85,13 @@ class TestFaceMeshWrapper(unittest.TestCase):
         with self.assertRaises(Exception):
             visualize_landmarks(img, bad_lmks)
 
-
-class TestFaceMeshStaticMethods(unittest.TestCase):
-    def test_to_numpy_rgb_hwc_tensor(self):
-        """HWC tensor (shape[0] != 3) → line 112: return image.cpu().numpy()."""
-        hwc = torch.randint(0, 255, (64, 64, 3), dtype=torch.uint8)
-        result = FaceMeshWrapper._to_numpy_rgb(hwc)
-        self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.shape, (64, 64, 3))
-
-
-class TestFaceMeshTrackToFeature(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.model = FaceMeshWrapper()
+    # --- track_to_feature ---
 
     def test_track_to_feature_returns_landmarks(self):
-        """track_to_feature → lines 179-197: batch loop, landmark extraction."""
         track = Track(0)
         for i in range(2):
             track.add(_make_detection(i))
-
         result = self.model.track_to_feature(track)
-
         self.assertIsInstance(result, dict)
         self.assertIn("frame_ids", result)
         self.assertIn("features", result)
@@ -119,12 +105,19 @@ class TestFaceMeshTrackToFeature(unittest.TestCase):
             self.assertEqual(landmarks.shape[2], 2)
 
     def test_track_to_feature_empty_track_returns_empty(self):
-        """Empty track → concatenation returns empty (0, 478, 2) tensor."""
         track = Track(99)
-        # No detections added
         result = self.model.track_to_feature(track)
         self.assertEqual(result["frame_ids"].shape[0], 0)
         self.assertEqual(result["features"].shape, (0, 478, 2))
+
+
+class TestFaceMeshStaticMethods(unittest.TestCase):
+    def test_to_numpy_rgb_hwc_tensor(self):
+        """HWC tensor (shape[0] != 3) → line 112: return image.cpu().numpy()."""
+        hwc = torch.randint(0, 255, (64, 64, 3), dtype=torch.uint8)
+        result = FaceMeshWrapper._to_numpy_rgb(hwc)
+        self.assertIsInstance(result, np.ndarray)
+        self.assertEqual(result.shape, (64, 64, 3))
 
 
 class TestFaceMeshDel(unittest.TestCase):

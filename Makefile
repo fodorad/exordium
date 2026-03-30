@@ -1,5 +1,9 @@
 .PHONY: install dev upgrade install-docs fix lint type-check test docs docs-serve docs-deploy check clean help
 
+# macOS: torchcodec requires FFmpeg dylibs which Homebrew installs to a non-standard prefix.
+# make does not inherit DYLD_LIBRARY_PATH, so we set it explicitly here.
+export DYLD_LIBRARY_PATH := /opt/homebrew/opt/ffmpeg/lib:$(DYLD_LIBRARY_PATH)
+
 help:
 	@echo "Dev (modify files):  fix"
 	@echo "Checks (read-only):  lint | type-check | test | docs | check"
