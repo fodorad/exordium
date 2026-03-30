@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.0](https://github.com/fodorad/exordium/compare/v2.1.0...v2.2.0) (2026-03-30)
+
+
+### Features
+
+* support pretrained EmotiEffNet ([3180453](https://github.com/fodorad/exordium/commit/3180453752428f3e43bf69c45502fe6e980dbbb5))
+* support pretrained emotion2vec+ seed ([6df3848](https://github.com/fodorad/exordium/commit/6df38481bce32813ccbf087b220dda0f8a6f395d))
+* support pretrained wav2vec2 on emotion classification (iemocap, 4-class) ([e625e8b](https://github.com/fodorad/exordium/commit/e625e8b31b41b0576992f0781d0cd21851fba371))
+
 ## [2.1.0](https://github.com/fodorad/exordium/compare/v2.0.0...v2.1.0) (2026-03-26)
 
 
