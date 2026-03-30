@@ -18,7 +18,7 @@ Features
 - Spectrograms — MFCC and Mel-spectrogram (with pre-emphasis)
 - OpenSMILE — eGeMAPSv02 low-level descriptors
 - CLAP — contrastive language–audio pre-training embeddings (512-d)
-- Wav2Vec2 — self-supervised speech representations (768-d)
+- Wav2Vec2 — self-supervised speech representations (base-960h / emotion-iemocap, 768-d)
 - WavLM — masked speech modelling, layer-wise hidden states (768-d)
 - emotion2vec+ — speech emotion features at ~50 Hz (768-d)
 

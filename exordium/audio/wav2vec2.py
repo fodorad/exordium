@@ -1,5 +1,16 @@
-"""Wav2Vec2 speech encoding model wrapper."""
+"""Wav2Vec2 speech encoding model wrapper.
 
+Supports multiple pretrained weight configurations:
+
+- ``"base-960h"`` — Facebook's wav2vec2-base-960h (ASR-finetuned).
+- ``"emotion-iemocap"`` — SpeechBrain's emotion-recognition-wav2vec2-IEMOCAP
+  (emotion-finetuned on IEMOCAP: neutral, anger, happy, sad).
+
+Both variants produce 768-dimensional frame-level features at ~50 Hz from
+16 kHz mono audio.
+"""
+
+import logging
 from pathlib import Path
 from typing import cast
 
@@ -7,28 +18,95 @@ import numpy as np
 import torch
 import transformers as tfm
 
+from exordium import WEIGHT_DIR
 from exordium.audio.base import AudioModelWrapper
+from exordium.utils.ckpt import download_file
 from exordium.utils.decorator import load_or_create
+
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
+
+_MODELS: dict[str, dict[str, str]] = {
+    "base-960h": {
+        "hf_id": "facebook/wav2vec2-base-960h",
+    },
+    "emotion-iemocap": {
+        "hf_id": "facebook/wav2vec2-base",
+        "weight_url": (
+            "https://huggingface.co/speechbrain/"
+            "emotion-recognition-wav2vec2-IEMOCAP/resolve/main/wav2vec2.ckpt"
+        ),
+    },
+}
+"""Supported model configurations."""
+
+SUPPORTED_MODELS = list(_MODELS.keys())
+"""List of supported model name strings."""
 
 
 class Wav2vec2Wrapper(AudioModelWrapper):
     """Wrapper for Wav2Vec2 audio feature extraction.
 
-    Extracts self-supervised learning features from audio using Facebook's
-    wav2vec2-base-960h model. Expects 16kHz mono audio input.
+    Extracts self-supervised learning features from audio using wav2vec2-base
+    architecture. Expects 16 kHz mono audio input.
+
+    Args:
+        device_id: GPU device index.  ``-1`` or ``None`` uses CPU.
+        model_name: Pretrained weight variant.  One of:
+
+            - ``"base-960h"`` (default) — ASR-finetuned features.
+            - ``"emotion-iemocap"`` — emotion-finetuned features (IEMOCAP).
+
+    Raises:
+        ValueError: If *model_name* is not in :data:`SUPPORTED_MODELS`.
+
     """
 
     SAMPLE_RATE = 16000
     """Expected audio sample rate for Wav2Vec2 (16 000 Hz)."""
 
-    def __init__(self, device_id: int = -1) -> None:
+    def __init__(self, device_id: int = -1, model_name: str = "base-960h") -> None:
         """Initialize Wav2Vec2 wrapper with pretrained model."""
         super().__init__(device_id)
-        self.preprocessor = tfm.Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
-        self.model = tfm.Wav2Vec2Model.from_pretrained("facebook/wav2vec2-base-960h")
+
+        if model_name not in _MODELS:
+            raise ValueError(f"Unknown model_name {model_name!r}. Supported: {SUPPORTED_MODELS}")
+
+        cfg = _MODELS[model_name]
+        hf_id = cfg["hf_id"]
+
+        self.preprocessor = tfm.Wav2Vec2Processor.from_pretrained(hf_id)
+        self.model = tfm.Wav2Vec2Model.from_pretrained(hf_id)
         assert isinstance(self.model, tfm.Wav2Vec2Model)
+
+        # Load custom weights if the variant has a separate checkpoint
+        if "weight_url" in cfg:
+            self._load_custom_weights(cfg["weight_url"], model_name)
+
         self.model.to(self.device)  # ty: ignore[invalid-argument-type]
         self.model.eval()
+        logger.info("Wav2Vec2 (%s) loaded to %s.", model_name, self.device)
+
+    def _load_custom_weights(self, url: str, model_name: str) -> None:
+        """Download and load a SpeechBrain-style wav2vec2 checkpoint.
+
+        SpeechBrain stores the state dict with a ``model.`` key prefix that
+        must be stripped before loading into the HuggingFace
+        :class:`~transformers.Wav2Vec2Model`.
+
+        Args:
+            url: Remote URL for the ``.ckpt`` file.
+            model_name: Used as a subdirectory under the cache.
+
+        """
+        weight_dir = WEIGHT_DIR / "wav2vec2" / model_name
+        local_path = weight_dir / "wav2vec2.ckpt"
+        download_file(url, local_path)
+
+        ckpt = torch.load(str(local_path), map_location="cpu", weights_only=False)
+        remapped = {k.replace("model.", "", 1): v for k, v in ckpt.items()}
+        self.model.load_state_dict(remapped, strict=False)
+        logger.info("Loaded custom weights for %s from %s.", model_name, local_path)
 
     def __call__(
         self,
