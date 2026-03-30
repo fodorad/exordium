@@ -88,7 +88,11 @@ class OpensmileWrapper:
 
         """
         if isinstance(waveform, (np.ndarray, torch.Tensor)):
-            waveform_np = waveform.detach().cpu().numpy() if isinstance(waveform, torch.Tensor) else np.asarray(waveform)
+            waveform_np = (
+                waveform.detach().cpu().numpy()
+                if isinstance(waveform, torch.Tensor)
+                else np.asarray(waveform)
+            )
             feature = np.array(self.smile.process_signal(waveform_np, sr))
         else:
             feature = np.array(self.smile.process_file(str(waveform)))

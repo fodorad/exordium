@@ -7,7 +7,7 @@ import torch
 
 from exordium.audio.clap import CLAP_MODEL_ID, CLAP_SAMPLE_RATE
 from exordium.audio.wav2vec2 import SUPPORTED_MODELS, Wav2vec2Wrapper
-from exordium.audio.wavlm import WAVLM_SAMPLE_RATE, WavlmWrapper, _MODEL_IDS
+from exordium.audio.wavlm import _MODEL_IDS, WAVLM_SAMPLE_RATE, WavlmWrapper
 from tests.fixtures import AUDIO_MULTISPEAKER, head_ok, hf_repo_exists
 
 

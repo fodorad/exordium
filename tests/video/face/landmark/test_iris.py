@@ -32,23 +32,26 @@ class TestIrisWrapper(unittest.TestCase):
         cls.eye = torch.randint(0, 255, (3, 80, 120), dtype=torch.uint8)
 
     def test_call_single_eye_patch_numpy(self):
-        eye_lmks, iris_lmks = self.model(
-            np.random.randint(0, 255, (64, 64, 3), dtype=np.uint8)
-        )
+        eye_lmks, iris_lmks = self.model(np.random.randint(0, 255, (64, 64, 3), dtype=np.uint8))
         self.assertEqual(eye_lmks.shape, (1, 71, 2))
         self.assertEqual(iris_lmks.shape, (1, 5, 2))
 
     def test_call_batch_tensor(self):
-        eye_lmks, iris_lmks = self.model(
-            torch.randint(0, 255, (4, 3, 64, 64), dtype=torch.uint8)
-        )
+        eye_lmks, iris_lmks = self.model(torch.randint(0, 255, (4, 3, 64, 64), dtype=torch.uint8))
         self.assertEqual(eye_lmks.shape, (4, 71, 2))
         self.assertEqual(iris_lmks.shape, (4, 5, 2))
 
     def test_eye_to_feature_keys(self):
         result = self.model.eye_to_feature(self.eye)
-        for key in ("eye_original", "eye", "eye_region_landmarks", "iris_landmarks",
-                    "iris_diameters", "eyelid_pupil_distances", "ear"):
+        for key in (
+            "eye_original",
+            "eye",
+            "eye_region_landmarks",
+            "iris_landmarks",
+            "iris_diameters",
+            "eyelid_pupil_distances",
+            "ear",
+        ):
             self.assertIn(key, result)
 
     def test_eye_to_feature_all_tensors(self):
@@ -154,9 +157,7 @@ class TestVisualizeIris(unittest.TestCase):
             visualize_iris(self._np_img(), np.zeros((71, 3), dtype=np.float32), self._iris_lmks())
 
     def test_show_indices_true(self):
-        out = visualize_iris(
-            self._np_img(), self._eye_lmks(), self._iris_lmks(), show_indices=True
-        )
+        out = visualize_iris(self._np_img(), self._eye_lmks(), self._iris_lmks(), show_indices=True)
         self.assertIsInstance(out, np.ndarray)
 
     def test_output_path_saves_file(self):

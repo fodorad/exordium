@@ -2,7 +2,10 @@
 
 import pathlib
 import urllib.request
-from http.client import HTTPResponse
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from http.client import HTTPResponse
 
 FIXTURES_ROOT = pathlib.Path(__file__).parent
 
@@ -43,6 +46,7 @@ def hf_file_exists(repo_id: str, filename: str) -> bool:
         return False
     except Exception:
         return False
+
 
 AUDIO_MULTISPEAKER = FIXTURES_ROOT / "audio" / "multispeaker.wav"
 IMAGE_CAT_TIE = FIXTURES_ROOT / "image" / "cat_tie.jpg"

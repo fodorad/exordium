@@ -6,11 +6,11 @@ import numpy as np
 import torch
 
 from exordium.video.face.au.opengraphau import (
+    _OPENGRAPHAU_WEIGHTS,
     AU_REGISTRY,
     AU_ids,
     AU_names,
     OpenGraphAuWrapper,
-    _OPENGRAPHAU_WEIGHTS,
 )
 from tests.fixtures import IMAGE_FACE, hf_file_exists
 
