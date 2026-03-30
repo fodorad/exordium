@@ -167,6 +167,25 @@ class TestSoftmaxTemperature(unittest.TestCase):
             self.assertAlmostEqual(s.item(), 1.0, places=5)
 
 
+class TestGazeWrapperLookingAtCamera(unittest.TestCase):
+    def test_tensor_input_returns_tensor(self):
+        yaw = torch.tensor([0.0, 0.1, 5.0])
+        pitch = torch.tensor([0.0, 0.05, 3.0])
+        lac = GazeWrapper.looking_at_camera(yaw, pitch, thr=0.3)
+        self.assertIsInstance(lac, torch.Tensor)
+        self.assertEqual(lac.shape, (3,))
+        self.assertTrue(lac[0].item())
+        self.assertFalse(lac[2].item())
+
+    def test_numpy_input_converts_and_returns_tensor(self):
+        yaw = np.array([0.0, 5.0])
+        pitch = np.array([0.0, 3.0])
+        lac = GazeWrapper.looking_at_camera(yaw, pitch, thr=0.3)
+        self.assertIsInstance(lac, torch.Tensor)
+        self.assertTrue(lac[0].item())
+        self.assertFalse(lac[1].item())
+
+
 class TestGazeWrapperVisualize(unittest.TestCase):
     def _make_face(self, size=64):
         return np.random.randint(0, 255, (size, size, 3), dtype=np.uint8)

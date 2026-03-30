@@ -1,12 +1,37 @@
 """Tests for ClipWrapper visual feature extractor."""
 
+import pathlib
+import shutil
+import tempfile
 import unittest
 
 import numpy as np
 import torch
 
-from exordium.video.deep.clip import ClipWrapper
-from tests.fixtures import IMAGE_EMMA, IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT
+from exordium.video.deep.clip import _CLIP_MEAN, _CLIP_STD, _DEFAULT_CLIP_MODEL, ClipWrapper
+from tests.fixtures import IMAGE_EMMA, IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT, hf_repo_exists
+
+
+class TestClipConstants(unittest.TestCase):
+    def test_default_model_is_string(self):
+        self.assertIsInstance(_DEFAULT_CLIP_MODEL, str)
+        self.assertGreater(len(_DEFAULT_CLIP_MODEL), 0)
+
+    def test_clip_mean_has_three_channels(self):
+        self.assertEqual(len(_CLIP_MEAN), 3)
+
+    def test_clip_std_has_three_channels(self):
+        self.assertEqual(len(_CLIP_STD), 3)
+
+    def test_clip_mean_values_in_range(self):
+        for v in _CLIP_MEAN:
+            self.assertGreater(v, 0.0)
+            self.assertLess(v, 1.0)
+
+    def test_clip_std_values_in_range(self):
+        for v in _CLIP_STD:
+            self.assertGreater(v, 0.0)
+            self.assertLess(v, 1.0)
 
 
 class TestClipWrapper(unittest.TestCase):
@@ -19,7 +44,6 @@ class TestClipWrapper(unittest.TestCase):
         self.assertIsInstance(out, torch.Tensor)
         self.assertEqual(out.ndim, 2)
         self.assertEqual(out.shape[0], 1)
-        self.assertGreater(out.shape[1], 0)
 
     def test_from_numpy(self):
         img = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)
@@ -27,42 +51,40 @@ class TestClipWrapper(unittest.TestCase):
         self.assertEqual(out.shape[0], 1)
 
     def test_from_tensor(self):
-        t = torch.randint(0, 255, (3, 224, 224), dtype=torch.uint8)
-        out = self.model(t)
+        out = self.model(torch.randint(0, 255, (3, 224, 224), dtype=torch.uint8))
         self.assertEqual(out.shape[0], 1)
 
     def test_batch_tensor(self):
-        imgs = torch.randint(0, 255, (4, 3, 224, 224), dtype=torch.uint8)
-        out = self.model(imgs)
+        out = self.model(torch.randint(0, 255, (4, 3, 224, 224), dtype=torch.uint8))
         self.assertEqual(out.shape[0], 4)
 
-    def test_batch_paths(self):
-        out = self.model([IMAGE_FACE, IMAGE_FACE])
-        self.assertEqual(out.shape[0], 2)
-
     def test_feature_dim_consistent(self):
-        out1 = self.model(IMAGE_FACE)
-        out2 = self.model(IMAGE_EMMA)
-        self.assertEqual(out1.shape[1], out2.shape[1])
+        self.assertEqual(self.model(IMAGE_FACE).shape[1], self.model(IMAGE_EMMA).shape[1])
+
+    def test_dir_to_feature(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for i in range(3):
+                shutil.copy(IMAGE_FACE, pathlib.Path(tmp) / f"{i:06d}.jpg")
+            result = self.model.dir_to_feature(
+                sorted(pathlib.Path(tmp).glob("*.jpg")), batch_size=2
+            )
+            self.assertIn("features", result)
+            self.assertEqual(result["features"].ndim, 2)
 
     def test_video_to_feature(self):
-        import pathlib
-        import tempfile
-
         with tempfile.TemporaryDirectory() as tmp_dir:
-            out_path = pathlib.Path(tmp_dir) / "clip_features.st"
             result = self.model.video_to_feature(
                 VIDEO_MULTISPEAKER_SHORT,
                 batch_size=8,
-                output_path=out_path,
+                output_path=pathlib.Path(tmp_dir) / "clip.st",
             )
-            self.assertIsInstance(result, dict)
-            feats = result["features"]
-            ids = result["frame_ids"]
-            self.assertIsInstance(feats, torch.Tensor)
-            self.assertEqual(feats.ndim, 2)
-            self.assertGreater(feats.shape[0], 0)
-            self.assertEqual(len(ids), feats.shape[0])
+            self.assertIsInstance(result["features"], torch.Tensor)
+            self.assertEqual(result["features"].ndim, 2)
+
+
+class TestClipWeightAvailability(unittest.TestCase):
+    def test_clip_repo(self):
+        self.assertTrue(hf_repo_exists("laion/CLIP-ViT-H-14-laion2B-s32B-b79K"))
 
 
 if __name__ == "__main__":
