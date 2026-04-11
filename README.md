@@ -67,6 +67,7 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Vision–language embeddings | [CLIP](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K) (ViT-H/14, laion2B) | 1024-d |
 | Self-supervised visual features | [DINOv2](https://huggingface.co/facebook/dinov2-base) (small/base/large/giant) | 384 / 768 / 1024 / 1536-d |
 | Facial expression features | [EmotiEffNet](https://github.com/sb-ai-lab/EmotiEffLib) (EfficientNet-B0/B2, AffectNet) | 1280-d / 1408-d |
+| Facial video features | [MARLIN](https://github.com/ControlNet/MARLIN) (ViT, 16-frame clips, CVPR 2023) | 384 / 768 / 1024-d |
 
 ### Text
 
