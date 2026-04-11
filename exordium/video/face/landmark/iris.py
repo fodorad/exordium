@@ -134,7 +134,7 @@ def calculate_eye_aspect_ratio(
         ValueError: If ``landmarks.shape`` is not ``(71, 2)`` or ``(16, 2)``.
 
     """
-    if landmarks.shape not in {(71, 2), (16, 2)}:
+    if tuple(landmarks.shape) not in {(71, 2), (16, 2)}:
         raise ValueError(
             "Invalid eye landmarks. Only FaceMesh is supported. "
             f"Expected (71, 2) or (16, 2), got {landmarks.shape}"

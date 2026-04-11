@@ -3,6 +3,7 @@ from exordium.video.deep.clip import ClipWrapper
 from exordium.video.deep.dinov2 import DINOv2Wrapper
 from exordium.video.deep.emotieffnet import EmotiEffNetWrapper
 from exordium.video.deep.fabnet import FabNetWrapper
+from exordium.video.deep.marlin import MarlinWrapper
 from exordium.video.deep.swint import (
     SwinTransformer,
     SwinTWrapper,
@@ -17,6 +18,7 @@ __all__ = [
     "DINOv2Wrapper",
     "EmotiEffNetWrapper",
     "FabNetWrapper",
+    "MarlinWrapper",
     "SwinTransformer",
     "SwinTWrapper",
     "swin_transformer_base",

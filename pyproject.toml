@@ -67,6 +67,8 @@ video = [
   "blinklinmult",
   "unigaze",
   "timm",
+  "marlin-pytorch",
+  "einops",
 ]
 dev = [
   "ruff",
