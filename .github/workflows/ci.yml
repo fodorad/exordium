@@ -53,7 +53,7 @@ jobs:
         # PEP 440 ignores local version segments, so torch==2.11.0 matches
         # both 2.11.0+cu130 (PyPI default) and 2.11.0+cpu (CPU index).
         if [ "$RUNNER_OS" = "Linux" ]; then
-          uv pip install --system --extra-index-url https://download.pytorch.org/whl/cpu -e ".[all,dev,docs]"
+          uv pip install --system --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match -e ".[all,dev,docs]"
         else
           uv pip install --system -e ".[all,dev,docs]"
         fi
