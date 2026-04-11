@@ -43,7 +43,7 @@ dependencies = [
   # ─────────────────────────────────────────────────────────────────────────────
   "torch==2.9.1",
   "torchaudio==2.9.1",
-  "torchvision==0.24.1",
+  "torchvision==0.26.0",
   "torchcodec==0.9.1",
   "tqdm",
   "matplotlib",
