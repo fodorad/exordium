@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../../../../genindex.html"><link rel="search" title="Search" href="../../../../../search.html"><link rel="next" title="exordium.video.deep.swint" href="../swint/index.html"><link rel="prev" title="exordium.video.deep.dinov2" href="../dinov2/index.html">
+<link rel="index" title="Index" href="../../../../../genindex.html"><link rel="search" title="Search" href="../../../../../search.html"><link rel="next" title="exordium.video.deep.marlin" href="../marlin/index.html"><link rel="prev" title="exordium.video.deep.emotieffnet" href="../emotieffnet/index.html">
         <link rel="canonical" href="https://fodorad.github.io/exordium/autoapi/exordium/video/deep/fabnet/index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
@@ -199,6 +199,7 @@
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../audio/index.html">exordium.audio</a><input aria-label="Toggle navigation of exordium.audio" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../audio/base/index.html">exordium.audio.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../audio/clap/index.html">exordium.audio.clap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../audio/emotion2vec/index.html">exordium.audio.emotion2vec</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../audio/io/index.html">exordium.audio.io</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../audio/smile/index.html">exordium.audio.smile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../audio/spectrogram/index.html">exordium.audio.spectrogram</a></li>
@@ -236,7 +237,9 @@
 <li class="toctree-l5"><a class="reference internal" href="../base/index.html">exordium.video.deep.base</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../clip/index.html">exordium.video.deep.clip</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../dinov2/index.html">exordium.video.deep.dinov2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../emotieffnet/index.html">exordium.video.deep.emotieffnet</a></li>
 <li class="toctree-l5 current current-page"><a class="current reference internal" href="#">exordium.video.deep.fabnet</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../marlin/index.html">exordium.video.deep.marlin</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../swint/index.html">exordium.video.deep.swint</a></li>
 </ul>
 </li>
@@ -357,7 +360,7 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="exordium.video.deep.fabnet.FabNetWrapper">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.video.deep.fabnet.</span></span><span class="sig-name descname"><span class="pre">FabNetWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/exordium/video/deep/fabnet.html#FabNetWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.deep.fabnet.FabNetWrapper" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.video.deep.fabnet.</span></span><span class="sig-name descname"><span class="pre">FabNetWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#exordium.video.deep.fabnet.FabNetWrapper" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base/index.html#exordium.video.deep.base.VisualModelWrapper" title="exordium.video.deep.base.VisualModelWrapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exordium.video.deep.base.VisualModelWrapper</span></code></a></p>
 <p>FAb-Net face encoder wrapper.</p>
 <p>Produces a 256-dimensional identity-preserving feature vector from a face
@@ -369,7 +372,7 @@ crop.  Model weights are downloaded automatically on first use.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="exordium.video.deep.fabnet.FabNetWrapper.preprocess">
-<span class="sig-name descname"><span class="pre">preprocess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/deep/fabnet.html#FabNetWrapper.preprocess"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.deep.fabnet.FabNetWrapper.preprocess" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">preprocess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frames</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#exordium.video.deep.fabnet.FabNetWrapper.preprocess" title="Link to this definition">¶</a></dt>
 <dd><p>Resize RGB frames to 256×256 and scale to [0, 1].</p>
 <p>FAb-Net was trained without channel-wise mean/std normalisation.</p>
 <dl class="field-list simple">
@@ -385,7 +388,7 @@ crop.  Model weights are downloaded automatically on first use.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="exordium.video.deep.fabnet.FabNetWrapper.inference">
-<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/deep/fabnet.html#FabNetWrapper.inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.deep.fabnet.FabNetWrapper.inference" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#exordium.video.deep.fabnet.FabNetWrapper.inference" title="Link to this definition">¶</a></dt>
 <dd><p>FAb-Net encoder forward pass.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -402,7 +405,7 @@ on self.device with values in [0, 1].</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="exordium.video.deep.fabnet.FrontaliseModelMasks_wider">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.video.deep.fabnet.</span></span><span class="sig-name descname"><span class="pre">FrontaliseModelMasks_wider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inner_nc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_additional_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/exordium/video/deep/fabnet.html#FrontaliseModelMasks_wider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.deep.fabnet.FrontaliseModelMasks_wider" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.video.deep.fabnet.</span></span><span class="sig-name descname"><span class="pre">FrontaliseModelMasks_wider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inner_nc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_additional_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#exordium.video.deep.fabnet.FrontaliseModelMasks_wider" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
 <p>FAb-Net model architecture with mask prediction branch.</p>
 <p>Code: <a class="reference external" href="https://github.com/oawiles/FAb-Net">https://github.com/oawiles/FAb-Net</a>
@@ -410,7 +413,7 @@ Authors: Olivia Wiles, A. Sophia Koepke, Andrew Zisserman</p>
 <p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="exordium.video.deep.fabnet.FrontaliseModelMasks_wider.generate_encoder_layers">
-<span class="sig-name descname"><span class="pre">generate_encoder_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.nn.Sequential</span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/deep/fabnet.html#FrontaliseModelMasks_wider.generate_encoder_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.deep.fabnet.FrontaliseModelMasks_wider.generate_encoder_layers" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generate_encoder_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.nn.Sequential</span></span></span><a class="headerlink" href="#exordium.video.deep.fabnet.FrontaliseModelMasks_wider.generate_encoder_layers" title="Link to this definition">¶</a></dt>
 <dd><p>Generate encoder layers for the FAb-Net model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -427,7 +430,7 @@ Authors: Olivia Wiles, A. Sophia Koepke, Andrew Zisserman</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="exordium.video.deep.fabnet.FrontaliseModelMasks_wider.generate_decoder_layers">
-<span class="sig-name descname"><span class="pre">generate_decoder_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_input_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_output_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.nn.Sequential</span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/deep/fabnet.html#FrontaliseModelMasks_wider.generate_decoder_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.deep.fabnet.FrontaliseModelMasks_wider.generate_decoder_layers" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generate_decoder_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_input_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_output_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.nn.Sequential</span></span></span><a class="headerlink" href="#exordium.video.deep.fabnet.FrontaliseModelMasks_wider.generate_decoder_layers" title="Link to this definition">¶</a></dt>
 <dd><p>Generate decoder layers for the FAb-Net model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -453,23 +456,23 @@ Authors: Olivia Wiles, A. Sophia Koepke, Andrew Zisserman</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../swint/index.html">
+          <a class="next-page" href="../marlin/index.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">exordium.video.deep.swint</div>
+                <div class="title">exordium.video.deep.marlin</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../dinov2/index.html">
+          <a class="prev-page" href="../emotieffnet/index.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">exordium.video.deep.dinov2</div>
+                <div class="title">exordium.video.deep.emotieffnet</div>
                 
               </div>
             </a>

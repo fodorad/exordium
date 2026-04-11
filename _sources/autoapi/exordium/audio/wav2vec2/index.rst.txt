@@ -7,6 +7,24 @@ exordium.audio.wav2vec2
 
    Wav2Vec2 speech encoding model wrapper.
 
+   Supports multiple pretrained weight configurations:
+
+   - ``"base-960h"`` — Facebook's wav2vec2-base-960h (ASR-finetuned).
+   - ``"emotion-iemocap"`` — SpeechBrain's emotion-recognition-wav2vec2-IEMOCAP
+     (emotion-finetuned on IEMOCAP: neutral, anger, happy, sad).
+
+   Both variants produce 768-dimensional frame-level features at ~50 Hz from
+   16 kHz mono audio.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.audio.wav2vec2.logger
+   exordium.audio.wav2vec2.SUPPORTED_MODELS
 
 
 Classes
@@ -20,15 +38,33 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: Wav2vec2Wrapper(device_id: int = -1)
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:data:: SUPPORTED_MODELS
+   :value: ['base-960h', 'emotion-iemocap']
+
+
+   List of supported model name strings.
+
+.. py:class:: Wav2vec2Wrapper(device_id: int = -1, model_name: str = 'base-960h')
 
    Bases: :py:obj:`exordium.audio.base.AudioModelWrapper`
 
 
    Wrapper for Wav2Vec2 audio feature extraction.
 
-   Extracts self-supervised learning features from audio using Facebook's
-   wav2vec2-base-960h model. Expects 16kHz mono audio input.
+   Extracts self-supervised learning features from audio using wav2vec2-base
+   architecture. Expects 16 kHz mono audio input.
+
+   :param device_id: GPU device index.  ``-1`` or ``None`` uses CPU.
+   :param model_name: Pretrained weight variant.  One of:
+
+                      - ``"base-960h"`` (default) — ASR-finetuned features.
+                      - ``"emotion-iemocap"`` — emotion-finetuned features (IEMOCAP).
+
+   :raises ValueError: If *model_name* is not in :data:`SUPPORTED_MODELS`.
 
    Initialize Wav2Vec2 wrapper with pretrained model.
 

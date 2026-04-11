@@ -1,0 +1,131 @@
+exordium.video.deep.emotieffnet
+===============================
+
+.. py:module:: exordium.video.deep.emotieffnet
+
+.. autoapi-nested-parse::
+
+   EmotiEffNet facial expression feature extractor wrapper.
+
+   Wraps the EmotiEffNet models from the EmotiEffLib project for penultimate-layer
+   feature extraction.  Models are EfficientNet backbones (B0 or B2) pre-trained on
+   VGGFace2 and fine-tuned on AffectNet for facial expression recognition.
+
+   Weights are downloaded on first use from the EmotiEffLib GitHub repository and
+   cached locally.  The final classification head is replaced with an identity
+   layer so that :meth:`inference` returns penultimate features rather than class
+   logits.
+
+   The checkpoints from EmotiEffLib are full pickled models saved with an older
+   ``timm`` version (0.9.x).  To avoid compatibility issues with newer ``timm``
+   releases, this wrapper creates a fresh architecture via ``timm.create_model``
+   and loads only the ``state_dict`` extracted from the pickle.
+
+   .. rubric:: References
+
+   * https://github.com/sb-ai-lab/EmotiEffLib
+   * Savchenko (2022), *HSEmotion: High-Speed Emotion Recognition Library*
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.deep.emotieffnet.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.deep.emotieffnet.EmotiEffNetWrapper
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: EmotiEffNetWrapper(model_name: str = _DEFAULT_MODEL, device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
+
+
+   EmotiEffNet penultimate-layer feature extractor.
+
+   Loads an EfficientNet-B0 or B2 model pre-trained for facial expression
+   recognition and extracts features from the penultimate layer (before the
+   classification head).  The output is a raw activation vector suitable for
+   downstream classifiers.
+
+   Model weights are downloaded automatically on first use from the
+   EmotiEffLib GitHub repository.
+
+   Supported variants:
+
+   +--------------------------+-------+-----------+
+   | ``model_name``           | Input | Feat dim  |
+   +==========================+=======+===========+
+   | ``enet_b0_8_best_vgaf``  | 224   | 1280      |
+   +--------------------------+-------+-----------+
+   | ``enet_b0_8_best_afew``  | 224   | 1280      |
+   +--------------------------+-------+-----------+
+   | ``enet_b0_8_va_mtl``     | 224   | 1280      |
+   +--------------------------+-------+-----------+
+   | ``enet_b2_8``            | 260   | 1408      |
+   +--------------------------+-------+-----------+
+   | ``enet_b2_7``            | 260   | 1408      |
+   +--------------------------+-------+-----------+
+
+   :param model_name: Model variant to load.  Defaults to
+                      ``"enet_b0_8_best_vgaf"``.
+   :param device_id: GPU device index.  ``None`` or negative uses CPU.
+
+   :raises ValueError: If ``model_name`` is not one of the supported variants.
+
+   Example::
+
+       from exordium.video.deep.emotieffnet import EmotiEffNetWrapper
+
+       model = EmotiEffNetWrapper(model_name="enet_b2_8", device_id=0)
+       features = model(face_crop)       # (1, 1408)
+       result = model.video_to_feature("clip.mp4")
+       # result["features"]: (T, 1408) — one embedding per frame
+
+
+
+   .. py:method:: preprocess(frames: torch.Tensor | collections.abc.Sequence) -> torch.Tensor
+
+      Resize and normalise frames for EmotiEffNet.
+
+      Applies bilinear resize to the model's expected input resolution and
+      normalises with ImageNet mean/std.
+
+      :param frames: Any input supported by
+                     :meth:`~exordium.video.deep.base.VisualModelWrapper._to_uint8_tensor`.
+
+      :returns: Float tensor of shape ``(B, 3, H, H)`` on ``self.device``, where
+                ``H`` is :attr:`img_size` (224 or 260).
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+
+      EmotiEffNet forward pass returning penultimate-layer features.
+
+      The classification head has been replaced with an identity layer, so
+      the model returns raw penultimate activations.
+
+      :param tensor: Preprocessed face tensor of shape
+                     ``(B, 3, H, H)`` on ``self.device``.
+
+      :returns: Feature tensor of shape ``(B, D)`` where ``D`` is
+                :attr:`feature_dim` (1280 for B0 variants, 1408 for B2).
+
+
+

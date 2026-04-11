@@ -199,6 +199,7 @@
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../audio/index.html">exordium.audio</a><input aria-label="Toggle navigation of exordium.audio" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../audio/base/index.html">exordium.audio.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../audio/clap/index.html">exordium.audio.clap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../audio/emotion2vec/index.html">exordium.audio.emotion2vec</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../audio/io/index.html">exordium.audio.io</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../audio/smile/index.html">exordium.audio.smile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../audio/spectrogram/index.html">exordium.audio.spectrogram</a></li>
@@ -236,7 +237,9 @@
 <li class="toctree-l5"><a class="reference internal" href="../../video/deep/base/index.html">exordium.video.deep.base</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../video/deep/clip/index.html">exordium.video.deep.clip</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../video/deep/dinov2/index.html">exordium.video.deep.dinov2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../video/deep/emotieffnet/index.html">exordium.video.deep.emotieffnet</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../video/deep/fabnet/index.html">exordium.video.deep.fabnet</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../video/deep/marlin/index.html">exordium.video.deep.marlin</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../video/deep/swint/index.html">exordium.video.deep.swint</a></li>
 </ul>
 </li>
@@ -331,6 +334,12 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.padding.pad_layered_time_dim" title="exordium.utils.padding.pad_layered_time_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pad_layered_time_dim</span></code></a>(→ tuple[torch.Tensor, torch.Tensor])</p></td>
 <td><p>Pad the time dimension of a tensor and generate a mask.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.padding.repeat_pad_time_dim" title="exordium.utils.padding.repeat_pad_time_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">repeat_pad_time_dim</span></code></a>(→ torch.Tensor)</p></td>
+<td><p>Pad the time dimension by repeating the last frame.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.padding.fill_gaps_with_repeat" title="exordium.utils.padding.fill_gaps_with_repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_gaps_with_repeat</span></code></a>(→ torch.Tensor)</p></td>
+<td><p>Fill zero-valued time steps by repeating the nearest earlier valid frame.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -377,6 +386,77 @@ of shape <code class="docutils literal notranslate"><span class="pre">(target_si
 for padding.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.utils.padding.repeat_pad_time_dim">
+<span class="sig-prename descclassname"><span class="pre">exordium.utils.padding.</span></span><span class="sig-name descname"><span class="pre">repeat_pad_time_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/exordium/utils/padding.html#repeat_pad_time_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.utils.padding.repeat_pad_time_dim" title="Link to this definition">¶</a></dt>
+<dd><p>Pad the time dimension by repeating the last frame.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">target_size</span> <span class="pre">&lt;=</span> <span class="pre">T</span></code> the tensor is returned unchanged (no cropping).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tensor</strong> – Input tensor of shape <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">...)</span></code> where <code class="docutils literal notranslate"><span class="pre">T</span></code> is the time
+dimension (e.g. <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> or <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">D)</span></code>).</p></li>
+<li><p><strong>target_size</strong> – Desired length of the time dimension.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor of shape <code class="docutils literal notranslate"><span class="pre">(target_size,</span> <span class="pre">...)</span></code> where frames beyond the
+original length are copies of the last frame.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the tensor has zero frames.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>  <span class="c1"># (2, 2)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">repeat_pad_time_dim</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="go">tensor([[1, 2], [3, 4], [3, 4], [3, 4], [3, 4]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.utils.padding.fill_gaps_with_repeat">
+<span class="sig-prename descclassname"><span class="pre">exordium.utils.padding.</span></span><span class="sig-name descname"><span class="pre">fill_gaps_with_repeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/exordium/utils/padding.html#fill_gaps_with_repeat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.utils.padding.fill_gaps_with_repeat" title="Link to this definition">¶</a></dt>
+<dd><p>Fill zero-valued time steps by repeating the nearest earlier valid frame.</p>
+<p>Given a tensor of shape <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">...)</span></code> where some time steps are entirely
+zero (no data), this function fills each gap by copying the closest
+preceding valid frame.  If the tensor starts with zeros before the first
+valid frame, those leading positions are back-filled from the first valid
+frame.</p>
+<p>A time step is considered <strong>valid</strong> when any element is non-zero, unless
+an explicit <code class="docutils literal notranslate"><span class="pre">valid_mask</span></code> is provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tensor</strong> – Input tensor of shape <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">...)</span></code>.</p></li>
+<li><p><strong>valid_mask</strong> – Optional boolean tensor of shape <code class="docutils literal notranslate"><span class="pre">(T,)</span></code>.  <code class="docutils literal notranslate"><span class="pre">True</span></code>
+marks valid (non-gap) time steps.  When <code class="docutils literal notranslate"><span class="pre">None</span></code>, validity is
+inferred as <code class="docutils literal notranslate"><span class="pre">tensor.flatten(1).any(dim=1)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor of the same shape with all gaps filled.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the tensor contains no valid frames at all.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fill_gaps_with_repeat</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">tensor([[1., 2.],   # back-filled from frame 1</span>
+<span class="go">        [1., 2.],   # valid</span>
+<span class="go">        [1., 2.],   # forward-filled from frame 1</span>
+<span class="go">        [1., 2.],   # forward-filled from frame 1</span>
+<span class="go">        [3., 4.],   # valid</span>
+<span class="go">        [3., 4.]])  # forward-filled from frame 4</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>
@@ -442,6 +522,8 @@ for padding.</p>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li><a class="reference internal" href="#exordium.utils.padding.pad_or_crop_time_dim"><code class="docutils literal notranslate"><span class="pre">pad_or_crop_time_dim()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.utils.padding.pad_layered_time_dim"><code class="docutils literal notranslate"><span class="pre">pad_layered_time_dim()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.utils.padding.repeat_pad_time_dim"><code class="docutils literal notranslate"><span class="pre">repeat_pad_time_dim()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.utils.padding.fill_gaps_with_repeat"><code class="docutils literal notranslate"><span class="pre">fill_gaps_with_repeat()</span></code></a></li>
 </ul>
 </li>
 </ul>

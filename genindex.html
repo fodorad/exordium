@@ -197,6 +197,7 @@
 <li class="toctree-l3 has-children"><a class="reference internal" href="autoapi/exordium/audio/index.html">exordium.audio</a><input aria-label="Toggle navigation of exordium.audio" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/base/index.html">exordium.audio.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/clap/index.html">exordium.audio.clap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/emotion2vec/index.html">exordium.audio.emotion2vec</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/io/index.html">exordium.audio.io</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/smile/index.html">exordium.audio.smile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/spectrogram/index.html">exordium.audio.spectrogram</a></li>
@@ -234,7 +235,9 @@
 <li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/base/index.html">exordium.video.deep.base</a></li>
 <li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/clip/index.html">exordium.video.deep.clip</a></li>
 <li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/dinov2/index.html">exordium.video.deep.dinov2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/emotieffnet/index.html">exordium.video.deep.emotieffnet</a></li>
 <li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/fabnet/index.html">exordium.video.deep.fabnet</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/marlin/index.html">exordium.video.deep.marlin</a></li>
 <li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/swint/index.html">exordium.video.deep.swint</a></li>
 </ul>
 </li>
@@ -321,6 +324,8 @@
         <li><a href="autoapi/exordium/audio/clap/index.html#exordium.audio.clap.ClapWrapper.__call__">__call__() (exordium.audio.clap.ClapWrapper method)</a>
 
         <ul>
+          <li><a href="autoapi/exordium/audio/emotion2vec/index.html#exordium.audio.emotion2vec.Emotion2vecWrapper.__call__">(exordium.audio.emotion2vec.Emotion2vecWrapper method)</a>
+</li>
           <li><a href="autoapi/exordium/audio/smile/index.html#exordium.audio.smile.OpensmileWrapper.__call__">(exordium.audio.smile.OpensmileWrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/audio/wav2vec2/index.html#exordium.audio.wav2vec2.Wav2vec2Wrapper.__call__">(exordium.audio.wav2vec2.Wav2vec2Wrapper method)</a>
@@ -447,6 +452,8 @@
         <ul>
           <li><a href="autoapi/exordium/audio/clap/index.html#exordium.audio.clap.ClapWrapper.audio_to_feature">(exordium.audio.clap.ClapWrapper method)</a>
 </li>
+          <li><a href="autoapi/exordium/audio/emotion2vec/index.html#exordium.audio.emotion2vec.Emotion2vecWrapper.audio_to_feature">(exordium.audio.emotion2vec.Emotion2vecWrapper method)</a>
+</li>
           <li><a href="autoapi/exordium/audio/smile/index.html#exordium.audio.smile.OpensmileWrapper.audio_to_feature">(exordium.audio.smile.OpensmileWrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/audio/wav2vec2/index.html#exordium.audio.wav2vec2.Wav2vec2Wrapper.audio_to_feature">(exordium.audio.wav2vec2.Wav2vec2Wrapper method)</a>
@@ -472,6 +479,8 @@
 
         <ul>
           <li><a href="autoapi/exordium/audio/clap/index.html#exordium.audio.clap.ClapWrapper.batch_audio_to_features">(exordium.audio.clap.ClapWrapper method)</a>
+</li>
+          <li><a href="autoapi/exordium/audio/emotion2vec/index.html#exordium.audio.emotion2vec.Emotion2vecWrapper.batch_audio_to_features">(exordium.audio.emotion2vec.Emotion2vecWrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/audio/wav2vec2/index.html#exordium.audio.wav2vec2.Wav2vec2Wrapper.batch_audio_to_features">(exordium.audio.wav2vec2.Wav2vec2Wrapper method)</a>
 </li>
@@ -608,10 +617,10 @@
 </li>
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.DetectionFromImage">DetectionFromImage (class in exordium.video.core.detection)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.DetectionFromNp">DetectionFromNp (class in exordium.video.core.detection)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.DetectionFromTorchTensor">DetectionFromTorchTensor (class in exordium.video.core.detection)</a>
 </li>
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.DetectionFromVideo">DetectionFromVideo (class in exordium.video.core.detection)</a>
@@ -627,7 +636,11 @@
         <li><a href="autoapi/exordium/video/deep/dinov2/index.html#exordium.video.deep.dinov2.DINOv2Wrapper">DINOv2Wrapper (class in exordium.video.deep.dinov2)</a>
 </li>
         <li><a href="autoapi/exordium/video/deep/base/index.html#exordium.video.deep.base.VisualModelWrapper.dir_to_feature">dir_to_feature() (exordium.video.deep.base.VisualModelWrapper method)</a>
+
+        <ul>
+          <li><a href="autoapi/exordium/video/deep/marlin/index.html#exordium.video.deep.marlin.MarlinWrapper.dir_to_feature">(exordium.video.deep.marlin.MarlinWrapper method)</a>
 </li>
+        </ul></li>
         <li><a href="autoapi/exordium/utils/ckpt/index.html#exordium.utils.ckpt.download_file">download_file() (in module exordium.utils.ckpt)</a>
 </li>
         <li><a href="autoapi/exordium/utils/ckpt/index.html#exordium.utils.ckpt.download_weight">download_weight() (in module exordium.utils.ckpt)</a>
@@ -649,6 +662,14 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/utils/loss/index.html#exordium.utils.loss.ecl1">ecl1() (in module exordium.utils.loss)</a>
+</li>
+        <li><a href="autoapi/exordium/video/deep/emotieffnet/index.html#exordium.video.deep.emotieffnet.EmotiEffNetWrapper">EmotiEffNetWrapper (class in exordium.video.deep.emotieffnet)</a>
+</li>
+        <li><a href="autoapi/exordium/audio/emotion2vec/index.html#exordium.audio.emotion2vec.EMOTION2VEC_FEATURE_DIM">EMOTION2VEC_FEATURE_DIM (in module exordium.audio.emotion2vec)</a>
+</li>
+        <li><a href="autoapi/exordium/audio/emotion2vec/index.html#exordium.audio.emotion2vec.EMOTION2VEC_SAMPLE_RATE">EMOTION2VEC_SAMPLE_RATE (in module exordium.audio.emotion2vec)</a>
+</li>
+        <li><a href="autoapi/exordium/audio/emotion2vec/index.html#exordium.audio.emotion2vec.Emotion2vecWrapper">Emotion2vecWrapper (class in exordium.audio.emotion2vec)</a>
 </li>
         <li>
     exordium
@@ -676,6 +697,13 @@
 
         <ul>
           <li><a href="autoapi/exordium/audio/clap/index.html#module-exordium.audio.clap">module</a>
+</li>
+        </ul></li>
+        <li>
+    exordium.audio.emotion2vec
+
+        <ul>
+          <li><a href="autoapi/exordium/audio/emotion2vec/index.html#module-exordium.audio.emotion2vec">module</a>
 </li>
         </ul></li>
         <li>
@@ -846,6 +874,8 @@
           <li><a href="autoapi/exordium/video/core/io/index.html#module-exordium.video.core.io">module</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     exordium.video.core.transform
 
@@ -853,8 +883,6 @@
           <li><a href="autoapi/exordium/video/core/transform/index.html#module-exordium.video.core.transform">module</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     exordium.video.deep
 
@@ -884,10 +912,24 @@
 </li>
         </ul></li>
         <li>
+    exordium.video.deep.emotieffnet
+
+        <ul>
+          <li><a href="autoapi/exordium/video/deep/emotieffnet/index.html#module-exordium.video.deep.emotieffnet">module</a>
+</li>
+        </ul></li>
+        <li>
     exordium.video.deep.fabnet
 
         <ul>
           <li><a href="autoapi/exordium/video/deep/fabnet/index.html#module-exordium.video.deep.fabnet">module</a>
+</li>
+        </ul></li>
+        <li>
+    exordium.video.deep.marlin
+
+        <ul>
+          <li><a href="autoapi/exordium/video/deep/marlin/index.html#module-exordium.video.deep.marlin">module</a>
 </li>
         </ul></li>
         <li>
@@ -1070,6 +1112,8 @@
 </li>
         <li><a href="autoapi/exordium/video/face/landmark/facemesh/index.html#exordium.video.face.landmark.facemesh.FaceMeshWrapper">FaceMeshWrapper (class in exordium.video.face.landmark.facemesh)</a>
 </li>
+        <li><a href="autoapi/exordium/utils/padding/index.html#exordium.utils.padding.fill_gaps_with_repeat">fill_gaps_with_repeat() (in module exordium.utils.padding)</a>
+</li>
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.Track.first_detection">first_detection() (exordium.video.core.detection.Track method)</a>
 </li>
         <li><a href="autoapi/exordium/index.html#exordium.FIXTURE_DIR">FIXTURE_DIR (in module exordium)</a>
@@ -1243,6 +1287,8 @@
         <ul>
           <li><a href="autoapi/exordium/audio/clap/index.html#exordium.audio.clap.ClapWrapper.inference">(exordium.audio.clap.ClapWrapper method)</a>
 </li>
+          <li><a href="autoapi/exordium/audio/emotion2vec/index.html#exordium.audio.emotion2vec.Emotion2vecWrapper.inference">(exordium.audio.emotion2vec.Emotion2vecWrapper method)</a>
+</li>
           <li><a href="autoapi/exordium/audio/wav2vec2/index.html#exordium.audio.wav2vec2.Wav2vec2Wrapper.inference">(exordium.audio.wav2vec2.Wav2vec2Wrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/audio/wavlm/index.html#exordium.audio.wavlm.WavlmWrapper.inference">(exordium.audio.wavlm.WavlmWrapper method)</a>
@@ -1265,7 +1311,11 @@
 </li>
           <li><a href="autoapi/exordium/video/deep/dinov2/index.html#exordium.video.deep.dinov2.DINOv2Wrapper.inference">(exordium.video.deep.dinov2.DINOv2Wrapper method)</a>
 </li>
+          <li><a href="autoapi/exordium/video/deep/emotieffnet/index.html#exordium.video.deep.emotieffnet.EmotiEffNetWrapper.inference">(exordium.video.deep.emotieffnet.EmotiEffNetWrapper method)</a>
+</li>
           <li><a href="autoapi/exordium/video/deep/fabnet/index.html#exordium.video.deep.fabnet.FabNetWrapper.inference">(exordium.video.deep.fabnet.FabNetWrapper method)</a>
+</li>
+          <li><a href="autoapi/exordium/video/deep/marlin/index.html#exordium.video.deep.marlin.MarlinWrapper.inference">(exordium.video.deep.marlin.MarlinWrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/video/deep/swint/index.html#exordium.video.deep.swint.SwinTWrapper.inference">(exordium.video.deep.swint.SwinTWrapper method)</a>
 </li>
@@ -1364,10 +1414,10 @@
           <li><a href="autoapi/exordium/audio/io/index.html#exordium.audio.io.load_audio">(in module exordium.audio.io)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/utils/ckpt/index.html#exordium.utils.ckpt.load_checkpoint">load_checkpoint() (in module exordium.utils.ckpt)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/video/core/io/index.html#exordium.video.core.io.load_frames">load_frames() (in module exordium.video.core.io)</a>
 </li>
         <li><a href="autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.load_or_create">load_or_create() (in module exordium.utils.decorator)</a>
@@ -1382,9 +1432,13 @@
 </li>
         <li><a href="autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.LoaderFactory.LOADERS">LOADERS (exordium.utils.decorator.LoaderFactory attribute)</a>
 </li>
-        <li><a href="autoapi/exordium/audio/io/index.html#exordium.audio.io.logger">logger (in module exordium.audio.io)</a>
+        <li><a href="autoapi/exordium/audio/emotion2vec/index.html#exordium.audio.emotion2vec.logger">logger (in module exordium.audio.emotion2vec)</a>
 
         <ul>
+          <li><a href="autoapi/exordium/audio/io/index.html#exordium.audio.io.logger">(in module exordium.audio.io)</a>
+</li>
+          <li><a href="autoapi/exordium/audio/wav2vec2/index.html#exordium.audio.wav2vec2.logger">(in module exordium.audio.wav2vec2)</a>
+</li>
           <li><a href="autoapi/exordium/text/whisper/index.html#exordium.text.whisper.logger">(in module exordium.text.whisper)</a>
 </li>
           <li><a href="autoapi/exordium/utils/ckpt/index.html#exordium.utils.ckpt.logger">(in module exordium.utils.ckpt)</a>
@@ -1395,7 +1449,11 @@
 </li>
           <li><a href="autoapi/exordium/video/core/io/index.html#exordium.video.core.io.logger">(in module exordium.video.core.io)</a>
 </li>
+          <li><a href="autoapi/exordium/video/deep/emotieffnet/index.html#exordium.video.deep.emotieffnet.logger">(in module exordium.video.deep.emotieffnet)</a>
+</li>
           <li><a href="autoapi/exordium/video/deep/fabnet/index.html#exordium.video.deep.fabnet.logger">(in module exordium.video.deep.fabnet)</a>
+</li>
+          <li><a href="autoapi/exordium/video/deep/marlin/index.html#exordium.video.deep.marlin.logger">(in module exordium.video.deep.marlin)</a>
 </li>
           <li><a href="autoapi/exordium/video/face/detector/base/index.html#exordium.video.face.detector.base.logger">(in module exordium.video.face.detector.base)</a>
 </li>
@@ -1420,6 +1478,8 @@
   <h2>M</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="autoapi/exordium/video/deep/marlin/index.html#exordium.video.deep.marlin.MarlinWrapper">MarlinWrapper (class in exordium.video.deep.marlin)</a>
+</li>
         <li><a href="autoapi/exordium/video/face/landmark/iris/index.html#exordium.video.face.landmark.iris.MediaPipeIris">MediaPipeIris (class in exordium.video.face.landmark.iris)</a>
 </li>
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.Track.merge">merge() (exordium.video.core.detection.Track method)</a>
@@ -1453,6 +1513,8 @@
           <li><a href="autoapi/exordium/audio/base/index.html#module-exordium.audio.base">exordium.audio.base</a>
 </li>
           <li><a href="autoapi/exordium/audio/clap/index.html#module-exordium.audio.clap">exordium.audio.clap</a>
+</li>
+          <li><a href="autoapi/exordium/audio/emotion2vec/index.html#module-exordium.audio.emotion2vec">exordium.audio.emotion2vec</a>
 </li>
           <li><a href="autoapi/exordium/audio/io/index.html#module-exordium.audio.io">exordium.audio.io</a>
 </li>
@@ -1512,7 +1574,11 @@
 </li>
           <li><a href="autoapi/exordium/video/deep/dinov2/index.html#module-exordium.video.deep.dinov2">exordium.video.deep.dinov2</a>
 </li>
+          <li><a href="autoapi/exordium/video/deep/emotieffnet/index.html#module-exordium.video.deep.emotieffnet">exordium.video.deep.emotieffnet</a>
+</li>
           <li><a href="autoapi/exordium/video/deep/fabnet/index.html#module-exordium.video.deep.fabnet">exordium.video.deep.fabnet</a>
+</li>
+          <li><a href="autoapi/exordium/video/deep/marlin/index.html#module-exordium.video.deep.marlin">exordium.video.deep.marlin</a>
 </li>
           <li><a href="autoapi/exordium/video/deep/swint/index.html#module-exordium.video.deep.swint">exordium.video.deep.swint</a>
 </li>
@@ -1660,7 +1726,11 @@
 </li>
           <li><a href="autoapi/exordium/video/deep/dinov2/index.html#exordium.video.deep.dinov2.DINOv2Wrapper.preprocess">(exordium.video.deep.dinov2.DINOv2Wrapper method)</a>
 </li>
+          <li><a href="autoapi/exordium/video/deep/emotieffnet/index.html#exordium.video.deep.emotieffnet.EmotiEffNetWrapper.preprocess">(exordium.video.deep.emotieffnet.EmotiEffNetWrapper method)</a>
+</li>
           <li><a href="autoapi/exordium/video/deep/fabnet/index.html#exordium.video.deep.fabnet.FabNetWrapper.preprocess">(exordium.video.deep.fabnet.FabNetWrapper method)</a>
+</li>
+          <li><a href="autoapi/exordium/video/deep/marlin/index.html#exordium.video.deep.marlin.MarlinWrapper.preprocess">(exordium.video.deep.marlin.MarlinWrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/video/deep/swint/index.html#exordium.video.deep.swint.SwinTWrapper.preprocess">(exordium.video.deep.swint.SwinTWrapper method)</a>
 </li>
@@ -1696,6 +1766,8 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/utils/ckpt/index.html#exordium.utils.ckpt.remove_token">remove_token() (in module exordium.utils.ckpt)</a>
+</li>
+        <li><a href="autoapi/exordium/utils/padding/index.html#exordium.utils.padding.repeat_pad_time_dim">repeat_pad_time_dim() (in module exordium.utils.padding)</a>
 </li>
         <li><a href="autoapi/exordium/video/core/transform/index.html#exordium.video.core.transform.Resize">Resize (class in exordium.video.core.transform)</a>
 </li>
@@ -1795,10 +1867,10 @@
 </li>
         <li><a href="autoapi/exordium/video/core/io/index.html#exordium.video.core.io.save_video">save_video() (in module exordium.video.core.io)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.Detection.score">score (exordium.video.core.detection.Detection attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.Tracker.select_long_tracks">select_long_tracks() (exordium.video.core.detection.Tracker method)</a>
 </li>
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.Tracker.select_topk_biggest_bb_tracks">select_topk_biggest_bb_tracks() (exordium.video.core.detection.Tracker method)</a>
@@ -1843,6 +1915,8 @@
         </ul></li>
         <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.StreamingMixin">StreamingMixin (class in exordium.text.base)</a>
 </li>
+        <li><a href="autoapi/exordium/audio/wav2vec2/index.html#exordium.audio.wav2vec2.SUPPORTED_MODELS">SUPPORTED_MODELS (in module exordium.audio.wav2vec2)</a>
+</li>
         <li><a href="autoapi/exordium/video/deep/swint/index.html#exordium.video.deep.swint.swin_transformer_base">swin_transformer_base() (in module exordium.video.deep.swint)</a>
 </li>
         <li><a href="autoapi/exordium/video/deep/swint/index.html#exordium.video.deep.swint.swin_transformer_small">swin_transformer_small() (in module exordium.video.deep.swint)</a>
@@ -1881,10 +1955,10 @@
         </ul></li>
         <li><a href="autoapi/exordium/video/face/landmark/constants/index.html#exordium.video.face.landmark.constants.FaceMeshLandmarks.TOP_ALL">TOP_ALL (exordium.video.face.landmark.constants.FaceMeshLandmarks attribute)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/video/face/landmark/constants/index.html#exordium.video.face.landmark.constants.FaceMeshLandmarks.TOP_LEFT">TOP_LEFT (exordium.video.face.landmark.constants.FaceMeshLandmarks attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/video/face/landmark/constants/index.html#exordium.video.face.landmark.constants.FaceMeshLandmarks.TOP_RIGHT">TOP_RIGHT (exordium.video.face.landmark.constants.FaceMeshLandmarks attribute)</a>
 </li>
         <li><a href="autoapi/exordium/video/core/io/index.html#exordium.video.core.io.TorchCodecBackend">TorchCodecBackend (class in exordium.video.core.io)</a>
@@ -1896,6 +1970,8 @@
         <li><a href="autoapi/exordium/video/deep/base/index.html#exordium.video.deep.base.VisualModelWrapper.track_to_feature">track_to_feature() (exordium.video.deep.base.VisualModelWrapper method)</a>
 
         <ul>
+          <li><a href="autoapi/exordium/video/deep/marlin/index.html#exordium.video.deep.marlin.MarlinWrapper.track_to_feature">(exordium.video.deep.marlin.MarlinWrapper method)</a>
+</li>
           <li><a href="autoapi/exordium/video/face/landmark/facemesh/index.html#exordium.video.face.landmark.facemesh.FaceMeshWrapper.track_to_feature">(exordium.video.face.landmark.facemesh.FaceMeshWrapper method)</a>
 </li>
         </ul></li>
@@ -1928,17 +2004,21 @@
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.DetectionFactory.VIDEO_EXTENSIONS">VIDEO_EXTENSIONS (exordium.video.core.detection.DetectionFactory attribute)</a>
 </li>
         <li><a href="autoapi/exordium/video/deep/base/index.html#exordium.video.deep.base.VisualModelWrapper.video_to_feature">video_to_feature() (exordium.video.deep.base.VisualModelWrapper method)</a>
+
+        <ul>
+          <li><a href="autoapi/exordium/video/deep/marlin/index.html#exordium.video.deep.marlin.MarlinWrapper.video_to_feature">(exordium.video.deep.marlin.MarlinWrapper method)</a>
 </li>
+        </ul></li>
         <li><a href="autoapi/exordium/video/core/io/index.html#exordium.video.core.io.video_to_frames">video_to_frames() (in module exordium.video.core.io)</a>
 </li>
         <li><a href="autoapi/exordium/video/core/io/index.html#exordium.video.core.io.VideoBackend">VideoBackend (class in exordium.video.core.io)</a>
 </li>
         <li><a href="autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.VideoDetections">VideoDetections (class in exordium.video.core.detection)</a>
 </li>
-        <li><a href="autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.VideoDetLoader">VideoDetLoader (class in exordium.utils.decorator)</a>
-</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.VideoDetLoader">VideoDetLoader (class in exordium.utils.decorator)</a>
+</li>
         <li><a href="autoapi/exordium/video/face/blink/densenet/index.html#exordium.video.face.blink.densenet.BlinkDenseNet121Wrapper.visualize">visualize() (exordium.video.face.blink.densenet.BlinkDenseNet121Wrapper static method)</a>
 
         <ul>

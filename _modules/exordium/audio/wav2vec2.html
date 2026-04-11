@@ -198,6 +198,7 @@
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../autoapi/exordium/audio/index.html">exordium.audio</a><input aria-label="Toggle navigation of exordium.audio" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/base/index.html">exordium.audio.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/clap/index.html">exordium.audio.clap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/emotion2vec/index.html">exordium.audio.emotion2vec</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/io/index.html">exordium.audio.io</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/smile/index.html">exordium.audio.smile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/audio/spectrogram/index.html">exordium.audio.spectrogram</a></li>
@@ -235,7 +236,9 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/base/index.html">exordium.video.deep.base</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/clip/index.html">exordium.video.deep.clip</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/dinov2/index.html">exordium.video.deep.dinov2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/emotieffnet/index.html">exordium.video.deep.emotieffnet</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/fabnet/index.html">exordium.video.deep.fabnet</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/marlin/index.html">exordium.video.deep.marlin</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/swint/index.html">exordium.video.deep.swint</a></li>
 </ul>
 </li>
@@ -311,8 +314,19 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.audio.wav2vec2</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Wav2Vec2 speech encoding model wrapper.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Wav2Vec2 speech encoding model wrapper.</span>
 
+<span class="sd">Supports multiple pretrained weight configurations:</span>
+
+<span class="sd">- ``&quot;base-960h&quot;`` — Facebook&#39;s wav2vec2-base-960h (ASR-finetuned).</span>
+<span class="sd">- ``&quot;emotion-iemocap&quot;`` — SpeechBrain&#39;s emotion-recognition-wav2vec2-IEMOCAP</span>
+<span class="sd">  (emotion-finetuned on IEMOCAP: neutral, anger, happy, sad).</span>
+
+<span class="sd">Both variants produce 768-dimensional frame-level features at ~50 Hz from</span>
+<span class="sd">16 kHz mono audio.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast</span>
 
@@ -320,8 +334,30 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tfm</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium</span><span class="w"> </span><span class="kn">import</span> <span class="n">WEIGHT_DIR</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.audio.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">AudioModelWrapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.ckpt</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_file</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.decorator</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_or_create</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Module-level logger.&quot;&quot;&quot;</span>
+
+<span class="n">_MODELS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;base-960h&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;hf_id&quot;</span><span class="p">:</span> <span class="s2">&quot;facebook/wav2vec2-base-960h&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;emotion-iemocap&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;hf_id&quot;</span><span class="p">:</span> <span class="s2">&quot;facebook/wav2vec2-base&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;weight_url&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s2">&quot;https://huggingface.co/speechbrain/&quot;</span>
+            <span class="s2">&quot;emotion-recognition-wav2vec2-IEMOCAP/resolve/main/wav2vec2.ckpt&quot;</span>
+        <span class="p">),</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+<span class="sd">&quot;&quot;&quot;Supported model configurations.&quot;&quot;&quot;</span>
+
+<span class="n">SUPPORTED_MODELS</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">_MODELS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;List of supported model name strings.&quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="Wav2vec2Wrapper">
@@ -329,21 +365,66 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Wav2vec2Wrapper</span><span class="p">(</span><span class="n">AudioModelWrapper</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for Wav2Vec2 audio feature extraction.</span>
 
-<span class="sd">    Extracts self-supervised learning features from audio using Facebook&#39;s</span>
-<span class="sd">    wav2vec2-base-960h model. Expects 16kHz mono audio input.</span>
+<span class="sd">    Extracts self-supervised learning features from audio using wav2vec2-base</span>
+<span class="sd">    architecture. Expects 16 kHz mono audio input.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        device_id: GPU device index.  ``-1`` or ``None`` uses CPU.</span>
+<span class="sd">        model_name: Pretrained weight variant.  One of:</span>
+
+<span class="sd">            - ``&quot;base-960h&quot;`` (default) — ASR-finetuned features.</span>
+<span class="sd">            - ``&quot;emotion-iemocap&quot;`` — emotion-finetuned features (IEMOCAP).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If *model_name* is not in :data:`SUPPORTED_MODELS`.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">SAMPLE_RATE</span> <span class="o">=</span> <span class="mi">16000</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Expected audio sample rate for Wav2Vec2 (16 000 Hz).&quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;base-960h&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize Wav2Vec2 wrapper with pretrained model.&quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span> <span class="o">=</span> <span class="n">tfm</span><span class="o">.</span><span class="n">Wav2Vec2Processor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">&quot;facebook/wav2vec2-base-960h&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">tfm</span><span class="o">.</span><span class="n">Wav2Vec2Model</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">&quot;facebook/wav2vec2-base-960h&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">model_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_MODELS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown model_name </span><span class="si">{</span><span class="n">model_name</span><span class="si">!r}</span><span class="s2">. Supported: </span><span class="si">{</span><span class="n">SUPPORTED_MODELS</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">cfg</span> <span class="o">=</span> <span class="n">_MODELS</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
+        <span class="n">hf_id</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;hf_id&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span> <span class="o">=</span> <span class="n">tfm</span><span class="o">.</span><span class="n">Wav2Vec2Processor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">hf_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">tfm</span><span class="o">.</span><span class="n">Wav2Vec2Model</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">hf_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">tfm</span><span class="o">.</span><span class="n">Wav2Vec2Model</span><span class="p">)</span>
+
+        <span class="c1"># Load custom weights if the variant has a separate checkpoint</span>
+        <span class="k">if</span> <span class="s2">&quot;weight_url&quot;</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_custom_weights</span><span class="p">(</span><span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;weight_url&quot;</span><span class="p">],</span> <span class="n">model_name</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># ty: ignore[invalid-argument-type]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Wav2Vec2 (</span><span class="si">%s</span><span class="s2">) loaded to </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_custom_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Download and load a SpeechBrain-style wav2vec2 checkpoint.</span>
+
+<span class="sd">        SpeechBrain stores the state dict with a ``model.`` key prefix that</span>
+<span class="sd">        must be stripped before loading into the HuggingFace</span>
+<span class="sd">        :class:`~transformers.Wav2Vec2Model`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            url: Remote URL for the ``.ckpt`` file.</span>
+<span class="sd">            model_name: Used as a subdirectory under the cache.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">weight_dir</span> <span class="o">=</span> <span class="n">WEIGHT_DIR</span> <span class="o">/</span> <span class="s2">&quot;wav2vec2&quot;</span> <span class="o">/</span> <span class="n">model_name</span>
+        <span class="n">local_path</span> <span class="o">=</span> <span class="n">weight_dir</span> <span class="o">/</span> <span class="s2">&quot;wav2vec2.ckpt&quot;</span>
+        <span class="n">download_file</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">local_path</span><span class="p">)</span>
+
+        <span class="n">ckpt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">local_path</span><span class="p">),</span> <span class="n">map_location</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">remapped</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;model.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ckpt</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">remapped</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loaded custom weights for </span><span class="si">%s</span><span class="s2"> from </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">local_path</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Wav2vec2Wrapper.__call__">
 <a class="viewcode-back" href="../../../autoapi/exordium/audio/wav2vec2/index.html#exordium.audio.wav2vec2.Wav2vec2Wrapper.__call__">[docs]</a>

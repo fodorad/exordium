@@ -199,6 +199,7 @@
 <li class="toctree-l3 current has-children"><a class="reference internal" href="../index.html">exordium.audio</a><input aria-label="Toggle navigation of exordium.audio" checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="../base/index.html">exordium.audio.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../clap/index.html">exordium.audio.clap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../emotion2vec/index.html">exordium.audio.emotion2vec</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../io/index.html">exordium.audio.io</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../smile/index.html">exordium.audio.smile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../spectrogram/index.html">exordium.audio.spectrogram</a></li>
@@ -236,7 +237,9 @@
 <li class="toctree-l5"><a class="reference internal" href="../../video/deep/base/index.html">exordium.video.deep.base</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../video/deep/clip/index.html">exordium.video.deep.clip</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../video/deep/dinov2/index.html">exordium.video.deep.dinov2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../video/deep/emotieffnet/index.html">exordium.video.deep.emotieffnet</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../video/deep/fabnet/index.html">exordium.video.deep.fabnet</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../video/deep/marlin/index.html">exordium.video.deep.marlin</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../video/deep/swint/index.html">exordium.video.deep.swint</a></li>
 </ul>
 </li>
@@ -320,6 +323,29 @@
           <section id="module-exordium.audio.wav2vec2">
 <span id="exordium-audio-wav2vec2"></span><h1>exordium.audio.wav2vec2<a class="headerlink" href="#module-exordium.audio.wav2vec2" title="Link to this heading">¶</a></h1>
 <p>Wav2Vec2 speech encoding model wrapper.</p>
+<p>Supports multiple pretrained weight configurations:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;base-960h&quot;</span></code> — Facebook’s wav2vec2-base-960h (ASR-finetuned).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;emotion-iemocap&quot;</span></code> — SpeechBrain’s emotion-recognition-wav2vec2-IEMOCAP
+(emotion-finetuned on IEMOCAP: neutral, anger, happy, sad).</p></li>
+</ul>
+<p>Both variants produce 768-dimensional frame-level features at ~50 Hz from
+16 kHz mono audio.</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.wav2vec2.logger" title="exordium.audio.wav2vec2.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p>Module-level logger.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.wav2vec2.SUPPORTED_MODELS" title="exordium.audio.wav2vec2.SUPPORTED_MODELS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SUPPORTED_MODELS</span></code></a></p></td>
+<td><p>List of supported model name strings.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
 <div class="table-wrapper autosummary longtable docutils container">
@@ -334,13 +360,41 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.audio.wav2vec2.logger">
+<span class="sig-prename descclassname"><span class="pre">exordium.audio.wav2vec2.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#exordium.audio.wav2vec2.logger" title="Link to this definition">¶</a></dt>
+<dd><p>Module-level logger.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.audio.wav2vec2.SUPPORTED_MODELS">
+<span class="sig-prename descclassname"><span class="pre">exordium.audio.wav2vec2.</span></span><span class="sig-name descname"><span class="pre">SUPPORTED_MODELS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['base-960h',</span> <span class="pre">'emotion-iemocap']</span></span><a class="headerlink" href="#exordium.audio.wav2vec2.SUPPORTED_MODELS" title="Link to this definition">¶</a></dt>
+<dd><p>List of supported model name strings.</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="exordium.audio.wav2vec2.Wav2vec2Wrapper">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.audio.wav2vec2.</span></span><span class="sig-name descname"><span class="pre">Wav2vec2Wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/exordium/audio/wav2vec2.html#Wav2vec2Wrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.audio.wav2vec2.Wav2vec2Wrapper" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.audio.wav2vec2.</span></span><span class="sig-name descname"><span class="pre">Wav2vec2Wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'base-960h'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/exordium/audio/wav2vec2.html#Wav2vec2Wrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.audio.wav2vec2.Wav2vec2Wrapper" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base/index.html#exordium.audio.base.AudioModelWrapper" title="exordium.audio.base.AudioModelWrapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exordium.audio.base.AudioModelWrapper</span></code></a></p>
 <p>Wrapper for Wav2Vec2 audio feature extraction.</p>
-<p>Extracts self-supervised learning features from audio using Facebook’s
-wav2vec2-base-960h model. Expects 16kHz mono audio input.</p>
+<p>Extracts self-supervised learning features from audio using wav2vec2-base
+architecture. Expects 16 kHz mono audio input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device_id</strong> – GPU device index.  <code class="docutils literal notranslate"><span class="pre">-1</span></code> or <code class="docutils literal notranslate"><span class="pre">None</span></code> uses CPU.</p></li>
+<li><p><strong>model_name</strong> – <p>Pretrained weight variant.  One of:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;base-960h&quot;</span></code> (default) — ASR-finetuned features.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;emotion-iemocap&quot;</span></code> — emotion-finetuned features (IEMOCAP).</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <em>model_name</em> is not in <a class="reference internal" href="#exordium.audio.wav2vec2.SUPPORTED_MODELS" title="exordium.audio.wav2vec2.SUPPORTED_MODELS"><code class="xref py py-data docutils literal notranslate"><span class="pre">SUPPORTED_MODELS</span></code></a>.</p>
+</dd>
+</dl>
 <p>Initialize Wav2Vec2 wrapper with pretrained model.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="exordium.audio.wav2vec2.Wav2vec2Wrapper.SAMPLE_RATE">
@@ -478,8 +532,11 @@ discarded using the model’s own feature-length calculation.</p>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">exordium.audio.wav2vec2</a><ul>
+<li><a class="reference internal" href="#attributes">Attributes</a></li>
 <li><a class="reference internal" href="#classes">Classes</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li><a class="reference internal" href="#exordium.audio.wav2vec2.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
+<li><a class="reference internal" href="#exordium.audio.wav2vec2.SUPPORTED_MODELS"><code class="docutils literal notranslate"><span class="pre">SUPPORTED_MODELS</span></code></a></li>
 <li><a class="reference internal" href="#exordium.audio.wav2vec2.Wav2vec2Wrapper"><code class="docutils literal notranslate"><span class="pre">Wav2vec2Wrapper</span></code></a><ul>
 <li><a class="reference internal" href="#exordium.audio.wav2vec2.Wav2vec2Wrapper.SAMPLE_RATE"><code class="docutils literal notranslate"><span class="pre">Wav2vec2Wrapper.SAMPLE_RATE</span></code></a></li>
 <li><a class="reference internal" href="#exordium.audio.wav2vec2.Wav2vec2Wrapper.__call__"><code class="docutils literal notranslate"><span class="pre">Wav2vec2Wrapper.__call__()</span></code></a></li>

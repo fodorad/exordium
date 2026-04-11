@@ -12,6 +12,7 @@ Submodules
 
    /autoapi/exordium/audio/base/index
    /autoapi/exordium/audio/clap/index
+   /autoapi/exordium/audio/emotion2vec/index
    /autoapi/exordium/audio/io/index
    /autoapi/exordium/audio/smile/index
    /autoapi/exordium/audio/spectrogram/index

@@ -199,6 +199,7 @@
 <li class="toctree-l3 has-children"><a class="reference internal" href="autoapi/exordium/audio/index.html">exordium.audio</a><input aria-label="Toggle navigation of exordium.audio" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/base/index.html">exordium.audio.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/clap/index.html">exordium.audio.clap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/emotion2vec/index.html">exordium.audio.emotion2vec</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/io/index.html">exordium.audio.io</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/smile/index.html">exordium.audio.smile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/audio/spectrogram/index.html">exordium.audio.spectrogram</a></li>
@@ -236,7 +237,9 @@
 <li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/base/index.html">exordium.video.deep.base</a></li>
 <li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/clip/index.html">exordium.video.deep.clip</a></li>
 <li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/dinov2/index.html">exordium.video.deep.dinov2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/emotieffnet/index.html">exordium.video.deep.emotieffnet</a></li>
 <li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/fabnet/index.html">exordium.video.deep.fabnet</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/marlin/index.html">exordium.video.deep.marlin</a></li>
 <li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/deep/swint/index.html">exordium.video.deep.swint</a></li>
 </ul>
 </li>
@@ -337,8 +340,9 @@
 <li><p>Spectrograms — MFCC and Mel-spectrogram (with pre-emphasis)</p></li>
 <li><p>OpenSMILE — eGeMAPSv02 low-level descriptors</p></li>
 <li><p>CLAP — contrastive language–audio pre-training embeddings (512-d)</p></li>
-<li><p>Wav2Vec2 — self-supervised speech representations (768-d)</p></li>
+<li><p>Wav2Vec2 — self-supervised speech representations (base-960h / emotion-iemocap, 768-d)</p></li>
 <li><p>WavLM — masked speech modelling, layer-wise hidden states (768-d)</p></li>
+<li><p>emotion2vec+ — speech emotion features at ~50 Hz (768-d)</p></li>
 </ul>
 <p><strong>Video</strong></p>
 <ul class="simple">
@@ -349,7 +353,7 @@
 <li><p>Iris landmarks — MediaPipe Iris 71 eye pts + 5 iris pts, EAR, iris diameters</p></li>
 <li><p>Blink detection — BlinkDenseNet121 per-eye open/closed probability</p></li>
 <li><p>Action units — OpenGraphAU 41-dim intensity vector</p></li>
-<li><p>Deep visual features — Swin Transformer (768-d), FAb-Net (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384 / 768 / 1024 / 1536-d)</p></li>
+<li><p>Deep visual features — Swin Transformer (768-d), FAb-Net (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384 / 768 / 1024 / 1536-d), EmotiEffNet (1280 / 1408-d), MARLIN (384 / 768 / 1024-d, 16-frame clips)</p></li>
 <li><p>IoU tracking — multi-face track assignment and merging across video frames</p></li>
 </ul>
 <p><strong>Text</strong></p>
@@ -429,7 +433,7 @@ downloaded automatically on first run.</p>
 <td><p>Video loading, frame iteration, batch access, FPS resampling</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_deep.ipynb</span></code></p></td>
-<td><p>Deep visual features: SwinT (768-d), FabNet (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384–1536-d)</p></td>
+<td><p>Deep visual features: SwinT (768-d), FabNet (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384–1536-d), EmotiEffNet (1280/1408-d), MARLIN (384–1024-d, 16-frame clips)</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">demo_video_face_bb.ipynb</span></code></p></td>
 <td><p>Face detection: YOLOv8 vs YOLO11 on easy and hard (extreme-pose) images</p></td>
@@ -456,7 +460,7 @@ downloaded automatically on first run.</p>
 <td><p>Multi-face IoU tracking across video frames with track merging</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">demo_audio.ipynb</span></code></p></td>
-<td><p>Audio features: spectrogram, OpenSMILE, CLAP, Wav2Vec2, WavLM</p></td>
+<td><p>Audio features: spectrogram, OpenSMILE, CLAP, Wav2Vec2, WavLM, emotion2vec+</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">demo_text.ipynb</span></code></p></td>
 <td><p>Text features: Whisper transcription, BERT, RoBERTa, XML-RoBERTa</p></td>

@@ -1,0 +1,237 @@
+exordium.video.deep.marlin
+==========================
+
+.. py:module:: exordium.video.deep.marlin
+
+.. autoapi-nested-parse::
+
+   MARLIN video-clip feature extractor wrapper using HuggingFace weights.
+
+   `MARLIN <https://github.com/ControlNet/MARLIN>`_ (Masked Autoencoder for facial
+   video Representation LearnINg, CVPR 2023) learns self-supervised representations
+   from facial video clips.  Unlike the frame-wise models in this package, MARLIN
+   operates on **16-frame clips** of shape ``(B, 3, 16, 224, 224)`` and produces a
+   single embedding per clip.
+
+   This wrapper loads the encoder architecture from the ``marlin-pytorch`` package
+   and downloads pre-trained weights from HuggingFace Hub in safetensors format.
+   MARLIN was trained on **unaligned face crops** (bounding-box crop + resize, no
+   landmark-based affine alignment), so inputs should follow the same convention.
+
+   Three ViT variants are available:
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Variant
+        - HuggingFace repo
+        - Embedding dim
+      * - ``"small"``
+        - ``ControlNet/marlin_vit_small_ytf``
+        - 384
+      * - ``"base"``
+        - ``ControlNet/marlin_vit_base_ytf``
+        - 768
+      * - ``"large"``
+        - ``ControlNet/marlin_vit_large_ytf``
+        - 1024
+
+   Example::
+
+       from exordium.video.deep.marlin import MarlinWrapper
+
+       model = MarlinWrapper(model_name="base", device_id=0)
+
+       # From a pre-loaded (B, 3, 16, 224, 224) uint8 tensor of face crops:
+       features = model(clip_tensor)          # (B, 768)
+
+       # From a face track (easiest — crops are already available):
+       result = model.track_to_feature(track, num_frames=300)
+       # result["features"]: (W, 768), result["mask"]: (W,)
+
+       # From a directory of pre-cropped face images:
+       result = model.dir_to_feature(sorted_paths, face_crops=True)
+
+       # From a video file (runs face detection + tracking internally):
+       result = model.video_to_feature("clip.mp4")
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.deep.marlin.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.deep.marlin.MarlinWrapper
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: MarlinWrapper(model_name: str = _DEFAULT_MARLIN_MODEL, device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
+
+
+   Wrapper for MARLIN clip-wise video feature extraction from face crops.
+
+   MARLIN processes **16-frame video clips** of face crops (not full frames).
+   The model was trained on unaligned bounding-box crops resized to 224x224,
+   so inputs should follow the same convention — no landmark-based affine
+   alignment.
+
+   Inherits from :class:`~exordium.video.deep.base.VisualModelWrapper` and
+   overrides the batch extraction methods (``dir_to_feature``,
+   ``track_to_feature``, ``video_to_feature``) with clip-aware versions that
+   split frame sequences into 16-frame windows with repeat-padding and
+   gap-filling.
+
+   * :meth:`preprocess` — convert face-crop clips to model-ready tensors
+   * :meth:`inference` — pure forward pass on prepared ``(B, 3, 16, 224, 224)``
+   * :meth:`__call__` — ``preprocess`` → ``inference`` (inherited)
+   * :meth:`track_to_feature` — extract from a face :class:`Track` (easiest)
+   * :meth:`dir_to_feature` — extract from a directory of face crops or full frames
+   * :meth:`video_to_feature` — extract from a video (runs face detection internally)
+
+   :param model_name: MARLIN variant — ``"small"`` (384-d), ``"base"``
+                      (768-d), or ``"large"`` (1024-d).  Defaults to ``"base"``.
+   :param device_id: GPU device index.  ``None`` or negative uses CPU.
+
+   :raises ValueError: If ``model_name`` is not one of the supported variants.
+
+   Example::
+
+       model = MarlinWrapper(model_name="base", device_id=0)
+       features = model(clip_tensor)  # (B, 768)
+
+
+
+   .. py:method:: preprocess(frames: torch.Tensor | collections.abc.Sequence) -> torch.Tensor
+
+      Resize and normalise a batch of 16-frame face-crop clips to ``[0, 1]``.
+
+      :param frames: Face-crop clip(s) in one of these formats:
+
+                     * ``torch.Tensor (B, 3, 16, H, W)`` — uint8 RGB clip batch
+                     * ``torch.Tensor (3, 16, H, W)`` — single clip (auto-unsqueezed)
+                     * ``np.ndarray (B, 16, H, W, 3)`` — uint8 HWC clip batch
+                     * ``np.ndarray (16, H, W, 3)`` — single HWC clip (auto-unsqueezed)
+
+      :returns: Float tensor ``(B, 3, 16, 224, 224)`` on ``self.device``,
+                values in ``[0, 1]``.
+
+      :raises TypeError: If input is not a tensor or ndarray.
+      :raises ValueError: If shape cannot be interpreted as ``(B, 3, T, H, W)``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+
+      MARLIN encoder forward pass with mean-pooling over sequence tokens.
+
+      The input must already be a prepared float tensor of face crops on
+      ``self.device``.
+
+      :param tensor: Preprocessed float tensor ``(B, 3, 16, 224, 224)``
+                     on ``self.device``, values in ``[0, 1]``.
+
+      :returns: Feature tensor ``(B, D)``.
+
+
+
+   .. py:method:: track_to_feature(track: exordium.video.core.detection.Track, num_frames: int | None = None, stride: int = _TIME_DIM, verbose: bool = False, **_kwargs) -> dict[str, torch.Tensor]
+
+      Extract MARLIN features from a face track over the full video span.
+
+      The entire video timeline (``num_frames`` frames starting at 0) is
+      divided into non-overlapping windows of ``stride`` frames.  For each
+      window:
+
+      * If the track has **at least one** detection in that range, the
+        crops are gathered, gaps are filled by repeating the nearest valid
+        crop, and MARLIN inference produces a real feature vector
+        (``mask=True``).
+      * If the track has **no** detections in that range, the feature is a
+        zero vector (``mask=False``).
+
+      This guarantees a fixed temporal grid: output timestep *i* always
+      corresponds to source frames ``[i * stride, i * stride + 16)``, so
+      downstream models can use the mask to skip empty windows while
+      preserving temporal alignment with other modalities.
+
+      .. note::
+
+         If ``num_frames`` is not provided, the span defaults to
+         ``max(detection.frame_id) + 1``, which may undercount if the
+         video continues after the last detection.  **Always pass
+         num_frames explicitly when the video length is known** to get
+         the expected output shape.
+
+      :param track: Face track with per-frame detections.
+      :param num_frames: Total number of frames in the source video.  When
+                         ``None``, defaults to the last detection's frame ID + 1.
+      :param stride: Step between clip windows.  Defaults to 16
+                     (non-overlapping).
+      :param verbose: Show progress bar.
+      :param \*\*_kwargs: Forwarded to ``load_or_create``.
+
+      :returns:
+
+                * ``"frame_ids"`` — ``(W,)`` long tensor of window start indices.
+                * ``"features"`` — ``(W, D)`` float tensor of MARLIN embeddings.
+                * ``"mask"`` — ``(W,)`` bool tensor.  ``True`` where at least one
+                  face detection existed in the window, ``False`` for zero-filled
+                  windows.
+      :rtype: Dict with
+
+
+
+   .. py:method:: dir_to_feature(img_paths: list[str | pathlib.Path], stride: int = _TIME_DIM, face_crops: bool = False, verbose: bool = False, **_kwargs) -> dict[str, torch.Tensor]
+
+      Extract MARLIN features from a directory of ordered images.
+
+      :param img_paths: Ordered image file paths.  Each file stem must be
+                        parseable as an integer frame ID.
+      :param stride: Step between clip windows.
+      :param face_crops: If ``True``, images are already face crops (e.g.
+                         from Aff-Wild2 cropped_aligned directories) and are used
+                         directly.  If ``False``, face detection is run on each
+                         image to extract face crops.
+      :param verbose: Show progress bar.
+      :param \*\*_kwargs: Forwarded to ``load_or_create``.
+
+      :returns: Dict with ``"frame_ids"`` ``(N,)`` and ``"features"`` ``(N, D)``.
+
+
+
+   .. py:method:: video_to_feature(video_path: str | pathlib.Path, stride: int = _TIME_DIM, conf: float = 0.7, min_score: float = 0.7, verbose: bool = False, **_kwargs) -> dict[str, torch.Tensor]
+
+      Extract MARLIN features from a video file.
+
+      Runs YOLO11 face detection and IoU tracking on the video, selects
+      the longest track, and extracts clip-wise features over the full
+      video timeline.  The total frame count is obtained from video
+      metadata so the output grid covers the entire video.
+
+      :param video_path: Path to the input video file.
+      :param stride: Step between clip windows.
+      :param conf: YOLO11 detection confidence threshold.
+      :param min_score: Minimum detection score for tracking.
+      :param verbose: Show progress bars.
+      :param \*\*_kwargs: Forwarded to ``load_or_create``.
+
+      :returns: Dict with ``"frame_ids"`` ``(W,)``, ``"features"`` ``(W, D)``,
+                and ``"mask"`` ``(W,)`` — see :meth:`track_to_feature`.
+
+
+
