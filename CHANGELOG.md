@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0](https://github.com/fodorad/exordium/compare/v2.2.0...v2.3.0) (2026-04-11)
+
+
+### Features
+
+* support pretrained MARLIN facial video feature extraction ([#8](https://github.com/fodorad/exordium/issues/8)) ([5b81613](https://github.com/fodorad/exordium/commit/5b81613daeff225821c0094651986a76935eeeb5))
+
 ## [2.2.0](https://github.com/fodorad/exordium/compare/v2.1.0...v2.2.0) (2026-03-30)
 
 
