@@ -47,7 +47,16 @@ jobs:
         echo "DYLD_LIBRARY_PATH=$(brew --prefix ffmpeg)/lib:${DYLD_LIBRARY_PATH}" >> "$GITHUB_ENV"
 
     - name: Install dependencies
-      run: uv pip install --system -e ".[all,dev,docs]"
+      run: |
+        # On Linux CI, use CPU-only PyTorch wheels to avoid CUDA runtime
+        # dependencies (e.g. libnppicc.so) that are absent on the runner.
+        # PEP 440 ignores local version segments, so torch==2.11.0 matches
+        # both 2.11.0+cu130 (PyPI default) and 2.11.0+cpu (CPU index).
+        if [ "$RUNNER_OS" = "Linux" ]; then
+          uv pip install --system --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match -e ".[all,dev,docs]"
+        else
+          uv pip install --system -e ".[all,dev,docs]"
+        fi
 
     - name: Audit dependencies for vulnerabilities
       run: uvx pip-audit
