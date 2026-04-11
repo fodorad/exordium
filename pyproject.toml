@@ -41,7 +41,7 @@ dependencies = [
   # To upgrade: wait for a torchcodec release that explicitly targets a stable
   # PyPI torch ≥ 2.10, then bump all four pins together.
   # ─────────────────────────────────────────────────────────────────────────────
-  "torch==2.9.1",
+  "torch==2.11.0",
   "torchaudio==2.9.1",
   "torchvision==0.24.1",
   "torchcodec==0.9.1",
