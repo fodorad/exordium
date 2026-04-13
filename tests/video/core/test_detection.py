@@ -10,6 +10,7 @@ import torch
 
 from exordium.video.core.detection import (
     DetectionFactory,
+    FaceIdTracker,
     FrameDetections,
     IouTracker,
     Track,
@@ -1151,6 +1152,254 @@ class TestVisualizeDetectionCrop(unittest.TestCase):
         )
         result = visualize_detection_crop(det, square=True)
         self.assertIsInstance(result, np.ndarray)
+
+
+class _CyclicEncoder:
+    """Mock encoder that cycles through a preset list of embeddings.
+
+    The tracker calls the encoder once per ``_compute_embedding``.  Use a
+    short pattern (e.g. ``[A]`` or ``[A, B]``) to simulate single or
+    alternating identities.
+    """
+
+    def __init__(self, embeddings: list[torch.Tensor]):
+        self.embeddings = [torch.nn.functional.normalize(e, p=2, dim=0) for e in embeddings]
+        self.calls = 0
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        out = self.embeddings[self.calls % len(self.embeddings)]
+        self.calls += 1
+        return out.unsqueeze(0)
+
+
+def _emb(*vals: float) -> torch.Tensor:
+    return torch.tensor(list(vals), dtype=torch.float32)
+
+
+class TestFaceIdTrackerInit(unittest.TestCase):
+    def test_construction_defaults(self):
+        enc = _CyclicEncoder([_emb(1.0, 0.0)])
+        tracker = FaceIdTracker(encoder=enc)
+        self.assertEqual(tracker.max_lost, -1)
+        self.assertAlmostEqual(tracker.iou_threshold, 0.2)
+        self.assertAlmostEqual(tracker.embedding_threshold, 0.5)
+        self.assertAlmostEqual(tracker.iou_weight, 0.5)
+        self.assertEqual(tracker.recovery_max_lost, 90)
+        self.assertEqual(tracker.tracks, {})
+
+
+class TestFaceIdTrackerSingleTrack(unittest.TestCase):
+    def test_single_identity_single_track(self):
+        vd = VideoDetections()
+        for i in range(6):
+            vd.add(_make_fd(frame_id=i, x=10 + i * 2, y=50))
+        enc = _CyclicEncoder([_emb(1.0, 0.0)])
+        tracker = FaceIdTracker(encoder=enc)
+        tracker.label(vd)
+        self.assertEqual(len(tracker.tracks), 1)
+        first_track = next(iter(tracker.tracks.values()))
+        self.assertEqual(len(first_track), 6)
+
+    def test_single_track_has_embedding(self):
+        vd = VideoDetections()
+        for i in range(3):
+            vd.add(_make_fd(frame_id=i, x=10 + i * 2, y=50))
+        enc = _CyclicEncoder([_emb(1.0, 0.0)])
+        tracker = FaceIdTracker(encoder=enc)
+        tracker.label(vd)
+        self.assertIn(0, tracker._track_embeddings)
+        norm = float(torch.norm(tracker._track_embeddings[0]).item())
+        self.assertAlmostEqual(norm, 1.0, places=5)
+
+
+class TestFaceIdTrackerTwoFaces(unittest.TestCase):
+    def test_two_non_overlapping_faces(self):
+        vd = VideoDetections()
+        for i in range(5):
+            fd = FrameDetections()
+            fd.add(_np_det(frame_id=i, x=10 + i, y=50))
+            fd.add(_np_det(frame_id=i, x=400 + i, y=50))
+            vd.add(fd)
+        enc = _CyclicEncoder([_emb(1.0, 0.0), _emb(0.0, 1.0)])
+        tracker = FaceIdTracker(encoder=enc, iou_threshold=0.1)
+        tracker.label(vd)
+        self.assertEqual(len(tracker.tracks), 2)
+
+    def test_two_faces_have_distinct_embeddings(self):
+        vd = VideoDetections()
+        for i in range(3):
+            fd = FrameDetections()
+            fd.add(_np_det(frame_id=i, x=10, y=50))
+            fd.add(_np_det(frame_id=i, x=400, y=50))
+            vd.add(fd)
+        enc = _CyclicEncoder([_emb(1.0, 0.0), _emb(0.0, 1.0)])
+        tracker = FaceIdTracker(encoder=enc, iou_threshold=0.1)
+        tracker.label(vd)
+        self.assertEqual(len(tracker._track_embeddings), 2)
+        e0 = tracker._track_embeddings[0]
+        e1 = tracker._track_embeddings[1]
+        sim = float(torch.nn.functional.cosine_similarity(e0.unsqueeze(0), e1.unsqueeze(0)).item())
+        self.assertLess(sim, 0.1)
+
+
+class TestFaceIdTrackerDisambiguation(unittest.TestCase):
+    def test_embedding_breaks_iou_tie(self):
+        """When two tracks both satisfy IoU, the embedding picks the correct one."""
+        emb_a = torch.nn.functional.normalize(_emb(1.0, 0.0), p=2, dim=0)
+        emb_b = torch.nn.functional.normalize(_emb(0.0, 1.0), p=2, dim=0)
+        enc = _CyclicEncoder([_emb(1.0, 0.0)])  # query vector == identity A
+        tracker = FaceIdTracker(encoder=enc, iou_threshold=0.05, iou_weight=0.5)
+
+        # Seed two overlapping tracks manually.
+        det_a = _np_det(frame_id=0, x=50, y=50, w=60, h=80)
+        det_b = _np_det(frame_id=0, x=70, y=50, w=60, h=80)
+        tracker.tracks[0] = Track(0, det_a)
+        tracker.tracks[1] = Track(1, det_b)
+        tracker._track_embeddings[0] = emb_a
+        tracker._track_embeddings[1] = emb_b
+        tracker._track_embed_counts[0] = 1
+        tracker._track_embed_counts[1] = 1
+        tracker.new_track_id = 2
+
+        # New detection overlaps both — encoder returns emb_a, so track 0 wins.
+        probe = _np_det(frame_id=1, x=60, y=50, w=60, h=80)
+        result = tracker._match_detection(probe, max_lost=30, iou_threshold=0.05)
+        self.assertEqual(result, 0)
+
+    def test_embedding_breaks_iou_tie_for_b(self):
+        emb_a = torch.nn.functional.normalize(_emb(1.0, 0.0), p=2, dim=0)
+        emb_b = torch.nn.functional.normalize(_emb(0.0, 1.0), p=2, dim=0)
+        enc = _CyclicEncoder([_emb(0.0, 1.0)])
+        tracker = FaceIdTracker(encoder=enc, iou_threshold=0.05, iou_weight=0.5)
+
+        det_a = _np_det(frame_id=0, x=50, y=50, w=60, h=80)
+        det_b = _np_det(frame_id=0, x=70, y=50, w=60, h=80)
+        tracker.tracks[0] = Track(0, det_a)
+        tracker.tracks[1] = Track(1, det_b)
+        tracker._track_embeddings[0] = emb_a
+        tracker._track_embeddings[1] = emb_b
+        tracker._track_embed_counts[0] = 1
+        tracker._track_embed_counts[1] = 1
+        tracker.new_track_id = 2
+
+        probe = _np_det(frame_id=1, x=60, y=50, w=60, h=80)
+        result = tracker._match_detection(probe, max_lost=30, iou_threshold=0.05)
+        self.assertEqual(result, 1)
+
+
+class TestFaceIdTrackerRecovery(unittest.TestCase):
+    def test_recovery_reconnects_same_identity(self):
+        vd = VideoDetections()
+        # Face at (10, 50) in frames 0-2.
+        for i in range(3):
+            vd.add(_make_fd(frame_id=i, x=10, y=50))
+        # Gap: frames 3-5 have no detections.
+        # Same face reappears at (10, 50) in frames 6-8 — all A.
+        for i in range(6, 9):
+            vd.add(_make_fd(frame_id=i, x=10, y=50))
+        enc = _CyclicEncoder([_emb(1.0, 0.0)])
+        tracker = FaceIdTracker(
+            encoder=enc,
+            iou_threshold=0.1,
+            embedding_threshold=0.5,
+            recovery_max_lost=20,
+        )
+        tracker.label(vd, max_lost=2)
+        self.assertEqual(len(tracker.tracks), 1)
+
+    def test_no_recovery_for_different_identity(self):
+        vd = VideoDetections()
+        for i in range(3):
+            vd.add(_make_fd(frame_id=i, x=10, y=50))
+        # Different identity reappears at a different (non-overlapping) location.
+        for i in range(6, 9):
+            vd.add(_make_fd(frame_id=i, x=400, y=50))
+        enc = _CyclicEncoder(
+            [
+                _emb(1.0, 0.0),
+                _emb(1.0, 0.0),
+                _emb(1.0, 0.0),
+                _emb(0.0, 1.0),
+                _emb(0.0, 1.0),
+                _emb(0.0, 1.0),
+            ]
+        )
+        tracker = FaceIdTracker(
+            encoder=enc,
+            iou_threshold=0.1,
+            embedding_threshold=0.5,
+            recovery_max_lost=20,
+        )
+        tracker.label(vd, max_lost=2)
+        self.assertEqual(len(tracker.tracks), 2)
+
+
+class TestFaceIdTrackerMergeRule(unittest.TestCase):
+    def _make_tracker_with_two_tracks(self, emb_a: torch.Tensor, emb_b: torch.Tensor):
+        enc = _CyclicEncoder([_emb(1.0, 0.0)])
+        tracker = FaceIdTracker(encoder=enc, max_lost=-1, embedding_threshold=0.5)
+        t0 = Track(0, _np_det(frame_id=0, x=10, y=50))
+        t0.add(_np_det(frame_id=1, x=12, y=50))
+        t1 = Track(1, _np_det(frame_id=5, x=14, y=50))
+        t1.add(_np_det(frame_id=6, x=16, y=50))
+        tracker.tracks[0] = t0
+        tracker.tracks[1] = t1
+        tracker._track_embeddings[0] = torch.nn.functional.normalize(emb_a, p=2, dim=0)
+        tracker._track_embeddings[1] = torch.nn.functional.normalize(emb_b, p=2, dim=0)
+        tracker._track_embed_counts[0] = 1
+        tracker._track_embed_counts[1] = 1
+        return tracker
+
+    def test_merge_same_identity(self):
+        tracker = self._make_tracker_with_two_tracks(_emb(1.0, 0.0), _emb(1.0, 0.0))
+        should_merge, keep, drop = tracker.merge_rule(tracker.tracks[0], tracker.tracks[1])
+        self.assertTrue(should_merge)
+        self.assertEqual(keep.track_id, 0)
+        self.assertEqual(drop.track_id, 1)
+
+    def test_no_merge_different_identity(self):
+        tracker = self._make_tracker_with_two_tracks(_emb(1.0, 0.0), _emb(0.0, 1.0))
+        should_merge, _, _ = tracker.merge_rule(tracker.tracks[0], tracker.tracks[1])
+        self.assertFalse(should_merge)
+
+    def test_no_merge_if_max_lost_exceeded(self):
+        enc = _CyclicEncoder([_emb(1.0, 0.0)])
+        tracker = FaceIdTracker(encoder=enc, max_lost=2, embedding_threshold=0.5)
+        t0 = Track(0, _np_det(frame_id=0, x=10, y=50))
+        t0.add(_np_det(frame_id=1, x=12, y=50))
+        t1 = Track(1, _np_det(frame_id=20, x=14, y=50))
+        tracker.tracks[0] = t0
+        tracker.tracks[1] = t1
+        emb = torch.nn.functional.normalize(_emb(1.0, 0.0), p=2, dim=0)
+        tracker._track_embeddings[0] = emb
+        tracker._track_embeddings[1] = emb
+        tracker._track_embed_counts[0] = 1
+        tracker._track_embed_counts[1] = 1
+        should_merge, _, _ = tracker.merge_rule(tracker.tracks[0], tracker.tracks[1])
+        self.assertFalse(should_merge)
+
+
+class TestIouTrackerRegressionAfterRefactor(unittest.TestCase):
+    """Guard against the _match_detection refactor changing IouTracker behaviour."""
+
+    def test_consecutive_detections_form_single_track(self):
+        vd = VideoDetections()
+        for i in range(8):
+            vd.add(_make_fd(frame_id=i, x=10 + i * 2, y=50))
+        tracker = IouTracker()
+        tracker.label(vd)
+        self.assertEqual(len(tracker.tracks), 1)
+        self.assertEqual(len(next(iter(tracker.tracks.values()))), 8)
+
+    def test_split_on_iou_gap(self):
+        vd = VideoDetections()
+        for i in range(4):
+            vd.add(_make_fd(frame_id=i, x=10, y=10))
+        for i in range(4, 8):
+            vd.add(_make_fd(frame_id=i, x=500, y=500))
+        tracker = IouTracker(iou_threshold=0.3)
+        tracker.label(vd)
+        self.assertEqual(len(tracker.tracks), 2)
 
 
 if __name__ == "__main__":
