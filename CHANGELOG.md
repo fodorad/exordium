@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.1](https://github.com/fodorad/exordium/compare/v2.3.0...v2.3.1) (2026-04-11)
+
+
+### Bug Fixes
+
+* bump PyTorch ecosystem to 2.11 ([#10](https://github.com/fodorad/exordium/issues/10)) ([a4a8bc3](https://github.com/fodorad/exordium/commit/a4a8bc306e1e7c5642b457c52b16f6ab1975c428))
+
 ## [2.3.0](https://github.com/fodorad/exordium/compare/v2.2.0...v2.3.0) (2026-04-11)
 
 
