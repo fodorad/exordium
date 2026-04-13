@@ -234,6 +234,7 @@
 </ul>
 </li>
 <li class="toctree-l4 has-children"><a class="reference internal" href="../../deep/index.html">exordium.video.deep</a><input aria-label="Toggle navigation of exordium.video.deep" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="../../deep/adaface/index.html">exordium.video.deep.adaface</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../deep/base/index.html">exordium.video.deep.base</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../deep/clip/index.html">exordium.video.deep.clip</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../deep/dinov2/index.html">exordium.video.deep.dinov2</a></li>
@@ -378,6 +379,9 @@ numpy arrays and convert to BGR numpy internally before writing with cv2.</p>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.detection.IouTracker" title="exordium.video.core.detection.IouTracker"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IouTracker</span></code></a></p></td>
 <td><p>IoU-based tracker for faces without large inter-frame displacements.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.detection.FaceIdTracker" title="exordium.video.core.detection.FaceIdTracker"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FaceIdTracker</span></code></a></p></td>
+<td><p>Face-ID-enhanced tracker using embedding similarity.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1073,10 +1077,9 @@ optional track merging via <a class="reference internal" href="#exordium.video.c
 <span class="sig-name descname"><span class="pre">label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#exordium.video.core.detection.VideoDetections" title="exordium.video.core.detection.VideoDetections"><span class="pre">VideoDetections</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_lost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#exordium.video.core.detection.Tracker" title="exordium.video.core.detection.Tracker"><span class="pre">Tracker</span></a></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/core/detection.html#Tracker.label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.core.detection.Tracker.label" title="Link to this definition">¶</a></dt>
 <dd><p>Assign per-frame detections to persistent tracks.</p>
 <p>Iterates over all <a class="reference internal" href="#exordium.video.core.detection.FrameDetections" title="exordium.video.core.detection.FrameDetections"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameDetections</span></code></a> in <code class="docutils literal notranslate"><span class="pre">detections</span></code> and
-greedily assigns each detection to the open track whose last detection
-has the highest IoU, subject to <code class="docutils literal notranslate"><span class="pre">max_lost</span></code> and <code class="docutils literal notranslate"><span class="pre">iou_threshold</span></code>
-constraints.  Detections below <code class="docutils literal notranslate"><span class="pre">min_score</span></code> are skipped.  A new track
-is started whenever no suitable candidate is found.</p>
+delegates per-detection track matching to <code class="xref py py-meth docutils literal notranslate"><span class="pre">_match_detection()</span></code>.
+Detections below <code class="docutils literal notranslate"><span class="pre">min_score</span></code> are skipped.  A new track is started
+whenever <code class="xref py py-meth docutils literal notranslate"><span class="pre">_match_detection()</span></code> returns <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1204,6 +1207,56 @@ unlimited.</p></li>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(should_merge,</span> <span class="pre">keep_track,</span> <span class="pre">drop_track)</span></code> where the earlier track
 is always kept.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="exordium.video.core.detection.FaceIdTracker">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.video.core.detection.</span></span><span class="sig-name descname"><span class="pre">FaceIdTracker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">collections.abc.Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_lost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recovery_max_lost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">90</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/exordium/video/core/detection.html#FaceIdTracker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.core.detection.FaceIdTracker" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#exordium.video.core.detection.Tracker" title="exordium.video.core.detection.Tracker"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tracker</span></code></a></p>
+<p>Face-ID-enhanced tracker using embedding similarity.</p>
+<p>Uses IoU as the primary fast gate.  Face identity embeddings fire only
+when IoU is ambiguous (2+ candidates) or for track recovery (0
+candidates).  This keeps most frames on the fast IoU path while still
+disambiguating overlapping faces and reconnecting tracks after gaps
+caused by occlusion, blur, or extreme head poses.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">encoder</span></code> is any callable that takes a <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">3,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> uint8 RGB
+tensor and returns a <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">D)</span></code> L2-normalised embedding tensor — for
+example <a class="reference internal" href="../../deep/adaface/index.html#exordium.video.deep.adaface.AdaFaceWrapper" title="exordium.video.deep.adaface.AdaFaceWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">AdaFaceWrapper</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>encoder</strong> – Face embedding model (callable).</p></li>
+<li><p><strong>verbose</strong> – Show tqdm progress bar during labelling.</p></li>
+<li><p><strong>max_lost</strong> – Maximum frame gap to keep a track open.  <code class="docutils literal notranslate"><span class="pre">-1</span></code> means
+unlimited.</p></li>
+<li><p><strong>iou_threshold</strong> – Minimum IoU for the geometric gate.</p></li>
+<li><p><strong>embedding_threshold</strong> – Minimum cosine similarity accepted for
+embedding-based matches (disambiguation and recovery).</p></li>
+<li><p><strong>iou_weight</strong> – Weight for IoU in the combined score used when 2+ IoU
+candidates compete.  Embedding weight is <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">iou_weight</span></code>.</p></li>
+<li><p><strong>recovery_max_lost</strong> – Maximum frame gap for embedding-only recovery
+when no IoU candidate is found.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="exordium.video.core.detection.FaceIdTracker.merge_rule">
+<span class="sig-name descname"><span class="pre">merge_rule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#exordium.video.core.detection.Track" title="exordium.video.core.detection.Track"><span class="pre">Track</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#exordium.video.core.detection.Track" title="exordium.video.core.detection.Track"><span class="pre">Track</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#exordium.video.core.detection.Track" title="exordium.video.core.detection.Track"><span class="pre">Track</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#exordium.video.core.detection.Track" title="exordium.video.core.detection.Track"><span class="pre">Track</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/core/detection.html#FaceIdTracker.merge_rule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.core.detection.FaceIdTracker.merge_rule" title="Link to this definition">¶</a></dt>
+<dd><p>Merge two tracks based on frame-gap and embedding similarity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>track_1</strong> – First track.</p></li>
+<li><p><strong>track_2</strong> – Second track.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(should_merge,</span> <span class="pre">keep_track,</span> <span class="pre">drop_track)</span></code> where the earlier
+track is always kept.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1528,6 +1581,10 @@ aspect ratio.</p></li>
 </li>
 <li><a class="reference internal" href="#exordium.video.core.detection.IouTracker"><code class="docutils literal notranslate"><span class="pre">IouTracker</span></code></a><ul>
 <li><a class="reference internal" href="#exordium.video.core.detection.IouTracker.merge_rule"><code class="docutils literal notranslate"><span class="pre">IouTracker.merge_rule()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exordium.video.core.detection.FaceIdTracker"><code class="docutils literal notranslate"><span class="pre">FaceIdTracker</span></code></a><ul>
+<li><a class="reference internal" href="#exordium.video.core.detection.FaceIdTracker.merge_rule"><code class="docutils literal notranslate"><span class="pre">FaceIdTracker.merge_rule()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#exordium.video.core.detection.add_detections_to_frame"><code class="docutils literal notranslate"><span class="pre">add_detections_to_frame()</span></code></a></li>

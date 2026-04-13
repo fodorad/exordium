@@ -1,0 +1,92 @@
+exordium.video.deep.adaface
+===========================
+
+.. py:module:: exordium.video.deep.adaface
+
+.. autoapi-nested-parse::
+
+   AdaFace face recognition model wrapper (CVPR 2022).
+
+   Provides a :class:`VisualModelWrapper` that produces 512-dimensional
+   identity-discriminative face embeddings using the AdaFace method with
+   an IResNet backbone.
+
+   AdaFace uses a quality-adaptive angular margin loss that makes it
+   especially robust to degraded face images (blur, occlusion, extreme
+   head poses, masks, glasses, and non-frontal views).
+
+   Reference:
+       Kim et al., "AdaFace: Quality Adaptive Margin for Face Recognition",
+       CVPR 2022.  https://github.com/mk-minchul/AdaFace
+
+   Weights are downloaded from HuggingFace Hub on first use.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.deep.adaface.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.deep.adaface.AdaFaceWrapper
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: AdaFaceWrapper(backbone: str = 'ir_50', device_id: int | None = None)
+
+   Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
+
+
+   AdaFace face recognition model.
+
+   Produces 512-dimensional L2-normalised identity embeddings from face
+   crops.  Designed for robustness to low-quality and occluded faces.
+
+   Supported backbones:
+
+   * ``"ir_18"`` — fastest, ~43 MB (trained on VGGFace2)
+   * ``"ir_50"`` — balanced, ~167 MB (trained on MS1MV2)
+   * ``"ir_101"`` — most accurate, ~249 MB (trained on WebFace4M)
+
+   :param backbone: One of ``"ir_18"``, ``"ir_50"``, ``"ir_101"``.
+   :param device_id: GPU device index.  ``None`` or negative uses CPU.
+
+   :raises ValueError: If ``backbone`` is not a supported variant.
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+
+      Resize RGB face crops to 112x112 and normalise to [-1, 1].
+
+      :param frames: Any input supported by
+                     :meth:`~exordium.video.deep.base.VisualModelWrapper._to_uint8_tensor`.
+
+      :returns: Float tensor of shape ``(B, 3, 112, 112)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+
+      IResNet forward pass with L2 normalisation.
+
+      :param tensor: Preprocessed face tensor of shape ``(B, 3, 112, 112)``
+                     on ``self.device`` with values in [-1, 1].
+
+      :returns: L2-normalised identity embedding of shape ``(B, 512)``.
+
+
+

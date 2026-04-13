@@ -10,6 +10,7 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
+   /autoapi/exordium/video/deep/adaface/index
    /autoapi/exordium/video/deep/base/index
    /autoapi/exordium/video/deep/clip/index
    /autoapi/exordium/video/deep/dinov2/index

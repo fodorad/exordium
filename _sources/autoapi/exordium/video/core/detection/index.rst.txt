@@ -41,6 +41,7 @@ Classes
    exordium.video.core.detection.Track
    exordium.video.core.detection.Tracker
    exordium.video.core.detection.IouTracker
+   exordium.video.core.detection.FaceIdTracker
 
 
 Functions
@@ -690,10 +691,9 @@ Module Contents
       Assign per-frame detections to persistent tracks.
 
       Iterates over all :class:`FrameDetections` in ``detections`` and
-      greedily assigns each detection to the open track whose last detection
-      has the highest IoU, subject to ``max_lost`` and ``iou_threshold``
-      constraints.  Detections below ``min_score`` are skipped.  A new track
-      is started whenever no suitable candidate is found.
+      delegates per-detection track matching to :meth:`_match_detection`.
+      Detections below ``min_score`` are skipped.  A new track is started
+      whenever :meth:`_match_detection` returns ``None``.
 
       :param detections: Per-frame detection results.
       :param min_score: Minimum detection confidence to consider.
@@ -785,6 +785,48 @@ Module Contents
 
       :returns: ``(should_merge, keep_track, drop_track)`` where the earlier track
                 is always kept.
+
+
+
+.. py:class:: FaceIdTracker(encoder: collections.abc.Callable[[torch.Tensor], torch.Tensor], verbose: bool = False, max_lost: int = -1, iou_threshold: float = 0.2, embedding_threshold: float = 0.5, iou_weight: float = 0.5, recovery_max_lost: int = 90)
+
+   Bases: :py:obj:`Tracker`
+
+
+   Face-ID-enhanced tracker using embedding similarity.
+
+   Uses IoU as the primary fast gate.  Face identity embeddings fire only
+   when IoU is ambiguous (2+ candidates) or for track recovery (0
+   candidates).  This keeps most frames on the fast IoU path while still
+   disambiguating overlapping faces and reconnecting tracks after gaps
+   caused by occlusion, blur, or extreme head poses.
+
+   The ``encoder`` is any callable that takes a ``(B, 3, H, W)`` uint8 RGB
+   tensor and returns a ``(B, D)`` L2-normalised embedding tensor — for
+   example :class:`~exordium.video.deep.adaface.AdaFaceWrapper`.
+
+   :param encoder: Face embedding model (callable).
+   :param verbose: Show tqdm progress bar during labelling.
+   :param max_lost: Maximum frame gap to keep a track open.  ``-1`` means
+                    unlimited.
+   :param iou_threshold: Minimum IoU for the geometric gate.
+   :param embedding_threshold: Minimum cosine similarity accepted for
+                               embedding-based matches (disambiguation and recovery).
+   :param iou_weight: Weight for IoU in the combined score used when 2+ IoU
+                      candidates compete.  Embedding weight is ``1 - iou_weight``.
+   :param recovery_max_lost: Maximum frame gap for embedding-only recovery
+                             when no IoU candidate is found.
+
+
+   .. py:method:: merge_rule(track_1: Track, track_2: Track) -> tuple[bool, Track, Track]
+
+      Merge two tracks based on frame-gap and embedding similarity.
+
+      :param track_1: First track.
+      :param track_2: Second track.
+
+      :returns: ``(should_merge, keep_track, drop_track)`` where the earlier
+                track is always kept.
 
 
 
