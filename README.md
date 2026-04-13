@@ -45,6 +45,7 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Face detection | [YOLOv8-Face](https://github.com/akanametov/yolo-face) (arnabdhar/YOLOv8-Face-Detection) | bounding boxes |
 | Face detection + keypoints | [YOLO11-pose](https://github.com/zjykzj/YOLO11Face) (yolo11n/s-pose_widerface) | bounding boxes + 5-pt keypoints |
 | Multi-face tracking | IoU-based tracker | track IDs across frames |
+| Face-ID tracking | [AdaFace](https://github.com/mk-minchul/AdaFace) (IResNet-18/50/101, CVPR 2022) + IoU gating | track IDs with identity recovery |
 
 #### Face Analysis
 
@@ -63,7 +64,8 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Functionality | Model / Method | Output |
 |---|---|---|
 | Video features | [Swin Transformer](https://github.com/microsoft/Swin-Transformer) (tiny/small/base) | 768-d / 768-d / 1024-d |
-| Face identity features | [FAb-Net](https://www.robots.ox.ac.uk/~vgg/research/unsup_learn_watch_faces/index.html) | 256-d |
+| Face identity embeddings | [AdaFace](https://github.com/mk-minchul/AdaFace) (IResNet-18/50/101, CVPR 2022) | 512-d L2-normalised |
+| Face appearance features | [FAb-Net](https://www.robots.ox.ac.uk/~vgg/research/unsup_learn_watch_faces/index.html) | 256-d |
 | Vision–language embeddings | [CLIP](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K) (ViT-H/14, laion2B) | 1024-d |
 | Self-supervised visual features | [DINOv2](https://huggingface.co/facebook/dinov2-base) (small/base/large/giant) | 384 / 768 / 1024 / 1536-d |
 | Facial expression features | [EmotiEffNet](https://github.com/sb-ai-lab/EmotiEffLib) (EfficientNet-B0/B2, AffectNet) | 1280-d / 1408-d |

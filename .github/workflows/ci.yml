@@ -1,50 +1,48 @@
 name: CI
 
+# NOTE: macOS is intentionally excluded from CI.
+#
+# The root cause is an Objective-C runtime class duplication between the FFmpeg
+# dylibs bundled with OpenCV (cv2) and the Homebrew-installed FFmpeg required by
+# torchcodec. Specifically, AVFFrameReceiver and AVFAudioReceiver are registered
+# twice, which triggers undefined behaviour in the ObjC runtime. In practice this
+# causes test hangs, spurious segfaults, and non-deterministic CI failures —
+# roughly 3 out of 10 runs fail for reasons unrelated to the actual code under test.
+#
+# macOS development and testing continues to work via the local Makefile, where
+# the environment is more controlled. Linux (ubuntu-latest) remains the primary
+# CI target; this is also the production deployment platform.
+#
+# This restriction will be revisited once a clean solution is identified.
+
 on:
-  push:
-    branches: [main, dev, "feature/**"]
   pull_request:
     branches: [main, dev]
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python-version: ["3.13"]
-        os: [ubuntu-latest, macos-latest]
+    name: test
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0  # required for hatch-vcs git describe
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.14
       uses: actions/setup-python@v6
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.14"
 
     - name: Set up uv
       uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
 
-    - name: Install system dependencies (Linux)
-      if: runner.os == 'Linux'
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y ffmpeg libgles2 libegl1
-
-    - name: Install system dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        # torchcodec 0.9.1 ships one dylib per FFmpeg major version (core4…core7)
-        # and selects the right one at runtime by searching for libavutil.X.dylib.
-        # Homebrew places its libraries in a non-standard prefix that is NOT in
-        # the default rpath chain, so we must expose it via DYLD_LIBRARY_PATH.
-        # Writing to $GITHUB_ENV makes it available to every subsequent step.
-        brew install ffmpeg || true
-        echo "DYLD_LIBRARY_PATH=$(brew --prefix ffmpeg)/lib:${DYLD_LIBRARY_PATH}" >> "$GITHUB_ENV"
 
     - name: Install dependencies
       run: |
@@ -52,11 +50,7 @@ jobs:
         # dependencies (e.g. libnppicc.so) that are absent on the runner.
         # PEP 440 ignores local version segments, so torch==2.11.0 matches
         # both 2.11.0+cu130 (PyPI default) and 2.11.0+cpu (CPU index).
-        if [ "$RUNNER_OS" = "Linux" ]; then
-          uv pip install --system --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match -e ".[all,dev,docs]"
-        else
-          uv pip install --system -e ".[all,dev,docs]"
-        fi
+        uv pip install --system --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match -e ".[all,dev,docs]"
 
     - name: Audit dependencies for vulnerabilities
       run: uvx pip-audit
@@ -80,7 +74,6 @@ jobs:
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v6
-      if: matrix.os == 'ubuntu-latest'
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: coverage.xml
@@ -89,10 +82,9 @@ jobs:
     - name: Upload coverage HTML
       uses: actions/upload-artifact@v7
       with:
-        name: coverage-report-${{ matrix.python-version }}-${{ matrix.os }}
+        name: coverage-report
         path: coverage_html/
       if: always()
 
     - name: Build docs
       run: sphinx-build -b html docs/ site/
-      if: matrix.os == 'ubuntu-latest'

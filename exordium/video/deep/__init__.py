@@ -1,3 +1,4 @@
+from exordium.video.deep.adaface import AdaFaceWrapper
 from exordium.video.deep.base import VisualModelWrapper
 from exordium.video.deep.clip import ClipWrapper
 from exordium.video.deep.dinov2 import DINOv2Wrapper
@@ -13,6 +14,7 @@ from exordium.video.deep.swint import (
 )
 
 __all__ = [
+    "AdaFaceWrapper",
     "VisualModelWrapper",
     "ClipWrapper",
     "DINOv2Wrapper",
