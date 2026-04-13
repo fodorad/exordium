@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.0](https://github.com/fodorad/exordium/compare/v2.3.1...v2.4.0) (2026-04-13)
+
+
+### Features
+
+* AdaFace identity-aware tracker with IoU-gated embedding matching ([#14](https://github.com/fodorad/exordium/issues/14)) ([9a4dc14](https://github.com/fodorad/exordium/commit/9a4dc1420655e8ee7339a334c7c102843e7ba252))
+
 ## [2.3.1](https://github.com/fodorad/exordium/compare/v2.3.0...v2.3.1) (2026-04-11)
 
 
