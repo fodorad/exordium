@@ -39,7 +39,7 @@ dependencies = [
   "torch==2.11.0",
   "torchaudio==2.11.0",
   "torchvision==0.26.0",
-  "torchcodec==0.11.0",
+  "torchcodec==0.11.1",
   "tqdm",
   "matplotlib",
   "huggingface_hub",
