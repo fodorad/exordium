@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.1](https://github.com/fodorad/exordium/compare/v2.4.0...v2.4.1) (2026-06-28)
+
+
+### Bug Fixes
+
+* run CI on push to main so the badge stays current ([#28](https://github.com/fodorad/exordium/issues/28)) ([4e293f9](https://github.com/fodorad/exordium/commit/4e293f924afaffc091b3a5bad352c4a0d02842db))
+
 ## [2.4.0](https://github.com/fodorad/exordium/compare/v2.3.1...v2.4.0) (2026-04-13)
 
 
