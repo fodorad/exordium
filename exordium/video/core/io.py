@@ -488,7 +488,7 @@ def save_video(
         # Handle (T, C, H, W) or (T, H, W, C) format
         arr = frames
         if arr.ndim == 4 and arr.shape[1] == 3:
-            arr = arr.transpose(0, 2, 3, 1)  # → (T, H, W, C)
+            arr = np.transpose(arr, (0, 2, 3, 1))  # → (T, H, W, C)
         frames_list = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in arr]  # ty: ignore[no-matching-overload]
     elif isinstance(frames[0], torch.Tensor):
         # Sequence of (C, H, W) or (H, W, C) tensors
