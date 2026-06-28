@@ -464,7 +464,7 @@ class GazeWrapper(ABC):
         roll_angles: Sequence[float] | None = None,
         thr: float = 0.3,
         output_path: str | Path | None = None,
-    ) -> list[np.ndarray] | list[torch.Tensor]:
+    ) -> list[np.ndarray | torch.Tensor]:
         """Draw gaze vectors on face crops.
 
         Accepts any supported face input (tensor, ndarray, list of images or
