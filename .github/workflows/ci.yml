@@ -16,6 +16,8 @@ name: CI
 # This restriction will be revisited once a clean solution is identified.
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main, dev]
 
