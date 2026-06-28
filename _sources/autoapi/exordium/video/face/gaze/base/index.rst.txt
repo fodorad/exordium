@@ -300,7 +300,7 @@ Module Contents
 
 
 
-   .. py:method:: visualize(faces, yaw: numpy.ndarray | torch.Tensor, pitch: numpy.ndarray | torch.Tensor, roll_angles: collections.abc.Sequence[float] | None = None, thr: float = 0.3, output_path: str | pathlib.Path | None = None) -> list[numpy.ndarray] | list[torch.Tensor]
+   .. py:method:: visualize(faces, yaw: numpy.ndarray | torch.Tensor, pitch: numpy.ndarray | torch.Tensor, roll_angles: collections.abc.Sequence[float] | None = None, thr: float = 0.3, output_path: str | pathlib.Path | None = None) -> list[numpy.ndarray | torch.Tensor]
       :staticmethod:
 
 
