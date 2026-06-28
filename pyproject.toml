@@ -36,7 +36,7 @@ dependencies = [
   #
   # To upgrade: bump all four pins together and verify CI passes.
   # ─────────────────────────────────────────────────────────────────────────────
-  "torch==2.11.0",
+  "torch==2.12.1",
   "torchaudio==2.11.0",
   "torchvision==0.26.0",
   "torchcodec==0.11.0",
