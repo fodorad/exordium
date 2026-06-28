@@ -510,7 +510,7 @@ class GazeWrapper(ABC):
         if roll_angles is None:
             roll_angles = [0.0] * len(x)
 
-        results: list[np.ndarray] = []
+        results: list[np.ndarray | torch.Tensor] = []
         for i, (y, p, roll) in enumerate(zip(yaw_list, pitch_list, roll_angles)):
             face_np = x[i].permute(1, 2, 0).cpu().numpy()  # (H, W, 3)
             h, w = face_np.shape[:2]
