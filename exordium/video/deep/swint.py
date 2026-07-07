@@ -908,7 +908,7 @@ class SwinTransformer(nn.Module):  # pragma: no cover
         flops = 0
         flops += self.patch_embed.flops()
         for i, layer in enumerate(self.layers):
-            flops += layer.flops()  # ty: ignore[call-non-callable]
+            flops += layer.flops()
         flops += (
             self.num_features
             * self.patches_resolution[0]

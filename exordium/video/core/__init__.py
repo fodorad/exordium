@@ -19,6 +19,7 @@ from exordium.video.core.detection import (
     DetectionFromNp,
     DetectionFromTorchTensor,
     DetectionFromVideo,
+    FaceClusterTracker,
     FaceIdTracker,
     FrameDetections,
     IouTracker,
@@ -80,4 +81,5 @@ __all__ = [
     "video_to_frames",
     "IouTracker",
     "FaceIdTracker",
+    "FaceClusterTracker",
 ]
