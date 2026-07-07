@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.0](https://github.com/fodorad/exordium/compare/v2.4.1...v2.5.0) (2026-07-07)
+
+
+### Features
+
+* add FaceClusterTracker for protagonist face-track extraction ([#30](https://github.com/fodorad/exordium/issues/30)) ([e174fc0](https://github.com/fodorad/exordium/commit/e174fc0b1c75476c4729a7814ca6177cc22df219))
+
 ## [2.4.1](https://github.com/fodorad/exordium/compare/v2.4.0...v2.4.1) (2026-06-28)
 
 
