@@ -1323,20 +1323,78 @@
 <span class="sd">    Implements IoU-based frame-to-track assignment via :meth:`label` and</span>
 <span class="sd">    optional track merging via :meth:`merge`.  Subclasses implement the</span>
 <span class="sd">    :meth:`merge_rule`.</span>
+
+<span class="sd">    An optional face-identity ``encoder`` and the shared embedding helpers</span>
+<span class="sd">    (:meth:`_compute_embedding`, :meth:`_cosine_similarity`,</span>
+<span class="sd">    :meth:`_ensure_track_embedding`) live on the base class so that both the</span>
+<span class="sd">    online :class:`FaceIdTracker` and the offline :class:`FaceClusterTracker`</span>
+<span class="sd">    can reuse them.  Trackers that do not use identity embeddings simply leave</span>
+<span class="sd">    ``encoder`` as ``None``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">encoder</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">new_track_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Track</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_selected_tracks</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Track</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_to_id</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id_to_path</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">.png&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">selected_tracks</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Track</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Active track selection, or all tracks if none selected.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected_tracks</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected_tracks</span>
+
+    <span class="c1"># -- Face-identity embedding helpers (shared by embedding-based trackers) --</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detection</span><span class="p">:</span> <span class="n">Detection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute a normalised face embedding for a single detection.</span>
+
+<span class="sd">        Requires :attr:`encoder` to be set.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            detection: Detection whose face crop is embedded.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            L2-normalised 1-D embedding tensor on the CPU.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;An encoder is required to compute face embeddings.&quot;</span><span class="p">)</span>
+        <span class="n">crop</span> <span class="o">=</span> <span class="n">detection</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra_space</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">crop</span><span class="p">)</span>
+        <span class="n">vec</span> <span class="o">=</span> <span class="n">embedding</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cosine_similarity</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cosine similarity between two 1-D tensors.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">cosine_similarity</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_track_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">track</span><span class="p">:</span> <span class="n">Track</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Populate the running-mean embedding for a track if missing.</span>
+
+<span class="sd">        Samples up to five detections from the track, embeds each, and stores</span>
+<span class="sd">        the L2-normalised mean in :attr:`_track_embeddings`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            track: Track to embed.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">track</span><span class="o">.</span><span class="n">track_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">track</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">embeddings</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_compute_embedding</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">sample</span><span class="p">]</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">[</span><span class="n">track</span><span class="o">.</span><span class="n">track_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span><span class="p">[</span><span class="n">track</span><span class="o">.</span><span class="n">track_id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_match_detection</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1642,23 +1700,12 @@
         <span class="n">iou_weight</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
         <span class="n">recovery_max_lost</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">90</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">encoder</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">encoder</span><span class="o">=</span><span class="n">encoder</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_lost</span> <span class="o">=</span> <span class="n">max_lost</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">iou_threshold</span> <span class="o">=</span> <span class="n">iou_threshold</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embedding_threshold</span> <span class="o">=</span> <span class="n">embedding_threshold</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">iou_weight</span> <span class="o">=</span> <span class="n">iou_weight</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">recovery_max_lost</span> <span class="o">=</span> <span class="n">recovery_max_lost</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detection</span><span class="p">:</span> <span class="n">Detection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute a normalised face embedding for a single detection.&quot;&quot;&quot;</span>
-        <span class="n">crop</span> <span class="o">=</span> <span class="n">detection</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra_space</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">crop</span><span class="p">)</span>
-        <span class="n">vec</span> <span class="o">=</span> <span class="n">embedding</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_track_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">track_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">embedding</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update a track&#39;s running-mean embedding with a new sample.&quot;&quot;&quot;</span>
@@ -1671,11 +1718,6 @@
         <span class="n">updated</span> <span class="o">=</span> <span class="p">(</span><span class="n">mean</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="n">embedding</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">[</span><span class="n">track_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">updated</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span><span class="p">[</span><span class="n">track_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_cosine_similarity</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cosine similarity between two 1-D tensors.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">cosine_similarity</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_match_detection</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1764,16 +1806,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">new_track_id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_track_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">track</span><span class="p">:</span> <span class="n">Track</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Populate the running embedding for a track if missing.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">track</span><span class="o">.</span><span class="n">track_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">:</span>
-            <span class="k">return</span>
-        <span class="n">sample</span> <span class="o">=</span> <span class="n">track</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-        <span class="n">embeddings</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_compute_embedding</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">sample</span><span class="p">]</span>
-        <span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">[</span><span class="n">track</span><span class="o">.</span><span class="n">track_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span><span class="p">[</span><span class="n">track</span><span class="o">.</span><span class="n">track_id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span>
-
 <div class="viewcode-block" id="FaceIdTracker.merge_rule">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.FaceIdTracker.merge_rule">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">merge_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">track_1</span><span class="p">:</span> <span class="n">Track</span><span class="p">,</span> <span class="n">track_2</span><span class="p">:</span> <span class="n">Track</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Track</span><span class="p">,</span> <span class="n">Track</span><span class="p">]:</span>
@@ -1801,6 +1833,286 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">[</span><span class="n">no2</span><span class="o">.</span><span class="n">track_id</span><span class="p">],</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">sim</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_threshold</span><span class="p">,</span> <span class="n">no1</span><span class="p">,</span> <span class="n">no2</span></div>
+</div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># FaceClusterTracker</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="FaceClusterTracker">
+<a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.FaceClusterTracker">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FaceClusterTracker</span><span class="p">(</span><span class="n">Tracker</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Offline IoU-tracklet tracker with global face-ID clustering.</span>
+
+<span class="sd">    Designed for video-level datasets (e.g. MOSEI, First Impressions) where a</span>
+<span class="sd">    single *protagonist* must be extracted from a clip.  Plain IoU tracking</span>
+<span class="sd">    yields short, high-purity tracklets that fragment on occlusions, scene</span>
+<span class="sd">    cuts, blur, or brief exits.  This tracker re-identifies those fragments by</span>
+<span class="sd">    embedding every tracklet once and clustering all tracklets **jointly** with</span>
+<span class="sd">    agglomerative (hierarchical) clustering.  Being order-independent, global</span>
+<span class="sd">    clustering recovers identities across arbitrary gaps far more reliably than</span>
+<span class="sd">    greedy pairwise merging.</span>
+
+<span class="sd">    Pipeline: :meth:`label` (IoU tracklets) → :meth:`cluster` (global face-ID</span>
+<span class="sd">    clustering into identity tracks) → :meth:`select_protagonist` (single</span>
+<span class="sd">    dominant identity).  :meth:`run` chains all three.</span>
+
+<span class="sd">    The ``encoder`` is any callable mapping a ``(B, 3, H, W)`` uint8 RGB tensor</span>
+<span class="sd">    to a ``(B, D)`` L2-normalised embedding tensor — for example</span>
+<span class="sd">    :class:`~exordium.video.deep.adaface.AdaFaceWrapper`, whose quality-adaptive</span>
+<span class="sd">    embeddings are robust to the low-resolution faces common in these datasets.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        encoder: Face embedding model (callable).</span>
+<span class="sd">        verbose: Show tqdm progress bar during labelling.</span>
+<span class="sd">        iou_threshold: Minimum IoU to continue an IoU tracklet.</span>
+<span class="sd">        max_lost: Maximum frame gap to keep an IoU tracklet open.  ``-1`` means</span>
+<span class="sd">            unlimited.</span>
+<span class="sd">        distance_threshold: Cosine-distance cut for the hierarchical</span>
+<span class="sd">            clustering (``1 - cosine_similarity``).  Tracklets closer than this</span>
+<span class="sd">            are merged into one identity.  Defaults to ``0.4`` (similarity</span>
+<span class="sd">            ``&gt;= 0.6``).</span>
+<span class="sd">        samples_per_track: Number of high-quality detections averaged into each</span>
+<span class="sd">            tracklet embedding.</span>
+<span class="sd">        min_det_score: Minimum detection score for a crop to feed a tracklet</span>
+<span class="sd">            embedding (quality gate for low-resolution robustness).</span>
+<span class="sd">        min_bb_size: Minimum bounding-box size (largest side, pixels) for a</span>
+<span class="sd">            crop to feed a tracklet embedding.</span>
+
+<span class="sd">    After :meth:`cluster` (or :meth:`run`), the track counts before and after</span>
+<span class="sd">    identity merging are available on :attr:`n_tracklets` and</span>
+<span class="sd">    :attr:`n_identities` (always ``n_identities &lt;= n_tracklets``).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">encoder</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">max_lost</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">distance_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.4</span><span class="p">,</span>
+        <span class="n">samples_per_track</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">min_det_score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">min_bb_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">encoder</span><span class="o">=</span><span class="n">encoder</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iou_threshold</span> <span class="o">=</span> <span class="n">iou_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_lost</span> <span class="o">=</span> <span class="n">max_lost</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distance_threshold</span> <span class="o">=</span> <span class="n">distance_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_track</span> <span class="o">=</span> <span class="n">samples_per_track</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_det_score</span> <span class="o">=</span> <span class="n">min_det_score</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_bb_size</span> <span class="o">=</span> <span class="n">min_bb_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_tracklets</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of IoU tracklets fed into the last :meth:`cluster` call (before merging).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_identities</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of identity tracks produced by the last :meth:`cluster` call (after merging).&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_tracklet_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">track</span><span class="p">:</span> <span class="n">Track</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute one robust identity embedding for a tracklet.</span>
+
+<span class="sd">        Drops crops below the ``min_det_score`` / ``min_bb_size`` quality gates,</span>
+<span class="sd">        then samples up to ``samples_per_track`` detections **evenly across the</span>
+<span class="sd">        tracklet&#39;s time span** and averages their embeddings.  Temporal-even</span>
+<span class="sd">        sampling is deliberate: ranking by confidence or face size tends to</span>
+<span class="sd">        over-select frames during transitions, occlusions, or scene blends —</span>
+<span class="sd">        which are large and high-scoring yet corrupt identity — whereas spread</span>
+<span class="sd">        sampling captures the tracklet&#39;s representative appearance.  Falls back</span>
+<span class="sd">        to all detections when the gates filter everything out (e.g. a wholly</span>
+<span class="sd">        low-resolution tracklet).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            track: Tracklet to embed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            L2-normalised 1-D embedding tensor on the CPU.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_for_embedding</span><span class="p">(</span><span class="n">track</span><span class="p">)</span>
+        <span class="n">embeddings</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_compute_embedding</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">]</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_select_for_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">track</span><span class="p">:</span> <span class="n">Track</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Detection</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pick the detections used to build a tracklet&#39;s identity embedding.</span>
+
+<span class="sd">        Applies the ``min_det_score`` / ``min_bb_size`` quality gates, then</span>
+<span class="sd">        returns up to ``samples_per_track`` detections spaced evenly across the</span>
+<span class="sd">        tracklet&#39;s time span.  Falls back to every detection when the gates</span>
+<span class="sd">        filter all of them out.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            track: Tracklet to sample.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Detections ordered by frame index.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">eligible</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">d</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">track</span>
+            <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_det_score</span>
+            <span class="ow">and</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">bb_xywh</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">bb_xywh</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bb_size</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">eligible</span><span class="p">:</span>
+            <span class="n">eligible</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">track</span><span class="p">)</span>
+
+        <span class="n">eligible</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">frame_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eligible</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_track</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">eligible</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">eligible</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_track</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">()</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">eligible</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">]</span>
+
+<div class="viewcode-block" id="FaceClusterTracker.cluster">
+<a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.FaceClusterTracker.cluster">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cluster</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FaceClusterTracker</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cluster IoU tracklets into identity tracks by face-ID similarity.</span>
+
+<span class="sd">        Embeds every tracklet once, runs average-linkage agglomerative</span>
+<span class="sd">        clustering over the tracklet embeddings with a cosine-distance cut of</span>
+<span class="sd">        :attr:`distance_threshold`, then consolidates each cluster into a single</span>
+<span class="sd">        identity :class:`Track` with a clean sequential ``track_id``.  The</span>
+<span class="sd">        clustered tracks replace :attr:`tracks`.</span>
+
+<span class="sd">        Records the tracklet and identity counts in :attr:`n_tracklets` and</span>
+<span class="sd">        :attr:`n_identities` for later retrieval.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Self (tracks updated in-place).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Local import: scipy is a declared dependency but only needed here.</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.cluster.hierarchy</span><span class="w"> </span><span class="kn">import</span> <span class="n">fcluster</span><span class="p">,</span> <span class="n">linkage</span>
+
+        <span class="n">track_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_tracklets</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">track_ids</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">track_ids</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_identities</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">track_ids</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">track_id</span> <span class="ow">in</span> <span class="n">track_ids</span><span class="p">:</span>
+            <span class="n">embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tracklet_embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">[</span><span class="n">track_id</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">[</span><span class="n">track_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">embedding</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span><span class="p">[</span><span class="n">track_id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">matrix</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span> <span class="k">for</span> <span class="n">tid</span> <span class="ow">in</span> <span class="n">track_ids</span><span class="p">])</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">linkage_matrix</span> <span class="o">=</span> <span class="n">linkage</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;average&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;cosine&quot;</span><span class="p">)</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">fcluster</span><span class="p">(</span><span class="n">linkage_matrix</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">distance_threshold</span><span class="p">,</span> <span class="n">criterion</span><span class="o">=</span><span class="s2">&quot;distance&quot;</span><span class="p">)</span>
+
+        <span class="n">clusters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">track_id</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">track_ids</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+            <span class="n">clusters</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">label</span><span class="p">),</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">track_id</span><span class="p">)</span>
+
+        <span class="n">clustered_tracks</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Track</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">new_id</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">clusters</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="n">merged</span> <span class="o">=</span> <span class="n">Track</span><span class="p">(</span><span class="n">track_id</span><span class="o">=</span><span class="n">new_id</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">member_id</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+                <span class="n">merged</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">[</span><span class="n">member_id</span><span class="p">])</span>
+            <span class="n">clustered_tracks</span><span class="p">[</span><span class="n">new_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span> <span class="o">=</span> <span class="n">clustered_tracks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_identities</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">clustered_tracks</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_selected_tracks</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_track_id</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">clustered_tracks</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="FaceClusterTracker.select_protagonist">
+<a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.FaceClusterTracker.select_protagonist">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_protagonist</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Track</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select the single dominant identity as the protagonist.</span>
+
+<span class="sd">        Scores each identity track by ``len(track) * bb_size`` — on-screen time</span>
+<span class="sd">        weighted by face size — and keeps the highest-scoring one.  The result</span>
+<span class="sd">        is stored in :attr:`_selected_tracks` and returned.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The protagonist :class:`Track`, or ``None`` when there are no</span>
+<span class="sd">            tracks.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_score</span><span class="p">(</span><span class="n">track</span><span class="p">:</span> <span class="n">Track</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">track</span><span class="p">)</span> <span class="o">*</span> <span class="n">track</span><span class="o">.</span><span class="n">bb_size</span><span class="p">(</span><span class="n">extra_percent</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="n">protagonist_id</span><span class="p">,</span> <span class="n">protagonist</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">_score</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_selected_tracks</span> <span class="o">=</span> <span class="p">{</span><span class="n">protagonist_id</span><span class="p">:</span> <span class="n">protagonist</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">protagonist</span></div>
+
+
+<div class="viewcode-block" id="FaceClusterTracker.run">
+<a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.FaceClusterTracker.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">detections</span><span class="p">:</span> <span class="n">VideoDetections</span><span class="p">,</span>
+        <span class="n">min_score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Track</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the full pipeline and return the protagonist track.</span>
+
+<span class="sd">        Chains :meth:`label` → :meth:`cluster` → :meth:`select_protagonist`.</span>
+<span class="sd">        After the call, :attr:`n_tracklets` and :attr:`n_identities` hold the</span>
+<span class="sd">        track counts before and after identity clustering.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; protagonist = tracker.run(video_detections)</span>
+<span class="sd">            &gt;&gt;&gt; tracker.n_tracklets, tracker.n_identities</span>
+<span class="sd">            (6, 4)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            detections: Per-frame detection results (a video-detection object).</span>
+<span class="sd">            min_score: Minimum detection confidence for the IoU tracklet stage.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The protagonist :class:`Track`, or ``None`` when no faces are</span>
+<span class="sd">            tracked.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">(</span>
+            <span class="n">detections</span><span class="p">,</span>
+            <span class="n">min_score</span><span class="o">=</span><span class="n">min_score</span><span class="p">,</span>
+            <span class="n">max_lost</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_lost</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lost</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">detections</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">iou_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">iou_threshold</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_protagonist</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="FaceClusterTracker.merge_rule">
+<a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.FaceClusterTracker.merge_rule">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">merge_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">track_1</span><span class="p">:</span> <span class="n">Track</span><span class="p">,</span> <span class="n">track_2</span><span class="p">:</span> <span class="n">Track</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Track</span><span class="p">,</span> <span class="n">Track</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pairwise embedding-similarity gate (for the base greedy merge).</span>
+
+<span class="sd">        Provided for API completeness so the inherited greedy :meth:`merge` can</span>
+<span class="sd">        be used as a fallback; :meth:`cluster` is the primary consolidation</span>
+<span class="sd">        path.  Two tracks merge when their embedding cosine similarity is at</span>
+<span class="sd">        least ``1 - distance_threshold``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            track_1: First track.</span>
+<span class="sd">            track_2: Second track.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``(should_merge, keep_track, drop_track)`` where the earlier track</span>
+<span class="sd">            is always kept.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">no1</span><span class="p">,</span> <span class="n">no2</span> <span class="o">=</span> <span class="p">(</span><span class="n">track_1</span><span class="p">,</span> <span class="n">track_2</span><span class="p">)</span> <span class="k">if</span> <span class="n">track_1</span><span class="o">.</span><span class="n">is_started_earlier</span><span class="p">(</span><span class="n">track_2</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">track_2</span><span class="p">,</span> <span class="n">track_1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_track_embedding</span><span class="p">(</span><span class="n">no1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_track_embedding</span><span class="p">(</span><span class="n">no2</span><span class="p">)</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cosine_similarity</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">[</span><span class="n">no1</span><span class="o">.</span><span class="n">track_id</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="p">[</span><span class="n">no2</span><span class="o">.</span><span class="n">track_id</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">sim</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance_threshold</span><span class="p">),</span> <span class="n">no1</span><span class="p">,</span> <span class="n">no2</span></div>
 </div>
 
 

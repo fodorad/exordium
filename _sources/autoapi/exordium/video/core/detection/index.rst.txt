@@ -42,6 +42,7 @@ Classes
    exordium.video.core.detection.Tracker
    exordium.video.core.detection.IouTracker
    exordium.video.core.detection.FaceIdTracker
+   exordium.video.core.detection.FaceClusterTracker
 
 
 Functions
@@ -667,7 +668,7 @@ Module Contents
 
 
 
-.. py:class:: Tracker(verbose: bool = False)
+.. py:class:: Tracker(verbose: bool = False, encoder: collections.abc.Callable[[torch.Tensor], torch.Tensor] | None = None)
 
    Bases: :py:obj:`abc.ABC`
 
@@ -677,6 +678,13 @@ Module Contents
    Implements IoU-based frame-to-track assignment via :meth:`label` and
    optional track merging via :meth:`merge`.  Subclasses implement the
    :meth:`merge_rule`.
+
+   An optional face-identity ``encoder`` and the shared embedding helpers
+   (:meth:`_compute_embedding`, :meth:`_cosine_similarity`,
+   :meth:`_ensure_track_embedding`) live on the base class so that both the
+   online :class:`FaceIdTracker` and the offline :class:`FaceClusterTracker`
+   can reuse them.  Trackers that do not use identity embeddings simply leave
+   ``encoder`` as ``None``.
 
 
    .. py:property:: selected_tracks
@@ -827,6 +835,138 @@ Module Contents
 
       :returns: ``(should_merge, keep_track, drop_track)`` where the earlier
                 track is always kept.
+
+
+
+.. py:class:: FaceClusterTracker(encoder: collections.abc.Callable[[torch.Tensor], torch.Tensor], verbose: bool = False, iou_threshold: float = 0.2, max_lost: int = -1, distance_threshold: float = 0.4, samples_per_track: int = 5, min_det_score: float = 0.0, min_bb_size: int = 0)
+
+   Bases: :py:obj:`Tracker`
+
+
+   Offline IoU-tracklet tracker with global face-ID clustering.
+
+   Designed for video-level datasets (e.g. MOSEI, First Impressions) where a
+   single *protagonist* must be extracted from a clip.  Plain IoU tracking
+   yields short, high-purity tracklets that fragment on occlusions, scene
+   cuts, blur, or brief exits.  This tracker re-identifies those fragments by
+   embedding every tracklet once and clustering all tracklets **jointly** with
+   agglomerative (hierarchical) clustering.  Being order-independent, global
+   clustering recovers identities across arbitrary gaps far more reliably than
+   greedy pairwise merging.
+
+   Pipeline: :meth:`label` (IoU tracklets) → :meth:`cluster` (global face-ID
+   clustering into identity tracks) → :meth:`select_protagonist` (single
+   dominant identity).  :meth:`run` chains all three.
+
+   The ``encoder`` is any callable mapping a ``(B, 3, H, W)`` uint8 RGB tensor
+   to a ``(B, D)`` L2-normalised embedding tensor — for example
+   :class:`~exordium.video.deep.adaface.AdaFaceWrapper`, whose quality-adaptive
+   embeddings are robust to the low-resolution faces common in these datasets.
+
+   :param encoder: Face embedding model (callable).
+   :param verbose: Show tqdm progress bar during labelling.
+   :param iou_threshold: Minimum IoU to continue an IoU tracklet.
+   :param max_lost: Maximum frame gap to keep an IoU tracklet open.  ``-1`` means
+                    unlimited.
+   :param distance_threshold: Cosine-distance cut for the hierarchical
+                              clustering (``1 - cosine_similarity``).  Tracklets closer than this
+                              are merged into one identity.  Defaults to ``0.4`` (similarity
+                              ``>= 0.6``).
+   :param samples_per_track: Number of high-quality detections averaged into each
+                             tracklet embedding.
+   :param min_det_score: Minimum detection score for a crop to feed a tracklet
+                         embedding (quality gate for low-resolution robustness).
+   :param min_bb_size: Minimum bounding-box size (largest side, pixels) for a
+                       crop to feed a tracklet embedding.
+
+   After :meth:`cluster` (or :meth:`run`), the track counts before and after
+   identity merging are available on :attr:`n_tracklets` and
+   :attr:`n_identities` (always ``n_identities <= n_tracklets``).
+
+
+
+   .. py:attribute:: n_tracklets
+      :type:  int
+      :value: 0
+
+
+      Number of IoU tracklets fed into the last :meth:`cluster` call (before merging).
+
+
+   .. py:attribute:: n_identities
+      :type:  int
+      :value: 0
+
+
+      Number of identity tracks produced by the last :meth:`cluster` call (after merging).
+
+
+   .. py:method:: cluster() -> FaceClusterTracker
+
+      Cluster IoU tracklets into identity tracks by face-ID similarity.
+
+      Embeds every tracklet once, runs average-linkage agglomerative
+      clustering over the tracklet embeddings with a cosine-distance cut of
+      :attr:`distance_threshold`, then consolidates each cluster into a single
+      identity :class:`Track` with a clean sequential ``track_id``.  The
+      clustered tracks replace :attr:`tracks`.
+
+      Records the tracklet and identity counts in :attr:`n_tracklets` and
+      :attr:`n_identities` for later retrieval.
+
+      :returns: Self (tracks updated in-place).
+
+
+
+   .. py:method:: select_protagonist() -> Track | None
+
+      Select the single dominant identity as the protagonist.
+
+      Scores each identity track by ``len(track) * bb_size`` — on-screen time
+      weighted by face size — and keeps the highest-scoring one.  The result
+      is stored in :attr:`_selected_tracks` and returned.
+
+      :returns: The protagonist :class:`Track`, or ``None`` when there are no
+                tracks.
+
+
+
+   .. py:method:: run(detections: VideoDetections, min_score: float = 0.7) -> Track | None
+
+      Run the full pipeline and return the protagonist track.
+
+      Chains :meth:`label` → :meth:`cluster` → :meth:`select_protagonist`.
+      After the call, :attr:`n_tracklets` and :attr:`n_identities` hold the
+      track counts before and after identity clustering.
+
+      .. rubric:: Example
+
+      >>> protagonist = tracker.run(video_detections)
+      >>> tracker.n_tracklets, tracker.n_identities
+      (6, 4)
+
+      :param detections: Per-frame detection results (a video-detection object).
+      :param min_score: Minimum detection confidence for the IoU tracklet stage.
+
+      :returns: The protagonist :class:`Track`, or ``None`` when no faces are
+                tracked.
+
+
+
+   .. py:method:: merge_rule(track_1: Track, track_2: Track) -> tuple[bool, Track, Track]
+
+      Pairwise embedding-similarity gate (for the base greedy merge).
+
+      Provided for API completeness so the inherited greedy :meth:`merge` can
+      be used as a fallback; :meth:`cluster` is the primary consolidation
+      path.  Two tracks merge when their embedding cosine similarity is at
+      least ``1 - distance_threshold``.
+
+      :param track_1: First track.
+      :param track_2: Second track.
+
+      :returns: ``(should_merge, keep_track, drop_track)`` where the earlier track
+                is always kept.
 
 
 
