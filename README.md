@@ -46,6 +46,7 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Face detection + keypoints | [YOLO11-pose](https://github.com/zjykzj/YOLO11Face) (yolo11n/s-pose_widerface) | bounding boxes + 5-pt keypoints |
 | Multi-face tracking | IoU-based tracker | track IDs across frames |
 | Face-ID tracking | [AdaFace](https://github.com/mk-minchul/AdaFace) (IResNet-18/50/101, CVPR 2022) + IoU gating | track IDs with identity recovery |
+| Protagonist extraction | IoU tracklets + [AdaFace](https://github.com/mk-minchul/AdaFace) global clustering (agglomerative, `FaceClusterTracker`) | single protagonist track |
 
 #### Face Analysis
 
