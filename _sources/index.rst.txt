@@ -37,6 +37,11 @@ Features
 **Text**
 
 - Whisper — speech-to-text transcription (OpenAI Whisper)
+- Word-level timestamps — Whisper ASR + forced alignment (torchaudio ``MMS_FA`` or whisperX), returns per-word ``(start, end, score)``
+- Forced alignment — align a known transcript to audio; interchangeable ``TorchaudioForcedAligner`` / ``WhisperxForcedAligner`` backends
+- Transcript re-alignment — dataset-agnostic fuzzy search (rapidfuzz) of a known transcript in the word stream to recover true segment ``(start, end)`` and a coverage score
+- Annotation checks — raw + Whisper-normalized (standard ``EnglishTextNormalizer``) WER / CER, rapidfuzz string similarity, and XLM-RoBERTa semantic cosine, with a heuristic ``is_acceptable`` verdict; standalone ``TranscriptEvaluator`` (two strings) or via the ``SpeechAlignmentPipeline`` facade
+- Segment validation — per-segment accept / recut / drop decisions with recovered start/end times
 - BERT — token-level and sentence-level embeddings (768-d)
 - RoBERTa — token-level and sentence-level embeddings (1024-d)
 - XML-RoBERTa — multilingual sentence embeddings (768-d)
@@ -72,7 +77,7 @@ Extras
    * - ``audio``
      - OpenSMILE, torchaudio — audio feature extraction
    * - ``text``
-     - transformers, torchaudio — text and speech models
+     - transformers, torchaudio, rapidfuzz, whisperX — text, speech, and alignment
    * - ``video``
      - MediaPipe, Ultralytics, blinklinmult, unigaze, timm — face & video models
    * - ``all``
@@ -115,6 +120,8 @@ downloaded automatically on first run.
      - Audio features: spectrogram, OpenSMILE, CLAP, Wav2Vec2, WavLM, emotion2vec+
    * - ``demo_text.ipynb``
      - Text features: Whisper transcription, BERT, RoBERTa, XML-RoBERTa
+   * - ``demo_text_alignment.ipynb``
+     - Word-level timestamps, transcript re-alignment, and annotation validation via ``SpeechAlignmentPipeline`` (torchaudio + whisperX backends)
 
 Development
 -----------

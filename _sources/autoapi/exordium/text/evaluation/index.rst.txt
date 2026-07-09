@@ -1,0 +1,340 @@
+exordium.text.evaluation
+========================
+
+.. py:module:: exordium.text.evaluation
+
+.. autoapi-nested-parse::
+
+   Structured transcript-quality metrics and segment-annotation validation.
+
+   Pure logic (no models): turns a word stream and known annotations into
+   structured, serialisable results that downstream code (e.g. an audio cutter in
+   another project) can act on directly.
+
+   * :func:`evaluate_transcript` → :class:`TranscriptMetrics` — how close an
+     annotated transcript is to an ASR prediction (WER / CER / similarity).
+   * :func:`validate_segment` / :func:`validate_segments` → :class:`SegmentValidation`
+     — whether an annotated ``(text, start, end)`` segment is where the annotation
+     claims, and, when not, the recovered start/end to re-cut with.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.text.evaluation.logger
+   exordium.text.evaluation.Embedder
+   exordium.text.evaluation.DEFAULT_MAX_NORMALIZED_WER
+   exordium.text.evaluation.DEFAULT_MIN_SEMANTIC_SIMILARITY
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.text.evaluation.TranscriptMetrics
+   exordium.text.evaluation.TranscriptEvaluator
+   exordium.text.evaluation.SegmentValidation
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.text.evaluation.normalize_asr
+   exordium.text.evaluation.evaluate_transcript
+   exordium.text.evaluation.is_acceptable
+   exordium.text.evaluation.build_embedder
+   exordium.text.evaluation.validate_segment
+   exordium.text.evaluation.validate_segments
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:data:: Embedder
+
+   Maps a list of texts to a ``(N, H)`` embedding array (for semantic similarity).
+
+.. py:data:: DEFAULT_MAX_NORMALIZED_WER
+   :value: 0.2
+
+
+   normalized WER at/under this is considered a match.
+
+   Heuristic — there is no universal ASR-quality cutoff. Rough guidance: ``<0.10``
+   excellent, ``0.10–0.20`` good, ``0.20–0.35`` fair, ``>0.5`` poor. The default
+   ``0.20`` accepts up to the good/fair boundary; raise to ``~0.35`` to also accept
+   "fair" annotations. Tune per dataset.
+
+   :type: Default accept threshold
+
+.. py:data:: DEFAULT_MIN_SEMANTIC_SIMILARITY
+   :value: 0.7
+
+
+   semantic cosine at/over this counts as same-meaning.
+
+   Heuristic for the ``xml-roberta`` sentence-transformer: ``>0.85`` near-identical
+   meaning, ``0.70–0.85`` clearly related/paraphrase, ``<0.5`` different. The default
+   ``0.70`` accepts clearly-related/paraphrase pairs. Tune per dataset.
+
+   :type: Default rescue threshold
+
+.. py:function:: normalize_asr(text: str, kind: str = 'english') -> str
+
+   Apply Whisper's standard ASR text normalizer.
+
+   This is **not** a hand-rolled normalizer: it is the normalizer published with
+   OpenAI Whisper (Whisper paper, Appendix C "Text Standardization") and shipped
+   in ``transformers`` — the same routine the HuggingFace Open ASR Leaderboard
+   uses, so WER/CER are comparable to the literature. It canonicalizes numbers
+   (``"ten thousand"`` and ``"10,000"`` → ``"10000"``), expands contractions,
+   and strips casing/punctuation.
+
+   :param text: Raw text to normalize.
+   :param kind: ``"english"`` (``EnglishTextNormalizer`` — number/contraction/
+                spelling aware, English only) or ``"basic"`` (``BasicTextNormalizer``
+                — language-agnostic: lowercasing, punctuation/symbol removal).
+
+   :returns: The normalized text.
+
+
+.. py:class:: TranscriptMetrics
+
+   Closeness between a reference (annotation) and a hypothesis (ASR).
+
+   Two families of metrics are reported:
+
+   * **Raw** (``wer`` / ``cer`` / ``similarity``) — on lightly normalized text
+     (lowercased, de-accented, punctuation stripped). Apostrophes and digits are
+     kept, so ``"it's"`` ≠ ``"its"`` and ``"ten thousand"`` ≠ ``"10,000"`` count
+     as errors. Sensitive to formatting.
+   * **Normalized** (``normalized_*``) — on Whisper's ``EnglishTextNormalizer``,
+     which canonicalizes numbers and contractions. This reflects *true*
+     recognition quality by ignoring cosmetic differences. **Prefer this** to
+     judge whether an annotation is fine.
+
+   WER/CER: ``0`` = identical, lower is better (can exceed ``1`` if the
+   hypothesis is much longer). Similarity: ``0–100``, higher is better.
+
+   .. attribute:: wer
+
+      Raw word error rate.
+
+   .. attribute:: cer
+
+      Raw character error rate.
+
+   .. attribute:: similarity
+
+      Raw rapidfuzz ratio in ``[0, 100]``.
+
+   .. attribute:: normalized_wer
+
+      WER after Whisper normalization (fair recognition error).
+
+   .. attribute:: normalized_cer
+
+      CER after Whisper normalization.
+
+   .. attribute:: normalized_similarity
+
+      rapidfuzz ratio after Whisper normalization.
+
+   .. attribute:: semantic_similarity
+
+      Meaning-level cosine in ``[-1, 1]`` (higher = closer
+      in meaning), or ``None`` when no embedder was supplied.
+
+   .. attribute:: reference
+
+      The original reference text.
+
+   .. attribute:: hypothesis
+
+      The original hypothesis text.
+
+
+.. py:function:: evaluate_transcript(reference: str, hypothesis: str, *, embedder: Embedder | None = None, normalizer: str = 'english') -> TranscriptMetrics
+
+   Score how closely *hypothesis* matches *reference*.
+
+   Judges an annotated transcript against an ASR prediction of the same audio.
+   Reports both raw and Whisper-normalized WER/CER/similarity; prefer the
+   ``normalized_*`` values, which ignore number-format and contraction
+   differences and thus reflect true recognition quality.
+
+   :param reference: Known/annotated transcript.
+   :param hypothesis: Predicted transcript (e.g. from Whisper).
+   :param embedder: Optional callable mapping ``[reference, hypothesis]`` to a
+                    ``(2, H)`` embedding array; when given, ``semantic_similarity`` is
+                    the cosine between the two rows.
+   :param normalizer: Whisper normalizer for the ``normalized_*`` metrics —
+                      ``"english"`` or ``"basic"`` (see :func:`normalize_asr`).
+
+   :returns: A :class:`TranscriptMetrics` with raw, normalized, and (optional)
+             semantic scores.
+
+
+.. py:function:: is_acceptable(metrics: TranscriptMetrics, *, max_normalized_wer: float = DEFAULT_MAX_NORMALIZED_WER, min_semantic_similarity: float = DEFAULT_MIN_SEMANTIC_SIMILARITY) -> bool
+
+   Heuristic accept/reject for an annotation given its :class:`TranscriptMetrics`.
+
+   An annotation is accepted when it is lexically close **or** semantically
+   equivalent to the prediction:
+
+   * ``normalized_wer <= max_normalized_wer`` (primary, standard ASR criterion), or
+   * ``semantic_similarity >= min_semantic_similarity`` (rescues paraphrases that
+     score a high WER but mean the same thing — only when a semantic score exists).
+
+   The thresholds are **heuristic defaults** (see
+   :data:`DEFAULT_MAX_NORMALIZED_WER` / :data:`DEFAULT_MIN_SEMANTIC_SIMILARITY`);
+   pass your own to match your dataset's tolerance. Judge on the ``normalized_*``
+   metrics, not the raw ones.
+
+   :param metrics: Result of :func:`evaluate_transcript` / :meth:`TranscriptEvaluator.evaluate`.
+   :param max_normalized_wer: Highest normalized WER still accepted.
+   :param min_semantic_similarity: Semantic cosine at/above which a high-WER pair is
+                                   still accepted.
+
+   :returns: ``True`` if the annotation should be trusted, else ``False``.
+
+
+.. py:function:: build_embedder(model: str = 'xml-roberta', device_id: int | None = -1) -> Embedder
+
+   Build a sentence embedder for :attr:`TranscriptMetrics.semantic_similarity`.
+
+   :param model: One of ``"xml-roberta"`` (default;
+                 :class:`~exordium.text.xml_roberta.XmlRobertaWrapper`, a multilingual
+                 sentence-transformer fine-tuned for semantic similarity — recommended),
+                 ``"roberta"`` (:class:`~exordium.text.roberta.RobertaWrapper`, CLS
+                 token), or ``"bert"`` (:class:`~exordium.text.bert.BertWrapper`, CLS
+                 token).
+   :param device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.
+
+   :returns: A callable mapping a list of texts to an ``(N, H)`` embedding array.
+
+
+.. py:class:: TranscriptEvaluator(semantic_model: str | None = 'xml-roberta', device_id: int | None = -1, normalizer: str = 'english')
+
+   Standalone transcript comparator — two strings in, metrics out.
+
+   Independent of audio, ASR, and the alignment pipeline: call it whenever you
+   have a reference and a hypothesis string. It computes raw and Whisper
+   -normalized WER/CER/similarity, plus (unless disabled) a semantic similarity
+   from a sentence-embedding model loaded lazily on first use.
+
+   :param semantic_model: Embedding model for semantic similarity
+                          (see :func:`build_embedder`), or ``None`` to skip it entirely (then
+                          no model is ever loaded — pure-text metrics only).
+   :param device_id: Device index for the embedding model.
+
+   Example::
+
+       evaluator = TranscriptEvaluator()  # xml-roberta semantic
+       metrics = evaluator.evaluate(annotation_text, predicted_text)
+       print(metrics.normalized_wer, metrics.semantic_similarity)
+
+
+
+   .. py:method:: evaluate(reference: str, hypothesis: str) -> TranscriptMetrics
+
+      Compare *reference* and *hypothesis*; see :func:`evaluate_transcript`.
+
+
+
+.. py:class:: SegmentValidation
+
+   Result of checking one annotated segment against a timed word stream.
+
+   ``recovered_start`` / ``recovered_end`` are the precise times where the
+   annotated text actually occurs on the current audio timeline — use them as
+   the corrected cut points whenever ``decision`` is not ``"drop"``.
+
+   .. attribute:: text
+
+      The annotated segment text.
+
+   .. attribute:: annotated_start
+
+      Segment start as claimed by the annotation (seconds).
+
+   .. attribute:: annotated_end
+
+      Segment end as claimed by the annotation (seconds).
+
+   .. attribute:: recovered_start
+
+      True start found in the word stream, or ``None`` if the
+      text was not locatable.
+
+   .. attribute:: recovered_end
+
+      True end found in the word stream, or ``None``.
+
+   .. attribute:: start_offset
+
+      ``recovered_start - annotated_start`` (``None`` if dropped).
+
+   .. attribute:: end_offset
+
+      ``recovered_end - annotated_end`` (``None`` if dropped).
+
+   .. attribute:: score
+
+      Fuzzy match coverage in ``[0, 100]`` (``0`` if dropped).
+
+   .. attribute:: decision
+
+      ``"accept"`` (annotation within tolerance),
+      ``"recut"`` (found but shifted — re-cut with recovered times), or
+      ``"drop"`` (text not found — likely a wrong edit).
+
+   .. attribute:: match
+
+      The underlying :class:`SegmentMatch`, or ``None`` if dropped.
+
+
+.. py:function:: validate_segment(text: str, words: list[exordium.text.base.Word], annotated_start: float, annotated_end: float, *, score_cutoff: float = 80.0, tolerance: float = 0.3) -> SegmentValidation
+
+   Check whether an annotated segment sits where the annotation claims.
+
+   Fuzzy-searches *text* in the *words* stream and compares the recovered span
+   to ``annotated_start``/``annotated_end``:
+
+   * text not found (below *score_cutoff*) → ``decision="drop"``.
+   * found and both offsets within *tolerance* → ``decision="accept"``.
+   * found but shifted → ``decision="recut"`` (use ``recovered_start``/
+     ``recovered_end`` as the corrected cut points).
+
+   :param text: The annotated segment transcript.
+   :param words: Timed word stream for the full audio (one ASR pass).
+   :param annotated_start: Annotated segment start in seconds.
+   :param annotated_end: Annotated segment end in seconds.
+   :param score_cutoff: Minimum fuzzy score to consider the text present.
+   :param tolerance: Max absolute start/end offset (seconds) to accept as-is.
+
+   :returns: A :class:`SegmentValidation` describing the decision and recovered times.
+
+
+.. py:function:: validate_segments(segments: list[tuple[str, float, float]], words: list[exordium.text.base.Word], *, score_cutoff: float = 80.0, tolerance: float = 0.3) -> list[SegmentValidation]
+
+   Batch-validate ``(text, start, end)`` segments against one word stream.
+
+   :param segments: Annotated segments as ``(text, start_sec, end_sec)`` tuples.
+   :param words: Shared timed word stream for the full audio.
+   :param score_cutoff: Minimum fuzzy score to consider a segment present.
+   :param tolerance: Max absolute start/end offset (seconds) to accept as-is.
+
+   :returns: One :class:`SegmentValidation` per input segment, in order.
+
+

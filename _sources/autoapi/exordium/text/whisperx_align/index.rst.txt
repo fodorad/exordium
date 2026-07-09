@@ -1,0 +1,87 @@
+exordium.text.whisperx_align
+============================
+
+.. py:module:: exordium.text.whisperx_align
+
+.. autoapi-nested-parse::
+
+   whisperX wav2vec2 forced alignment (ships with the ``text`` extra).
+
+   Wraps whisperX's per-language wav2vec2 CTC alignment so a **known** transcript
+   can be aligned to audio, returning the same ``list[Word]`` as the built-in
+   :class:`~exordium.text.alignment.TorchaudioForcedAligner`.  Having both lets you
+   cross-check word timings from two independent aligners (useful when validating
+   dataset timestamps such as CMU-MOSEI).
+
+   .. note::
+
+      Only whisperX's **alignment** stage is used here.  Its faster-whisper ASR /
+      pyannote VAD path relies on ``torchaudio`` APIs removed in the version this
+      repo pins, so transcription is done by
+      :class:`~exordium.text.whisper.WhisperWrapper` instead (see
+      :class:`~exordium.text.alignment.WhisperWordTimestamper`).
+
+   whisperX ships with the ``text`` extra::
+
+       uv sync --extra text
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.text.whisperx_align.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.text.whisperx_align.WhisperxForcedAligner
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: WhisperxForcedAligner(language: str = 'en', device_id: int | None = 0)
+
+   Bases: :py:obj:`exordium.text.base.ForcedAligner`
+
+
+   Forced aligner backed by whisperX's wav2vec2 alignment models.
+
+   Loads (and caches) a language-specific alignment model on first use, then
+   aligns the known transcript against the audio.
+
+   :param language: Language code for the alignment model (e.g. ``"en"``).
+   :param device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.
+
+   :raises ImportError: If whisperX (the ``text`` extra) is not installed.
+
+   Example::
+
+       aligner = WhisperxForcedAligner(language="en", device_id=None)
+       words = aligner.align("audio.wav", "hey guys what do you want to eat")
+
+
+
+   .. py:method:: align(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, transcript: str, language: str | None = None) -> list[exordium.text.base.Word]
+
+      Align *transcript* to *audio* using whisperX and return timed words.
+
+      :param audio: Audio file path, numpy array, or torch tensor (16 kHz mono).
+      :param transcript: The known transcript for this audio.
+      :param language: Optional language code; must match the model's language if
+                       given (a mismatch is logged, not enforced).
+
+      :returns: Words in chronological order. Empty if *transcript* is blank.
+
+
+

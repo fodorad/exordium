@@ -208,10 +208,15 @@
 </ul>
 </li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="autoapi/exordium/text/index.html">exordium.text</a><input aria-label="Toggle navigation of exordium.text" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/alignment/index.html">exordium.text.alignment</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/base/index.html">exordium.text.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/bert/index.html">exordium.text.bert</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/evaluation/index.html">exordium.text.evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/pipeline/index.html">exordium.text.pipeline</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/roberta/index.html">exordium.text.roberta</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/transcript_align/index.html">exordium.text.transcript_align</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/whisper/index.html">exordium.text.whisper</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/whisperx_align/index.html">exordium.text.whisperx_align</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/xml_roberta/index.html">exordium.text.xml_roberta</a></li>
 </ul>
 </li>
@@ -360,6 +365,11 @@
 <p><strong>Text</strong></p>
 <ul class="simple">
 <li><p>Whisper — speech-to-text transcription (OpenAI Whisper)</p></li>
+<li><p>Word-level timestamps — Whisper ASR + forced alignment (torchaudio <code class="docutils literal notranslate"><span class="pre">MMS_FA</span></code> or whisperX), returns per-word <code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end,</span> <span class="pre">score)</span></code></p></li>
+<li><p>Forced alignment — align a known transcript to audio; interchangeable <code class="docutils literal notranslate"><span class="pre">TorchaudioForcedAligner</span></code> / <code class="docutils literal notranslate"><span class="pre">WhisperxForcedAligner</span></code> backends</p></li>
+<li><p>Transcript re-alignment — dataset-agnostic fuzzy search (rapidfuzz) of a known transcript in the word stream to recover true segment <code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end)</span></code> and a coverage score</p></li>
+<li><p>Annotation checks — raw + Whisper-normalized (standard <code class="docutils literal notranslate"><span class="pre">EnglishTextNormalizer</span></code>) WER / CER, rapidfuzz string similarity, and XLM-RoBERTa semantic cosine, with a heuristic <code class="docutils literal notranslate"><span class="pre">is_acceptable</span></code> verdict; standalone <code class="docutils literal notranslate"><span class="pre">TranscriptEvaluator</span></code> (two strings) or via the <code class="docutils literal notranslate"><span class="pre">SpeechAlignmentPipeline</span></code> facade</p></li>
+<li><p>Segment validation — per-segment accept / recut / drop decisions with recovered start/end times</p></li>
 <li><p>BERT — token-level and sentence-level embeddings (768-d)</p></li>
 <li><p>RoBERTa — token-level and sentence-level embeddings (1024-d)</p></li>
 <li><p>XML-RoBERTa — multilingual sentence embeddings (768-d)</p></li>
@@ -400,7 +410,7 @@ pip<span class="w"> </span>install<span class="w"> </span>exordium<span class="o
 <td><p>OpenSMILE, torchaudio — audio feature extraction</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">text</span></code></p></td>
-<td><p>transformers, torchaudio — text and speech models</p></td>
+<td><p>transformers, torchaudio, rapidfuzz, whisperX — text, speech, and alignment</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">video</span></code></p></td>
 <td><p>MediaPipe, Ultralytics, blinklinmult, unigaze, timm — face &amp; video models</p></td>
@@ -465,6 +475,9 @@ downloaded automatically on first run.</p>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">demo_text.ipynb</span></code></p></td>
 <td><p>Text features: Whisper transcription, BERT, RoBERTa, XML-RoBERTa</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">demo_text_alignment.ipynb</span></code></p></td>
+<td><p>Word-level timestamps, transcript re-alignment, and annotation validation via <code class="docutils literal notranslate"><span class="pre">SpeechAlignmentPipeline</span></code> (torchaudio + whisperX backends)</p></td>
 </tr>
 </tbody>
 </table>

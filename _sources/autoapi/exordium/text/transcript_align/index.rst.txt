@@ -1,0 +1,94 @@
+exordium.text.transcript_align
+==============================
+
+.. py:module:: exordium.text.transcript_align
+
+.. autoapi-nested-parse::
+
+   Dataset-agnostic fuzzy re-alignment of a known transcript to a word stream.
+
+   Given a word stream with timestamps (``list[Word]`` from any backend in
+   :mod:`exordium.text.alignment` / :mod:`exordium.text.whisperx_align`) and a
+   **known** segment transcript from any dataset, :func:`find_segment` locates where
+   that text occurs on the audio timeline and how well it matches.
+
+   This is the core of transcript-guided re-alignment: run open-vocabulary ASR once
+   over a full video, then fuzzy-search each dataset segment's annotated text inside
+   the word stream to recover its true start/end plus a coverage score.  Decide per
+   segment: high score → accept / re-cut with recovered times; low score → flag as
+   unrecoverable (wrong edit) and drop.
+
+   The module knows nothing about any specific dataset — callers supply their own
+   segment transcripts, so the same code adapts to CMU-MOSEI, MOSI, or any future
+   corpus.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.text.transcript_align.logger
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.text.transcript_align.normalize_token
+   exordium.text.transcript_align.find_segment
+   exordium.text.transcript_align.find_segments
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:function:: normalize_token(text: str) -> str
+
+   Normalize text for matching: lowercase, de-accent, strip punctuation.
+
+   Applies NFKD decomposition to drop diacritics, lowercases, and removes every
+   character outside ``[a-z0-9']``.  Applied identically to both the query and
+   each stream word so the fuzzy comparison is punctuation/casing insensitive.
+
+   :param text: Raw token or phrase.
+
+   :returns: Normalized string (may be empty, e.g. for pure punctuation).
+
+
+.. py:function:: find_segment(query_text: str, words: list[exordium.text.base.Word], *, score_cutoff: float = 80.0) -> exordium.text.base.SegmentMatch | None
+
+   Fuzzy-search *query_text* inside a timed *words* stream.
+
+   Normalizes both sides, then finds the span of ``words`` whose concatenated
+   text best matches the query (via :func:`rapidfuzz.fuzz.partial_ratio_alignment`,
+   which is robust to insertions/deletions from ASR errors and differing
+   segmentation).  Returns the recovered start/end and coverage score, or
+   ``None`` when the best match falls below *score_cutoff*.
+
+   :param query_text: The known transcript to locate (from any dataset).
+   :param words: Timed word stream to search within.
+   :param score_cutoff: Minimum rapidfuzz score in ``[0, 100]`` to accept a match.
+                        Below this the segment is considered unrecoverable (``None``).
+
+   :returns: A :class:`SegmentMatch` on the audio timeline, or ``None``.
+
+
+.. py:function:: find_segments(query_texts: list[str], words: list[exordium.text.base.Word], *, score_cutoff: float = 80.0) -> list[exordium.text.base.SegmentMatch | None]
+
+   Batch-apply :func:`find_segment` to many segment transcripts.
+
+   :param query_texts: Known transcripts, e.g. one per dataset segment.
+   :param words: Shared timed word stream (one full-video ASR pass).
+   :param score_cutoff: Minimum score to accept each match.
+
+   :returns: One result per query, in order; ``None`` where a segment is
+             unrecoverable.
+
+

@@ -1,0 +1,148 @@
+exordium.text.pipeline
+======================
+
+.. py:module:: exordium.text.pipeline
+
+.. autoapi-nested-parse::
+
+   High-level speech transcription & alignment facade.
+
+   :class:`SpeechAlignmentPipeline` hides the choice of forced-alignment backend
+   (``torchaudio`` ``MMS_FA`` or whisperX) and the fuzzy-matching mechanics behind a
+   small set of methods that return **structured** results.  Downstream projects
+   consume those results (transcripts, timed words, metrics, per-segment decisions
+   with recovered start/end) and drive their own actions such as audio cutting.
+
+   Covers four common tasks:
+
+   1. :meth:`transcribe` — audio → transcript text.
+   2. :meth:`transcribe_words` — audio → word-level timestamps.
+   3. :meth:`evaluate_annotation` — audio + annotated text → closeness metrics.
+   4. :meth:`validate_segments` — audio + annotated ``(text, start, end)`` segments
+      → per-segment accept/recut/drop decisions with recovered times.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.text.pipeline.logger
+   exordium.text.pipeline.AudioInput
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.text.pipeline.SpeechAlignmentPipeline
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:data:: AudioInput
+
+   path, numpy array, or tensor.
+
+   :type: Any audio form accepted by the wrappers
+
+.. py:class:: SpeechAlignmentPipeline(backend: str = 'whisperx', language: str = 'en', whisper_model: str = 'distil-whisper/distil-large-v3', device_id: int | None = 0, whisper: WhisperWrapper | None = None, semantic_model: str = 'xml-roberta')
+
+   One entry point for transcription, word alignment, and re-alignment.
+
+   The forced-alignment backend is selected once via *backend* and then hidden:
+   every method returns plain data structures, never backend objects.
+
+   :param backend: ``"whisperx"`` (default; whisperX wav2vec2 alignment, ships with
+                   the ``text`` extra) or ``"torchaudio"`` (``MMS_FA``, no extra deps).
+                   Both yield the same :class:`~exordium.text.base.Word` stream.
+   :param language: Language code used for ASR and alignment (e.g. ``"en"``).
+   :param whisper_model: HuggingFace Whisper model id for transcription.
+   :param device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.
+   :param whisper: An existing :class:`WhisperWrapper` to reuse (e.g. to share one
+                   ASR model across two backends and avoid loading Whisper twice —
+                   Whisper is by far the largest model here). Created if omitted.
+   :param semantic_model: Sentence-embedding model for the optional semantic
+                          similarity in :meth:`evaluate_annotation` (see
+                          :func:`~exordium.text.evaluation.build_embedder`); default
+                          ``"xml-roberta"``. Loaded lazily only when ``semantic=True``.
+
+   Example::
+
+       pipe = SpeechAlignmentPipeline(backend="whisperx", device_id=0)
+       text = pipe.transcribe("clip.wav")                       # case 1
+       words = pipe.transcribe_words("clip.wav")                # case 2
+       metrics = pipe.evaluate_annotation("clip.wav", annotated)  # case 3
+       results = pipe.validate_segments("video.wav", segments)  # case 4
+
+       # compare backends without loading Whisper twice:
+       other = SpeechAlignmentPipeline(backend="torchaudio", whisper=pipe.whisper)
+
+
+
+   .. py:method:: transcribe(audio: AudioInput, language: str | None = None) -> str
+
+      Case 1 — return the plain transcript for *audio*.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+      :param language: Override the pipeline language for this call.
+
+      :returns: The transcribed text.
+
+
+
+   .. py:method:: transcribe_words(audio: AudioInput, language: str | None = None) -> list[exordium.text.base.Word]
+
+      Case 2 — return word-level timestamps for *audio*.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+      :param language: Override the pipeline language for this call.
+
+      :returns: Words with ``start``/``end``/``score`` in chronological order.
+
+
+
+   .. py:method:: evaluate_annotation(audio: AudioInput, annotated_text: str, language: str | None = None, *, semantic: bool = False) -> exordium.text.evaluation.TranscriptMetrics
+
+      Case 3 — score an annotated transcript against a fresh prediction.
+
+      Transcribes *audio* and compares the result to *annotated_text*. Prefer
+      the ``normalized_*`` fields of the result, which ignore number-format and
+      contraction differences and reflect true recognition quality.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+      :param annotated_text: The existing annotation to judge.
+      :param language: Override the pipeline language for this call.
+      :param semantic: If ``True``, also compute meaning-level cosine similarity
+                       using a BERT sentence embedder (loaded lazily on first use).
+
+      :returns: :class:`TranscriptMetrics` (raw + normalized WER/CER/similarity, and
+                ``semantic_similarity`` when *semantic* is set).
+
+
+
+   .. py:method:: validate_segments(audio: AudioInput, segments: list[tuple[str, float, float]], *, language: str | None = None, score_cutoff: float = 80.0, tolerance: float = 0.3) -> list[exordium.text.evaluation.SegmentValidation]
+
+      Case 4 — check annotated segments against a single ASR pass.
+
+      Runs word-level ASR once over the full *audio*, then fuzzy-locates each
+      annotated segment to decide accept / recut / drop and recover true times.
+
+      :param audio: Full-audio file path, numpy array, or torch tensor.
+      :param segments: Annotated ``(text, start_sec, end_sec)`` tuples.
+      :param language: Override the pipeline language for this call.
+      :param score_cutoff: Minimum fuzzy score to consider a segment present.
+      :param tolerance: Max absolute start/end offset (seconds) to accept as-is.
+
+      :returns: One :class:`SegmentValidation` per segment, each carrying the
+                decision and recovered start/end for your cutting step.
+
+
+

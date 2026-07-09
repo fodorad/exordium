@@ -207,10 +207,15 @@
 </ul>
 </li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../autoapi/exordium/text/index.html">exordium.text</a><input aria-label="Toggle navigation of exordium.text" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/alignment/index.html">exordium.text.alignment</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/base/index.html">exordium.text.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/bert/index.html">exordium.text.bert</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/evaluation/index.html">exordium.text.evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/pipeline/index.html">exordium.text.pipeline</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/roberta/index.html">exordium.text.roberta</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/transcript_align/index.html">exordium.text.transcript_align</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/whisper/index.html">exordium.text.whisper</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/whisperx_align/index.html">exordium.text.whisperx_align</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/xml_roberta/index.html">exordium.text.xml_roberta</a></li>
 </ul>
 </li>
@@ -319,6 +324,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -326,6 +332,62 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tfm</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_torch_device</span>
+
+
+<div class="viewcode-block" id="Word">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.Word">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Word</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single transcribed word with its time span on the audio timeline.</span>
+
+<span class="sd">    This is the common currency exchanged between word-timestamp backends</span>
+<span class="sd">    (Whisper + forced alignment, whisperX) and downstream consumers such as</span>
+<span class="sd">    :func:`~exordium.text.transcript_align.find_segment`.  Keeping every backend</span>
+<span class="sd">    behind this one type makes the re-alignment logic backend-agnostic.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        text: The word as decoded (may include surrounding punctuation).</span>
+<span class="sd">        start: Word start time in seconds from the beginning of the audio.</span>
+<span class="sd">        end: Word end time in seconds from the beginning of the audio.</span>
+<span class="sd">        score: Alignment confidence in ``[0, 1]``; ``1.0`` when unknown.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">start</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">end</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span></div>
+
+
+
+<div class="viewcode-block" id="SegmentMatch">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.SegmentMatch">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SegmentMatch</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Result of fuzzy-searching a known transcript inside a word stream.</span>
+
+<span class="sd">    Returned by :func:`~exordium.text.transcript_align.find_segment`.  The</span>
+<span class="sd">    ``start``/``end`` recover the segment&#39;s true position on the *current*</span>
+<span class="sd">    audio timeline, while ``score`` reports how well the query text matched</span>
+<span class="sd">    (useful to accept, re-cut, or drop a dataset segment).</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        text: The concatenated matched span from the word stream.</span>
+<span class="sd">        start: Match start time in seconds (from the first matched word).</span>
+<span class="sd">        end: Match end time in seconds (from the last matched word).</span>
+<span class="sd">        score: Fuzzy match coverage score in ``[0, 100]`` (rapidfuzz scale).</span>
+<span class="sd">        word_start_idx: Index of the first matched word in the stream.</span>
+<span class="sd">        word_end_idx: Index of the last matched word (inclusive).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">start</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">end</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">score</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">word_start_idx</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">word_end_idx</span><span class="p">:</span> <span class="nb">int</span></div>
+
 
 
 <div class="viewcode-block" id="TextModelWrapper">
@@ -589,6 +651,85 @@
 
 <span class="sd">        Yields:</span>
 <span class="sd">            Decoded text chunks (words or sub-word tokens) as they are produced.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ForcedAligner">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.ForcedAligner">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ForcedAligner</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for transcript-to-audio forced aligners.</span>
+
+<span class="sd">    A forced aligner takes audio **and its known transcript** and returns each</span>
+<span class="sd">    word&#39;s time span.  Use it when the transcript is already available (e.g. a</span>
+<span class="sd">    dataset annotation) and only the timing needs to be recovered.</span>
+
+<span class="sd">    Concrete backends:</span>
+
+<span class="sd">    * :class:`~exordium.text.alignment.TorchaudioForcedAligner`</span>
+<span class="sd">      (``torchaudio`` ``MMS_FA``, always available).</span>
+<span class="sd">    * :class:`~exordium.text.whisperx_align.WhisperxForcedAligner`</span>
+<span class="sd">      (whisperX wav2vec2 alignment; ships with the ``text`` extra).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ForcedAligner.align">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.ForcedAligner.align">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">align</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">audio</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">transcript</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align a known transcript to audio and return timed words.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            audio: Audio file path, numpy array, or torch tensor (16 kHz mono).</span>
+<span class="sd">            transcript: The known transcript for this audio.</span>
+<span class="sd">            language: Language code (e.g. ``&quot;en&quot;``) or ``None`` for the default.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Words in chronological order with ``start``/``end``/``score``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="WordTimestamper">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.WordTimestamper">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WordTimestamper</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for open-vocabulary word-timestamp backends.</span>
+
+<span class="sd">    Unlike :class:`ForcedAligner`, a word-timestamper needs **only audio**: it</span>
+<span class="sd">    transcribes and time-stamps in one call (ASR followed by alignment).  This</span>
+<span class="sd">    is the entry point for raw video where no transcript is known yet.</span>
+
+<span class="sd">    Concrete backend:</span>
+<span class="sd">    :class:`~exordium.text.alignment.WhisperWordTimestamper` (Whisper ASR plus a</span>
+<span class="sd">    pluggable :class:`ForcedAligner`).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WordTimestamper.transcribe_words">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.WordTimestamper.transcribe_words">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transcribe_words</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">audio</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transcribe audio and return timed words.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            audio: Audio file path, numpy array, or torch tensor.</span>
+<span class="sd">            language: Language code or ``None`` for auto/default.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Words in chronological order with ``start``/``end``/``score``.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span></div>
 </div>

@@ -1,0 +1,145 @@
+exordium.text.alignment
+=======================
+
+.. py:module:: exordium.text.alignment
+
+.. autoapi-nested-parse::
+
+   Word-level forced alignment and open-vocabulary word timestamps.
+
+   Two public classes:
+
+   * :class:`TorchaudioForcedAligner` — aligns a **known** transcript to audio
+     using ``torchaudio``'s multilingual ``MMS_FA`` bundle.  No extra dependencies
+     beyond the pinned ``torchaudio``.
+   * :class:`WhisperWordTimestamper` — transcribes **raw** audio with
+     :class:`~exordium.text.whisper.WhisperWrapper` and then forced-aligns the
+     result, yielding open-vocabulary word timestamps from audio alone.
+
+   Both return ``list[Word]`` (see :class:`~exordium.text.base.Word`), the common
+   currency consumed by :mod:`exordium.text.transcript_align`.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.text.alignment.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.text.alignment.TorchaudioForcedAligner
+   exordium.text.alignment.WhisperWordTimestamper
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.text.alignment.normalize_words
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:function:: normalize_words(transcript: str) -> list[str]
+
+   Normalize a transcript into aligner-friendly lowercase word tokens.
+
+   Lowercases, strips diacritics (NFKD), and removes every character outside
+   ``[a-z']`` so the tokens match the ``MMS_FA`` dictionary.  Empty tokens are
+   dropped.  Used by :class:`TorchaudioForcedAligner`.
+
+   :param transcript: Raw transcript text.
+
+   :returns: List of normalized word tokens (possibly empty).
+
+
+.. py:class:: TorchaudioForcedAligner(device_id: int | None = 0)
+
+   Bases: :py:obj:`exordium.text.base.ForcedAligner`
+
+
+   Forced aligner backed by ``torchaudio.pipelines.MMS_FA``.
+
+   ``MMS_FA`` is a Massively Multilingual Speech CTC alignment model covering
+   1000+ languages; it produces accurate word timings by aligning the known
+   transcript against the audio (the same idea whisperX uses, but with a single
+   multilingual model and no extra dependencies).
+
+   :param device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.
+
+   Example::
+
+       aligner = TorchaudioForcedAligner(device_id=None)
+       words = aligner.align("audio.wav", "hey guys what do you want to eat")
+       for w in words:
+           print(w.text, w.start, w.end, w.score)
+
+
+
+   .. py:method:: align(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, transcript: str, language: str | None = None) -> list[exordium.text.base.Word]
+
+      Align *transcript* to *audio* and return timed :class:`Word` objects.
+
+      :param audio: Audio file path, numpy array, or torch tensor (16 kHz mono).
+      :param transcript: The known transcript for this audio.
+      :param language: Unused — ``MMS_FA`` is multilingual. Accepted for
+                       interface compatibility with :class:`ForcedAligner`.
+
+      :returns: Words in chronological order. Empty if *transcript* has no
+                alignable tokens.
+
+
+
+.. py:class:: WhisperWordTimestamper(whisper: WhisperWrapper | None = None, aligner: exordium.text.base.ForcedAligner | None = None, device_id: int | None = 0)
+
+   Bases: :py:obj:`exordium.text.base.WordTimestamper`
+
+
+   Open-vocabulary word timestamps: Whisper ASR + forced alignment.
+
+   Transcribes raw audio with :class:`~exordium.text.whisper.WhisperWrapper`,
+   then forced-aligns the transcript with a pluggable
+   :class:`~exordium.text.base.ForcedAligner` (``MMS_FA`` by default, or
+   :class:`~exordium.text.whisperx_align.WhisperxForcedAligner`).  This mirrors
+   the whisperX architecture (ASR → wav2vec2 alignment) while running on the
+   repo's pinned ``torch`` stack.
+
+   :param whisper: A ready :class:`WhisperWrapper`; created with ``device_id`` if
+                   omitted.
+   :param aligner: A ready :class:`ForcedAligner`; a
+                   :class:`TorchaudioForcedAligner` is created with ``device_id`` if
+                   omitted.
+   :param device_id: Device used only when *whisper* / *aligner* are not supplied.
+
+   Example::
+
+       ts = WhisperWordTimestamper(device_id=None)
+       words = ts.transcribe_words("audio.wav")
+
+
+
+   .. py:method:: transcribe_words(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, language: str | None = None) -> list[exordium.text.base.Word]
+
+      Transcribe *audio* and return forced-aligned :class:`Word` objects.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+      :param language: Language code forwarded to both ASR and alignment, or
+                       ``None`` for auto/default.
+
+      :returns: Words in chronological order with ``start``/``end``/``score``.
+
+
+

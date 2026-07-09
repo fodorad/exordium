@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../../../genindex.html"><link rel="search" title="Search" href="../../../../search.html"><link rel="next" title="exordium.text.bert" href="../bert/index.html"><link rel="prev" title="exordium.text" href="../index.html">
+<link rel="index" title="Index" href="../../../../genindex.html"><link rel="search" title="Search" href="../../../../search.html"><link rel="next" title="exordium.text.bert" href="../bert/index.html"><link rel="prev" title="exordium.text.alignment" href="../alignment/index.html">
         <link rel="canonical" href="https://fodorad.github.io/exordium/autoapi/exordium/text/base/index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
@@ -208,10 +208,15 @@
 </ul>
 </li>
 <li class="toctree-l3 current has-children"><a class="reference internal" href="../index.html">exordium.text</a><input aria-label="Toggle navigation of exordium.text" checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../alignment/index.html">exordium.text.alignment</a></li>
 <li class="toctree-l4 current current-page"><a class="current reference internal" href="#">exordium.text.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../bert/index.html">exordium.text.bert</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../evaluation/index.html">exordium.text.evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../pipeline/index.html">exordium.text.pipeline</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../roberta/index.html">exordium.text.roberta</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../transcript_align/index.html">exordium.text.transcript_align</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../whisper/index.html">exordium.text.whisper</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../whisperx_align/index.html">exordium.text.whisperx_align</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../xml_roberta/index.html">exordium.text.xml_roberta</a></li>
 </ul>
 </li>
@@ -329,6 +334,12 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.Word" title="exordium.text.base.Word"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Word</span></code></a></p></td>
+<td><p>A single transcribed word with its time span on the audio timeline.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.SegmentMatch" title="exordium.text.base.SegmentMatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SegmentMatch</span></code></a></p></td>
+<td><p>Result of fuzzy-searching a known transcript inside a word stream.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.TextModelWrapper" title="exordium.text.base.TextModelWrapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TextModelWrapper</span></code></a></p></td>
 <td><p>Abstract base class for HuggingFace encoder-only transformer models.</p></td>
 </tr>
@@ -338,12 +349,98 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.StreamingMixin" title="exordium.text.base.StreamingMixin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StreamingMixin</span></code></a></p></td>
 <td><p>Mixin for STT backends that support word-by-word streaming output.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.ForcedAligner" title="exordium.text.base.ForcedAligner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ForcedAligner</span></code></a></p></td>
+<td><p>Abstract base class for transcript-to-audio forced aligners.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.WordTimestamper" title="exordium.text.base.WordTimestamper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WordTimestamper</span></code></a></p></td>
+<td><p>Abstract base class for open-vocabulary word-timestamp backends.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="exordium.text.base.Word">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">Word</span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#Word"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.Word" title="Link to this definition">¶</a></dt>
+<dd><p>A single transcribed word with its time span on the audio timeline.</p>
+<p>This is the common currency exchanged between word-timestamp backends
+(Whisper + forced alignment, whisperX) and downstream consumers such as
+<a class="reference internal" href="../transcript_align/index.html#exordium.text.transcript_align.find_segment" title="exordium.text.transcript_align.find_segment"><code class="xref py py-func docutils literal notranslate"><span class="pre">find_segment()</span></code></a>.  Keeping every backend
+behind this one type makes the re-alignment logic backend-agnostic.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.Word.text">
+<span class="sig-name descname"><span class="pre">text</span></span><a class="headerlink" href="#exordium.text.base.Word.text" title="Link to this definition">¶</a></dt>
+<dd><p>The word as decoded (may include surrounding punctuation).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.Word.start">
+<span class="sig-name descname"><span class="pre">start</span></span><a class="headerlink" href="#exordium.text.base.Word.start" title="Link to this definition">¶</a></dt>
+<dd><p>Word start time in seconds from the beginning of the audio.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.Word.end">
+<span class="sig-name descname"><span class="pre">end</span></span><a class="headerlink" href="#exordium.text.base.Word.end" title="Link to this definition">¶</a></dt>
+<dd><p>Word end time in seconds from the beginning of the audio.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.Word.score">
+<span class="sig-name descname"><span class="pre">score</span></span><a class="headerlink" href="#exordium.text.base.Word.score" title="Link to this definition">¶</a></dt>
+<dd><p>Alignment confidence in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>; <code class="docutils literal notranslate"><span class="pre">1.0</span></code> when unknown.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="exordium.text.base.SegmentMatch">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">SegmentMatch</span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#SegmentMatch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.SegmentMatch" title="Link to this definition">¶</a></dt>
+<dd><p>Result of fuzzy-searching a known transcript inside a word stream.</p>
+<p>Returned by <a class="reference internal" href="../transcript_align/index.html#exordium.text.transcript_align.find_segment" title="exordium.text.transcript_align.find_segment"><code class="xref py py-func docutils literal notranslate"><span class="pre">find_segment()</span></code></a>.  The
+<code class="docutils literal notranslate"><span class="pre">start</span></code>/<code class="docutils literal notranslate"><span class="pre">end</span></code> recover the segment’s true position on the <em>current</em>
+audio timeline, while <code class="docutils literal notranslate"><span class="pre">score</span></code> reports how well the query text matched
+(useful to accept, re-cut, or drop a dataset segment).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.SegmentMatch.text">
+<span class="sig-name descname"><span class="pre">text</span></span><a class="headerlink" href="#exordium.text.base.SegmentMatch.text" title="Link to this definition">¶</a></dt>
+<dd><p>The concatenated matched span from the word stream.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.SegmentMatch.start">
+<span class="sig-name descname"><span class="pre">start</span></span><a class="headerlink" href="#exordium.text.base.SegmentMatch.start" title="Link to this definition">¶</a></dt>
+<dd><p>Match start time in seconds (from the first matched word).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.SegmentMatch.end">
+<span class="sig-name descname"><span class="pre">end</span></span><a class="headerlink" href="#exordium.text.base.SegmentMatch.end" title="Link to this definition">¶</a></dt>
+<dd><p>Match end time in seconds (from the last matched word).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.SegmentMatch.score">
+<span class="sig-name descname"><span class="pre">score</span></span><a class="headerlink" href="#exordium.text.base.SegmentMatch.score" title="Link to this definition">¶</a></dt>
+<dd><p>Fuzzy match coverage score in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">100]</span></code> (rapidfuzz scale).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.SegmentMatch.word_start_idx">
+<span class="sig-name descname"><span class="pre">word_start_idx</span></span><a class="headerlink" href="#exordium.text.base.SegmentMatch.word_start_idx" title="Link to this definition">¶</a></dt>
+<dd><p>Index of the first matched word in the stream.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.SegmentMatch.word_end_idx">
+<span class="sig-name descname"><span class="pre">word_end_idx</span></span><a class="headerlink" href="#exordium.text.base.SegmentMatch.word_end_idx" title="Link to this definition">¶</a></dt>
+<dd><p>Index of the last matched word (inclusive).</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="exordium.text.base.TextModelWrapper">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">TextModelWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#TextModelWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.TextModelWrapper" title="Link to this definition">¶</a></dt>
@@ -550,6 +647,71 @@ model decodes incrementally and can yield tokens as they are produced:</p>
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="exordium.text.base.ForcedAligner">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">ForcedAligner</span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#ForcedAligner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.ForcedAligner" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Abstract base class for transcript-to-audio forced aligners.</p>
+<p>A forced aligner takes audio <strong>and its known transcript</strong> and returns each
+word’s time span.  Use it when the transcript is already available (e.g. a
+dataset annotation) and only the timing needs to be recovered.</p>
+<p>Concrete backends:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../alignment/index.html#exordium.text.alignment.TorchaudioForcedAligner" title="exordium.text.alignment.TorchaudioForcedAligner"><code class="xref py py-class docutils literal notranslate"><span class="pre">TorchaudioForcedAligner</span></code></a>
+(<code class="docutils literal notranslate"><span class="pre">torchaudio</span></code> <code class="docutils literal notranslate"><span class="pre">MMS_FA</span></code>, always available).</p></li>
+<li><p><a class="reference internal" href="../whisperx_align/index.html#exordium.text.whisperx_align.WhisperxForcedAligner" title="exordium.text.whisperx_align.WhisperxForcedAligner"><code class="xref py py-class docutils literal notranslate"><span class="pre">WhisperxForcedAligner</span></code></a>
+(whisperX wav2vec2 alignment; ships with the <code class="docutils literal notranslate"><span class="pre">text</span></code> extra).</p></li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="exordium.text.base.ForcedAligner.align">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">align</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">audio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transcript</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#exordium.text.base.Word" title="exordium.text.base.Word"><span class="pre">Word</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#ForcedAligner.align"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.ForcedAligner.align" title="Link to this definition">¶</a></dt>
+<dd><p>Align a known transcript to audio and return timed words.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio</strong> – Audio file path, numpy array, or torch tensor (16 kHz mono).</p></li>
+<li><p><strong>transcript</strong> – The known transcript for this audio.</p></li>
+<li><p><strong>language</strong> – Language code (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;en&quot;</span></code>) or <code class="docutils literal notranslate"><span class="pre">None</span></code> for the default.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Words in chronological order with <code class="docutils literal notranslate"><span class="pre">start</span></code>/<code class="docutils literal notranslate"><span class="pre">end</span></code>/<code class="docutils literal notranslate"><span class="pre">score</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="exordium.text.base.WordTimestamper">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">WordTimestamper</span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#WordTimestamper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.WordTimestamper" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Abstract base class for open-vocabulary word-timestamp backends.</p>
+<p>Unlike <a class="reference internal" href="#exordium.text.base.ForcedAligner" title="exordium.text.base.ForcedAligner"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForcedAligner</span></code></a>, a word-timestamper needs <strong>only audio</strong>: it
+transcribes and time-stamps in one call (ASR followed by alignment).  This
+is the entry point for raw video where no transcript is known yet.</p>
+<p>Concrete backend:
+<a class="reference internal" href="../alignment/index.html#exordium.text.alignment.WhisperWordTimestamper" title="exordium.text.alignment.WhisperWordTimestamper"><code class="xref py py-class docutils literal notranslate"><span class="pre">WhisperWordTimestamper</span></code></a> (Whisper ASR plus a
+pluggable <a class="reference internal" href="#exordium.text.base.ForcedAligner" title="exordium.text.base.ForcedAligner"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForcedAligner</span></code></a>).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="exordium.text.base.WordTimestamper.transcribe_words">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">transcribe_words</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">audio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#exordium.text.base.Word" title="exordium.text.base.Word"><span class="pre">Word</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#WordTimestamper.transcribe_words"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.WordTimestamper.transcribe_words" title="Link to this definition">¶</a></dt>
+<dd><p>Transcribe audio and return timed words.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio</strong> – Audio file path, numpy array, or torch tensor.</p></li>
+<li><p><strong>language</strong> – Language code or <code class="docutils literal notranslate"><span class="pre">None</span></code> for auto/default.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Words in chronological order with <code class="docutils literal notranslate"><span class="pre">start</span></code>/<code class="docutils literal notranslate"><span class="pre">end</span></code>/<code class="docutils literal notranslate"><span class="pre">score</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 </section>
 
@@ -567,14 +729,14 @@ model decodes incrementally and can yield tokens as they are produced:</p>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../index.html">
+          <a class="prev-page" href="../alignment/index.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">exordium.text</div>
+                <div class="title">exordium.text.alignment</div>
                 
               </div>
             </a>
@@ -611,6 +773,22 @@ model decodes incrementally and can yield tokens as they are produced:</p>
 <li><a class="reference internal" href="#">exordium.text.base</a><ul>
 <li><a class="reference internal" href="#classes">Classes</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li><a class="reference internal" href="#exordium.text.base.Word"><code class="docutils literal notranslate"><span class="pre">Word</span></code></a><ul>
+<li><a class="reference internal" href="#exordium.text.base.Word.text"><code class="docutils literal notranslate"><span class="pre">Word.text</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.Word.start"><code class="docutils literal notranslate"><span class="pre">Word.start</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.Word.end"><code class="docutils literal notranslate"><span class="pre">Word.end</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.Word.score"><code class="docutils literal notranslate"><span class="pre">Word.score</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exordium.text.base.SegmentMatch"><code class="docutils literal notranslate"><span class="pre">SegmentMatch</span></code></a><ul>
+<li><a class="reference internal" href="#exordium.text.base.SegmentMatch.text"><code class="docutils literal notranslate"><span class="pre">SegmentMatch.text</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.SegmentMatch.start"><code class="docutils literal notranslate"><span class="pre">SegmentMatch.start</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.SegmentMatch.end"><code class="docutils literal notranslate"><span class="pre">SegmentMatch.end</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.SegmentMatch.score"><code class="docutils literal notranslate"><span class="pre">SegmentMatch.score</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.SegmentMatch.word_start_idx"><code class="docutils literal notranslate"><span class="pre">SegmentMatch.word_start_idx</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.SegmentMatch.word_end_idx"><code class="docutils literal notranslate"><span class="pre">SegmentMatch.word_end_idx</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#exordium.text.base.TextModelWrapper"><code class="docutils literal notranslate"><span class="pre">TextModelWrapper</span></code></a><ul>
 <li><a class="reference internal" href="#exordium.text.base.TextModelWrapper.preprocess"><code class="docutils literal notranslate"><span class="pre">TextModelWrapper.preprocess()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.TextModelWrapper.inference"><code class="docutils literal notranslate"><span class="pre">TextModelWrapper.inference()</span></code></a></li>
@@ -626,6 +804,14 @@ model decodes incrementally and can yield tokens as they are produced:</p>
 </li>
 <li><a class="reference internal" href="#exordium.text.base.StreamingMixin"><code class="docutils literal notranslate"><span class="pre">StreamingMixin</span></code></a><ul>
 <li><a class="reference internal" href="#exordium.text.base.StreamingMixin.stream"><code class="docutils literal notranslate"><span class="pre">StreamingMixin.stream()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exordium.text.base.ForcedAligner"><code class="docutils literal notranslate"><span class="pre">ForcedAligner</span></code></a><ul>
+<li><a class="reference internal" href="#exordium.text.base.ForcedAligner.align"><code class="docutils literal notranslate"><span class="pre">ForcedAligner.align()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exordium.text.base.WordTimestamper"><code class="docutils literal notranslate"><span class="pre">WordTimestamper</span></code></a><ul>
+<li><a class="reference internal" href="#exordium.text.base.WordTimestamper.transcribe_words"><code class="docutils literal notranslate"><span class="pre">WordTimestamper.transcribe_words()</span></code></a></li>
 </ul>
 </li>
 </ul>
