@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -9,6 +10,56 @@ import torch
 import transformers as tfm
 
 from exordium.utils.device import get_torch_device
+
+
+@dataclass
+class Word:
+    """A single transcribed word with its time span on the audio timeline.
+
+    This is the common currency exchanged between word-timestamp backends
+    (Whisper + forced alignment, whisperX) and downstream consumers such as
+    :func:`~exordium.text.transcript_align.find_segment`.  Keeping every backend
+    behind this one type makes the re-alignment logic backend-agnostic.
+
+    Attributes:
+        text: The word as decoded (may include surrounding punctuation).
+        start: Word start time in seconds from the beginning of the audio.
+        end: Word end time in seconds from the beginning of the audio.
+        score: Alignment confidence in ``[0, 1]``; ``1.0`` when unknown.
+
+    """
+
+    text: str
+    start: float
+    end: float
+    score: float = 1.0
+
+
+@dataclass
+class SegmentMatch:
+    """Result of fuzzy-searching a known transcript inside a word stream.
+
+    Returned by :func:`~exordium.text.transcript_align.find_segment`.  The
+    ``start``/``end`` recover the segment's true position on the *current*
+    audio timeline, while ``score`` reports how well the query text matched
+    (useful to accept, re-cut, or drop a dataset segment).
+
+    Attributes:
+        text: The concatenated matched span from the word stream.
+        start: Match start time in seconds (from the first matched word).
+        end: Match end time in seconds (from the last matched word).
+        score: Fuzzy match coverage score in ``[0, 100]`` (rapidfuzz scale).
+        word_start_idx: Index of the first matched word in the stream.
+        word_end_idx: Index of the last matched word (inclusive).
+
+    """
+
+    text: str
+    start: float
+    end: float
+    score: float
+    word_start_idx: int
+    word_end_idx: int
 
 
 class TextModelWrapper(ABC):
@@ -241,5 +292,72 @@ class StreamingMixin(ABC):
 
         Yields:
             Decoded text chunks (words or sub-word tokens) as they are produced.
+
+        """
+
+
+class ForcedAligner(ABC):
+    """Abstract base class for transcript-to-audio forced aligners.
+
+    A forced aligner takes audio **and its known transcript** and returns each
+    word's time span.  Use it when the transcript is already available (e.g. a
+    dataset annotation) and only the timing needs to be recovered.
+
+    Concrete backends:
+
+    * :class:`~exordium.text.alignment.TorchaudioForcedAligner`
+      (``torchaudio`` ``MMS_FA``, always available).
+    * :class:`~exordium.text.whisperx_align.WhisperxForcedAligner`
+      (whisperX wav2vec2 alignment; ships with the ``text`` extra).
+
+    """
+
+    @abstractmethod
+    def align(
+        self,
+        audio: Path | str | np.ndarray | torch.Tensor,
+        transcript: str,
+        language: str | None = None,
+    ) -> list[Word]:
+        """Align a known transcript to audio and return timed words.
+
+        Args:
+            audio: Audio file path, numpy array, or torch tensor (16 kHz mono).
+            transcript: The known transcript for this audio.
+            language: Language code (e.g. ``"en"``) or ``None`` for the default.
+
+        Returns:
+            Words in chronological order with ``start``/``end``/``score``.
+
+        """
+
+
+class WordTimestamper(ABC):
+    """Abstract base class for open-vocabulary word-timestamp backends.
+
+    Unlike :class:`ForcedAligner`, a word-timestamper needs **only audio**: it
+    transcribes and time-stamps in one call (ASR followed by alignment).  This
+    is the entry point for raw video where no transcript is known yet.
+
+    Concrete backend:
+    :class:`~exordium.text.alignment.WhisperWordTimestamper` (Whisper ASR plus a
+    pluggable :class:`ForcedAligner`).
+
+    """
+
+    @abstractmethod
+    def transcribe_words(
+        self,
+        audio: Path | str | np.ndarray | torch.Tensor,
+        language: str | None = None,
+    ) -> list[Word]:
+        """Transcribe audio and return timed words.
+
+        Args:
+            audio: Audio file path, numpy array, or torch tensor.
+            language: Language code or ``None`` for auto/default.
+
+        Returns:
+            Words in chronological order with ``start``/``end``/``score``.
 
         """

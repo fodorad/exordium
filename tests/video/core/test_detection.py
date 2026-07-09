@@ -26,7 +26,7 @@ from exordium.video.core.detection import (
     visualize_detection,
     visualize_detection_crop,
 )
-from tests.fixtures import IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT
+from tests.fixtures import IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT, ModelTestCase
 
 
 def _make_fd(frame_id: int, x: int, y: int, w: int = 60, h: int = 80) -> FrameDetections:
@@ -100,7 +100,7 @@ def _det(frame_id, x=50, y=50, w=80, h=80, score=0.95):
     )
 
 
-class TestDetectionFromImage(unittest.TestCase):
+class TestDetectionFromImage(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         fd = _make_fd(frame_id=0, x=50, y=50)
@@ -301,7 +301,7 @@ class TestArrEqual(unittest.TestCase):
         self.assertFalse(_arr_equal(torch.tensor([1, 2]), torch.tensor([1, 3])))
 
 
-class TestDetectionFromVideo(unittest.TestCase):
+class TestDetectionFromVideo(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.det = _video_det(0)
@@ -326,7 +326,7 @@ class TestDetectionFromVideo(unittest.TestCase):
         self.assertIsInstance(crop, torch.Tensor)
 
 
-class TestDetectionFromTorchTensor(unittest.TestCase):
+class TestDetectionFromTorchTensor(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.frame_t = torch.randint(0, 255, (3, 200, 200), dtype=torch.uint8)
@@ -640,7 +640,7 @@ class TestDetectionEqNonDetection(unittest.TestCase):
         self.assertNotEqual(det, None)
 
 
-class TestDetectionFromNpMethods(unittest.TestCase):
+class TestDetectionFromNpMethods(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.np_frame = np.zeros((200, 200, 3), dtype=np.uint8)

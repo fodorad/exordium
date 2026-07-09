@@ -6,10 +6,10 @@ import numpy as np
 import torch
 
 from exordium.video.face.gaze.l2csnet import L2csNetWrapper
-from tests.fixtures import IMAGE_FACE, hf_file_exists
+from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_file_exists
 
 
-class TestL2csNetWrapper(unittest.TestCase):
+class TestL2csNetWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = L2csNetWrapper(device_id=None)

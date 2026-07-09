@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from exordium.video.deep.swint import SwinTWrapper
-from tests.fixtures import IMAGE_FACE, hf_file_exists
+from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_file_exists
 
 
 class TestSwinTWrapperInvalidArch(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestSwinTWrapperInvalidArch(unittest.TestCase):
             SwinTWrapper(arch="xlarge", device_id=None)
 
 
-class TestSwinTWrapperTiny(unittest.TestCase):
+class TestSwinTWrapperTiny(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = SwinTWrapper(arch="tiny", pretrained=True, device_id=None)

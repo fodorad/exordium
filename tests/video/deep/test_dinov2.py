@@ -13,7 +13,13 @@ from exordium.video.deep.dinov2 import (
     _MODEL_IDS,
     DINOv2Wrapper,
 )
-from tests.fixtures import IMAGE_EMMA, IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT, hf_repo_exists
+from tests.fixtures import (
+    IMAGE_EMMA,
+    IMAGE_FACE,
+    VIDEO_MULTISPEAKER_SHORT,
+    ModelTestCase,
+    hf_repo_exists,
+)
 
 
 class TestDINOv2WrapperInit(unittest.TestCase):
@@ -26,7 +32,7 @@ class TestDINOv2WrapperInit(unittest.TestCase):
         self.assertIn(_DEFAULT_DINOV2_MODEL, _MODEL_IDS)
 
 
-class TestDINOv2Wrapper(unittest.TestCase):
+class TestDINOv2Wrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = DINOv2Wrapper(model_name="base", device_id=None)

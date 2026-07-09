@@ -6,10 +6,10 @@ import numpy as np
 import torch
 
 from exordium.video.deep.fabnet import FabNetWrapper
-from tests.fixtures import IMAGE_FACE, hf_file_exists
+from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_file_exists
 
 
-class TestFabNetWrapper(unittest.TestCase):
+class TestFabNetWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = FabNetWrapper(device_id=None)

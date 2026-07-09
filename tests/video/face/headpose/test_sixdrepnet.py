@@ -9,7 +9,7 @@ import torch
 
 from exordium.video.face.headpose import draw_headpose_axis, draw_headpose_cube
 from exordium.video.face.headpose.sixdrepnet import _HF_REPO_ID
-from tests.fixtures import IMAGE_FACE, hf_repo_exists
+from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_repo_exists
 
 
 class TestDrawHeadposeAxis(unittest.TestCase):
@@ -82,7 +82,7 @@ class TestDrawHeadposeCube(unittest.TestCase):
             self.assertTrue(p.exists())
 
 
-class TestSixDRepNetWrapper(unittest.TestCase):
+class TestSixDRepNetWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         from exordium.video.face.headpose import SixDRepNetWrapper
