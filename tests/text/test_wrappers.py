@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from exordium.text.base import TextModelWrapper
-from tests.fixtures import AUDIO_MULTISPEAKER, hf_repo_exists
+from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase, hf_repo_exists
 
 
 class TestTextMeanPool(unittest.TestCase):
@@ -42,7 +42,7 @@ class TestTextMeanPool(unittest.TestCase):
             self.assertTrue(torch.allclose(batched[i], single[0], atol=1e-5))
 
 
-class TestBertWrapper(unittest.TestCase):
+class TestBertWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         from exordium.text.bert import BertWrapper
@@ -64,7 +64,7 @@ class TestBertWrapper(unittest.TestCase):
         self.assertEqual(out.shape[0], 2)
 
 
-class TestRobertaWrapper(unittest.TestCase):
+class TestRobertaWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         from exordium.text.roberta import RobertaWrapper
@@ -80,7 +80,7 @@ class TestRobertaWrapper(unittest.TestCase):
         self.assertIsInstance(out, np.ndarray)
 
 
-class TestXmlRobertaWrapper(unittest.TestCase):
+class TestXmlRobertaWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         from exordium.text.xml_roberta import XmlRobertaWrapper
@@ -96,7 +96,7 @@ class TestXmlRobertaWrapper(unittest.TestCase):
         self.assertEqual(out.ndim, 2)
 
 
-class TestWhisperWrapper(unittest.TestCase):
+class TestWhisperWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         from exordium.text.whisper import WhisperWrapper

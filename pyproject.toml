@@ -55,6 +55,12 @@ audio = [
 text = [
   "transformers",
   "torchaudio",
+  "rapidfuzz",
+  # whisperX — wav2vec2 forced-alignment backend for word-level timestamps.
+  # Pulls the pyannote-audio / faster-whisper / ctranslate2 stack; the torch
+  # generation and numpy/pandas/transformers versions are held at the repo pins
+  # by the ``override-dependencies`` safety belt in ``[tool.uv]``.
+  "whisperx",
 ]
 video = [
   "mediapipe",
@@ -70,6 +76,7 @@ dev = [
   "ty",
   "coverage",
   "pre-commit",
+  "ipykernel",  # run the example notebooks in examples/
 ]
 docs = [
   "sphinx>=8.0",
@@ -137,6 +144,22 @@ directory = "coverage_html"
 [tool.uv]
 override-dependencies = [
   "timm>=1.0",  # unigaze pins timm==0.3.2; override it
+  # whisperX (and pyannote-audio) declare conservative torch pins (~=2.8) and a
+  # requires-python <3.14 upper bound. Empirically whisperx 3.7.2 works fine on
+  # this repo's torch 2.11 / py3.14, so we hold the torch stack at the repo pins
+  # and let uv resolve whisperx against them instead of downgrading torch.
+  "torch==2.11.0",
+  "torchaudio==2.11.0",
+  "torchvision==0.26.0",
+  "torchcodec==0.14.0",
+  # Hold transformers at latest 5.x; the whisperx stack otherwise pulls it down
+  # to 4.57. Verified whisperx alignment + the existing wrappers work on 5.x.
+  "transformers>=5.5",
+  # whisperx 3.7.x caps numpy<2.3 / pandas<2.3, but those have no stable
+  # Python 3.14 wheels and ABI-segfault opensmile. Hold them at the repo's
+  # working versions; whisperx alignment is verified to work on them.
+  "numpy>=2.4",
+  "pandas>=3.0",
 ]
 
 [tool.ty.environment]

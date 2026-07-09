@@ -12,7 +12,7 @@ from exordium.audio.emotion2vec import (
     EMOTION2VEC_SAMPLE_RATE,
     Emotion2vecWrapper,
 )
-from tests.fixtures import AUDIO_MULTISPEAKER, head_ok
+from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase, head_ok
 
 
 class TestEmotion2vecWrapperInit(unittest.TestCase):
@@ -25,7 +25,7 @@ class TestEmotion2vecWrapperInit(unittest.TestCase):
         self.assertEqual(EMOTION2VEC_FEATURE_DIM, 768)
 
 
-class TestEmotion2vecWrapper(unittest.TestCase):
+class TestEmotion2vecWrapper(ModelTestCase):
     """Inference tests — loads the model once for the entire suite."""
 
     @classmethod
