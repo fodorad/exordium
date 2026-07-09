@@ -7,7 +7,7 @@ from pathlib import Path
 import torch
 
 from exordium.audio.io import AudioLoader, load_audio, save_audio, split_audio
-from tests.fixtures import AUDIO_MULTISPEAKER
+from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase
 
 
 class TestLoadAudio(unittest.TestCase):
@@ -117,7 +117,7 @@ class TestAudioLoader(unittest.TestCase):
             )
 
 
-class TestAudioLoaderEdgeCases(unittest.TestCase):
+class TestAudioLoaderEdgeCases(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.loader = AudioLoader()

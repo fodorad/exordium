@@ -12,7 +12,7 @@ from exordium.video.face.au.opengraphau import (
     AU_names,
     OpenGraphAuWrapper,
 )
-from tests.fixtures import IMAGE_FACE, hf_file_exists
+from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_file_exists
 
 
 class TestOpenGraphAuInit(unittest.TestCase):
@@ -50,7 +50,7 @@ class TestOpenGraphAuRegistry(unittest.TestCase):
             self.assertTrue(fname.endswith(".pth"))
 
 
-class TestOpenGraphAuWrapper(unittest.TestCase):
+class TestOpenGraphAuWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         try:

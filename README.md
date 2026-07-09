@@ -77,6 +77,10 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Functionality | Model / Method | Output |
 |---|---|---|
 | Speech-to-text | [Whisper](https://github.com/openai/whisper) (OpenAI) | transcript |
+| Word-level timestamps | Whisper + [torchaudio MMS_FA](https://pytorch.org/audio/stable/pipelines.html#mms-fa) or [whisperX](https://github.com/m-bain/whisperX) forced alignment | word (start, end, score) |
+| Transcript re-alignment | fuzzy search of known transcript in word stream ([rapidfuzz](https://github.com/rapidfuzz/RapidFuzz)) | segment (start, end, score) |
+| Annotation validation | `SpeechAlignmentPipeline` facade — transcribe, align, evaluate, re-segment | metrics + accept/recut/drop decisions |
+| Transcript metrics | `TranscriptEvaluator` — raw + Whisper-normalized WER/CER, `rapidfuzz` similarity, `xml-roberta` semantic cosine | `TranscriptMetrics` + `is_acceptable` |
 | Contextual embeddings | [BERT](https://huggingface.co/bert-base-uncased) (bert-base-uncased) | (T, 768) |
 | Contextual embeddings | [RoBERTa](https://huggingface.co/roberta-large) (roberta-large) | (T, 1024) |
 | Multilingual embeddings | [XML-RoBERTa](https://huggingface.co/xlm-roberta-base) (xlm-roberta-base) | (T, 768) |
@@ -104,7 +108,7 @@ uv pip install exordium          # base only
 uv pip install exordium[all]     # all optional dependencies
 uv pip install exordium[audio]   # audio extras only
 uv pip install exordium[video]   # video extras only
-uv pip install exordium[text]    # text extras only
+uv pip install exordium[text]    # text extras only (includes whisperX)
 ```
 
 Install uv if you don't have it yet:
@@ -118,7 +122,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 | Extra | Dependencies |
 |---|---|
 | `audio` | OpenSMILE, torchaudio — audio feature extraction |
-| `text` | transformers, torchaudio — text and speech models |
+| `text` | transformers, torchaudio, rapidfuzz, whisperX — text, speech & alignment |
 | `video` | MediaPipe, Ultralytics, blinklinmult, unigaze, timm — face & video models |
 | `all` | all previously described extras |
 

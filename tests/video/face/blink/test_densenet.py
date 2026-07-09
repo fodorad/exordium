@@ -8,6 +8,7 @@ import numpy as np
 import torch
 
 from exordium.video.face.blink.densenet import BlinkDenseNet121Wrapper
+from tests.fixtures import ModelTestCase
 
 
 def _make_landmarks_6(B, left_x=80, left_y=112, right_x=144, right_y=112):
@@ -107,7 +108,7 @@ class TestBlinkDenseNetStaticMethods(unittest.TestCase):
             self.assertGreater(len(list(Path(d).glob("*.png"))), 0)
 
 
-class TestBlinkDenseNet121WrapperModel(unittest.TestCase):
+class TestBlinkDenseNet121WrapperModel(ModelTestCase):
     """Inference tests — loads the model once for the entire suite."""
 
     @classmethod

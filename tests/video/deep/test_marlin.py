@@ -18,7 +18,7 @@ from exordium.video.deep.marlin import (
     MarlinWrapper,
     _frames_to_clips,
 )
-from tests.fixtures import IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT, hf_repo_exists
+from tests.fixtures import IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT, ModelTestCase, hf_repo_exists
 
 
 class TestModuleConstants(unittest.TestCase):
@@ -137,7 +137,7 @@ class TestMarlinWrapperInit(unittest.TestCase):
             MarlinWrapper(model_name="xlarge")
 
 
-class TestMarlinWrapper(unittest.TestCase):
+class TestMarlinWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = MarlinWrapper(model_name="base", device_id=None)
