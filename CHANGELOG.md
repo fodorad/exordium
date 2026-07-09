@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.0](https://github.com/fodorad/exordium/compare/v2.5.0...v2.6.0) (2026-07-09)
+
+
+### Features
+
+* whisper upgrade — word timestamps, alignment, metrics ([#34](https://github.com/fodorad/exordium/issues/34)) ([536eca4](https://github.com/fodorad/exordium/commit/536eca422c5725556a61715695cc28640ed486f0))
+
 ## [2.5.0](https://github.com/fodorad/exordium/compare/v2.4.1...v2.5.0) (2026-07-07)
 
 
