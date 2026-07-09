@@ -12,7 +12,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/fodorad/exordium?color=purple)](https://github.com/fodorad/exordium/releases)
 [![PyPI](https://img.shields.io/pypi/v/exordium?color=purple)](https://pypi.org/project/exordium/)
 [![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.9.1-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.11.0-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
@@ -45,6 +45,8 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Face detection | [YOLOv8-Face](https://github.com/akanametov/yolo-face) (arnabdhar/YOLOv8-Face-Detection) | bounding boxes |
 | Face detection + keypoints | [YOLO11-pose](https://github.com/zjykzj/YOLO11Face) (yolo11n/s-pose_widerface) | bounding boxes + 5-pt keypoints |
 | Multi-face tracking | IoU-based tracker | track IDs across frames |
+| Face-ID tracking | [AdaFace](https://github.com/mk-minchul/AdaFace) (IResNet-18/50/101, CVPR 2022) + IoU gating | track IDs with identity recovery |
+| Protagonist extraction | IoU tracklets + [AdaFace](https://github.com/mk-minchul/AdaFace) global clustering (agglomerative, `FaceClusterTracker`) | single protagonist track |
 
 #### Face Analysis
 
@@ -63,16 +65,22 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Functionality | Model / Method | Output |
 |---|---|---|
 | Video features | [Swin Transformer](https://github.com/microsoft/Swin-Transformer) (tiny/small/base) | 768-d / 768-d / 1024-d |
-| Face identity features | [FAb-Net](https://www.robots.ox.ac.uk/~vgg/research/unsup_learn_watch_faces/index.html) | 256-d |
+| Face identity embeddings | [AdaFace](https://github.com/mk-minchul/AdaFace) (IResNet-18/50/101, CVPR 2022) | 512-d L2-normalised |
+| Face appearance features | [FAb-Net](https://www.robots.ox.ac.uk/~vgg/research/unsup_learn_watch_faces/index.html) | 256-d |
 | Vision–language embeddings | [CLIP](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K) (ViT-H/14, laion2B) | 1024-d |
 | Self-supervised visual features | [DINOv2](https://huggingface.co/facebook/dinov2-base) (small/base/large/giant) | 384 / 768 / 1024 / 1536-d |
 | Facial expression features | [EmotiEffNet](https://github.com/sb-ai-lab/EmotiEffLib) (EfficientNet-B0/B2, AffectNet) | 1280-d / 1408-d |
+| Facial video features | [MARLIN](https://github.com/ControlNet/MARLIN) (ViT, 16-frame clips, CVPR 2023) | 384 / 768 / 1024-d |
 
 ### Text
 
 | Functionality | Model / Method | Output |
 |---|---|---|
 | Speech-to-text | [Whisper](https://github.com/openai/whisper) (OpenAI) | transcript |
+| Word-level timestamps | Whisper + [torchaudio MMS_FA](https://pytorch.org/audio/stable/pipelines.html#mms-fa) or [whisperX](https://github.com/m-bain/whisperX) forced alignment | word (start, end, score) |
+| Transcript re-alignment | fuzzy search of known transcript in word stream ([rapidfuzz](https://github.com/rapidfuzz/RapidFuzz)) | segment (start, end, score) |
+| Annotation validation | `SpeechAlignmentPipeline` facade — transcribe, align, evaluate, re-segment | metrics + accept/recut/drop decisions |
+| Transcript metrics | `TranscriptEvaluator` — raw + Whisper-normalized WER/CER, `rapidfuzz` similarity, `xml-roberta` semantic cosine | `TranscriptMetrics` + `is_acceptable` |
 | Contextual embeddings | [BERT](https://huggingface.co/bert-base-uncased) (bert-base-uncased) | (T, 768) |
 | Contextual embeddings | [RoBERTa](https://huggingface.co/roberta-large) (roberta-large) | (T, 1024) |
 | Multilingual embeddings | [XML-RoBERTa](https://huggingface.co/xlm-roberta-base) (xlm-roberta-base) | (T, 768) |
@@ -100,7 +108,7 @@ uv pip install exordium          # base only
 uv pip install exordium[all]     # all optional dependencies
 uv pip install exordium[audio]   # audio extras only
 uv pip install exordium[video]   # video extras only
-uv pip install exordium[text]    # text extras only
+uv pip install exordium[text]    # text extras only (includes whisperX)
 ```
 
 Install uv if you don't have it yet:
@@ -114,7 +122,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 | Extra | Dependencies |
 |---|---|
 | `audio` | OpenSMILE, torchaudio — audio feature extraction |
-| `text` | transformers, torchaudio — text and speech models |
+| `text` | transformers, torchaudio, rapidfuzz, whisperX — text, speech & alignment |
 | `video` | MediaPipe, Ultralytics, blinklinmult, unigaze, timm — face & video models |
 | `all` | all previously described extras |
 

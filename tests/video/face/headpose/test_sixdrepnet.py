@@ -8,7 +8,8 @@ import numpy as np
 import torch
 
 from exordium.video.face.headpose import draw_headpose_axis, draw_headpose_cube
-from tests.fixtures import IMAGE_FACE, head_ok
+from exordium.video.face.headpose.sixdrepnet import _HF_REPO_ID
+from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_repo_exists
 
 
 class TestDrawHeadposeAxis(unittest.TestCase):
@@ -81,7 +82,7 @@ class TestDrawHeadposeCube(unittest.TestCase):
             self.assertTrue(p.exists())
 
 
-class TestSixDRepNetWrapper(unittest.TestCase):
+class TestSixDRepNetWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         from exordium.video.face.headpose import SixDRepNetWrapper
@@ -116,9 +117,8 @@ class TestSixDRepNetWrapper(unittest.TestCase):
 
 
 class TestSixDRepNetWeightAvailability(unittest.TestCase):
-    def test_sixdrepnet_url(self):
-        url = "https://cloud.ovgu.de/s/Q67RnLDy6JKLRWm/download/6DRepNet_300W_LP_AFLW2000.pth"
-        self.assertTrue(head_ok(url), f"Not reachable: {url}")
+    def test_sixdrepnet_weights_repo_exists(self):
+        self.assertTrue(hf_repo_exists(_HF_REPO_ID), f"HF repo not reachable: {_HF_REPO_ID}")
 
 
 if __name__ == "__main__":

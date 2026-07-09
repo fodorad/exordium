@@ -5,10 +5,10 @@ import unittest
 import numpy as np
 import torch
 
-from tests.fixtures import AUDIO_MULTISPEAKER
+from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase
 
 
-class TestOpensmileWrapper(unittest.TestCase):
+class TestOpensmileWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         from exordium.audio.smile import OpensmileWrapper

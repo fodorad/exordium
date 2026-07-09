@@ -11,7 +11,7 @@ import torch
 
 from exordium.video.core.detection import FrameDetections
 from exordium.video.face.detector.base import FaceDetector as BaseDetector
-from tests.fixtures import IMAGE_FACE
+from tests.fixtures import IMAGE_FACE, ModelTestCase
 
 
 def _make_detector():
@@ -67,7 +67,7 @@ def _make_mock_result(n_boxes: int = 0):
     return r
 
 
-class TestDetectImageAcceptsNumpyAndTensor(unittest.TestCase):
+class TestDetectImageAcceptsNumpyAndTensor(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.detector = _make_detector()
@@ -92,7 +92,7 @@ class TestDetectImageAcceptsNumpyAndTensor(unittest.TestCase):
         self.assertIsInstance(result, FrameDetections)
 
 
-class TestDetectFrameDir(unittest.TestCase):
+class TestDetectFrameDir(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.detector = _make_detector()

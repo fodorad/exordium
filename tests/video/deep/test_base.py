@@ -8,10 +8,10 @@ import unittest
 import torch
 
 from exordium.video.deep.clip import ClipWrapper
-from tests.fixtures import IMAGE_FACE
+from tests.fixtures import IMAGE_FACE, ModelTestCase
 
 
-class TestVisualModelWrapperBase(unittest.TestCase):
+class TestVisualModelWrapperBase(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = ClipWrapper(device_id=None)

@@ -8,7 +8,7 @@ import torch
 from exordium.audio.clap import CLAP_MODEL_ID, CLAP_SAMPLE_RATE
 from exordium.audio.wav2vec2 import SUPPORTED_MODELS, Wav2vec2Wrapper
 from exordium.audio.wavlm import _MODEL_IDS, WAVLM_SAMPLE_RATE, WavlmWrapper
-from tests.fixtures import AUDIO_MULTISPEAKER, head_ok, hf_repo_exists
+from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase, head_ok, hf_repo_exists
 
 
 class TestWavlmWrapperInit(unittest.TestCase):
@@ -51,7 +51,7 @@ class TestWav2vec2WrapperInvalidModel(unittest.TestCase):
         self.assertIn("emotion-iemocap", SUPPORTED_MODELS)
 
 
-class TestClapWrapper(unittest.TestCase):
+class TestClapWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         from exordium.audio.clap import ClapWrapper
@@ -76,7 +76,7 @@ class TestClapWrapper(unittest.TestCase):
         self.assertEqual(result.shape[0], 2)
 
 
-class TestWavlmWrapper(unittest.TestCase):
+class TestWavlmWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = WavlmWrapper(device_id=None)
@@ -100,7 +100,7 @@ class TestWavlmWrapper(unittest.TestCase):
         self.assertIsInstance(result[0], torch.Tensor)
 
 
-class TestWav2vec2Wrapper(unittest.TestCase):
+class TestWav2vec2Wrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = Wav2vec2Wrapper(device_id=None, model_name="base-960h")
@@ -124,7 +124,7 @@ class TestWav2vec2Wrapper(unittest.TestCase):
         self.assertIsInstance(result, torch.Tensor)
 
 
-class TestWav2vec2WrapperEmotion(unittest.TestCase):
+class TestWav2vec2WrapperEmotion(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = Wav2vec2Wrapper(device_id=None, model_name="emotion-iemocap")

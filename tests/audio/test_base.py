@@ -6,6 +6,7 @@ import numpy as np
 import torch
 
 from exordium.audio.base import AudioModelWrapper
+from tests.fixtures import ModelTestCase
 
 
 class _MinimalWrapper(AudioModelWrapper):
@@ -21,7 +22,7 @@ class _MinimalWrapper(AudioModelWrapper):
         return None
 
 
-class TestAudioModelWrapperPadWaveforms(unittest.TestCase):
+class TestAudioModelWrapperPadWaveforms(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.wrapper = _MinimalWrapper(device_id=-1)
@@ -45,7 +46,7 @@ class TestAudioModelWrapperPadWaveforms(unittest.TestCase):
         self.assertIsInstance(result, torch.Tensor)
 
 
-class TestPrepareWaveformBranches(unittest.TestCase):
+class TestPrepareWaveformBranches(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.wrapper = _MinimalWrapper(device_id=-1)

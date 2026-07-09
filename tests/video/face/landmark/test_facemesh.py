@@ -12,7 +12,7 @@ from exordium.video.face.landmark.facemesh import (
     rotate_landmarks,
     visualize_landmarks,
 )
-from tests.fixtures import IMAGE_FACE
+from tests.fixtures import IMAGE_FACE, ModelTestCase
 
 
 def _make_detection(frame_id):
@@ -26,7 +26,7 @@ def _make_detection(frame_id):
     )
 
 
-class TestFaceMeshWrapper(unittest.TestCase):
+class TestFaceMeshWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = FaceMeshWrapper()

@@ -815,20 +815,113 @@ class Tracker(ABC):
     Implements IoU-based frame-to-track assignment via :meth:`label` and
     optional track merging via :meth:`merge`.  Subclasses implement the
     :meth:`merge_rule`.
+
+    An optional face-identity ``encoder`` and the shared embedding helpers
+    (:meth:`_compute_embedding`, :meth:`_cosine_similarity`,
+    :meth:`_ensure_track_embedding`) live on the base class so that both the
+    online :class:`FaceIdTracker` and the offline :class:`FaceClusterTracker`
+    can reuse them.  Trackers that do not use identity embeddings simply leave
+    ``encoder`` as ``None``.
     """
 
-    def __init__(self, verbose: bool = False):
+    def __init__(
+        self,
+        verbose: bool = False,
+        encoder: Callable[[torch.Tensor], torch.Tensor] | None = None,
+    ):
         self.new_track_id: int = 0
         self.tracks: dict[int, Track] = {}
         self._selected_tracks: dict[int, Track] = {}
         self.path_to_id: Callable[[str], int] = lambda p: int(Path(p).stem)
         self.id_to_path: Callable[[int], str] = lambda i: f"{i:06d}.png"
         self.verbose = verbose
+        self.encoder = encoder
+        self._track_embeddings: dict[int, torch.Tensor] = {}
+        self._track_embed_counts: dict[int, int] = {}
 
     @property
     def selected_tracks(self) -> dict[int, Track]:
         """Active track selection, or all tracks if none selected."""
         return self.tracks if not self._selected_tracks else self._selected_tracks
+
+    # -- Face-identity embedding helpers (shared by embedding-based trackers) --
+
+    def _compute_embedding(self, detection: Detection) -> torch.Tensor:
+        """Compute a normalised face embedding for a single detection.
+
+        Requires :attr:`encoder` to be set.
+
+        Args:
+            detection: Detection whose face crop is embedded.
+
+        Returns:
+            L2-normalised 1-D embedding tensor on the CPU.
+
+        """
+        if self.encoder is None:
+            raise ValueError("An encoder is required to compute face embeddings.")
+        crop = detection.crop(square=True, extra_space=1.5).unsqueeze(0)
+        embedding = self.encoder(crop)
+        vec = embedding.squeeze(0).detach().cpu()
+        return torch.nn.functional.normalize(vec, p=2, dim=0)
+
+    @staticmethod
+    def _cosine_similarity(a: torch.Tensor, b: torch.Tensor) -> float:
+        """Cosine similarity between two 1-D tensors."""
+        return float(torch.nn.functional.cosine_similarity(a.unsqueeze(0), b.unsqueeze(0)).item())
+
+    def _ensure_track_embedding(self, track: Track) -> None:
+        """Populate the running-mean embedding for a track if missing.
+
+        Samples up to five detections from the track, embeds each, and stores
+        the L2-normalised mean in :attr:`_track_embeddings`.
+
+        Args:
+            track: Track to embed.
+
+        """
+        if track.track_id in self._track_embeddings:
+            return
+        sample = track.sample(num=5)
+        embeddings = [self._compute_embedding(d) for d in sample]
+        mean = torch.stack(embeddings).mean(dim=0)
+        self._track_embeddings[track.track_id] = torch.nn.functional.normalize(mean, p=2, dim=0)
+        self._track_embed_counts[track.track_id] = len(embeddings)
+
+    def _match_detection(
+        self,
+        detection: Detection,
+        max_lost: int,
+        iou_threshold: float,
+    ) -> int | None:
+        """Find the best existing track for a detection.
+
+        Default implementation selects the open track whose last detection
+        has the highest IoU with ``detection``, subject to ``max_lost`` and
+        ``iou_threshold`` constraints.  Subclasses may override this to
+        incorporate additional signals (e.g. face-identity embeddings).
+
+        Args:
+            detection: Candidate detection.
+            max_lost: Maximum frame gap to keep a track open.
+            iou_threshold: Minimum IoU required to continue a track.
+
+        Returns:
+            Best matching ``track_id``, or ``None`` if no track qualifies.
+
+        """
+        candidate_tracks: list[tuple[int, float]] = []
+        for _, track in self.tracks.items():
+            last = track.last_detection()
+            iou = iou_xywh(last.bb_xywh, detection.bb_xywh)
+            frame_dist = abs(detection.frame_id - last.frame_id)
+            if frame_dist < max_lost and iou > iou_threshold:
+                candidate_tracks.append((track.track_id, iou))
+
+        if candidate_tracks:
+            best_id, _ = sorted(candidate_tracks, key=lambda x: x[1], reverse=True)[0]
+            return best_id
+        return None
 
     def label(
         self,
@@ -840,10 +933,9 @@ class Tracker(ABC):
         """Assign per-frame detections to persistent tracks.
 
         Iterates over all :class:`FrameDetections` in ``detections`` and
-        greedily assigns each detection to the open track whose last detection
-        has the highest IoU, subject to ``max_lost`` and ``iou_threshold``
-        constraints.  Detections below ``min_score`` are skipped.  A new track
-        is started whenever no suitable candidate is found.
+        delegates per-detection track matching to :meth:`_match_detection`.
+        Detections below ``min_score`` are skipped.  A new track is started
+        whenever :meth:`_match_detection` returns ``None``.
 
         Args:
             detections: Per-frame detection results.
@@ -865,16 +957,8 @@ class Tracker(ABC):
                 if detection.score < min_score:
                     continue
 
-                candidate_tracks = []
-                for _, track in self.tracks.items():
-                    last = track.last_detection()
-                    iou = iou_xywh(last.bb_xywh, detection.bb_xywh)
-                    frame_dist = abs(detection.frame_id - last.frame_id)
-                    if frame_dist < max_lost and iou > iou_threshold:
-                        candidate_tracks.append((track.track_id, iou))
-
-                if candidate_tracks:
-                    best_id, _ = sorted(candidate_tracks, key=lambda x: x[1], reverse=True)[0]
+                best_id = self._match_detection(detection, max_lost, iou_threshold)
+                if best_id is not None:
                     self.tracks[best_id].add(detection)
                 else:
                     self.tracks[self.new_track_id] = Track(self.new_track_id, detection)
@@ -1033,6 +1117,447 @@ class IouTracker(Tracker):
             > self.iou_threshold
         )
         return (ok_lost and ok_iou), no1, no2
+
+
+# ---------------------------------------------------------------------------
+# FaceIdTracker
+# ---------------------------------------------------------------------------
+
+
+class FaceIdTracker(Tracker):
+    """Face-ID-enhanced tracker using embedding similarity.
+
+    Uses IoU as the primary fast gate.  Face identity embeddings fire only
+    when IoU is ambiguous (2+ candidates) or for track recovery (0
+    candidates).  This keeps most frames on the fast IoU path while still
+    disambiguating overlapping faces and reconnecting tracks after gaps
+    caused by occlusion, blur, or extreme head poses.
+
+    The ``encoder`` is any callable that takes a ``(B, 3, H, W)`` uint8 RGB
+    tensor and returns a ``(B, D)`` L2-normalised embedding tensor — for
+    example :class:`~exordium.video.deep.adaface.AdaFaceWrapper`.
+
+    Args:
+        encoder: Face embedding model (callable).
+        verbose: Show tqdm progress bar during labelling.
+        max_lost: Maximum frame gap to keep a track open.  ``-1`` means
+            unlimited.
+        iou_threshold: Minimum IoU for the geometric gate.
+        embedding_threshold: Minimum cosine similarity accepted for
+            embedding-based matches (disambiguation and recovery).
+        iou_weight: Weight for IoU in the combined score used when 2+ IoU
+            candidates compete.  Embedding weight is ``1 - iou_weight``.
+        recovery_max_lost: Maximum frame gap for embedding-only recovery
+            when no IoU candidate is found.
+
+    """
+
+    def __init__(
+        self,
+        encoder: Callable[[torch.Tensor], torch.Tensor],
+        verbose: bool = False,
+        max_lost: int = -1,
+        iou_threshold: float = 0.2,
+        embedding_threshold: float = 0.5,
+        iou_weight: float = 0.5,
+        recovery_max_lost: int = 90,
+    ):
+        super().__init__(verbose=verbose, encoder=encoder)
+        self.max_lost = max_lost
+        self.iou_threshold = iou_threshold
+        self.embedding_threshold = embedding_threshold
+        self.iou_weight = iou_weight
+        self.recovery_max_lost = recovery_max_lost
+
+    def _update_track_embedding(self, track_id: int, embedding: torch.Tensor) -> None:
+        """Update a track's running-mean embedding with a new sample."""
+        if track_id not in self._track_embeddings:
+            self._track_embeddings[track_id] = embedding
+            self._track_embed_counts[track_id] = 1
+            return
+        n = self._track_embed_counts[track_id]
+        mean = self._track_embeddings[track_id]
+        updated = (mean * n + embedding) / (n + 1)
+        self._track_embeddings[track_id] = torch.nn.functional.normalize(updated, p=2, dim=0)
+        self._track_embed_counts[track_id] = n + 1
+
+    def _match_detection(
+        self,
+        detection: Detection,
+        max_lost: int,
+        iou_threshold: float,
+    ) -> int | None:
+        """Match a detection using IoU gating with embedding tie-breaking.
+
+        Three cases:
+
+        * **1 IoU candidate** — fast path, assign directly and update the
+          track's running embedding.
+        * **2+ IoU candidates** — compute combined score
+          ``iou_weight * iou + (1 - iou_weight) * cosine_sim``.
+        * **0 IoU candidates** — embedding-only recovery against tracks
+          within ``recovery_max_lost`` frames; accept the best if cosine
+          similarity exceeds ``embedding_threshold``.
+
+        Args:
+            detection: Candidate detection to assign.
+            max_lost: Maximum frame gap (from :meth:`Tracker.label`).
+            iou_threshold: Minimum IoU (from :meth:`Tracker.label`).
+
+        Returns:
+            Matched ``track_id``, or ``None`` if a new track should be
+            created.
+
+        """
+        candidates: list[tuple[int, float]] = []
+        for _, track in self.tracks.items():
+            last = track.last_detection()
+            iou = iou_xywh(last.bb_xywh, detection.bb_xywh)
+            frame_dist = abs(detection.frame_id - last.frame_id)
+            if frame_dist < max_lost and iou > iou_threshold:
+                candidates.append((track.track_id, iou))
+
+        if len(candidates) == 1:
+            best_id = candidates[0][0]
+            embedding = self._compute_embedding(detection)
+            self._update_track_embedding(best_id, embedding)
+            return best_id
+
+        if len(candidates) >= 2:
+            embedding = self._compute_embedding(detection)
+            best_id: int | None = None
+            best_score = -1.0
+            for track_id, iou in candidates:
+                if track_id in self._track_embeddings:
+                    sim = self._cosine_similarity(embedding, self._track_embeddings[track_id])
+                else:
+                    sim = 0.0
+                score = self.iou_weight * iou + (1.0 - self.iou_weight) * sim
+                if score > best_score:
+                    best_score = score
+                    best_id = track_id
+            if best_id is not None:
+                self._update_track_embedding(best_id, embedding)
+            return best_id
+
+        # Zero IoU candidates: try embedding-only recovery.
+        embedding = self._compute_embedding(detection)
+
+        if self._track_embeddings:
+            best_id = None
+            best_sim = -1.0
+            for _, track in self.tracks.items():
+                last = track.last_detection()
+                frame_dist = abs(detection.frame_id - last.frame_id)
+                if self.recovery_max_lost != -1 and frame_dist > self.recovery_max_lost:
+                    continue
+                if track.track_id not in self._track_embeddings:
+                    continue
+                sim = self._cosine_similarity(embedding, self._track_embeddings[track.track_id])
+                if sim > best_sim:
+                    best_sim = sim
+                    best_id = track.track_id
+
+            if best_id is not None and best_sim >= self.embedding_threshold:
+                self._update_track_embedding(best_id, embedding)
+                return best_id
+
+        # No suitable existing track — seed a fresh embedding for the new
+        # track that :meth:`Tracker.label` is about to create.
+        self._track_embeddings[self.new_track_id] = embedding
+        self._track_embed_counts[self.new_track_id] = 1
+        return None
+
+    def merge_rule(self, track_1: Track, track_2: Track) -> tuple[bool, Track, Track]:
+        """Merge two tracks based on frame-gap and embedding similarity.
+
+        Args:
+            track_1: First track.
+            track_2: Second track.
+
+        Returns:
+            ``(should_merge, keep_track, drop_track)`` where the earlier
+            track is always kept.
+
+        """
+        no1, no2 = (track_1, track_2) if track_1.is_started_earlier(track_2) else (track_2, track_1)
+        ok_lost = (self.max_lost == -1) or (no1.frame_distance(no2) <= self.max_lost)
+        if not ok_lost:
+            return False, no1, no2
+
+        self._ensure_track_embedding(no1)
+        self._ensure_track_embedding(no2)
+
+        sim = self._cosine_similarity(
+            self._track_embeddings[no1.track_id],
+            self._track_embeddings[no2.track_id],
+        )
+        return sim >= self.embedding_threshold, no1, no2
+
+
+# ---------------------------------------------------------------------------
+# FaceClusterTracker
+# ---------------------------------------------------------------------------
+
+
+class FaceClusterTracker(Tracker):
+    """Offline IoU-tracklet tracker with global face-ID clustering.
+
+    Designed for video-level datasets (e.g. MOSEI, First Impressions) where a
+    single *protagonist* must be extracted from a clip.  Plain IoU tracking
+    yields short, high-purity tracklets that fragment on occlusions, scene
+    cuts, blur, or brief exits.  This tracker re-identifies those fragments by
+    embedding every tracklet once and clustering all tracklets **jointly** with
+    agglomerative (hierarchical) clustering.  Being order-independent, global
+    clustering recovers identities across arbitrary gaps far more reliably than
+    greedy pairwise merging.
+
+    Pipeline: :meth:`label` (IoU tracklets) → :meth:`cluster` (global face-ID
+    clustering into identity tracks) → :meth:`select_protagonist` (single
+    dominant identity).  :meth:`run` chains all three.
+
+    The ``encoder`` is any callable mapping a ``(B, 3, H, W)`` uint8 RGB tensor
+    to a ``(B, D)`` L2-normalised embedding tensor — for example
+    :class:`~exordium.video.deep.adaface.AdaFaceWrapper`, whose quality-adaptive
+    embeddings are robust to the low-resolution faces common in these datasets.
+
+    Args:
+        encoder: Face embedding model (callable).
+        verbose: Show tqdm progress bar during labelling.
+        iou_threshold: Minimum IoU to continue an IoU tracklet.
+        max_lost: Maximum frame gap to keep an IoU tracklet open.  ``-1`` means
+            unlimited.
+        distance_threshold: Cosine-distance cut for the hierarchical
+            clustering (``1 - cosine_similarity``).  Tracklets closer than this
+            are merged into one identity.  Defaults to ``0.4`` (similarity
+            ``>= 0.6``).
+        samples_per_track: Number of high-quality detections averaged into each
+            tracklet embedding.
+        min_det_score: Minimum detection score for a crop to feed a tracklet
+            embedding (quality gate for low-resolution robustness).
+        min_bb_size: Minimum bounding-box size (largest side, pixels) for a
+            crop to feed a tracklet embedding.
+
+    After :meth:`cluster` (or :meth:`run`), the track counts before and after
+    identity merging are available on :attr:`n_tracklets` and
+    :attr:`n_identities` (always ``n_identities <= n_tracklets``).
+
+    """
+
+    def __init__(
+        self,
+        encoder: Callable[[torch.Tensor], torch.Tensor],
+        verbose: bool = False,
+        iou_threshold: float = 0.2,
+        max_lost: int = -1,
+        distance_threshold: float = 0.4,
+        samples_per_track: int = 5,
+        min_det_score: float = 0.0,
+        min_bb_size: int = 0,
+    ):
+        super().__init__(verbose=verbose, encoder=encoder)
+        self.iou_threshold = iou_threshold
+        self.max_lost = max_lost
+        self.distance_threshold = distance_threshold
+        self.samples_per_track = samples_per_track
+        self.min_det_score = min_det_score
+        self.min_bb_size = min_bb_size
+        self.n_tracklets: int = 0
+        """Number of IoU tracklets fed into the last :meth:`cluster` call (before merging)."""
+        self.n_identities: int = 0
+        """Number of identity tracks produced by the last :meth:`cluster` call (after merging)."""
+
+    def _tracklet_embedding(self, track: Track) -> torch.Tensor:
+        """Compute one robust identity embedding for a tracklet.
+
+        Drops crops below the ``min_det_score`` / ``min_bb_size`` quality gates,
+        then samples up to ``samples_per_track`` detections **evenly across the
+        tracklet's time span** and averages their embeddings.  Temporal-even
+        sampling is deliberate: ranking by confidence or face size tends to
+        over-select frames during transitions, occlusions, or scene blends —
+        which are large and high-scoring yet corrupt identity — whereas spread
+        sampling captures the tracklet's representative appearance.  Falls back
+        to all detections when the gates filter everything out (e.g. a wholly
+        low-resolution tracklet).
+
+        Args:
+            track: Tracklet to embed.
+
+        Returns:
+            L2-normalised 1-D embedding tensor on the CPU.
+
+        """
+        selected = self._select_for_embedding(track)
+        embeddings = [self._compute_embedding(d) for d in selected]
+        mean = torch.stack(embeddings).mean(dim=0)
+        return torch.nn.functional.normalize(mean, p=2, dim=0)
+
+    def _select_for_embedding(self, track: Track) -> list[Detection]:
+        """Pick the detections used to build a tracklet's identity embedding.
+
+        Applies the ``min_det_score`` / ``min_bb_size`` quality gates, then
+        returns up to ``samples_per_track`` detections spaced evenly across the
+        tracklet's time span.  Falls back to every detection when the gates
+        filter all of them out.
+
+        Args:
+            track: Tracklet to sample.
+
+        Returns:
+            Detections ordered by frame index.
+
+        """
+        eligible = [
+            d
+            for d in track
+            if d.score >= self.min_det_score
+            and max(float(d.bb_xywh[2]), float(d.bb_xywh[3])) >= self.min_bb_size
+        ]
+        if not eligible:
+            eligible = list(track)
+
+        eligible.sort(key=lambda d: d.frame_id)
+        if len(eligible) <= self.samples_per_track:
+            return eligible
+        idx = torch.linspace(0, len(eligible) - 1, self.samples_per_track).round().long()
+        return [eligible[int(i)] for i in idx]
+
+    def cluster(self) -> FaceClusterTracker:
+        """Cluster IoU tracklets into identity tracks by face-ID similarity.
+
+        Embeds every tracklet once, runs average-linkage agglomerative
+        clustering over the tracklet embeddings with a cosine-distance cut of
+        :attr:`distance_threshold`, then consolidates each cluster into a single
+        identity :class:`Track` with a clean sequential ``track_id``.  The
+        clustered tracks replace :attr:`tracks`.
+
+        Records the tracklet and identity counts in :attr:`n_tracklets` and
+        :attr:`n_identities` for later retrieval.
+
+        Returns:
+            Self (tracks updated in-place).
+
+        """
+        # Local import: scipy is a declared dependency but only needed here.
+        from scipy.cluster.hierarchy import fcluster, linkage
+
+        track_ids = list(self.tracks.keys())
+        self.n_tracklets = len(track_ids)
+        if len(track_ids) <= 1:
+            self.n_identities = len(track_ids)
+            return self
+
+        self._track_embeddings = {}
+        self._track_embed_counts = {}
+        for track_id in track_ids:
+            embedding = self._tracklet_embedding(self.tracks[track_id])
+            self._track_embeddings[track_id] = embedding
+            self._track_embed_counts[track_id] = 1
+
+        matrix = torch.stack([self._track_embeddings[tid] for tid in track_ids]).numpy()
+        linkage_matrix = linkage(matrix, method="average", metric="cosine")
+        labels = fcluster(linkage_matrix, t=self.distance_threshold, criterion="distance")
+
+        clusters: dict[int, list[int]] = {}
+        for track_id, label in zip(track_ids, labels):
+            clusters.setdefault(int(label), []).append(track_id)
+
+        clustered_tracks: dict[int, Track] = {}
+        for new_id, members in enumerate(clusters.values()):
+            merged = Track(track_id=new_id)
+            for member_id in members:
+                merged.merge(self.tracks[member_id])
+            clustered_tracks[new_id] = merged
+
+        self.tracks = clustered_tracks
+        self.n_identities = len(clustered_tracks)
+        self._selected_tracks = {}
+        self.new_track_id = len(clustered_tracks)
+        self._track_embeddings = {}
+        self._track_embed_counts = {}
+        return self
+
+    def select_protagonist(self) -> Track | None:
+        """Select the single dominant identity as the protagonist.
+
+        Scores each identity track by ``len(track) * bb_size`` — on-screen time
+        weighted by face size — and keeps the highest-scoring one.  The result
+        is stored in :attr:`_selected_tracks` and returned.
+
+        Returns:
+            The protagonist :class:`Track`, or ``None`` when there are no
+            tracks.
+
+        """
+        if not self.tracks:
+            return None
+
+        def _score(track: Track) -> float:
+            return len(track) * track.bb_size(extra_percent=0.0)
+
+        protagonist_id, protagonist = max(self.tracks.items(), key=lambda item: _score(item[1]))
+        self._selected_tracks = {protagonist_id: protagonist}
+        return protagonist
+
+    def run(
+        self,
+        detections: VideoDetections,
+        min_score: float = 0.7,
+    ) -> Track | None:
+        """Run the full pipeline and return the protagonist track.
+
+        Chains :meth:`label` → :meth:`cluster` → :meth:`select_protagonist`.
+        After the call, :attr:`n_tracklets` and :attr:`n_identities` hold the
+        track counts before and after identity clustering.
+
+        Example:
+            >>> protagonist = tracker.run(video_detections)
+            >>> tracker.n_tracklets, tracker.n_identities
+            (6, 4)
+
+        Args:
+            detections: Per-frame detection results (a video-detection object).
+            min_score: Minimum detection confidence for the IoU tracklet stage.
+
+        Returns:
+            The protagonist :class:`Track`, or ``None`` when no faces are
+            tracked.
+
+        """
+        self.label(
+            detections,
+            min_score=min_score,
+            max_lost=self.max_lost if self.max_lost != -1 else len(detections) + 1,
+            iou_threshold=self.iou_threshold,
+        )
+        self.cluster()
+        return self.select_protagonist()
+
+    def merge_rule(self, track_1: Track, track_2: Track) -> tuple[bool, Track, Track]:
+        """Pairwise embedding-similarity gate (for the base greedy merge).
+
+        Provided for API completeness so the inherited greedy :meth:`merge` can
+        be used as a fallback; :meth:`cluster` is the primary consolidation
+        path.  Two tracks merge when their embedding cosine similarity is at
+        least ``1 - distance_threshold``.
+
+        Args:
+            track_1: First track.
+            track_2: Second track.
+
+        Returns:
+            ``(should_merge, keep_track, drop_track)`` where the earlier track
+            is always kept.
+
+        """
+        no1, no2 = (track_1, track_2) if track_1.is_started_earlier(track_2) else (track_2, track_1)
+        self._ensure_track_embedding(no1)
+        self._ensure_track_embedding(no2)
+        sim = self._cosine_similarity(
+            self._track_embeddings[no1.track_id],
+            self._track_embeddings[no2.track_id],
+        )
+        return sim >= (1.0 - self.distance_threshold), no1, no2
 
 
 # ---------------------------------------------------------------------------

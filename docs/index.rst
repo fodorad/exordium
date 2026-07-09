@@ -31,12 +31,17 @@ Features
 - Iris landmarks — MediaPipe Iris 71 eye pts + 5 iris pts, EAR, iris diameters
 - Blink detection — BlinkDenseNet121 per-eye open/closed probability
 - Action units — OpenGraphAU 41-dim intensity vector
-- Deep visual features — Swin Transformer (768-d), FAb-Net (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384 / 768 / 1024 / 1536-d), EmotiEffNet (1280 / 1408-d)
-- IoU tracking — multi-face track assignment and merging across video frames
+- Deep visual features — Swin Transformer (768-d), AdaFace IResNet-18/50/101 (512-d identity embeddings), FAb-Net (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384 / 768 / 1024 / 1536-d), EmotiEffNet (1280 / 1408-d), MARLIN (384 / 768 / 1024-d, 16-frame clips)
+- Tracking — IoU-based multi-face tracker; face-ID tracker (AdaFace embeddings + IoU gating) with occlusion recovery and identity-aware merge
 
 **Text**
 
 - Whisper — speech-to-text transcription (OpenAI Whisper)
+- Word-level timestamps — Whisper ASR + forced alignment (torchaudio ``MMS_FA`` or whisperX), returns per-word ``(start, end, score)``
+- Forced alignment — align a known transcript to audio; interchangeable ``TorchaudioForcedAligner`` / ``WhisperxForcedAligner`` backends
+- Transcript re-alignment — dataset-agnostic fuzzy search (rapidfuzz) of a known transcript in the word stream to recover true segment ``(start, end)`` and a coverage score
+- Annotation checks — raw + Whisper-normalized (standard ``EnglishTextNormalizer``) WER / CER, rapidfuzz string similarity, and XLM-RoBERTa semantic cosine, with a heuristic ``is_acceptable`` verdict; standalone ``TranscriptEvaluator`` (two strings) or via the ``SpeechAlignmentPipeline`` facade
+- Segment validation — per-segment accept / recut / drop decisions with recovered start/end times
 - BERT — token-level and sentence-level embeddings (768-d)
 - RoBERTa — token-level and sentence-level embeddings (1024-d)
 - XML-RoBERTa — multilingual sentence embeddings (768-d)
@@ -72,7 +77,7 @@ Extras
    * - ``audio``
      - OpenSMILE, torchaudio — audio feature extraction
    * - ``text``
-     - transformers, torchaudio — text and speech models
+     - transformers, torchaudio, rapidfuzz, whisperX — text, speech, and alignment
    * - ``video``
      - MediaPipe, Ultralytics, blinklinmult, unigaze, timm — face & video models
    * - ``all``
@@ -94,7 +99,7 @@ downloaded automatically on first run.
    * - ``demo_video_io.ipynb``
      - Video loading, frame iteration, batch access, FPS resampling
    * - ``demo_video_deep.ipynb``
-     - Deep visual features: SwinT (768-d), FabNet (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384–1536-d), EmotiEffNet (1280/1408-d)
+     - Deep visual features: SwinT (768-d), AdaFace (512-d identity), FabNet (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384–1536-d), EmotiEffNet (1280/1408-d), MARLIN (384–1024-d, 16-frame clips)
    * - ``demo_video_face_bb.ipynb``
      - Face detection: YOLOv8 vs YOLO11 on easy and hard (extreme-pose) images
    * - ``demo_video_face_landmarks.ipynb``
@@ -110,11 +115,13 @@ downloaded automatically on first run.
    * - ``demo_video_face_action_units.ipynb``
      - Facial action units with OpenGraphAU — 41-dim AU intensity vector
    * - ``demo_video_tracking.ipynb``
-     - Multi-face IoU tracking across video frames with track merging
+     - Multi-face tracking: IoU tracker and face-ID tracker (AdaFace) with occlusion recovery
    * - ``demo_audio.ipynb``
      - Audio features: spectrogram, OpenSMILE, CLAP, Wav2Vec2, WavLM, emotion2vec+
    * - ``demo_text.ipynb``
      - Text features: Whisper transcription, BERT, RoBERTa, XML-RoBERTa
+   * - ``demo_text_alignment.ipynb``
+     - Word-level timestamps, transcript re-alignment, and annotation validation via ``SpeechAlignmentPipeline`` (torchaudio + whisperX backends)
 
 Development
 -----------

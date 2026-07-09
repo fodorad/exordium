@@ -9,7 +9,13 @@ import numpy as np
 import torch
 
 from exordium.video.deep.clip import _CLIP_MEAN, _CLIP_STD, _DEFAULT_CLIP_MODEL, ClipWrapper
-from tests.fixtures import IMAGE_EMMA, IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT, hf_repo_exists
+from tests.fixtures import (
+    IMAGE_EMMA,
+    IMAGE_FACE,
+    VIDEO_MULTISPEAKER_SHORT,
+    ModelTestCase,
+    hf_repo_exists,
+)
 
 
 class TestClipConstants(unittest.TestCase):
@@ -34,7 +40,7 @@ class TestClipConstants(unittest.TestCase):
             self.assertLess(v, 1.0)
 
 
-class TestClipWrapper(unittest.TestCase):
+class TestClipWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = ClipWrapper(device_id=None)

@@ -14,7 +14,7 @@ from exordium.video.face.landmark.iris import (
     calculate_iris_diameters,
     visualize_iris,
 )
-from tests.fixtures import hf_file_exists
+from tests.fixtures import ModelTestCase, hf_file_exists
 
 
 class TestIrisWeightAvailability(unittest.TestCase):
@@ -25,7 +25,7 @@ class TestIrisWeightAvailability(unittest.TestCase):
         )
 
 
-class TestIrisWrapper(unittest.TestCase):
+class TestIrisWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = IrisWrapper(device_id=None)

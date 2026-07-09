@@ -1,8 +1,10 @@
+from exordium.video.deep.adaface import AdaFaceWrapper
 from exordium.video.deep.base import VisualModelWrapper
 from exordium.video.deep.clip import ClipWrapper
 from exordium.video.deep.dinov2 import DINOv2Wrapper
 from exordium.video.deep.emotieffnet import EmotiEffNetWrapper
 from exordium.video.deep.fabnet import FabNetWrapper
+from exordium.video.deep.marlin import MarlinWrapper
 from exordium.video.deep.swint import (
     SwinTransformer,
     SwinTWrapper,
@@ -12,11 +14,13 @@ from exordium.video.deep.swint import (
 )
 
 __all__ = [
+    "AdaFaceWrapper",
     "VisualModelWrapper",
     "ClipWrapper",
     "DINOv2Wrapper",
     "EmotiEffNetWrapper",
     "FabNetWrapper",
+    "MarlinWrapper",
     "SwinTransformer",
     "SwinTWrapper",
     "swin_transformer_base",

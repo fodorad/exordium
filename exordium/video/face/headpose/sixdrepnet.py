@@ -35,6 +35,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 
+from exordium import WEIGHT_DIR
 from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD, VisualModelWrapper
 
 
@@ -542,8 +543,15 @@ class _RepVGG(nn.Module):  # pragma: no cover
 _G2_MAP = {layer: 2 for layer in [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26]}
 """Mapping of RepVGG layer indices to group count 2 for weight reparameterisation."""
 
-_WEIGHT_URL = "https://cloud.ovgu.de/s/Q67RnLDy6JKLRWm/download/6DRepNet_300W_LP_AFLW2000.pth"
-"""Download URL for the 6DRepNet pretrained weights (300W-LP + AFLW2000)."""
+_HF_REPO_ID = "osanseviero/6DRepNet_300W_LP_AFLW2000"
+"""HuggingFace Hub repo hosting the 6DRepNet pretrained weights (300W-LP + AFLW2000).
+
+The original author-hosted download link went offline; these are the same weights
+(strict ``load_state_dict`` match) mirrored on the Hub.
+"""
+
+_HF_FILENAME = "model.pth"
+"""Weights filename within :data:`_HF_REPO_ID`."""
 
 
 # ===========================================================================
@@ -594,8 +602,17 @@ class _SixDRepNetModel(nn.Module):  # pragma: no cover
 
     @classmethod
     def from_pretrained(cls, device: torch.device) -> _SixDRepNetModel:
+        from huggingface_hub import hf_hub_download
+
         model = cls(deploy=True)
-        state = torch.hub.load_state_dict_from_url(_WEIGHT_URL, map_location=device)
+        cache_dir = WEIGHT_DIR / "sixdrepnet"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        local_path = hf_hub_download(
+            repo_id=_HF_REPO_ID,
+            filename=_HF_FILENAME,
+            local_dir=str(cache_dir),
+        )
+        state = torch.load(local_path, map_location=device)
         model.load_state_dict(state)
         model.eval()
         model.to(device)

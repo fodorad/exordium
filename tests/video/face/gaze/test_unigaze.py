@@ -6,9 +6,10 @@ import numpy as np
 import torch
 
 from exordium.video.face.gaze.unigaze import UnigazeWrapper
+from tests.fixtures import ModelTestCase
 
 
-class TestUnigazeWrapper(unittest.TestCase):
+class TestUnigazeWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = UnigazeWrapper(device_id=None)
