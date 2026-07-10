@@ -3,7 +3,7 @@
 import unittest
 
 from exordium.text import whisperx_align
-from exordium.text.base import Word
+from exordium.text.base import Segment, Word
 from exordium.text.transcript_align import find_segment
 from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase
 
@@ -43,6 +43,21 @@ class TestWhisperxForcedAligner(ModelTestCase):
         )
         match = find_segment("what do you guys want to eat", words)
         self.assertIsNotNone(match)
+
+    def test_align_segments_returns_full_timeline_words(self):
+        # whisperX's native batched segment path (used for long recordings).
+        segments = [
+            Segment(text="hey guys", start=0.0, end=2.0),
+            Segment(text="what do you guys want to eat", start=2.0, end=6.0),
+        ]
+        words = self.aligner.align_segments(AUDIO_MULTISPEAKER, segments)
+        self.assertGreater(len(words), 2)
+        self.assertGreaterEqual(words[-1].start, 2.0)
+        starts = [w.start for w in words]
+        self.assertEqual(starts, sorted(starts))
+
+    def test_align_segments_empty_returns_empty(self):
+        self.assertEqual(self.aligner.align_segments(AUDIO_MULTISPEAKER, []), [])
 
 
 if __name__ == "__main__":

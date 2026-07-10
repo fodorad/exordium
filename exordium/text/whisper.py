@@ -1,6 +1,7 @@
 """Whisper speech-to-text model wrapper."""
 
 import logging
+import re
 from collections.abc import Iterator
 from pathlib import Path
 from threading import Thread
@@ -11,11 +12,20 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, TextIteratorStreamer
 
 from exordium.audio.io import load_audio
-from exordium.text.base import SpeechToText, StreamingMixin
+from exordium.text.base import (
+    WHISPER_WINDOW_SECONDS,
+    Segment,
+    SpeechToText,
+    StreamingMixin,
+    to_mono_16k,
+)
 from exordium.utils.device import get_torch_device
 
 logger = logging.getLogger(__name__)
 """Module-level logger."""
+
+_TIMESTAMP_TOKEN_RE = re.compile(r"<\|[\d.]+\|>")
+"""Matches Whisper timestamp tokens (e.g. ``<|12.34|>``) emitted during long-form decoding."""
 
 
 class WhisperWrapper(StreamingMixin, SpeechToText):
@@ -98,7 +108,8 @@ class WhisperWrapper(StreamingMixin, SpeechToText):
                 automatically). Defaults to 16000.
 
         Returns:
-            Dict with ``input_features`` on ``self.device``.
+            Dict with ``input_features`` on ``self.device``, plus an
+            ``attention_mask`` when the audio exceeds Whisper's 30 s window.
 
         """
         if isinstance(audio, (str, Path)):
@@ -109,12 +120,29 @@ class WhisperWrapper(StreamingMixin, SpeechToText):
         else:
             audio = np.asarray(audio).squeeze()
 
-        inputs = self.processor(
-            audio,
-            sampling_rate=sample_rate,
-            return_tensors="pt",
-        )
-        return {k: v.to(self.device, dtype=self.dtype) for k, v in inputs.items()}
+        # Whisper's encoder sees a fixed 30 s window. The feature extractor's
+        # defaults (truncation + pad to 30 s) would silently discard everything
+        # past 30 s, so longer audio must be kept whole and decoded long-form.
+        if audio.shape[-1] > int(WHISPER_WINDOW_SECONDS * sample_rate):
+            inputs = self.processor(
+                audio,
+                sampling_rate=sample_rate,
+                return_tensors="pt",
+                truncation=False,
+                padding="longest",
+                return_attention_mask=True,
+            )
+        else:
+            inputs = self.processor(audio, sampling_rate=sample_rate, return_tensors="pt")
+
+        # Only the float mel features take the model dtype; the attention mask
+        # must stay integral.
+        return {
+            key: value.to(self.device, dtype=self.dtype)
+            if value.is_floating_point()
+            else value.to(self.device)
+            for key, value in inputs.items()
+        }
 
     def inference(self, inputs: object, **kwargs: object) -> str:
         """Run greedy/beam-search decoding and return the full transcript.
@@ -128,17 +156,68 @@ class WhisperWrapper(StreamingMixin, SpeechToText):
 
         """
         inputs_dict = cast("dict[str, torch.Tensor]", inputs)
+        generate_kwargs = self._generate_kwargs(inputs_dict, **kwargs)
+
+        with torch.inference_mode():
+            token_ids = self.model.generate(**inputs_dict, **generate_kwargs)
+
+        return self.processor.batch_decode(token_ids, skip_special_tokens=True)[0].strip()
+
+    def _generate_kwargs(self, inputs: dict[str, torch.Tensor], **kwargs: object) -> dict:
+        """Build ``generate`` kwargs, enabling long-form decoding when needed."""
         language: str | None = cast("str | None", kwargs.get("language"))
         beam_size_obj = kwargs.get("beam_size", 5)
         beam_size: int = beam_size_obj if isinstance(beam_size_obj, int) else 5
         generate_kwargs: dict = {"num_beams": beam_size}
         if language is not None:
             generate_kwargs["language"] = language
+        # Long-form (>30 s) inputs carry an attention mask and require timestamps
+        # for Whisper's sequential chunk-by-chunk decoding.
+        if "attention_mask" in inputs:
+            generate_kwargs["return_timestamps"] = True
+        return generate_kwargs
+
+    def transcribe_segments(
+        self,
+        audio: Path | str | np.ndarray | torch.Tensor,
+        language: str | None = None,
+        beam_size: int = 5,
+        sample_rate: int = 16000,
+    ) -> list[Segment]:
+        """Transcribe audio into timestamped :class:`Segment` chunks.
+
+        Works for audio of any length: short clips decode in one pass, longer
+        recordings use Whisper's sequential long-form decoding. The segments are
+        what :meth:`~exordium.text.base.ForcedAligner.align_segments` consumes to
+        keep forced alignment bounded on long files.
+
+        Args:
+            audio: Audio file path, numpy array, or torch tensor.
+            language: Language code or ``None`` for auto-detection.
+            beam_size: Decoder beam width.
+            sample_rate: Sample rate of the input waveform (ignored for paths).
+
+        Returns:
+            Segments in chronological order; empty if nothing was transcribed.
+
+        """
+        inputs = self.preprocess(audio, sample_rate=sample_rate)
+        generate_kwargs = self._generate_kwargs(inputs, language=language, beam_size=beam_size)
+        generate_kwargs["return_timestamps"] = True
+        generate_kwargs["return_segments"] = True
 
         with torch.inference_mode():
-            token_ids = self.model.generate(**inputs_dict, **generate_kwargs)
+            outputs = self.model.generate(**inputs, **generate_kwargs)
 
-        return self.processor.batch_decode(token_ids, skip_special_tokens=True)[0].strip()
+        segments: list[Segment] = []
+        for raw in outputs["segments"][0]:
+            text = self.processor.batch_decode(
+                raw["tokens"].unsqueeze(0), skip_special_tokens=True
+            )[0].strip()
+            if not text:
+                continue
+            segments.append(Segment(text=text, start=float(raw["start"]), end=float(raw["end"])))
+        return segments
 
     def __call__(
         self,
@@ -185,8 +264,19 @@ class WhisperWrapper(StreamingMixin, SpeechToText):
             beam_size: Decoder beam width. Defaults to ``1`` for streaming.
             sample_rate: Sample rate of the input waveform (ignored for paths).
 
+        Audio longer than Whisper's 30 s window is streamed window by window:
+        ``TextIteratorStreamer`` only observes the first chunk of Whisper's
+        sequential long-form decoding, so streaming the whole file in one
+        ``generate`` call would silently stop after 30 s. Each window is decoded
+        short-form instead, which keeps the full transcript flowing. A word
+        spanning a window boundary may be split.
+
         Yields:
             Decoded text chunks (words or sub-word tokens) as strings.
+
+        Raises:
+            Exception: Whatever ``model.generate`` raised in the worker thread,
+                re-raised on the caller's thread once the stream drains.
 
         Example::
 
@@ -195,25 +285,55 @@ class WhisperWrapper(StreamingMixin, SpeechToText):
             print()  # newline after full transcript
 
         """
-        inputs = self.preprocess(audio, sample_rate=sample_rate)
+        if isinstance(audio, (str, Path)):
+            waveform, rate = to_mono_16k(audio)
+        else:
+            waveform, _ = to_mono_16k(audio)
+            rate = sample_rate
 
+        window = int(WHISPER_WINDOW_SECONDS * rate)
+        total = waveform.numel()
+        for start in range(0, total, window):
+            chunk = waveform[start : start + window]
+            if chunk.numel() < rate // 10:  # ignore <100 ms tail
+                continue
+            yield from self._stream_window(chunk, language, beam_size, rate)
+
+    def _stream_window(
+        self,
+        waveform: torch.Tensor,
+        language: str | None,
+        beam_size: int,
+        sample_rate: int,
+    ) -> Iterator[str]:
+        """Stream one ``<=30 s`` window, re-raising worker-thread failures."""
+        inputs = self.preprocess(waveform, sample_rate=sample_rate)
         streamer = TextIteratorStreamer(
             self.processor.tokenizer,
             skip_special_tokens=True,
             skip_prompt=True,
         )
+        generate_kwargs = self._generate_kwargs(inputs, language=language, beam_size=beam_size)
 
-        generate_kwargs: dict = {
-            **inputs,
-            "streamer": streamer,
-            "num_beams": beam_size,
-        }
-        if language is not None:
-            generate_kwargs["language"] = language
+        failure: list[BaseException] = []
 
-        thread = Thread(target=self.model.generate, kwargs=generate_kwargs, daemon=True)
+        def _generate() -> None:
+            try:
+                with torch.inference_mode():
+                    self.model.generate(**inputs, streamer=streamer, **generate_kwargs)
+            except BaseException as exc:  # noqa: BLE001 - surfaced to the caller below
+                failure.append(exc)
+                # Without this the consumer would block on the streamer forever.
+                streamer.end()
+
+        thread = Thread(target=_generate, daemon=True)
         thread.start()
 
-        yield from streamer
+        for chunk in streamer:
+            text = _TIMESTAMP_TOKEN_RE.sub("", chunk)
+            if text:
+                yield text
 
         thread.join()
+        if failure:
+            raise failure[0]

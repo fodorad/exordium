@@ -207,5 +207,10 @@ class WhisperWordTimestamper(WordTimestamper):
             Words in chronological order with ``start``/``end``/``score``.
 
         """
-        transcript = self.whisper(audio, language=language)
-        return self.aligner.align(audio, transcript, language=language)
+        # Segment-wise ASR + alignment: correct for clips of any length. Whisper
+        # decodes long-form (>30 s) instead of silently cropping, and each
+        # segment is aligned on its own slice so long files stay memory-bounded.
+        segments = self.whisper.transcribe_segments(audio, language=language)
+        if not segments:
+            return []
+        return self.aligner.align_segments(audio, segments, language=language)

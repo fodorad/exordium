@@ -16,9 +16,11 @@ segment transcripts, so the same code adapts to CMU-MOSEI, MOSI, or any future
 corpus.
 """
 
+import bisect
 import logging
 import re
 import unicodedata
+from dataclasses import dataclass
 
 from rapidfuzz import fuzz
 
@@ -74,13 +76,72 @@ def find_segment(
         A :class:`SegmentMatch` on the audio timeline, or ``None``.
 
     """
-    query = normalize_token(query_text)
-    if not query or not words:
-        return None
+    return _search(normalize_token(query_text), build_word_index(words), words, score_cutoff)
 
-    # Build the searchable haystack, tracking each char range back to its word.
+
+def find_segments(
+    query_texts: list[str],
+    words: list[Word],
+    *,
+    score_cutoff: float = 80.0,
+) -> list[SegmentMatch | None]:
+    """Locate many segment transcripts in one shared *words* stream.
+
+    The normalized haystack is built **once** and reused for every query, so a
+    long recording searched for many segments costs ``O(N + Q·search)`` rather
+    than re-normalizing all ``N`` words for each of the ``Q`` queries.
+
+    Args:
+        query_texts: Known transcripts, e.g. one per dataset segment.
+        words: Shared timed word stream (one full-video ASR pass).
+        score_cutoff: Minimum score to accept each match.
+
+    Returns:
+        One result per query, in order; ``None`` where a segment is
+        unrecoverable.
+
+    """
+    index = build_word_index(words)
+    return [_search(normalize_token(q), index, words, score_cutoff) for q in query_texts]
+
+
+@dataclass(frozen=True)
+class WordIndex:
+    """Precomputed search structure over a timed word stream.
+
+    Built once by :func:`build_word_index` and reused across queries.
+
+    Attributes:
+        haystack: The normalized words joined by single spaces.
+        starts: Character offset where each indexed word begins in ``haystack``.
+        ends: Character offset just past each indexed word.
+        word_ids: Index into the original ``words`` list for each entry.
+
+    """
+
+    haystack: str
+    starts: list[int]
+    ends: list[int]
+    word_ids: list[int]
+
+
+def build_word_index(words: list[Word]) -> WordIndex:
+    """Normalize *words* once into a reusable :class:`WordIndex`.
+
+    Words that normalize to nothing (pure punctuation) are skipped, while
+    ``word_ids`` keeps the mapping back to their original positions.
+
+    Args:
+        words: Timed word stream.
+
+    Returns:
+        The searchable index (possibly empty).
+
+    """
     pieces: list[str] = []
-    char_to_word: list[tuple[int, int, int]] = []  # (char_start, char_end, word_idx)
+    starts: list[int] = []
+    ends: list[int] = []
+    word_ids: list[int] = []
     cursor = 0
     for idx, word in enumerate(words):
         norm = normalize_token(word.text)
@@ -89,20 +150,28 @@ def find_segment(
         if pieces:
             cursor += 1  # the joining space
         pieces.append(norm)
-        char_to_word.append((cursor, cursor + len(norm), idx))
+        starts.append(cursor)
+        ends.append(cursor + len(norm))
+        word_ids.append(idx)
         cursor += len(norm)
+    return WordIndex(haystack=" ".join(pieces), starts=starts, ends=ends, word_ids=word_ids)
 
-    if not pieces:
+
+def _search(
+    query: str,
+    index: WordIndex,
+    words: list[Word],
+    score_cutoff: float,
+) -> SegmentMatch | None:
+    """Fuzzy-match a normalized *query* against a prebuilt *index*."""
+    if not query or not index.haystack:
         return None
-    haystack = " ".join(pieces)
 
-    alignment = fuzz.partial_ratio_alignment(query, haystack, score_cutoff=score_cutoff)
+    alignment = fuzz.partial_ratio_alignment(query, index.haystack, score_cutoff=score_cutoff)
     if alignment is None:
         return None
 
-    first_idx, last_idx = _span_to_word_indices(
-        alignment.dest_start, alignment.dest_end, char_to_word
-    )
+    first_idx, last_idx = _span_to_word_indices(alignment.dest_start, alignment.dest_end, index)
     if first_idx is None or last_idx is None:
         return None
 
@@ -117,39 +186,19 @@ def find_segment(
     )
 
 
-def find_segments(
-    query_texts: list[str],
-    words: list[Word],
-    *,
-    score_cutoff: float = 80.0,
-) -> list[SegmentMatch | None]:
-    """Batch-apply :func:`find_segment` to many segment transcripts.
-
-    Args:
-        query_texts: Known transcripts, e.g. one per dataset segment.
-        words: Shared timed word stream (one full-video ASR pass).
-        score_cutoff: Minimum score to accept each match.
-
-    Returns:
-        One result per query, in order; ``None`` where a segment is
-        unrecoverable.
-
-    """
-    return [find_segment(q, words, score_cutoff=score_cutoff) for q in query_texts]
-
-
 def _span_to_word_indices(
     char_start: int,
     char_end: int,
-    char_to_word: list[tuple[int, int, int]],
+    index: WordIndex,
 ) -> tuple[int | None, int | None]:
-    """Map a matched ``[char_start, char_end)`` haystack range to word indices."""
-    first_idx: int | None = None
-    last_idx: int | None = None
-    for c_start, c_end, word_idx in char_to_word:
-        # Overlap between the word's char span and the matched range.
-        if c_end > char_start and c_start < char_end:
-            if first_idx is None:
-                first_idx = word_idx
-            last_idx = word_idx
-    return first_idx, last_idx
+    """Map a matched ``[char_start, char_end)`` haystack range to word indices.
+
+    Word char spans are sorted and non-overlapping, so the first/last overlapping
+    entries are found by binary search instead of scanning every word.
+    """
+    # First entry whose end is past char_start; last entry whose start precedes char_end.
+    first = bisect.bisect_right(index.ends, char_start)
+    last = bisect.bisect_left(index.starts, char_end) - 1
+    if first > last or first >= len(index.word_ids) or last < 0:
+        return None, None
+    return index.word_ids[first], index.word_ids[last]
