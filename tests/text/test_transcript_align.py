@@ -3,7 +3,12 @@
 import unittest
 
 from exordium.text.base import SegmentMatch, Word
-from exordium.text.transcript_align import find_segment, find_segments, normalize_token
+from exordium.text.transcript_align import (
+    build_word_index,
+    find_segment,
+    find_segments,
+    normalize_token,
+)
 
 
 def _stream(sentence: str, step: float = 1.0, dur: float = 0.5) -> list[Word]:
@@ -76,6 +81,27 @@ class TestFindSegment(unittest.TestCase):
         assert m is not None
         self.assertEqual(m.word_start_idx, 0)
         self.assertEqual(m.word_end_idx, 2)
+
+
+class TestWordIndex(unittest.TestCase):
+    def test_skips_punctuation_only_words_but_keeps_original_ids(self):
+        words = _stream("hello , world")
+        index = build_word_index(words)
+        self.assertEqual(index.haystack, "hello world")
+        self.assertEqual(index.word_ids, [0, 2])  # index 1 normalized to nothing
+
+    def test_empty_stream_yields_empty_index(self):
+        index = build_word_index([])
+        self.assertEqual(index.haystack, "")
+        self.assertEqual(index.word_ids, [])
+
+    def test_batch_matches_per_query_results(self):
+        # The shared-index batch path must agree with the one-shot path.
+        words = _stream("hey guys what do you want to eat for lunch today")
+        queries = ["what do you want to eat", "for lunch today", "not spoken at all"]
+        batched = find_segments(queries, words)
+        one_by_one = [find_segment(q, words) for q in queries]
+        self.assertEqual(batched, one_by_one)
 
 
 class TestFindSegments(unittest.TestCase):

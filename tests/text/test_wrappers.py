@@ -97,16 +97,67 @@ class TestXmlRobertaWrapper(ModelTestCase):
 
 
 class TestWhisperWrapper(ModelTestCase):
+    """The multispeaker fixture is ~61 s — i.e. longer than Whisper's 30 s window."""
+
     @classmethod
     def setUpClass(cls):
+        from exordium.audio.io import load_audio
         from exordium.text.whisper import WhisperWrapper
 
         cls.model = WhisperWrapper(device_id=None)
+        wave, sr = load_audio(AUDIO_MULTISPEAKER, target_sample_rate=16000)
+        cls.waveform = wave
+        cls.sample_rate = sr
 
     def test_transcribe_from_path(self):
         out = self.model(AUDIO_MULTISPEAKER)
         self.assertIsInstance(out, str)
         self.assertGreater(len(out), 0)
+
+    def test_preprocess_short_audio_uses_padded_30s_window(self):
+        short = self.waveform[..., : 10 * self.sample_rate]
+        inputs = self.model.preprocess(short)
+        self.assertEqual(inputs["input_features"].shape[-1], 3000)
+        self.assertNotIn("attention_mask", inputs)
+
+    def test_preprocess_long_audio_is_not_truncated(self):
+        # Regression: the feature extractor's defaults cropped audio to 30 s.
+        inputs = self.model.preprocess(AUDIO_MULTISPEAKER)
+        self.assertGreater(inputs["input_features"].shape[-1], 3000)
+        self.assertIn("attention_mask", inputs)
+        self.assertFalse(inputs["attention_mask"].is_floating_point())
+
+    def test_transcribe_long_audio_decodes_past_30s(self):
+        # A 30 s-truncated decode yields ~138 words; the full 61 s yields ~250+.
+        text = self.model(AUDIO_MULTISPEAKER, beam_size=1)
+        self.assertGreater(len(text.split()), 180)
+
+    def test_transcribe_segments_cover_the_full_audio(self):
+        segments = self.model.transcribe_segments(AUDIO_MULTISPEAKER, beam_size=1)
+        self.assertGreater(len(segments), 1)
+        self.assertGreater(segments[-1].end, 45.0)
+        starts = [s.start for s in segments]
+        self.assertEqual(starts, sorted(starts))
+        self.assertTrue(all(s.text.strip() for s in segments))
+
+    def test_transcribe_segments_short_audio(self):
+        short = self.waveform[..., : 10 * self.sample_rate]
+        segments = self.model.transcribe_segments(short, beam_size=1)
+        self.assertGreater(len(segments), 0)
+
+    def test_stream_short_audio(self):
+        short = self.waveform[..., : 10 * self.sample_rate]
+        text = "".join(self.model.stream(short, beam_size=1))
+        self.assertGreater(len(text.split()), 5)
+        self.assertNotIn("<|", text)  # no timestamp tokens leak through
+
+    def test_stream_long_audio_covers_the_whole_file(self):
+        # Regression: streaming a >30 s file first hung forever (the worker
+        # thread raised and the streamer never ended), then silently stopped
+        # after 30 s because the streamer only sees long-form's first chunk.
+        text = "".join(self.model.stream(AUDIO_MULTISPEAKER, beam_size=1))
+        self.assertGreater(len(text.split()), 180)
+        self.assertNotIn("<|", text)
 
 
 class TestTextWeightAvailability(unittest.TestCase):

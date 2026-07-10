@@ -27,7 +27,7 @@ import numpy as np
 import torch
 
 from exordium.audio.io import load_audio
-from exordium.text.base import ForcedAligner, Word
+from exordium.text.base import ForcedAligner, Segment, Word
 from exordium.utils.device import get_torch_device
 
 logger = logging.getLogger(__name__)
@@ -94,17 +94,56 @@ class WhisperxForcedAligner(ForcedAligner):
             Words in chronological order. Empty if *transcript* is blank.
 
         """
-        if language is not None and language != self.language:
-            logger.warning(
-                f"Requested language {language!r} != model language {self.language!r}; "
-                "reload WhisperxForcedAligner with the desired language."
-            )
+        self._warn_language(language)
         if not transcript.strip():
             return []
 
         waveform, sr = self._to_array(audio)
         duration = len(waveform) / sr
-        segments = [{"text": transcript, "start": 0.0, "end": duration}]
+        return self._run([{"text": transcript, "start": 0.0, "end": duration}], waveform)
+
+    def align_segments(
+        self,
+        audio: Path | str | np.ndarray | torch.Tensor,
+        segments: list[Segment],
+        language: str | None = None,
+    ) -> list[Word]:
+        """Align all *segments* in one whisperX call (native batched path).
+
+        whisperX slices the audio per segment internally and returns word times
+        already on the full-audio timeline, so long recordings stay bounded
+        without the per-segment Python loop of the base implementation.
+
+        Args:
+            audio: Full audio — file path, numpy array, or torch tensor.
+            segments: Timestamped transcript segments covering the audio.
+            language: Optional language code (must match the loaded model).
+
+        Returns:
+            Words in chronological order on the full-audio timeline.
+
+        """
+        self._warn_language(language)
+        payload = [
+            {"text": s.text, "start": float(s.start), "end": float(s.end)}
+            for s in segments
+            if s.text.strip()
+        ]
+        if not payload:
+            return []
+        waveform, _ = self._to_array(audio)
+        return self._run(payload, waveform)
+
+    def _warn_language(self, language: str | None) -> None:
+        """Log when a caller asks for a language the loaded model was not built for."""
+        if language is not None and language != self.language:
+            logger.warning(
+                f"Requested language {language!r} != model language {self.language!r}; "
+                "reload WhisperxForcedAligner with the desired language."
+            )
+
+    def _run(self, segments: list[dict], waveform: np.ndarray) -> list[Word]:
+        """Run whisperX alignment over *segments* and convert to :class:`Word`."""
         result = whisperx.align(
             segments,
             self.model,

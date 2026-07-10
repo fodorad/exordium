@@ -21,7 +21,7 @@ from rapidfuzz import fuzz
 from rapidfuzz.distance import Levenshtein
 
 from exordium.text.base import SegmentMatch, Word
-from exordium.text.transcript_align import find_segment, normalize_token
+from exordium.text.transcript_align import find_segment, find_segments, normalize_token
 
 logger = logging.getLogger(__name__)
 """Module-level logger."""
@@ -386,6 +386,17 @@ def validate_segment(
 
     """
     match = find_segment(text, words, score_cutoff=score_cutoff)
+    return _decide(text, annotated_start, annotated_end, match, tolerance)
+
+
+def _decide(
+    text: str,
+    annotated_start: float,
+    annotated_end: float,
+    match: SegmentMatch | None,
+    tolerance: float,
+) -> SegmentValidation:
+    """Turn a (possibly missing) fuzzy match into an accept/recut/drop decision."""
     if match is None:
         return SegmentValidation(
             text=text,
@@ -426,6 +437,9 @@ def validate_segments(
 ) -> list[SegmentValidation]:
     """Batch-validate ``(text, start, end)`` segments against one word stream.
 
+    The word stream is normalized once and reused for every segment, so long
+    recordings with many annotations stay cheap.
+
     Args:
         segments: Annotated segments as ``(text, start_sec, end_sec)`` tuples.
         words: Shared timed word stream for the full audio.
@@ -436,7 +450,8 @@ def validate_segments(
         One :class:`SegmentValidation` per input segment, in order.
 
     """
+    matches = find_segments([text for text, _, _ in segments], words, score_cutoff=score_cutoff)
     return [
-        validate_segment(text, words, start, end, score_cutoff=score_cutoff, tolerance=tolerance)
-        for text, start, end in segments
+        _decide(text, start, end, match, tolerance)
+        for (text, start, end), match in zip(segments, matches, strict=True)
     ]
