@@ -9,11 +9,20 @@ exordium.text.base
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.text.base.WHISPER_WINDOW_SECONDS
+
+
 Classes
 -------
 
 .. autoapisummary::
 
+   exordium.text.base.Segment
    exordium.text.base.Word
    exordium.text.base.SegmentMatch
    exordium.text.base.TextModelWrapper
@@ -23,8 +32,54 @@ Classes
    exordium.text.base.WordTimestamper
 
 
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.text.base.to_mono_16k
+
+
 Module Contents
 ---------------
+
+.. py:data:: WHISPER_WINDOW_SECONDS
+   :value: 30.0
+
+
+   Length of Whisper's fixed receptive field; audio longer than this needs long-form decoding.
+
+.. py:class:: Segment
+
+   An utterance-level chunk of a transcript with its time span.
+
+   Produced by :meth:`~exordium.text.whisper.WhisperWrapper.transcribe_segments`
+   and consumed by :meth:`ForcedAligner.align_segments`, which aligns each
+   segment independently. Chunking this way keeps forced alignment bounded for
+   long recordings (a 16-minute waveform never enters a single forward pass).
+
+   .. attribute:: text
+
+      The segment's transcribed text.
+
+   .. attribute:: start
+
+      Segment start in seconds from the beginning of the audio.
+
+   .. attribute:: end
+
+      Segment end in seconds from the beginning of the audio.
+
+
+.. py:function:: to_mono_16k(audio: Path | str | np.ndarray | torch.Tensor) -> tuple[torch.Tensor, int]
+
+   Return *audio* as a 1-D float32 waveform at 16 kHz plus its sample rate.
+
+   :param audio: File path, numpy array, or torch tensor (arrays/tensors are
+                 assumed to already be 16 kHz mono).
+
+   :returns: Tuple of ``(waveform_1d, sample_rate)``.
+
 
 .. py:class:: Word
 
@@ -293,6 +348,24 @@ Module Contents
       :param language: Language code (e.g. ``"en"``) or ``None`` for the default.
 
       :returns: Words in chronological order with ``start``/``end``/``score``.
+
+
+
+   .. py:method:: align_segments(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, segments: list[Segment], language: str | None = None) -> list[Word]
+
+      Align each segment separately and return one merged word stream.
+
+      Aligning per segment keeps every forward pass short, so recordings of any
+      length work without exhausting memory. Word times are shifted back onto
+      the full-audio timeline by each segment's ``start``.
+
+      Backends with a native batched segment API (e.g. whisperX) override this.
+
+      :param audio: Full audio — file path, numpy array, or torch tensor.
+      :param segments: Timestamped transcript segments covering the audio.
+      :param language: Language code or ``None`` for the default.
+
+      :returns: Words in chronological order on the full-audio timeline.
 
 
 

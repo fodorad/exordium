@@ -353,6 +353,18 @@ corpus.</p>
 </table>
 </div>
 </section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.transcript_align.WordIndex" title="exordium.text.transcript_align.WordIndex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WordIndex</span></code></a></p></td>
+<td><p>Precomputed search structure over a timed word stream.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
 <div class="table-wrapper autosummary longtable docutils container">
@@ -365,7 +377,10 @@ corpus.</p>
 <td><p>Fuzzy-search <em>query_text</em> inside a timed <em>words</em> stream.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.transcript_align.find_segments" title="exordium.text.transcript_align.find_segments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_segments</span></code></a>(...)</p></td>
-<td><p>Batch-apply <a class="reference internal" href="#exordium.text.transcript_align.find_segment" title="exordium.text.transcript_align.find_segment"><code class="xref py py-func docutils literal notranslate"><span class="pre">find_segment()</span></code></a> to many segment transcripts.</p></td>
+<td><p>Locate many segment transcripts in one shared <em>words</em> stream.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.transcript_align.build_word_index" title="exordium.text.transcript_align.build_word_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_word_index</span></code></a>(→ WordIndex)</p></td>
+<td><p>Normalize <em>words</em> once into a reusable <a class="reference internal" href="#exordium.text.transcript_align.WordIndex" title="exordium.text.transcript_align.WordIndex"><code class="xref py py-class docutils literal notranslate"><span class="pre">WordIndex</span></code></a>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -423,7 +438,10 @@ Below this the segment is considered unrecoverable (<code class="docutils litera
 <dl class="py function">
 <dt class="sig sig-object py" id="exordium.text.transcript_align.find_segments">
 <span class="sig-prename descclassname"><span class="pre">exordium.text.transcript_align.</span></span><span class="sig-name descname"><span class="pre">find_segments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query_texts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">words</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../base/index.html#exordium.text.base.Word" title="exordium.text.base.Word"><span class="pre">exordium.text.base.Word</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_cutoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">80.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../base/index.html#exordium.text.base.SegmentMatch" title="exordium.text.base.SegmentMatch"><span class="pre">exordium.text.base.SegmentMatch</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#exordium.text.transcript_align.find_segments" title="Link to this definition">¶</a></dt>
-<dd><p>Batch-apply <a class="reference internal" href="#exordium.text.transcript_align.find_segment" title="exordium.text.transcript_align.find_segment"><code class="xref py py-func docutils literal notranslate"><span class="pre">find_segment()</span></code></a> to many segment transcripts.</p>
+<dd><p>Locate many segment transcripts in one shared <em>words</em> stream.</p>
+<p>The normalized haystack is built <strong>once</strong> and reused for every query, so a
+long recording searched for many segments costs <code class="docutils literal notranslate"><span class="pre">O(N</span> <span class="pre">+</span> <span class="pre">Q·search)</span></code> rather
+than re-normalizing all <code class="docutils literal notranslate"><span class="pre">N</span></code> words for each of the <code class="docutils literal notranslate"><span class="pre">Q</span></code> queries.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -435,6 +453,53 @@ Below this the segment is considered unrecoverable (<code class="docutils litera
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>One result per query, in order; <code class="docutils literal notranslate"><span class="pre">None</span></code> where a segment is
 unrecoverable.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="exordium.text.transcript_align.WordIndex">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.transcript_align.</span></span><span class="sig-name descname"><span class="pre">WordIndex</span></span><a class="headerlink" href="#exordium.text.transcript_align.WordIndex" title="Link to this definition">¶</a></dt>
+<dd><p>Precomputed search structure over a timed word stream.</p>
+<p>Built once by <a class="reference internal" href="#exordium.text.transcript_align.build_word_index" title="exordium.text.transcript_align.build_word_index"><code class="xref py py-func docutils literal notranslate"><span class="pre">build_word_index()</span></code></a> and reused across queries.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.transcript_align.WordIndex.haystack">
+<span class="sig-name descname"><span class="pre">haystack</span></span><a class="headerlink" href="#exordium.text.transcript_align.WordIndex.haystack" title="Link to this definition">¶</a></dt>
+<dd><p>The normalized words joined by single spaces.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.transcript_align.WordIndex.starts">
+<span class="sig-name descname"><span class="pre">starts</span></span><a class="headerlink" href="#exordium.text.transcript_align.WordIndex.starts" title="Link to this definition">¶</a></dt>
+<dd><p>Character offset where each indexed word begins in <code class="docutils literal notranslate"><span class="pre">haystack</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.transcript_align.WordIndex.ends">
+<span class="sig-name descname"><span class="pre">ends</span></span><a class="headerlink" href="#exordium.text.transcript_align.WordIndex.ends" title="Link to this definition">¶</a></dt>
+<dd><p>Character offset just past each indexed word.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.transcript_align.WordIndex.word_ids">
+<span class="sig-name descname"><span class="pre">word_ids</span></span><a class="headerlink" href="#exordium.text.transcript_align.WordIndex.word_ids" title="Link to this definition">¶</a></dt>
+<dd><p>Index into the original <code class="docutils literal notranslate"><span class="pre">words</span></code> list for each entry.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.text.transcript_align.build_word_index">
+<span class="sig-prename descclassname"><span class="pre">exordium.text.transcript_align.</span></span><span class="sig-name descname"><span class="pre">build_word_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">words</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../base/index.html#exordium.text.base.Word" title="exordium.text.base.Word"><span class="pre">exordium.text.base.Word</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#exordium.text.transcript_align.WordIndex" title="exordium.text.transcript_align.WordIndex"><span class="pre">WordIndex</span></a></span></span><a class="headerlink" href="#exordium.text.transcript_align.build_word_index" title="Link to this definition">¶</a></dt>
+<dd><p>Normalize <em>words</em> once into a reusable <a class="reference internal" href="#exordium.text.transcript_align.WordIndex" title="exordium.text.transcript_align.WordIndex"><code class="xref py py-class docutils literal notranslate"><span class="pre">WordIndex</span></code></a>.</p>
+<p>Words that normalize to nothing (pure punctuation) are skipped, while
+<code class="docutils literal notranslate"><span class="pre">word_ids</span></code> keeps the mapping back to their original positions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>words</strong> – Timed word stream.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The searchable index (possibly empty).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -499,12 +564,21 @@ unrecoverable.</p>
             <ul>
 <li><a class="reference internal" href="#">exordium.text.transcript_align</a><ul>
 <li><a class="reference internal" href="#attributes">Attributes</a></li>
+<li><a class="reference internal" href="#classes">Classes</a></li>
 <li><a class="reference internal" href="#functions">Functions</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li><a class="reference internal" href="#exordium.text.transcript_align.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.transcript_align.normalize_token"><code class="docutils literal notranslate"><span class="pre">normalize_token()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.transcript_align.find_segment"><code class="docutils literal notranslate"><span class="pre">find_segment()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.transcript_align.find_segments"><code class="docutils literal notranslate"><span class="pre">find_segments()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.transcript_align.WordIndex"><code class="docutils literal notranslate"><span class="pre">WordIndex</span></code></a><ul>
+<li><a class="reference internal" href="#exordium.text.transcript_align.WordIndex.haystack"><code class="docutils literal notranslate"><span class="pre">WordIndex.haystack</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.transcript_align.WordIndex.starts"><code class="docutils literal notranslate"><span class="pre">WordIndex.starts</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.transcript_align.WordIndex.ends"><code class="docutils literal notranslate"><span class="pre">WordIndex.ends</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.transcript_align.WordIndex.word_ids"><code class="docutils literal notranslate"><span class="pre">WordIndex.word_ids</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exordium.text.transcript_align.build_word_index"><code class="docutils literal notranslate"><span class="pre">build_word_index()</span></code></a></li>
 </ul>
 </li>
 </ul>

@@ -32,6 +32,14 @@ Attributes
    exordium.text.transcript_align.logger
 
 
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.text.transcript_align.WordIndex
+
+
 Functions
 ---------
 
@@ -40,6 +48,7 @@ Functions
    exordium.text.transcript_align.normalize_token
    exordium.text.transcript_align.find_segment
    exordium.text.transcript_align.find_segments
+   exordium.text.transcript_align.build_word_index
 
 
 Module Contents
@@ -82,7 +91,11 @@ Module Contents
 
 .. py:function:: find_segments(query_texts: list[str], words: list[exordium.text.base.Word], *, score_cutoff: float = 80.0) -> list[exordium.text.base.SegmentMatch | None]
 
-   Batch-apply :func:`find_segment` to many segment transcripts.
+   Locate many segment transcripts in one shared *words* stream.
+
+   The normalized haystack is built **once** and reused for every query, so a
+   long recording searched for many segments costs ``O(N + Q·search)`` rather
+   than re-normalizing all ``N`` words for each of the ``Q`` queries.
 
    :param query_texts: Known transcripts, e.g. one per dataset segment.
    :param words: Shared timed word stream (one full-video ASR pass).
@@ -90,5 +103,40 @@ Module Contents
 
    :returns: One result per query, in order; ``None`` where a segment is
              unrecoverable.
+
+
+.. py:class:: WordIndex
+
+   Precomputed search structure over a timed word stream.
+
+   Built once by :func:`build_word_index` and reused across queries.
+
+   .. attribute:: haystack
+
+      The normalized words joined by single spaces.
+
+   .. attribute:: starts
+
+      Character offset where each indexed word begins in ``haystack``.
+
+   .. attribute:: ends
+
+      Character offset just past each indexed word.
+
+   .. attribute:: word_ids
+
+      Index into the original ``words`` list for each entry.
+
+
+.. py:function:: build_word_index(words: list[exordium.text.base.Word]) -> WordIndex
+
+   Normalize *words* once into a reusable :class:`WordIndex`.
+
+   Words that normalize to nothing (pure punctuation) are skipped, while
+   ``word_ids`` keeps the mapping back to their original positions.
+
+   :param words: Timed word stream.
+
+   :returns: The searchable index (possibly empty).
 
 

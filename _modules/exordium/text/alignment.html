@@ -542,8 +542,13 @@
 <span class="sd">            Words in chronological order with ``start``/``end``/``score``.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">transcript</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">whisper</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="n">language</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aligner</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">transcript</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="n">language</span><span class="p">)</span></div>
+        <span class="c1"># Segment-wise ASR + alignment: correct for clips of any length. Whisper</span>
+        <span class="c1"># decodes long-form (&gt;30 s) instead of silently cropping, and each</span>
+        <span class="c1"># segment is aligned on its own slice so long files stay memory-bounded.</span>
+        <span class="n">segments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">whisper</span><span class="o">.</span><span class="n">transcribe_segments</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="n">language</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">segments</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aligner</span><span class="o">.</span><span class="n">align_segments</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">segments</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="n">language</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

@@ -333,6 +333,57 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_torch_device</span>
 
+<span class="n">WHISPER_WINDOW_SECONDS</span> <span class="o">=</span> <span class="mf">30.0</span>
+<span class="sd">&quot;&quot;&quot;Length of Whisper&#39;s fixed receptive field; audio longer than this needs long-form decoding.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="Segment">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.Segment">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Segment</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An utterance-level chunk of a transcript with its time span.</span>
+
+<span class="sd">    Produced by :meth:`~exordium.text.whisper.WhisperWrapper.transcribe_segments`</span>
+<span class="sd">    and consumed by :meth:`ForcedAligner.align_segments`, which aligns each</span>
+<span class="sd">    segment independently. Chunking this way keeps forced alignment bounded for</span>
+<span class="sd">    long recordings (a 16-minute waveform never enters a single forward pass).</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        text: The segment&#39;s transcribed text.</span>
+<span class="sd">        start: Segment start in seconds from the beginning of the audio.</span>
+<span class="sd">        end: Segment end in seconds from the beginning of the audio.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">start</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">end</span><span class="p">:</span> <span class="nb">float</span></div>
+
+
+
+<div class="viewcode-block" id="to_mono_16k">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.to_mono_16k">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_mono_16k</span><span class="p">(</span><span class="n">audio</span><span class="p">:</span> <span class="s2">&quot;Path | str | np.ndarray | torch.Tensor&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return *audio* as a 1-D float32 waveform at 16 kHz plus its sample rate.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        audio: File path, numpy array, or torch tensor (arrays/tensors are</span>
+<span class="sd">            assumed to already be 16 kHz mono).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of ``(waveform_1d, sample_rate)``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.audio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_audio</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
+        <span class="n">waveform</span><span class="p">,</span> <span class="n">sample_rate</span> <span class="o">=</span> <span class="n">load_audio</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">target_sample_rate</span><span class="o">=</span><span class="mi">16000</span><span class="p">,</span> <span class="n">mono</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">waveform</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">sample_rate</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">audio</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="mi">16000</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="mi">16000</span></div>
+
+
 
 <div class="viewcode-block" id="Word">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.Word">[docs]</a>
@@ -695,6 +746,52 @@
 <span class="sd">            Words in chronological order with ``start``/``end``/``score``.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="ForcedAligner.align_segments">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.ForcedAligner.align_segments">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">align_segments</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">audio</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">segments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">],</span>
+        <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align each segment separately and return one merged word stream.</span>
+
+<span class="sd">        Aligning per segment keeps every forward pass short, so recordings of any</span>
+<span class="sd">        length work without exhausting memory. Word times are shifted back onto</span>
+<span class="sd">        the full-audio timeline by each segment&#39;s ``start``.</span>
+
+<span class="sd">        Backends with a native batched segment API (e.g. whisperX) override this.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            audio: Full audio — file path, numpy array, or torch tensor.</span>
+<span class="sd">            segments: Timestamped transcript segments covering the audio.</span>
+<span class="sd">            language: Language code or ``None`` for the default.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Words in chronological order on the full-audio timeline.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">waveform</span><span class="p">,</span> <span class="n">sample_rate</span> <span class="o">=</span> <span class="n">to_mono_16k</span><span class="p">(</span><span class="n">audio</span><span class="p">)</span>
+        <span class="n">words</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">segments</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">segment</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">segment</span><span class="o">.</span><span class="n">start</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">))</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">waveform</span><span class="o">.</span><span class="n">numel</span><span class="p">(),</span> <span class="nb">int</span><span class="p">(</span><span class="n">segment</span><span class="o">.</span><span class="n">end</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">sample_rate</span> <span class="o">//</span> <span class="mi">100</span><span class="p">:</span>  <span class="c1"># skip &lt;10 ms slivers</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">waveform</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">],</span> <span class="n">segment</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="n">language</span><span class="p">):</span>
+                <span class="n">words</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">Word</span><span class="p">(</span>
+                        <span class="n">text</span><span class="o">=</span><span class="n">word</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+                        <span class="n">start</span><span class="o">=</span><span class="n">word</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">segment</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+                        <span class="n">end</span><span class="o">=</span><span class="n">word</span><span class="o">.</span><span class="n">end</span> <span class="o">+</span> <span class="n">segment</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+                        <span class="n">score</span><span class="o">=</span><span class="n">word</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">words</span></div>
 </div>
 
 

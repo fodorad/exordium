@@ -422,7 +422,8 @@ automatically). Defaults to 16000.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Dict with <code class="docutils literal notranslate"><span class="pre">input_features</span></code> on <code class="docutils literal notranslate"><span class="pre">self.device</span></code>.</p>
+<dd class="field-even"><p>Dict with <code class="docutils literal notranslate"><span class="pre">input_features</span></code> on <code class="docutils literal notranslate"><span class="pre">self.device</span></code>, plus an
+<code class="docutils literal notranslate"><span class="pre">attention_mask</span></code> when the audio exceeds Whisper’s 30 s window.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -440,6 +441,29 @@ automatically). Defaults to 16000.</p></li>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Transcribed text as a plain string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="exordium.text.whisper.WhisperWrapper.transcribe_segments">
+<span class="sig-name descname"><span class="pre">transcribe_segments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">audio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beam_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../base/index.html#exordium.text.base.Segment" title="exordium.text.base.Segment"><span class="pre">exordium.text.base.Segment</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/whisper.html#WhisperWrapper.transcribe_segments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.whisper.WhisperWrapper.transcribe_segments" title="Link to this definition">¶</a></dt>
+<dd><p>Transcribe audio into timestamped <code class="xref py py-class docutils literal notranslate"><span class="pre">Segment</span></code> chunks.</p>
+<p>Works for audio of any length: short clips decode in one pass, longer
+recordings use Whisper’s sequential long-form decoding. The segments are
+what <a class="reference internal" href="../base/index.html#exordium.text.base.ForcedAligner.align_segments" title="exordium.text.base.ForcedAligner.align_segments"><code class="xref py py-meth docutils literal notranslate"><span class="pre">align_segments()</span></code></a> consumes to
+keep forced alignment bounded on long files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio</strong> – Audio file path, numpy array, or torch tensor.</p></li>
+<li><p><strong>language</strong> – Language code or <code class="docutils literal notranslate"><span class="pre">None</span></code> for auto-detection.</p></li>
+<li><p><strong>beam_size</strong> – Decoder beam width.</p></li>
+<li><p><strong>sample_rate</strong> – Sample rate of the input waveform (ignored for paths).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Segments in chronological order; empty if nothing was transcribed.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -480,8 +504,20 @@ latency; increase for better quality at the cost of first-token delay.</p>
 <li><p><strong>sample_rate</strong> – Sample rate of the input waveform (ignored for paths).</p></li>
 </ul>
 </dd>
-<dt class="field-even">Yields<span class="colon">:</span></dt>
-<dd class="field-even"><p>Decoded text chunks (words or sub-word tokens) as strings.</p>
+</dl>
+<p>Audio longer than Whisper’s 30 s window is streamed window by window:
+<code class="docutils literal notranslate"><span class="pre">TextIteratorStreamer</span></code> only observes the first chunk of Whisper’s
+sequential long-form decoding, so streaming the whole file in one
+<code class="docutils literal notranslate"><span class="pre">generate</span></code> call would silently stop after 30 s. Each window is decoded
+short-form instead, which keeps the full transcript flowing. A word
+spanning a window boundary may be split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Yields<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Decoded text chunks (words or sub-word tokens) as strings.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – Whatever <code class="docutils literal notranslate"><span class="pre">model.generate</span></code> raised in the worker thread,
+re-raised on the caller’s thread once the stream drains.</p>
 </dd>
 </dl>
 <p>Example:</p>
@@ -560,6 +596,7 @@ latency; increase for better quality at the cost of first-token delay.</p>
 <li><a class="reference internal" href="#exordium.text.whisper.WhisperWrapper"><code class="docutils literal notranslate"><span class="pre">WhisperWrapper</span></code></a><ul>
 <li><a class="reference internal" href="#exordium.text.whisper.WhisperWrapper.preprocess"><code class="docutils literal notranslate"><span class="pre">WhisperWrapper.preprocess()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.whisper.WhisperWrapper.inference"><code class="docutils literal notranslate"><span class="pre">WhisperWrapper.inference()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.whisper.WhisperWrapper.transcribe_segments"><code class="docutils literal notranslate"><span class="pre">WhisperWrapper.transcribe_segments()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.whisper.WhisperWrapper.__call__"><code class="docutils literal notranslate"><span class="pre">WhisperWrapper.__call__()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.whisper.WhisperWrapper.stream"><code class="docutils literal notranslate"><span class="pre">WhisperWrapper.stream()</span></code></a></li>
 </ul>

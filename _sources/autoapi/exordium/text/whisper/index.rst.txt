@@ -86,7 +86,8 @@ Module Contents
                           array or tensor directly. Ignored for file paths (detected
                           automatically). Defaults to 16000.
 
-      :returns: Dict with ``input_features`` on ``self.device``.
+      :returns: Dict with ``input_features`` on ``self.device``, plus an
+                ``attention_mask`` when the audio exceeds Whisper's 30 s window.
 
 
 
@@ -98,6 +99,24 @@ Module Contents
       :param \*\*kwargs: Optional ``language`` (str) and ``beam_size`` (int).
 
       :returns: Transcribed text as a plain string.
+
+
+
+   .. py:method:: transcribe_segments(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, language: str | None = None, beam_size: int = 5, sample_rate: int = 16000) -> list[exordium.text.base.Segment]
+
+      Transcribe audio into timestamped :class:`Segment` chunks.
+
+      Works for audio of any length: short clips decode in one pass, longer
+      recordings use Whisper's sequential long-form decoding. The segments are
+      what :meth:`~exordium.text.base.ForcedAligner.align_segments` consumes to
+      keep forced alignment bounded on long files.
+
+      :param audio: Audio file path, numpy array, or torch tensor.
+      :param language: Language code or ``None`` for auto-detection.
+      :param beam_size: Decoder beam width.
+      :param sample_rate: Sample rate of the input waveform (ignored for paths).
+
+      :returns: Segments in chronological order; empty if nothing was transcribed.
 
 
 
@@ -128,7 +147,17 @@ Module Contents
       :param beam_size: Decoder beam width. Defaults to ``1`` for streaming.
       :param sample_rate: Sample rate of the input waveform (ignored for paths).
 
+      Audio longer than Whisper's 30 s window is streamed window by window:
+      ``TextIteratorStreamer`` only observes the first chunk of Whisper's
+      sequential long-form decoding, so streaming the whole file in one
+      ``generate`` call would silently stop after 30 s. Each window is decoded
+      short-form instead, which keeps the full transcript flowing. A word
+      spanning a window boundary may be split.
+
       :Yields: Decoded text chunks (words or sub-word tokens) as strings.
+
+      :raises Exception: Whatever ``model.generate`` raised in the worker thread,
+          re-raised on the caller's thread once the stream drains.
 
       Example::
 

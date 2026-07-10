@@ -330,6 +330,9 @@ Module Contents
 
    Batch-validate ``(text, start, end)`` segments against one word stream.
 
+   The word stream is normalized once and reused for every segment, so long
+   recordings with many annotations stay cheap.
+
    :param segments: Annotated segments as ``(text, start_sec, end_sec)`` tuples.
    :param words: Shared timed word stream for the full audio.
    :param score_cutoff: Minimum fuzzy score to consider a segment present.

@@ -85,3 +85,19 @@ Module Contents
 
 
 
+   .. py:method:: align_segments(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, segments: list[exordium.text.base.Segment], language: str | None = None) -> list[exordium.text.base.Word]
+
+      Align all *segments* in one whisperX call (native batched path).
+
+      whisperX slices the audio per segment internally and returns word times
+      already on the full-audio timeline, so long recordings stay bounded
+      without the per-segment Python loop of the base implementation.
+
+      :param audio: Full audio — file path, numpy array, or torch tensor.
+      :param segments: Timestamped transcript segments covering the audio.
+      :param language: Optional language code (must match the loaded model).
+
+      :returns: Words in chronological order on the full-audio timeline.
+
+
+

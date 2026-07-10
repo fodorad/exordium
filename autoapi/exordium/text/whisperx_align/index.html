@@ -420,6 +420,27 @@ given (a mismatch is logged, not enforced).</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="exordium.text.whisperx_align.WhisperxForcedAligner.align_segments">
+<span class="sig-name descname"><span class="pre">align_segments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">audio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../base/index.html#exordium.text.base.Segment" title="exordium.text.base.Segment"><span class="pre">exordium.text.base.Segment</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../base/index.html#exordium.text.base.Word" title="exordium.text.base.Word"><span class="pre">exordium.text.base.Word</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/whisperx_align.html#WhisperxForcedAligner.align_segments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.whisperx_align.WhisperxForcedAligner.align_segments" title="Link to this definition">¶</a></dt>
+<dd><p>Align all <em>segments</em> in one whisperX call (native batched path).</p>
+<p>whisperX slices the audio per segment internally and returns word times
+already on the full-audio timeline, so long recordings stay bounded
+without the per-segment Python loop of the base implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio</strong> – Full audio — file path, numpy array, or torch tensor.</p></li>
+<li><p><strong>segments</strong> – Timestamped transcript segments covering the audio.</p></li>
+<li><p><strong>language</strong> – Optional language code (must match the loaded model).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Words in chronological order on the full-audio timeline.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -487,6 +508,7 @@ given (a mismatch is logged, not enforced).</p></li>
 <li><a class="reference internal" href="#exordium.text.whisperx_align.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.whisperx_align.WhisperxForcedAligner"><code class="docutils literal notranslate"><span class="pre">WhisperxForcedAligner</span></code></a><ul>
 <li><a class="reference internal" href="#exordium.text.whisperx_align.WhisperxForcedAligner.align"><code class="docutils literal notranslate"><span class="pre">WhisperxForcedAligner.align()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.whisperx_align.WhisperxForcedAligner.align_segments"><code class="docutils literal notranslate"><span class="pre">WhisperxForcedAligner.align_segments()</span></code></a></li>
 </ul>
 </li>
 </ul>
