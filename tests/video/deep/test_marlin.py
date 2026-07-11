@@ -10,6 +10,7 @@ import numpy as np
 import torch
 
 from exordium.utils.padding import fill_gaps_with_repeat, repeat_pad_time_dim
+from exordium.video.core.detection import DetectionFromTorchTensor, Track
 from exordium.video.deep.marlin import (
     _DEFAULT_MARLIN_MODEL,
     _FEATURE_DIMS,
@@ -19,6 +20,39 @@ from exordium.video.deep.marlin import (
     _frames_to_clips,
 )
 from tests.fixtures import IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT, ModelTestCase, hf_repo_exists
+
+
+def _track_with_varying_crop_sizes() -> tuple[Track, int]:
+    """A synthetic track whose per-frame boxes yield differently sized crops.
+
+    ``Detection.crop(square=True, extra_space=1.5)`` derives the square side from
+    ``max(w, h) * extra_space`` per detection, so a box that grows/shrinks frame
+    to frame (as a tracked face naturally does) produces crops of different
+    sizes within a single 16-frame window.  One box is deliberately pushed
+    against the frame edge so its crop is clipped to a non-square rectangle.
+    """
+    frame = torch.randint(0, 255, (3, 400, 400), dtype=torch.uint8)
+    landmarks = torch.zeros(5, 2, dtype=torch.long)
+    track = Track(track_id=0)
+    # Two windows' worth of frames (0..23), with one gap at frame 5.
+    for fid in range(24):
+        if fid == 5:
+            continue  # gap → exercises fill_gaps_with_repeat
+        side = 100 + (fid % 7) * 8  # 100, 108, ... size drifts per frame
+        cx = cy = 200
+        if fid == 3:
+            cx, cy = 5, 5  # near corner → crop clipped to a non-square rectangle
+        x = cx - side // 2
+        y = cy - side // 2
+        det = DetectionFromTorchTensor(
+            frame_id=fid,
+            source=frame,
+            score=0.99,
+            bb_xywh=torch.tensor([x, y, side, side], dtype=torch.long),
+            landmarks=landmarks,
+        )
+        track.add(det)
+    return track, 24
 
 
 class TestModuleConstants(unittest.TestCase):
@@ -218,6 +252,16 @@ class TestMarlinWrapper(ModelTestCase):
         result = self.model.dir_to_feature([])
         self.assertEqual(result["features"].shape, (0, _FEATURE_DIMS["base"]))
         self.assertEqual(result["frame_ids"].shape, (0,))
+
+    def test_track_to_feature_varying_crop_sizes(self):
+        # Regression: crops within one window differ in size (bbox drift +
+        # edge clipping), which used to crash _extract_from_track.
+        track, num_frames = _track_with_varying_crop_sizes()
+        result = self.model.track_to_feature(track, num_frames=num_frames)
+        expected_windows = math.ceil(num_frames / _TIME_DIM)
+        self.assertEqual(result["features"].shape, (expected_windows, _FEATURE_DIMS["base"]))
+        self.assertEqual(result["mask"].shape, (expected_windows,))
+        self.assertTrue(result["mask"].all())  # every window has detections
 
     def test_video_to_feature(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
