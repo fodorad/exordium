@@ -567,9 +567,25 @@ class MarlinWrapper(VisualModelWrapper):
 
             mask[wi] = True
 
-            # Build a dense (_TIME_DIM, 3, H, W) tensor for this window
-            _, ch, cw = window_dets[0][1].shape
-            crops = torch.zeros(_TIME_DIM, 3, ch, cw, dtype=torch.uint8)
+            # Crop sizes drift frame to frame (the tracked box grows/shrinks and
+            # edge-clipping can make a crop non-square), so resize each to the
+            # model's 224x224 input up front. This keeps the dense window tensor
+            # uniform and matches the resize preprocess() would apply anyway.
+            window_dets = [
+                (
+                    local_idx,
+                    TF.resize(
+                        crop,
+                        [224, 224],
+                        interpolation=TF.InterpolationMode.BICUBIC,
+                        antialias=True,
+                    ),
+                )
+                for local_idx, crop in window_dets
+            ]
+
+            # Build a dense (_TIME_DIM, 3, 224, 224) tensor for this window
+            crops = torch.zeros(_TIME_DIM, 3, 224, 224, dtype=torch.uint8)
             valid = torch.zeros(_TIME_DIM, dtype=torch.bool)
 
             for local_idx, crop in window_dets:
