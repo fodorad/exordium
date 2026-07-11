@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.2](https://github.com/fodorad/exordium/compare/v2.6.1...v2.6.2) (2026-07-11)
+
+
+### Bug Fixes
+
+* marlin crop-size crash ([#39](https://github.com/fodorad/exordium/issues/39)) ([934c3a6](https://github.com/fodorad/exordium/commit/934c3a6141e9ce8bb6e0d6f1cbcf2f75d5469963))
+
 ## [2.6.1](https://github.com/fodorad/exordium/compare/v2.6.0...v2.6.1) (2026-07-10)
 
 
