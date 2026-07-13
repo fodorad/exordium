@@ -346,11 +346,13 @@ class TextModelWrapper(ABC):
 
     """
 
-    def __init__(self, model_name: str, device_id: int = -1) -> None:
+    def __init__(self, model_name: str, device_id: int = -1, pretrained: bool = True) -> None:
+        from exordium.utils.ckpt import build_hf_model
+
         self.model_name = model_name
         self.device = get_torch_device(device_id)
         self.tokenizer = tfm.AutoTokenizer.from_pretrained(model_name)
-        self.model = tfm.AutoModel.from_pretrained(model_name)
+        self.model = build_hf_model(tfm.AutoModel, model_name, pretrained=pretrained)
         self.model.eval()
         self.model.to(self.device)
 

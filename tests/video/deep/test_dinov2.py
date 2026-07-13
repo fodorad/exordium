@@ -16,6 +16,8 @@ from exordium.video.deep.dinov2 import (
 from tests.fixtures import (
     IMAGE_EMMA,
     IMAGE_FACE,
+    PRETRAINED,
+    TEST_DINOV2_MODEL,
     VIDEO_MULTISPEAKER_SHORT,
     ModelTestCase,
     hf_repo_exists,
@@ -35,26 +37,28 @@ class TestDINOv2WrapperInit(unittest.TestCase):
 class TestDINOv2Wrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = DINOv2Wrapper(model_name="base", device_id=None)
+        cls.model = DINOv2Wrapper(
+            model_name=TEST_DINOV2_MODEL, device_id=None, pretrained=PRETRAINED
+        )
 
     def test_feature_dim_attribute(self):
-        self.assertEqual(self.model.feature_dim, _FEATURE_DIMS["base"])
+        self.assertEqual(self.model.feature_dim, _FEATURE_DIMS[TEST_DINOV2_MODEL])
 
     def test_from_image_path(self):
         out = self.model(IMAGE_FACE)
-        self.assertEqual(out.shape, (1, _FEATURE_DIMS["base"]))
+        self.assertEqual(out.shape, (1, _FEATURE_DIMS[TEST_DINOV2_MODEL]))
 
     def test_from_numpy_hwc(self):
         out = self.model(np.random.randint(0, 255, (128, 128, 3), dtype=np.uint8))
-        self.assertEqual(out.shape, (1, _FEATURE_DIMS["base"]))
+        self.assertEqual(out.shape, (1, _FEATURE_DIMS[TEST_DINOV2_MODEL]))
 
     def test_from_batch_tensor(self):
         out = self.model(torch.randint(0, 255, (4, 3, 224, 224), dtype=torch.uint8))
-        self.assertEqual(out.shape, (4, _FEATURE_DIMS["base"]))
+        self.assertEqual(out.shape, (4, _FEATURE_DIMS[TEST_DINOV2_MODEL]))
 
     def test_from_list_of_paths(self):
         out = self.model([IMAGE_FACE, IMAGE_FACE])
-        self.assertEqual(out.shape, (2, _FEATURE_DIMS["base"]))
+        self.assertEqual(out.shape, (2, _FEATURE_DIMS[TEST_DINOV2_MODEL]))
 
     def test_preprocess_output_shape(self):
         preprocessed = self.model.preprocess(
@@ -77,7 +81,7 @@ class TestDINOv2Wrapper(ModelTestCase):
                 batch_size=8,
                 output_path=pathlib.Path(tmp_dir) / "dino.st",
             )
-            self.assertEqual(result["features"].shape[1], _FEATURE_DIMS["base"])
+            self.assertEqual(result["features"].shape[1], _FEATURE_DIMS[TEST_DINOV2_MODEL])
 
 
 class TestDINOv2WeightAvailability(unittest.TestCase):

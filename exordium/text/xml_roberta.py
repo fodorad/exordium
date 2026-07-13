@@ -14,10 +14,11 @@ class XmlRobertaWrapper(TextModelWrapper):
 
     """
 
-    def __init__(self, device_id: int = -1) -> None:
+    def __init__(self, device_id: int = -1, pretrained: bool = True) -> None:
         super().__init__(
             "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
             device_id,
+            pretrained=pretrained,
         )
 
     def inference(self, inputs: dict[str, torch.Tensor]) -> torch.Tensor:

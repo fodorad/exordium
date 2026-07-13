@@ -8,7 +8,7 @@ import torch
 from exordium.audio.clap import CLAP_MODEL_ID, CLAP_SAMPLE_RATE
 from exordium.audio.wav2vec2 import SUPPORTED_MODELS, Wav2vec2Wrapper
 from exordium.audio.wavlm import _MODEL_IDS, WAVLM_SAMPLE_RATE, WavlmWrapper
-from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase, head_ok, hf_repo_exists
+from tests.fixtures import AUDIO_MULTISPEAKER, PRETRAINED, ModelTestCase, head_ok, hf_repo_exists
 
 
 class TestWavlmWrapperInit(unittest.TestCase):
@@ -56,7 +56,7 @@ class TestClapWrapper(ModelTestCase):
     def setUpClass(cls):
         from exordium.audio.clap import ClapWrapper
 
-        cls.model = ClapWrapper(device_id=None)
+        cls.model = ClapWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_audio_to_feature_from_path(self):
         result = self.model.audio_to_feature(AUDIO_MULTISPEAKER, sample_rate=16000)
@@ -79,7 +79,7 @@ class TestClapWrapper(ModelTestCase):
 class TestWavlmWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = WavlmWrapper(device_id=None)
+        cls.model = WavlmWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_audio_to_feature_from_tensor(self):
         result = self.model.audio_to_feature(torch.zeros(16000), sample_rate=16000)
@@ -103,7 +103,7 @@ class TestWavlmWrapper(ModelTestCase):
 class TestWav2vec2Wrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = Wav2vec2Wrapper(device_id=None, model_name="base-960h")
+        cls.model = Wav2vec2Wrapper(device_id=None, model_name="base-960h", pretrained=PRETRAINED)
 
     def test_audio_to_feature_from_tensor(self):
         result = self.model.audio_to_feature(torch.zeros(16000), sample_rate=16000)
@@ -127,8 +127,12 @@ class TestWav2vec2Wrapper(ModelTestCase):
 class TestWav2vec2WrapperEmotion(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = Wav2vec2Wrapper(device_id=None, model_name="emotion-iemocap")
-        cls.base_model = Wav2vec2Wrapper(device_id=None, model_name="base-960h")
+        cls.model = Wav2vec2Wrapper(
+            device_id=None, model_name="emotion-iemocap", pretrained=PRETRAINED
+        )
+        cls.base_model = Wav2vec2Wrapper(
+            device_id=None, model_name="base-960h", pretrained=PRETRAINED
+        )
 
     def test_output_shape(self):
         result = self.model(torch.zeros(16000))

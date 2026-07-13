@@ -4,6 +4,7 @@ import torch
 import torchvision.transforms.functional as TF
 from transformers import Dinov2Model
 
+from exordium.utils.ckpt import build_hf_model
 from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD, VisualModelWrapper
 
 _MODEL_IDS: dict[str, str] = {
@@ -61,15 +62,16 @@ class DINOv2Wrapper(VisualModelWrapper):
         self,
         model_name: str = _DEFAULT_DINOV2_MODEL,
         device_id: int | None = None,
+        pretrained: bool = True,
     ) -> None:
         if model_name not in _MODEL_IDS:
             raise ValueError(f"Invalid model_name: {model_name!r}. Choose from {list(_MODEL_IDS)}.")
         super().__init__(device_id)
         self.feature_dim = _FEATURE_DIMS[model_name]
-        self.model = Dinov2Model.from_pretrained(_MODEL_IDS[model_name])
+        self.model = build_hf_model(Dinov2Model, _MODEL_IDS[model_name], pretrained=pretrained)
         assert isinstance(self.model, Dinov2Model)
         self.model.eval()
-        self.model.to(self.device)  # ty: ignore[invalid-argument-type]
+        self.model.to(self.device)
         self._mean = torch.tensor(_IMAGENET_MEAN, dtype=torch.float32, device=self.device).view(
             1, 3, 1, 1
         )

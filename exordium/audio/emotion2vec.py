@@ -54,7 +54,7 @@ import torch.nn.functional as F
 
 from exordium import WEIGHT_DIR
 from exordium.audio.base import AudioModelWrapper
-from exordium.utils.ckpt import download_file
+from exordium.utils.ckpt import download_weight
 from exordium.utils.decorator import load_or_create
 
 logger = logging.getLogger(__name__)
@@ -63,8 +63,18 @@ logger = logging.getLogger(__name__)
 EMOTION2VEC_SAMPLE_RATE = 16000
 """Required audio sample rate for emotion2vec (16 000 Hz)."""
 
-_WEIGHT_URL = "https://huggingface.co/emotion2vec/emotion2vec_plus_seed/resolve/main/model.pt"
-"""URL for downloading the emotion2vec+ seed checkpoint."""
+_MIRROR_FILENAME = "emotion2vec_plus_seed.pt"
+"""Filename of the emotion2vec+ seed checkpoint in the exordium mirror."""
+
+_UPSTREAM_REPO_ID = "emotion2vec/emotion2vec_plus_seed"
+"""Upstream Hub repo for the emotion2vec+ seed checkpoint, used as a fallback.
+
+Original project: https://github.com/ddlBoJack/emotion2vec (emotion2vec — Ma et al.).
+Served from the exordium mirror (``fodorad/exordium-weights/emotion2vec_plus_seed.pt``);
+this repo (file ``model.pt``) is the fallback."""
+
+_UPSTREAM_FILENAME = "model.pt"
+"""Filename of the checkpoint within :data:`_UPSTREAM_REPO_ID`."""
 
 EMOTION2VEC_FEATURE_DIM = 768
 """Output feature dimension of the emotion2vec+ seed model."""
@@ -615,18 +625,21 @@ class Emotion2vecWrapper(AudioModelWrapper):
 
     """
 
-    def __init__(self, device_id: int = -1) -> None:
+    def __init__(self, device_id: int = -1, pretrained: bool = True) -> None:
         super().__init__(device_id)
 
-        # Download weights
-        weight_dir = WEIGHT_DIR / "emotion2vec"
-        local_path = weight_dir / "model.pt"
-        download_file(_WEIGHT_URL, local_path)
-
-        # Build and load model
-        state_dict = _load_emotion2vec_state_dict(str(local_path))
         self.model = _Emotion2vecModel()
-        self.model.load_state_dict(state_dict)
+        if pretrained:
+            local_path = download_weight(
+                _MIRROR_FILENAME,
+                WEIGHT_DIR / "emotion2vec",
+                upstream_repo_id=_UPSTREAM_REPO_ID,
+                upstream_filename=_UPSTREAM_FILENAME,
+            )
+            state_dict = _load_emotion2vec_state_dict(str(local_path))
+            self.model.load_state_dict(state_dict)
+        else:
+            logger.info("Building emotion2vec architecture with random weights (no checkpoint).")
         self.model.to(self.device)
         self.model.eval()
 

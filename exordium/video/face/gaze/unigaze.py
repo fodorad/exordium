@@ -1,11 +1,16 @@
 """UniGaze gaze estimation model wrapper."""
 
+import logging
+
 import torch
 import torchvision.transforms.functional as TF
 
 from exordium.utils.device import get_torch_device
 from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD
 from exordium.video.face.gaze.base import GazeWrapper
+
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
 
 
 class UnigazeWrapper(GazeWrapper):
@@ -31,11 +36,21 @@ class UnigazeWrapper(GazeWrapper):
         self,
         model_name: str = "unigaze_b16_joint",
         device_id: int | None = None,
+        pretrained: bool = True,
     ) -> None:
         import unigaze as _unigaze
 
         self.device = get_torch_device(device_id)
-        self.model = _unigaze.load(model_name, device=str(self.device))
+        if pretrained:
+            self.model = _unigaze.load(model_name, device=str(self.device))
+        else:
+            # ``unigaze.load`` builds the architecture and *then* fetches the checkpoint;
+            # calling the builder directly gives the same model with random weights.
+            logger.info("Building UniGaze architecture with random weights (no checkpoint).")
+            from unigaze.loader import MODEL_INDEX, build_unigaze_model
+
+            builder_key = str(MODEL_INDEX[model_name]["builder"])
+            self.model = build_unigaze_model(builder_key).to(self.device).eval()
         self._mean = torch.tensor(_IMAGENET_MEAN, device=self.device).view(1, 3, 1, 1)
         self._std = torch.tensor(_IMAGENET_STD, device=self.device).view(1, 3, 1, 1)
 

@@ -7,6 +7,7 @@ import torch
 from transformers import WavLMModel
 
 from exordium.audio.base import AudioModelWrapper
+from exordium.utils.ckpt import build_hf_model
 from exordium.utils.decorator import load_or_create
 
 WAVLM_SAMPLE_RATE = 16000  # all WavLM variants operate at 16 kHz
@@ -36,17 +37,19 @@ class WavlmWrapper(AudioModelWrapper):
 
     """
 
-    def __init__(self, device_id: int = -1, model_name: str = "base+") -> None:
+    def __init__(
+        self, device_id: int = -1, model_name: str = "base+", pretrained: bool = True
+    ) -> None:
         super().__init__(device_id)
 
         if model_name not in _MODEL_IDS:
             raise ValueError(f"Invalid model_name: {model_name!r}. Choose from {list(_MODEL_IDS)}.")
 
         self.sample_rate = WAVLM_SAMPLE_RATE
-        self.model = WavLMModel.from_pretrained(_MODEL_IDS[model_name])
+        self.model = build_hf_model(WavLMModel, _MODEL_IDS[model_name], pretrained=pretrained)
         assert isinstance(self.model, WavLMModel)
         self.model.eval()
-        self.model.to(self.device)  # ty: ignore[invalid-argument-type]
+        self.model.to(self.device)
 
     def __call__(self, waveform: np.ndarray | torch.Tensor) -> list[torch.Tensor]:
         """Extract hidden-state features from a waveform.
@@ -117,8 +120,8 @@ class WavlmWrapper(AudioModelWrapper):
         """
         out = lengths
         for layer in self.model.feature_extractor.conv_layers:
-            k = layer.conv.kernel_size[0]  # ty: ignore[unresolved-attribute, not-subscriptable]
-            s = layer.conv.stride[0]  # ty: ignore[not-subscriptable]
+            k = layer.conv.kernel_size[0]
+            s = layer.conv.stride[0]
             out = [(n - k) // s + 1 for n in out]
         return out
 

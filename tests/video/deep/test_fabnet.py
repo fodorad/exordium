@@ -6,13 +6,13 @@ import numpy as np
 import torch
 
 from exordium.video.deep.fabnet import FabNetWrapper
-from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_file_exists
+from tests.fixtures import IMAGE_FACE, PRETRAINED, ModelTestCase, hf_file_exists
 
 
 class TestFabNetWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = FabNetWrapper(device_id=None)
+        cls.model = FabNetWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_preprocess_shape(self):
         img = np.random.randint(0, 255, (128, 128, 3), dtype=np.uint8)

@@ -11,7 +11,7 @@ from exordium.video.deep.adaface import (
     _INPUT_SIZE,
     AdaFaceWrapper,
 )
-from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_repo_exists
+from tests.fixtures import IMAGE_FACE, PRETRAINED, ModelTestCase, hf_repo_exists
 
 
 class TestAdaFaceConstants(unittest.TestCase):
@@ -36,7 +36,7 @@ class TestAdaFaceWrapperInit(unittest.TestCase):
 class TestAdaFaceWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = AdaFaceWrapper(backbone="ir_50", device_id=None)
+        cls.model = AdaFaceWrapper(backbone="ir_50", device_id=None, pretrained=PRETRAINED)
 
     def test_feature_dim_attribute(self):
         self.assertEqual(self.model.feature_dim, _FEATURE_DIM)

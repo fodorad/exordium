@@ -19,7 +19,14 @@ from exordium.video.deep.marlin import (
     MarlinWrapper,
     _frames_to_clips,
 )
-from tests.fixtures import IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT, ModelTestCase, hf_repo_exists
+from tests.fixtures import (
+    IMAGE_FACE,
+    PRETRAINED,
+    TEST_MARLIN_MODEL,
+    VIDEO_MULTISPEAKER_SHORT,
+    ModelTestCase,
+    hf_repo_exists,
+)
 
 
 def _track_with_varying_crop_sizes() -> tuple[Track, int]:
@@ -174,41 +181,43 @@ class TestMarlinWrapperInit(unittest.TestCase):
 class TestMarlinWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = MarlinWrapper(model_name="base", device_id=None)
+        cls.model = MarlinWrapper(
+            model_name=TEST_MARLIN_MODEL, device_id=None, pretrained=PRETRAINED
+        )
 
     def test_feature_dim_attribute(self):
-        self.assertEqual(self.model.feature_dim, _FEATURE_DIMS["base"])
+        self.assertEqual(self.model.feature_dim, _FEATURE_DIMS[TEST_MARLIN_MODEL])
 
     def test_from_uint8_tensor(self):
         clip = torch.randint(0, 255, (1, 3, 16, 112, 112), dtype=torch.uint8)
         out = self.model(clip)
-        self.assertEqual(out.shape, (1, _FEATURE_DIMS["base"]))
+        self.assertEqual(out.shape, (1, _FEATURE_DIMS[TEST_MARLIN_MODEL]))
 
     def test_from_float_tensor(self):
         clip = torch.rand(1, 3, 16, 224, 224)
         with torch.inference_mode():
             out = self.model.inference(clip.to(self.model.device))
-        self.assertEqual(out.shape, (1, _FEATURE_DIMS["base"]))
+        self.assertEqual(out.shape, (1, _FEATURE_DIMS[TEST_MARLIN_MODEL]))
 
     def test_batch_of_clips(self):
         clips = torch.randint(0, 255, (2, 3, 16, 224, 224), dtype=torch.uint8)
         out = self.model(clips)
-        self.assertEqual(out.shape, (2, _FEATURE_DIMS["base"]))
+        self.assertEqual(out.shape, (2, _FEATURE_DIMS[TEST_MARLIN_MODEL]))
 
     def test_single_clip_no_batch_dim(self):
         clip = torch.randint(0, 255, (3, 16, 112, 112), dtype=torch.uint8)
         out = self.model(clip)
-        self.assertEqual(out.shape, (1, _FEATURE_DIMS["base"]))
+        self.assertEqual(out.shape, (1, _FEATURE_DIMS[TEST_MARLIN_MODEL]))
 
     def test_from_numpy_array(self):
         clip = np.random.randint(0, 255, (16, 64, 64, 3), dtype=np.uint8)
         out = self.model(clip)
-        self.assertEqual(out.shape, (1, _FEATURE_DIMS["base"]))
+        self.assertEqual(out.shape, (1, _FEATURE_DIMS[TEST_MARLIN_MODEL]))
 
     def test_from_numpy_batch(self):
         clips = np.random.randint(0, 255, (2, 16, 64, 64, 3), dtype=np.uint8)
         out = self.model(clips)
-        self.assertEqual(out.shape, (2, _FEATURE_DIMS["base"]))
+        self.assertEqual(out.shape, (2, _FEATURE_DIMS[TEST_MARLIN_MODEL]))
 
     def test_preprocess_output_shape(self):
         clip = torch.randint(0, 255, (2, 3, 16, 128, 128), dtype=torch.uint8)
@@ -245,12 +254,12 @@ class TestMarlinWrapper(ModelTestCase):
             self.assertIn("features", result)
             self.assertIn("frame_ids", result)
             self.assertEqual(result["features"].ndim, 2)
-            self.assertEqual(result["features"].shape[1], _FEATURE_DIMS["base"])
+            self.assertEqual(result["features"].shape[1], _FEATURE_DIMS[TEST_MARLIN_MODEL])
             self.assertGreater(result["features"].shape[0], 0)
 
     def test_dir_to_feature_empty(self):
         result = self.model.dir_to_feature([])
-        self.assertEqual(result["features"].shape, (0, _FEATURE_DIMS["base"]))
+        self.assertEqual(result["features"].shape, (0, _FEATURE_DIMS[TEST_MARLIN_MODEL]))
         self.assertEqual(result["frame_ids"].shape, (0,))
 
     def test_track_to_feature_varying_crop_sizes(self):
@@ -259,7 +268,9 @@ class TestMarlinWrapper(ModelTestCase):
         track, num_frames = _track_with_varying_crop_sizes()
         result = self.model.track_to_feature(track, num_frames=num_frames)
         expected_windows = math.ceil(num_frames / _TIME_DIM)
-        self.assertEqual(result["features"].shape, (expected_windows, _FEATURE_DIMS["base"]))
+        self.assertEqual(
+            result["features"].shape, (expected_windows, _FEATURE_DIMS[TEST_MARLIN_MODEL])
+        )
         self.assertEqual(result["mask"].shape, (expected_windows,))
         self.assertTrue(result["mask"].all())  # every window has detections
 
@@ -272,7 +283,7 @@ class TestMarlinWrapper(ModelTestCase):
             self.assertIn("features", result)
             self.assertIn("frame_ids", result)
             self.assertIn("mask", result)
-            self.assertEqual(result["features"].shape[1], _FEATURE_DIMS["base"])
+            self.assertEqual(result["features"].shape[1], _FEATURE_DIMS[TEST_MARLIN_MODEL])
             self.assertEqual(result["features"].shape[0], result["frame_ids"].shape[0])
             self.assertEqual(result["features"].shape[0], result["mask"].shape[0])
             self.assertEqual(result["mask"].dtype, torch.bool)

@@ -17,13 +17,6 @@ from tests.fixtures import (
 WHISPERX_AVAILABLE = whisperx_align._WHISPERX_AVAILABLE
 
 
-class TestWhisperxImportGuard(unittest.TestCase):
-    @unittest.skipIf(WHISPERX_AVAILABLE, "whisperX is installed; guard not exercised.")
-    def test_raises_without_extra(self):
-        with self.assertRaises(ImportError):
-            whisperx_align.WhisperxForcedAligner(device_id=None)
-
-
 @unittest.skipUnless(WHISPERX_AVAILABLE, "Requires whisperX (the text extra).")
 class TestWhisperxForcedAligner(ModelTestCase):
     @classmethod

@@ -8,6 +8,7 @@ import torchaudio
 from transformers import ClapModel, ClapProcessor
 
 from exordium.audio.base import AudioModelWrapper
+from exordium.utils.ckpt import build_hf_model
 
 CLAP_MODEL_ID = "laion/larger_clap_music_and_speech"
 """HuggingFace model ID for the LAION CLAP music-and-speech checkpoint."""
@@ -33,11 +34,12 @@ class ClapWrapper(AudioModelWrapper):
         self,
         model_name: str = CLAP_MODEL_ID,
         device_id: int = -1,
+        pretrained: bool = True,
     ) -> None:
         super().__init__(device_id)
-        self.model = ClapModel.from_pretrained(model_name)
+        self.model = build_hf_model(ClapModel, model_name, pretrained=pretrained)
         assert isinstance(self.model, ClapModel)
-        self.model.to(self.device)  # ty: ignore[invalid-argument-type]
+        self.model.to(self.device)
         self.model.eval()
         self.processor = ClapProcessor.from_pretrained(model_name)
         self._resamplers: dict[int, torchaudio.transforms.Resample] = {}

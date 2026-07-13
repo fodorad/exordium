@@ -83,12 +83,21 @@ class TorchaudioForcedAligner(ForcedAligner):
 
     """
 
-    def __init__(self, device_id: int | None = 0) -> None:
+    def __init__(self, device_id: int | None = 0, pretrained: bool = True) -> None:
         self.device = get_torch_device(device_id)
         bundle = torchaudio.pipelines.MMS_FA
         self.sample_rate: int = int(bundle.sample_rate)
-        logger.info(f"Loading MMS_FA forced aligner on {self.device}...")
-        self.model = bundle.get_model().to(self.device)
+        if pretrained:
+            logger.info(f"Loading MMS_FA forced aligner on {self.device}...")
+            model = bundle.get_model()
+        else:
+            # The bundle has no public weight-free path, but it builds the architecture
+            # from these params before loading the checkpoint — so we can too.
+            logger.info("Building MMS_FA architecture with random weights (no checkpoint).")
+            from torchaudio.models import wav2vec2_model
+
+            model = wav2vec2_model(**bundle._params)  # noqa: SLF001 - no public equivalent
+        self.model = model.to(self.device)
         self.model.eval()
         self.tokenizer = bundle.get_tokenizer()
         self.aligner = bundle.get_aligner()
@@ -222,13 +231,20 @@ class WhisperWordTimestamper(WordTimestamper):
         whisper: "WhisperWrapper | None" = None,
         aligner: ForcedAligner | None = None,
         device_id: int | None = 0,
+        pretrained: bool = True,
     ) -> None:
         if whisper is None:
             from exordium.text.whisper import WhisperWrapper
 
-            whisper = WhisperWrapper(device_id=device_id if device_id is not None else -1)
+            whisper = WhisperWrapper(
+                device_id=device_id if device_id is not None else -1, pretrained=pretrained
+            )
         self.whisper = whisper
-        self.aligner = aligner if aligner is not None else TorchaudioForcedAligner(device_id)
+        self.aligner = (
+            aligner
+            if aligner is not None
+            else TorchaudioForcedAligner(device_id, pretrained=pretrained)
+        )
 
     def transcribe_words(
         self,

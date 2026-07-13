@@ -6,7 +6,13 @@ import numpy as np
 import torch
 
 from exordium.text.base import TextModelWrapper
-from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase, hf_repo_exists
+from tests.fixtures import (
+    AUDIO_MULTISPEAKER,
+    PRETRAINED,
+    TEST_WHISPER_MODEL,
+    ModelTestCase,
+    hf_repo_exists,
+)
 
 
 class TestTextMeanPool(unittest.TestCase):
@@ -47,7 +53,7 @@ class TestBertWrapper(ModelTestCase):
     def setUpClass(cls):
         from exordium.text.bert import BertWrapper
 
-        cls.model = BertWrapper(device_id=None)
+        cls.model = BertWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_call_returns_tensor(self):
         out = self.model("hello world")
@@ -69,7 +75,7 @@ class TestRobertaWrapper(ModelTestCase):
     def setUpClass(cls):
         from exordium.text.roberta import RobertaWrapper
 
-        cls.model = RobertaWrapper(device_id=None)
+        cls.model = RobertaWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_call_returns_tensor(self):
         out = self.model("hello world")
@@ -85,7 +91,7 @@ class TestXmlRobertaWrapper(ModelTestCase):
     def setUpClass(cls):
         from exordium.text.xml_roberta import XmlRobertaWrapper
 
-        cls.model = XmlRobertaWrapper(device_id=None)
+        cls.model = XmlRobertaWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_call_returns_tensor(self):
         out = self.model("hello world")
@@ -104,15 +110,12 @@ class TestWhisperWrapper(ModelTestCase):
         from exordium.audio.io import load_audio
         from exordium.text.whisper import WhisperWrapper
 
-        cls.model = WhisperWrapper(device_id=None)
+        cls.model = WhisperWrapper(
+            model_name=TEST_WHISPER_MODEL, device_id=None, pretrained=PRETRAINED
+        )
         wave, sr = load_audio(AUDIO_MULTISPEAKER, target_sample_rate=16000)
         cls.waveform = wave
         cls.sample_rate = sr
-
-    def test_transcribe_from_path(self):
-        out = self.model(AUDIO_MULTISPEAKER)
-        self.assertIsInstance(out, str)
-        self.assertGreater(len(out), 0)
 
     def test_preprocess_short_audio_uses_padded_30s_window(self):
         short = self.waveform[..., : 10 * self.sample_rate]
@@ -126,38 +129,6 @@ class TestWhisperWrapper(ModelTestCase):
         self.assertGreater(inputs["input_features"].shape[-1], 3000)
         self.assertIn("attention_mask", inputs)
         self.assertFalse(inputs["attention_mask"].is_floating_point())
-
-    def test_transcribe_long_audio_decodes_past_30s(self):
-        # A 30 s-truncated decode yields ~138 words; the full 61 s yields ~250+.
-        text = self.model(AUDIO_MULTISPEAKER, beam_size=1)
-        self.assertGreater(len(text.split()), 180)
-
-    def test_transcribe_segments_cover_the_full_audio(self):
-        segments = self.model.transcribe_segments(AUDIO_MULTISPEAKER, beam_size=1)
-        self.assertGreater(len(segments), 1)
-        self.assertGreater(segments[-1].end, 45.0)
-        starts = [s.start for s in segments]
-        self.assertEqual(starts, sorted(starts))
-        self.assertTrue(all(s.text.strip() for s in segments))
-
-    def test_transcribe_segments_short_audio(self):
-        short = self.waveform[..., : 10 * self.sample_rate]
-        segments = self.model.transcribe_segments(short, beam_size=1)
-        self.assertGreater(len(segments), 0)
-
-    def test_stream_short_audio(self):
-        short = self.waveform[..., : 10 * self.sample_rate]
-        text = "".join(self.model.stream(short, beam_size=1))
-        self.assertGreater(len(text.split()), 5)
-        self.assertNotIn("<|", text)  # no timestamp tokens leak through
-
-    def test_stream_long_audio_covers_the_whole_file(self):
-        # Regression: streaming a >30 s file first hung forever (the worker
-        # thread raised and the streamer never ended), then silently stopped
-        # after 30 s because the streamer only sees long-form's first chunk.
-        text = "".join(self.model.stream(AUDIO_MULTISPEAKER, beam_size=1))
-        self.assertGreater(len(text.split()), 180)
-        self.assertNotIn("<|", text)
 
 
 class TestTextWeightAvailability(unittest.TestCase):

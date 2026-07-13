@@ -39,6 +39,9 @@ from exordium.text.evaluation import (
 logger = logging.getLogger(__name__)
 """Module-level logger."""
 
+_BACKENDS: frozenset[str] = frozenset({"torchaudio", "whisperx"})
+"""Supported forced-alignment backends."""
+
 AudioInput = Path | str | np.ndarray | torch.Tensor
 """Any audio form accepted by the wrappers: path, numpy array, or tensor."""
 
@@ -85,11 +88,18 @@ class SpeechAlignmentPipeline:
         device_id: int | None = 0,
         whisper: "WhisperWrapper | None" = None,
         semantic_model: str = "xml-roberta",
+        pretrained: bool = True,
     ) -> None:
+        if backend not in _BACKENDS:
+            # Validate before building anything: constructing Whisper first would
+            # download gigabytes only to raise on a typo'd backend name.
+            raise ValueError(f"Unknown backend {backend!r}; use one of {sorted(_BACKENDS)}.")
+
         self.backend = backend
         self.language = language
         self.device_id = device_id
         self.semantic_model = semantic_model
+        self.pretrained = pretrained
 
         if whisper is None:
             from exordium.text.whisper import WhisperWrapper
@@ -97,22 +107,30 @@ class SpeechAlignmentPipeline:
             whisper = WhisperWrapper(
                 model_name=whisper_model,
                 device_id=device_id if device_id is not None else -1,
+                pretrained=pretrained,
             )
         self.whisper = whisper
-        aligner = self._build_aligner(backend, language, device_id)
+        aligner = self._build_aligner(backend, language, device_id, pretrained=pretrained)
         self._timestamper = WhisperWordTimestamper(whisper=self.whisper, aligner=aligner)
         self._embedder: Embedder | None = None
 
     @staticmethod
-    def _build_aligner(backend: str, language: str, device_id: int | None) -> ForcedAligner:
-        """Instantiate the requested forced-alignment backend."""
+    def _build_aligner(
+        backend: str, language: str, device_id: int | None, pretrained: bool = True
+    ) -> ForcedAligner:
+        """Instantiate the requested forced-alignment backend.
+
+        ``pretrained=False`` reaches the torchaudio backend, which can build its
+        architecture without a checkpoint. whisperX has no weight-free path, so it always
+        loads its alignment model.
+        """
         if backend == "torchaudio":
-            return TorchaudioForcedAligner(device_id=device_id)
+            return TorchaudioForcedAligner(device_id=device_id, pretrained=pretrained)
         if backend == "whisperx":
             from exordium.text.whisperx_align import WhisperxForcedAligner
 
             return WhisperxForcedAligner(language=language, device_id=device_id)
-        raise ValueError(f"Unknown backend {backend!r}; use 'torchaudio' or 'whisperx'.")
+        raise ValueError(f"Unknown backend {backend!r}; use one of {sorted(_BACKENDS)}.")
 
     def transcribe(self, audio: AudioInput, language: str | None = None) -> str:
         """Case 1 — return the plain transcript for *audio*.

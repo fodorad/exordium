@@ -233,7 +233,9 @@ def is_acceptable(
     )
 
 
-def build_embedder(model: str = "xml-roberta", device_id: int | None = -1) -> Embedder:
+def build_embedder(
+    model: str = "xml-roberta", device_id: int | None = -1, pretrained: bool = True
+) -> Embedder:
     """Build a sentence embedder for :attr:`TranscriptMetrics.semantic_similarity`.
 
     Args:
@@ -244,6 +246,9 @@ def build_embedder(model: str = "xml-roberta", device_id: int | None = -1) -> Em
             token), or ``"bert"`` (:class:`~exordium.text.bert.BertWrapper`, CLS
             token).
         device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.
+        pretrained: ``True`` (default) loads the real weights. ``False`` builds the
+            architecture with random weights — embeddings are then meaningless, but the
+            shapes and call contract hold (used by the test suite to avoid downloads).
 
     Returns:
         A callable mapping a list of texts to an ``(N, H)`` embedding array.
@@ -254,17 +259,17 @@ def build_embedder(model: str = "xml-roberta", device_id: int | None = -1) -> Em
     if name in ("xml-roberta", "xlm-roberta"):
         from exordium.text.xml_roberta import XmlRobertaWrapper
 
-        wrapper = XmlRobertaWrapper(device_id=dev)
+        wrapper = XmlRobertaWrapper(device_id=dev, pretrained=pretrained)
         return lambda texts: wrapper(texts).detach().cpu().numpy()  # already (N, 768)
     if name == "roberta":
         from exordium.text.roberta import RobertaWrapper
 
-        rob = RobertaWrapper(device_id=dev)
+        rob = RobertaWrapper(device_id=dev, pretrained=pretrained)
         return lambda texts: rob(texts)[:, 0].detach().cpu().numpy()  # <s> token
     if name == "bert":
         from exordium.text.bert import BertWrapper
 
-        bert = BertWrapper(device_id=dev)
+        bert = BertWrapper(device_id=dev, pretrained=pretrained)
         return lambda texts: bert(texts)[:, 0].detach().cpu().numpy()  # [CLS] token
     raise ValueError(f"Unknown semantic model {model!r}; use 'xml-roberta', 'roberta', or 'bert'.")
 
@@ -296,10 +301,12 @@ class TranscriptEvaluator:
         semantic_model: str | None = "xml-roberta",
         device_id: int | None = -1,
         normalizer: str = "english",
+        pretrained: bool = True,
     ) -> None:
         self.semantic_model = semantic_model
         self.device_id = device_id
         self.normalizer = normalizer
+        self.pretrained = pretrained
         self._embedder: Embedder | None = None
 
     def evaluate(self, reference: str, hypothesis: str) -> TranscriptMetrics:
@@ -313,7 +320,9 @@ class TranscriptEvaluator:
         if self.semantic_model is None:
             return None
         if self._embedder is None:
-            self._embedder = build_embedder(self.semantic_model, self.device_id)
+            self._embedder = build_embedder(
+                self.semantic_model, self.device_id, pretrained=self.pretrained
+            )
         return self._embedder
 
 
