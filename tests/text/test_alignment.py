@@ -9,9 +9,14 @@ from exordium.text.alignment import (
     WhisperWordTimestamper,
     normalize_words,
 )
-from exordium.text.base import Segment, Word
+from exordium.text.base import MIN_ALIGN_SAMPLES, Segment, Word
 from exordium.text.transcript_align import find_segment
-from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase
+from tests.fixtures import (
+    AUDIO_MULTISPEAKER,
+    ModelTestCase,
+    best_anchored_word,
+    logging_enabled,
+)
 
 
 class TestNormalizeWords(unittest.TestCase):
@@ -83,6 +88,60 @@ class TestTorchaudioForcedAligner(ModelTestCase):
         ]
         words = self.aligner.align_segments(AUDIO_MULTISPEAKER, segments)
         self.assertEqual([w.text for w in words], ["hey"])
+
+    def test_align_segments_recovers_degenerate_micro_segment(self):
+        # Regression: Whisper long-form emits real text spanning ~0.02s. The slice was
+        # below MMS_FA's conv floor, which raised and killed the whole recording. The
+        # word must not merely survive the crash — it must come back timed.
+        segments = [
+            Segment(text="hey guys", start=0.0, end=2.0),
+            Segment(text="that", start=2.100, end=2.120),  # degenerate: 320 samples
+            Segment(text="what do you guys want to eat", start=2.5, end=6.0),
+        ]
+        words = self.aligner.align_segments(AUDIO_MULTISPEAKER, segments)
+        self.assertIn("that", [w.text for w in words])
+        starts = [w.start for w in words]
+        self.assertEqual(starts, sorted(starts))
+
+    def test_recovered_degenerate_word_matches_ground_truth_timing(self):
+        # The point of widening is not just "no crash" — the word must come back timed
+        # *correctly*. Align the full sentence for ground truth, then re-align one of its
+        # words as a degenerate 0.02s micro-segment and check we land back on it.
+        target = best_anchored_word(
+            self.aligner.align(
+                AUDIO_MULTISPEAKER, "Hey guys, what do you guys want to eat for lunch?"
+            )
+        )
+        midpoint = (target.start + target.end) / 2
+        degenerate = [Segment(text=target.text, start=midpoint, end=midpoint + 0.02)]
+
+        words = self.aligner.align_segments(AUDIO_MULTISPEAKER, degenerate)
+        self.assertEqual([w.text for w in words], [target.text])
+        # Recovered to within ~2 emission frames of where the word really is. Without the
+        # speech-realistic floor the window clips the word and this drifts by >100 ms.
+        self.assertAlmostEqual(words[0].start, target.start, delta=0.1)
+        self.assertAlmostEqual(words[0].end, target.end, delta=0.1)
+
+    def test_min_align_samples_uses_the_models_own_tokenizer(self):
+        # normalize_words strips punctuation, so it must not inflate the requirement.
+        self.assertEqual(
+            self.aligner.min_align_samples("that!"), self.aligner.min_align_samples("that")
+        )
+        # Longer text genuinely needs more frames, hence more audio.
+        self.assertGreater(
+            self.aligner.min_align_samples("that"), self.aligner.min_align_samples("i")
+        )
+
+    def test_min_align_samples_falls_back_for_untokenizable_text(self):
+        # Punctuation-only text has no MMS_FA tokens; fall back to the two-frame floor
+        # rather than computing a requirement from zero tokens.
+        self.assertEqual(self.aligner.min_align_samples("..."), MIN_ALIGN_SAMPLES)
+
+    def test_align_on_audio_too_short_for_its_text_returns_empty(self):
+        # align() is the raw single-shot path: it cannot widen, so it declines.
+        waveform = np.zeros(MIN_ALIGN_SAMPLES, dtype=np.float32)
+        with logging_enabled(), self.assertLogs("exordium.text.alignment", level="WARNING"):
+            self.assertEqual(self.aligner.align(waveform, "that"), [])
 
 
 class TestWhisperWordTimestamper(ModelTestCase):

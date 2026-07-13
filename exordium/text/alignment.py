@@ -24,7 +24,13 @@ import torch
 import torchaudio
 
 from exordium.audio.io import load_audio
-from exordium.text.base import ForcedAligner, Word, WordTimestamper
+from exordium.text.base import (
+    MIN_ALIGN_SAMPLES,
+    ForcedAligner,
+    Word,
+    WordTimestamper,
+    wav2vec2_min_samples,
+)
 from exordium.utils.device import get_torch_device
 
 if TYPE_CHECKING:
@@ -87,6 +93,26 @@ class TorchaudioForcedAligner(ForcedAligner):
         self.tokenizer = bundle.get_tokenizer()
         self.aligner = bundle.get_aligner()
 
+    def min_align_samples(self, text: str) -> int:
+        """Samples ``MMS_FA`` needs to align *text*, counted with its own tokenizer.
+
+        Overrides the base class's character estimate: ``normalize_words`` strips
+        everything outside the ``MMS_FA`` alphabet, so counting raw characters would
+        demand more audio than the model actually needs.
+
+        Args:
+            text: The text to be aligned.
+
+        Returns:
+            Minimum slice length in samples.
+
+        """
+        words = normalize_words(text)
+        if not words:
+            return MIN_ALIGN_SAMPLES
+        tokens = cast("list[list[int]]", self.tokenizer(words))
+        return wav2vec2_min_samples(sum(len(word_tokens) for word_tokens in tokens))
+
     def align(
         self,
         audio: Path | str | np.ndarray | torch.Tensor,
@@ -102,8 +128,11 @@ class TorchaudioForcedAligner(ForcedAligner):
                 interface compatibility with :class:`ForcedAligner`.
 
         Returns:
-            Words in chronological order. Empty if *transcript* has no
-            alignable tokens.
+            Words in chronological order. Empty if *transcript* has no alignable
+            tokens, or if the audio is too short to carry them — see
+            :func:`~exordium.text.base.wav2vec2_min_samples`.  Callers aligning
+            whole recordings should go through :meth:`align_segments`, which
+            widens short windows instead of giving up on them.
 
         """
         del language  # MMS_FA is a single multilingual model.
@@ -111,6 +140,16 @@ class TorchaudioForcedAligner(ForcedAligner):
         words = normalize_words(transcript)
         if not words:
             logger.warning("Transcript has no alignable tokens; returning [].")
+            return []
+
+        num_samples = waveform.size(1)
+        needed = self.min_align_samples(transcript)
+        if num_samples < needed:
+            # Too few frames for the tokens: MMS_FA's conv stack or forced_align raises.
+            logger.warning(
+                f"Audio is {num_samples} samples but {' '.join(words)!r} needs {needed} "
+                "to force-align; returning []."
+            )
             return []
 
         with torch.inference_mode():
