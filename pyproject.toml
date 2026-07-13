@@ -36,7 +36,7 @@ dependencies = [
   #
   # To upgrade: bump all four pins together and verify CI passes.
   # ─────────────────────────────────────────────────────────────────────────────
-  "torch==2.11.0",
+  "torch==2.13.0",
   "torchaudio==2.11.0",
   "torchvision==0.26.0",
   "torchcodec==0.14.0",
@@ -148,7 +148,7 @@ override-dependencies = [
   # requires-python <3.14 upper bound. Empirically whisperx 3.7.2 works fine on
   # this repo's torch 2.11 / py3.14, so we hold the torch stack at the repo pins
   # and let uv resolve whisperx against them instead of downgrading torch.
-  "torch==2.11.0",
+  "torch==2.13.0",
   "torchaudio==2.11.0",
   "torchvision==0.26.0",
   "torchcodec==0.14.0",
