@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.7.0](https://github.com/fodorad/exordium/compare/v2.6.2...v2.7.0) (2026-07-13)
+
+
+### Features
+
+* **models:** load wrappers without downloading weights; cut CI from 30min to 2min ([#46](https://github.com/fodorad/exordium/issues/46)) ([9301d93](https://github.com/fodorad/exordium/commit/9301d93ac159527a644d1223ad97240e7600fa65))
+
 ## [2.6.2](https://github.com/fodorad/exordium/compare/v2.6.1...v2.6.2) (2026-07-11)
 
 
