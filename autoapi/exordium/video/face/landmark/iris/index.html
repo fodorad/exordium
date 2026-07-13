@@ -329,6 +329,18 @@
           <section id="module-exordium.video.face.landmark.iris">
 <span id="exordium-video-face-landmark-iris"></span><h1>exordium.video.face.landmark.iris<a class="headerlink" href="#module-exordium.video.face.landmark.iris" title="Link to this heading">¶</a></h1>
 <p>MediaPipe Iris landmark detector wrapper.</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.landmark.iris.logger" title="exordium.video.face.landmark.iris.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p>Module-level logger.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
 <div class="table-wrapper autosummary longtable docutils container">
@@ -370,6 +382,12 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.video.face.landmark.iris.logger">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.landmark.iris.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#exordium.video.face.landmark.iris.logger" title="Link to this definition">¶</a></dt>
+<dd><p>Module-level logger.</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="exordium.video.face.landmark.iris.calculate_iris_diameters">
 <span class="sig-prename descclassname"><span class="pre">exordium.video.face.landmark.iris.</span></span><span class="sig-name descname"><span class="pre">calculate_iris_diameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iris_landmarks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#exordium.video.face.landmark.iris.calculate_iris_diameters" title="Link to this definition">¶</a></dt>
@@ -443,7 +461,7 @@ Both shapes correspond to MediaPipe FaceMesh eye subsets.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="exordium.video.face.landmark.iris.IrisWrapper">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.video.face.landmark.iris.</span></span><span class="sig-name descname"><span class="pre">IrisWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#exordium.video.face.landmark.iris.IrisWrapper" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.video.face.landmark.iris.</span></span><span class="sig-name descname"><span class="pre">IrisWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#exordium.video.face.landmark.iris.IrisWrapper" title="Link to this definition">¶</a></dt>
 <dd><p>MediaPipe Iris landmark detector wrapper.</p>
 <p>Detects 71 eye landmarks and 5 iris landmarks from 64×64 eye patches
 using a PyTorch port of the MediaPipe Iris model.</p>
@@ -728,9 +746,11 @@ of shape (0, 17).</p>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">exordium.video.face.landmark.iris</a><ul>
+<li><a class="reference internal" href="#attributes">Attributes</a></li>
 <li><a class="reference internal" href="#classes">Classes</a></li>
 <li><a class="reference internal" href="#functions">Functions</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li><a class="reference internal" href="#exordium.video.face.landmark.iris.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.landmark.iris.calculate_iris_diameters"><code class="docutils literal notranslate"><span class="pre">calculate_iris_diameters()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.landmark.iris.calculate_eyelid_pupil_distances"><code class="docutils literal notranslate"><span class="pre">calculate_eyelid_pupil_distances()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.landmark.iris.calculate_eye_aspect_ratio"><code class="docutils literal notranslate"><span class="pre">calculate_eye_aspect_ratio()</span></code></a></li>

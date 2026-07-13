@@ -46,7 +46,7 @@ Module Contents
 
    Module-level logger.
 
-.. py:class:: AdaFaceWrapper(backbone: str = 'ir_50', device_id: int | None = None)
+.. py:class:: AdaFaceWrapper(backbone: str = 'ir_50', device_id: int | None = None, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
 

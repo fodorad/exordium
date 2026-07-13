@@ -329,6 +329,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">WavLMModel</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.audio.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">AudioModelWrapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.ckpt</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_hf_model</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.decorator</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_or_create</span>
 
 <span class="n">WAVLM_SAMPLE_RATE</span> <span class="o">=</span> <span class="mi">16000</span>  <span class="c1"># all WavLM variants operate at 16 kHz</span>
@@ -360,17 +361,19 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;base+&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;base+&quot;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">model_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_MODEL_IDS</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid model_name: </span><span class="si">{</span><span class="n">model_name</span><span class="si">!r}</span><span class="s2">. Choose from </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_MODEL_IDS</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">=</span> <span class="n">WAVLM_SAMPLE_RATE</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">WavLMModel</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">_MODEL_IDS</span><span class="p">[</span><span class="n">model_name</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">build_hf_model</span><span class="p">(</span><span class="n">WavLMModel</span><span class="p">,</span> <span class="n">_MODEL_IDS</span><span class="p">[</span><span class="n">model_name</span><span class="p">],</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">WavLMModel</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># ty: ignore[invalid-argument-type]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
 <div class="viewcode-block" id="WavlmWrapper.__call__">
 <a class="viewcode-back" href="../../../autoapi/exordium/audio/wavlm/index.html#exordium.audio.wavlm.WavlmWrapper.__call__">[docs]</a>
@@ -444,8 +447,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">lengths</span>
         <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">feature_extractor</span><span class="o">.</span><span class="n">conv_layers</span><span class="p">:</span>
-            <span class="n">k</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">conv</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># ty: ignore[unresolved-attribute, not-subscriptable]</span>
-            <span class="n">s</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">conv</span><span class="o">.</span><span class="n">stride</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># ty: ignore[not-subscriptable]</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">conv</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">conv</span><span class="o">.</span><span class="n">stride</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">out</span> <span class="o">=</span> <span class="p">[(</span><span class="n">n</span> <span class="o">-</span> <span class="n">k</span><span class="p">)</span> <span class="o">//</span> <span class="n">s</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">out</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">out</span>
 

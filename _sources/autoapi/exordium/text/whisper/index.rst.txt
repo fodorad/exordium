@@ -32,7 +32,7 @@ Module Contents
 
    Module-level logger.
 
-.. py:class:: WhisperWrapper(model_name: str = 'distil-whisper/distil-large-v3', device_id: int = 0, dtype: torch.dtype | None = None)
+.. py:class:: WhisperWrapper(model_name: str = 'distil-whisper/distil-large-v3', device_id: int = 0, dtype: torch.dtype | None = None, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.text.base.StreamingMixin`, :py:obj:`exordium.text.base.SpeechToText`
 

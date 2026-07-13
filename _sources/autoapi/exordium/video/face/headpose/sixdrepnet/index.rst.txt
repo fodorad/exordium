@@ -29,6 +29,14 @@ exordium.video.face.headpose.sixdrepnet
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.headpose.sixdrepnet.logger
+
+
 Classes
 -------
 
@@ -49,7 +57,11 @@ Functions
 Module Contents
 ---------------
 
-.. py:class:: SixDRepNetWrapper(device_id: int | None = None)
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: SixDRepNetWrapper(device_id: int | None = None, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
 

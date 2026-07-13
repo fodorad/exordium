@@ -20,7 +20,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: ClipWrapper(model_name: str = _DEFAULT_CLIP_MODEL, device_id: int | None = None)
+.. py:class:: ClipWrapper(model_name: str = _DEFAULT_CLIP_MODEL, device_id: int | None = None, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
 

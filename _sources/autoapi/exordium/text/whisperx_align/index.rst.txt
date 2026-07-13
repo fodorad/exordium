@@ -81,7 +81,11 @@ Module Contents
       :param language: Optional language code; must match the model's language if
                        given (a mismatch is logged, not enforced).
 
-      :returns: Words in chronological order. Empty if *transcript* is blank.
+      :returns: Words in chronological order. Empty if *transcript* is blank, or if the
+                audio is too short to carry it — see
+                :func:`~exordium.text.base.wav2vec2_min_samples`.  Callers aligning whole
+                recordings should go through :meth:`align_segments`, which widens short
+                windows instead of giving up on them.
 
 
 
@@ -92,6 +96,17 @@ Module Contents
       whisperX slices the audio per segment internally and returns word times
       already on the full-audio timeline, so long recordings stay bounded
       without the per-segment Python loop of the base implementation.
+
+      Segments too short for whisperX to align are widened first by
+      :func:`~exordium.text.base.prepare_segments`.  whisperX pads a short slice up to
+      wav2vec2's input floor, but then rescales its timestamps by
+      ``duration / (trellis.size(0) - 1)`` — a one-row trellis divides by zero and
+      aborts the entire recording.  Even when it survives that, a frame-starved
+      segment fails backtrack and comes back *untimed*, so its words are silently
+      dropped.  Widening the window fixes both.
+
+      Because a widened window may overlap its neighbours, the merged word stream is
+      sorted by time before it is returned.
 
       :param audio: Full audio — file path, numpy array, or torch tensor.
       :param segments: Timestamped transcript segments covering the audio.

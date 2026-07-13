@@ -209,7 +209,7 @@ Module Contents
    :returns: ``True`` if the annotation should be trusted, else ``False``.
 
 
-.. py:function:: build_embedder(model: str = 'xml-roberta', device_id: int | None = -1) -> Embedder
+.. py:function:: build_embedder(model: str = 'xml-roberta', device_id: int | None = -1, pretrained: bool = True) -> Embedder
 
    Build a sentence embedder for :attr:`TranscriptMetrics.semantic_similarity`.
 
@@ -220,11 +220,14 @@ Module Contents
                  token), or ``"bert"`` (:class:`~exordium.text.bert.BertWrapper`, CLS
                  token).
    :param device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.
+   :param pretrained: ``True`` (default) loads the real weights. ``False`` builds the
+                      architecture with random weights — embeddings are then meaningless, but the
+                      shapes and call contract hold (used by the test suite to avoid downloads).
 
    :returns: A callable mapping a list of texts to an ``(N, H)`` embedding array.
 
 
-.. py:class:: TranscriptEvaluator(semantic_model: str | None = 'xml-roberta', device_id: int | None = -1, normalizer: str = 'english')
+.. py:class:: TranscriptEvaluator(semantic_model: str | None = 'xml-roberta', device_id: int | None = -1, normalizer: str = 'english', pretrained: bool = True)
 
    Standalone transcript comparator — two strings in, metrics out.
 

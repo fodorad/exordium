@@ -41,7 +41,7 @@ Module Contents
 
    Required audio sample rate for CLAP inference (48 000 Hz).
 
-.. py:class:: ClapWrapper(model_name: str = CLAP_MODEL_ID, device_id: int = -1)
+.. py:class:: ClapWrapper(model_name: str = CLAP_MODEL_ID, device_id: int = -1, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.audio.base.AudioModelWrapper`
 

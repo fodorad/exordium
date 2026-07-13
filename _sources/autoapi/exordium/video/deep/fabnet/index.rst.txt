@@ -33,7 +33,7 @@ Module Contents
 
    Module-level logger.
 
-.. py:class:: FabNetWrapper(device_id: int | None = None)
+.. py:class:: FabNetWrapper(device_id: int | None = None, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
 

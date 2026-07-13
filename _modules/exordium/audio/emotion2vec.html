@@ -376,7 +376,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium</span><span class="w"> </span><span class="kn">import</span> <span class="n">WEIGHT_DIR</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.audio.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">AudioModelWrapper</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.ckpt</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.ckpt</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_weight</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.decorator</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_or_create</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -385,8 +385,18 @@
 <span class="n">EMOTION2VEC_SAMPLE_RATE</span> <span class="o">=</span> <span class="mi">16000</span>
 <span class="sd">&quot;&quot;&quot;Required audio sample rate for emotion2vec (16 000 Hz).&quot;&quot;&quot;</span>
 
-<span class="n">_WEIGHT_URL</span> <span class="o">=</span> <span class="s2">&quot;https://huggingface.co/emotion2vec/emotion2vec_plus_seed/resolve/main/model.pt&quot;</span>
-<span class="sd">&quot;&quot;&quot;URL for downloading the emotion2vec+ seed checkpoint.&quot;&quot;&quot;</span>
+<span class="n">_MIRROR_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;emotion2vec_plus_seed.pt&quot;</span>
+<span class="sd">&quot;&quot;&quot;Filename of the emotion2vec+ seed checkpoint in the exordium mirror.&quot;&quot;&quot;</span>
+
+<span class="n">_UPSTREAM_REPO_ID</span> <span class="o">=</span> <span class="s2">&quot;emotion2vec/emotion2vec_plus_seed&quot;</span>
+<span class="sd">&quot;&quot;&quot;Upstream Hub repo for the emotion2vec+ seed checkpoint, used as a fallback.</span>
+
+<span class="sd">Original project: https://github.com/ddlBoJack/emotion2vec (emotion2vec — Ma et al.).</span>
+<span class="sd">Served from the exordium mirror (``fodorad/exordium-weights/emotion2vec_plus_seed.pt``);</span>
+<span class="sd">this repo (file ``model.pt``) is the fallback.&quot;&quot;&quot;</span>
+
+<span class="n">_UPSTREAM_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;model.pt&quot;</span>
+<span class="sd">&quot;&quot;&quot;Filename of the checkpoint within :data:`_UPSTREAM_REPO_ID`.&quot;&quot;&quot;</span>
 
 <span class="n">EMOTION2VEC_FEATURE_DIM</span> <span class="o">=</span> <span class="mi">768</span>
 <span class="sd">&quot;&quot;&quot;Output feature dimension of the emotion2vec+ seed model.&quot;&quot;&quot;</span>
@@ -939,18 +949,21 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
 
-        <span class="c1"># Download weights</span>
-        <span class="n">weight_dir</span> <span class="o">=</span> <span class="n">WEIGHT_DIR</span> <span class="o">/</span> <span class="s2">&quot;emotion2vec&quot;</span>
-        <span class="n">local_path</span> <span class="o">=</span> <span class="n">weight_dir</span> <span class="o">/</span> <span class="s2">&quot;model.pt&quot;</span>
-        <span class="n">download_file</span><span class="p">(</span><span class="n">_WEIGHT_URL</span><span class="p">,</span> <span class="n">local_path</span><span class="p">)</span>
-
-        <span class="c1"># Build and load model</span>
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">_load_emotion2vec_state_dict</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">local_path</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">_Emotion2vecModel</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
+            <span class="n">local_path</span> <span class="o">=</span> <span class="n">download_weight</span><span class="p">(</span>
+                <span class="n">_MIRROR_FILENAME</span><span class="p">,</span>
+                <span class="n">WEIGHT_DIR</span> <span class="o">/</span> <span class="s2">&quot;emotion2vec&quot;</span><span class="p">,</span>
+                <span class="n">upstream_repo_id</span><span class="o">=</span><span class="n">_UPSTREAM_REPO_ID</span><span class="p">,</span>
+                <span class="n">upstream_filename</span><span class="o">=</span><span class="n">_UPSTREAM_FILENAME</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">state_dict</span> <span class="o">=</span> <span class="n">_load_emotion2vec_state_dict</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">local_path</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building emotion2vec architecture with random weights (no checkpoint).&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 

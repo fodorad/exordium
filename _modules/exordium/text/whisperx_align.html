@@ -349,7 +349,12 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.audio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_audio</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.text.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForcedAligner</span><span class="p">,</span> <span class="n">Segment</span><span class="p">,</span> <span class="n">Word</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.text.base</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ForcedAligner</span><span class="p">,</span>
+    <span class="n">Segment</span><span class="p">,</span>
+    <span class="n">Word</span><span class="p">,</span>
+    <span class="n">prepare_segments</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_torch_device</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -417,7 +422,11 @@
 <span class="sd">                given (a mismatch is logged, not enforced).</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Words in chronological order. Empty if *transcript* is blank.</span>
+<span class="sd">            Words in chronological order. Empty if *transcript* is blank, or if the</span>
+<span class="sd">            audio is too short to carry it — see</span>
+<span class="sd">            :func:`~exordium.text.base.wav2vec2_min_samples`.  Callers aligning whole</span>
+<span class="sd">            recordings should go through :meth:`align_segments`, which widens short</span>
+<span class="sd">            windows instead of giving up on them.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_warn_language</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
@@ -425,6 +434,14 @@
             <span class="k">return</span> <span class="p">[]</span>
 
         <span class="n">waveform</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_array</span><span class="p">(</span><span class="n">audio</span><span class="p">)</span>
+        <span class="n">needed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_align_samples</span><span class="p">(</span><span class="n">transcript</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">needed</span><span class="p">:</span>
+            <span class="c1"># Too few frames: whisperX divides by zero, or backtracks to untimed words.</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Audio is </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span><span class="si">}</span><span class="s2"> samples but the transcript needs </span><span class="si">{</span><span class="n">needed</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="s2">&quot;to force-align; returning [].&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
         <span class="n">duration</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span> <span class="o">/</span> <span class="n">sr</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">([{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">transcript</span><span class="p">,</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="n">duration</span><span class="p">}],</span> <span class="n">waveform</span><span class="p">)</span></div>
 
@@ -443,6 +460,17 @@
 <span class="sd">        already on the full-audio timeline, so long recordings stay bounded</span>
 <span class="sd">        without the per-segment Python loop of the base implementation.</span>
 
+<span class="sd">        Segments too short for whisperX to align are widened first by</span>
+<span class="sd">        :func:`~exordium.text.base.prepare_segments`.  whisperX pads a short slice up to</span>
+<span class="sd">        wav2vec2&#39;s input floor, but then rescales its timestamps by</span>
+<span class="sd">        ``duration / (trellis.size(0) - 1)`` — a one-row trellis divides by zero and</span>
+<span class="sd">        aborts the entire recording.  Even when it survives that, a frame-starved</span>
+<span class="sd">        segment fails backtrack and comes back *untimed*, so its words are silently</span>
+<span class="sd">        dropped.  Widening the window fixes both.</span>
+
+<span class="sd">        Because a widened window may overlap its neighbours, the merged word stream is</span>
+<span class="sd">        sorted by time before it is returned.</span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            audio: Full audio — file path, numpy array, or torch tensor.</span>
 <span class="sd">            segments: Timestamped transcript segments covering the audio.</span>
@@ -453,15 +481,18 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_warn_language</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">segments</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">waveform</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_array</span><span class="p">(</span><span class="n">audio</span><span class="p">)</span>
         <span class="n">payload</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">start</span><span class="p">),</span> <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">end</span><span class="p">)}</span>
-            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">segments</span>
-            <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">prepare_segments</span><span class="p">(</span><span class="n">segments</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_align_samples</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">))</span>
         <span class="p">]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">payload</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[]</span>
-        <span class="n">waveform</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_array</span><span class="p">(</span><span class="n">audio</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">waveform</span><span class="p">)</span></div>
+        <span class="n">words</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">waveform</span><span class="p">)</span>
+        <span class="n">words</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">end</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">words</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_warn_language</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>

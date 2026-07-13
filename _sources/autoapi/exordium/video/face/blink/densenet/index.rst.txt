@@ -20,7 +20,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: BlinkDenseNet121Wrapper(device_id: int | None = None, yaw_threshold: float = 40.0)
+.. py:class:: BlinkDenseNet121Wrapper(device_id: int | None = None, yaw_threshold: float = 40.0, pretrained: bool = True)
 
    Blink detection wrapper using BlinkDenseNet121.
 

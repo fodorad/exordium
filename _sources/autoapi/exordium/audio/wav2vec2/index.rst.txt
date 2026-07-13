@@ -48,7 +48,7 @@ Module Contents
 
    List of supported model name strings.
 
-.. py:class:: Wav2vec2Wrapper(device_id: int = -1, model_name: str = 'base-960h')
+.. py:class:: Wav2vec2Wrapper(device_id: int = -1, model_name: str = 'base-960h', pretrained: bool = True)
 
    Bases: :py:obj:`exordium.audio.base.AudioModelWrapper`
 
@@ -66,7 +66,7 @@ Module Contents
 
    :raises ValueError: If *model_name* is not in :data:`SUPPORTED_MODELS`.
 
-   Initialize Wav2Vec2 wrapper with pretrained model.
+   Initialize Wav2Vec2 wrapper, optionally without downloading weights.
 
 
    .. py:attribute:: SAMPLE_RATE

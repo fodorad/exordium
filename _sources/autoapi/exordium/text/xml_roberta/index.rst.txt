@@ -20,7 +20,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: XmlRobertaWrapper(device_id: int = -1)
+.. py:class:: XmlRobertaWrapper(device_id: int = -1, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.text.base.TextModelWrapper`
 

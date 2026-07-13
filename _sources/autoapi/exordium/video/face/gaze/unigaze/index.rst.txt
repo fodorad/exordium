@@ -9,6 +9,14 @@ exordium.video.face.gaze.unigaze
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.unigaze.logger
+
+
 Classes
 -------
 
@@ -20,7 +28,11 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: UnigazeWrapper(model_name: str = 'unigaze_b16_joint', device_id: int | None = None)
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: UnigazeWrapper(model_name: str = 'unigaze_b16_joint', device_id: int | None = None, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.video.face.gaze.base.GazeWrapper`
 

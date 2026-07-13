@@ -346,6 +346,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">safetensors.torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_file</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium</span><span class="w"> </span><span class="kn">import</span> <span class="n">WEIGHT_DIR</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.ckpt</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_weight</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.deep.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">VisualModelWrapper</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -362,7 +363,18 @@
     <span class="s2">&quot;ir_50&quot;</span><span class="p">:</span> <span class="s2">&quot;minchul/cvlface_adaface_ir50_ms1mv2&quot;</span><span class="p">,</span>
     <span class="s2">&quot;ir_101&quot;</span><span class="p">:</span> <span class="s2">&quot;minchul/cvlface_adaface_ir101_webface4m&quot;</span><span class="p">,</span>
 <span class="p">}</span>
-<span class="sd">&quot;&quot;&quot;HuggingFace repo IDs for each supported backbone.&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;Upstream HuggingFace repo IDs per backbone, used as a fallback.</span>
+
+<span class="sd">Original project: https://github.com/mk-minchul/AdaFace (AdaFace — Kim et al., CVPR 2022).</span>
+<span class="sd">Weights are served from the exordium mirror (``fodorad/exordium-weights``, files</span>
+<span class="sd">``adaface_ir{18,50,101}.safetensors``); these repos are only the fallback.&quot;&quot;&quot;</span>
+
+<span class="n">_MIRROR_FILENAMES</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;ir_18&quot;</span><span class="p">:</span> <span class="s2">&quot;adaface_ir18.safetensors&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ir_50&quot;</span><span class="p">:</span> <span class="s2">&quot;adaface_ir50.safetensors&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ir_101&quot;</span><span class="p">:</span> <span class="s2">&quot;adaface_ir101.safetensors&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="sd">&quot;&quot;&quot;Filenames of the AdaFace weights in the exordium mirror, per backbone.&quot;&quot;&quot;</span>
 
 <span class="n">_NUM_LAYERS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;ir_18&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
@@ -398,7 +410,9 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backbone</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ir_50&quot;</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">backbone</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ir_50&quot;</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">):</span>
         <span class="k">if</span> <span class="n">backbone</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_HF_REPO_IDS</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Unknown backbone </span><span class="si">{</span><span class="n">backbone</span><span class="si">!r}</span><span class="s2">. Choose from </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_HF_REPO_IDS</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
@@ -414,8 +428,10 @@
             <span class="n">output_dim</span><span class="o">=</span><span class="n">_FEATURE_DIM</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_weights</span><span class="p">(</span><span class="n">backbone</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_load_weights</span><span class="p">(</span><span class="n">backbone</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building AdaFace architecture with random weights (no checkpoint).&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
@@ -431,21 +447,12 @@
 <span class="sd">            State dict with ``model.net.`` prefix stripped.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">hf_hub_download</span>
-
-        <span class="n">repo_id</span> <span class="o">=</span> <span class="n">_HF_REPO_IDS</span><span class="p">[</span><span class="n">backbone</span><span class="p">]</span>
-        <span class="n">cache_dir</span> <span class="o">=</span> <span class="n">WEIGHT_DIR</span> <span class="o">/</span> <span class="s2">&quot;adaface&quot;</span> <span class="o">/</span> <span class="n">backbone</span>
-        <span class="n">cache_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">local_path</span> <span class="o">=</span> <span class="n">cache_dir</span> <span class="o">/</span> <span class="s2">&quot;model.safetensors&quot;</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">local_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading </span><span class="si">{</span><span class="n">repo_id</span><span class="si">}</span><span class="s2">/model.safetensors → </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">hf_hub_download</span><span class="p">(</span>
-                <span class="n">repo_id</span><span class="o">=</span><span class="n">repo_id</span><span class="p">,</span>
-                <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;model.safetensors&quot;</span><span class="p">,</span>
-                <span class="n">local_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">),</span>
-            <span class="p">)</span>
-
+        <span class="n">local_path</span> <span class="o">=</span> <span class="n">download_weight</span><span class="p">(</span>
+            <span class="n">_MIRROR_FILENAMES</span><span class="p">[</span><span class="n">backbone</span><span class="p">],</span>
+            <span class="n">WEIGHT_DIR</span> <span class="o">/</span> <span class="s2">&quot;adaface&quot;</span> <span class="o">/</span> <span class="n">backbone</span><span class="p">,</span>
+            <span class="n">upstream_repo_id</span><span class="o">=</span><span class="n">_HF_REPO_IDS</span><span class="p">[</span><span class="n">backbone</span><span class="p">],</span>
+            <span class="n">upstream_filename</span><span class="o">=</span><span class="s2">&quot;model.safetensors&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">raw</span> <span class="o">=</span> <span class="n">load_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">local_path</span><span class="p">))</span>
         <span class="n">prefix_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_STATE_DICT_PREFIX</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">{</span>

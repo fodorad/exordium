@@ -34,7 +34,7 @@ Module Contents
 
    Required audio sample rate for all WavLM variants (16 000 Hz).
 
-.. py:class:: WavlmWrapper(device_id: int = -1, model_name: str = 'base+')
+.. py:class:: WavlmWrapper(device_id: int = -1, model_name: str = 'base+', pretrained: bool = True)
 
    Bases: :py:obj:`exordium.audio.base.AudioModelWrapper`
 

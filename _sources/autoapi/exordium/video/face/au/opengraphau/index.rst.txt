@@ -14,6 +14,7 @@ Attributes
 
 .. autoapisummary::
 
+   exordium.video.face.au.opengraphau.logger
    exordium.video.face.au.opengraphau.AU_REGISTRY
    exordium.video.face.au.opengraphau.AU_ids
    exordium.video.face.au.opengraphau.AU_names
@@ -29,6 +30,10 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
+
+   Module-level logger.
 
 .. py:data:: AU_REGISTRY
    :type:  list[tuple[str, str]]
@@ -47,7 +52,7 @@ Module Contents
 
    Ordered list of AU display names aligned with :data:`AU_ids`.
 
-.. py:class:: OpenGraphAuWrapper(stage: int = 2, device_id: int | None = None)
+.. py:class:: OpenGraphAuWrapper(stage: int = 2, device_id: int | None = None, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
 

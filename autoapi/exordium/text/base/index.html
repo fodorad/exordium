@@ -334,8 +334,23 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.WHISPER_WINDOW_SECONDS" title="exordium.text.base.WHISPER_WINDOW_SECONDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WHISPER_WINDOW_SECONDS</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.logger" title="exordium.text.base.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p>Module-level logger.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.WHISPER_WINDOW_SECONDS" title="exordium.text.base.WHISPER_WINDOW_SECONDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WHISPER_WINDOW_SECONDS</span></code></a></p></td>
 <td><p>Length of Whisper's fixed receptive field; audio longer than this needs long-form decoding.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.WAV2VEC2_RECEPTIVE_FIELD_SAMPLES" title="exordium.text.base.WAV2VEC2_RECEPTIVE_FIELD_SAMPLES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WAV2VEC2_RECEPTIVE_FIELD_SAMPLES</span></code></a></p></td>
+<td><p>Samples consumed by one wav2vec2 emission frame (the conv frontend's receptive field).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.WAV2VEC2_STRIDE_SAMPLES" title="exordium.text.base.WAV2VEC2_STRIDE_SAMPLES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WAV2VEC2_STRIDE_SAMPLES</span></code></a></p></td>
+<td><p>Samples between consecutive wav2vec2 emission frames (the conv frontend's total stride).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.MIN_ALIGN_SAMPLES" title="exordium.text.base.MIN_ALIGN_SAMPLES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MIN_ALIGN_SAMPLES</span></code></a></p></td>
+<td><p>Shortest slice (720 samples, 45 ms &#64; 16 kHz) that yields <strong>two</strong> emission frames.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.WIDEN_WINDOW_SECONDS" title="exordium.text.base.WIDEN_WINDOW_SECONDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WIDEN_WINDOW_SECONDS</span></code></a></p></td>
+<td><p>Window a degenerate segment is widened to, over and above the geometric minimum.</p></td>
 </tr>
 </tbody>
 </table>
@@ -379,6 +394,12 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.wav2vec2_min_samples" title="exordium.text.base.wav2vec2_min_samples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wav2vec2_min_samples</span></code></a>(→ int)</p></td>
+<td><p>Samples needed to force-align <em>num_tokens</em> tokens with a wav2vec2 CTC model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.prepare_segments" title="exordium.text.base.prepare_segments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_segments</span></code></a>(→ list[Segment])</p></td>
+<td><p>Widen segments that are too short for a wav2vec2 aligner to time-stamp.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.to_mono_16k" title="exordium.text.base.to_mono_16k"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_mono_16k</span></code></a>(→ tuple[torch.Tensor, int])</p></td>
 <td><p>Return <em>audio</em> as a 1-D float32 waveform at 16 kHz plus its sample rate.</p></td>
 </tr>
@@ -389,9 +410,75 @@
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
 <dl class="py data">
+<dt class="sig sig-object py" id="exordium.text.base.logger">
+<span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#exordium.text.base.logger" title="Link to this definition">¶</a></dt>
+<dd><p>Module-level logger.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="exordium.text.base.WHISPER_WINDOW_SECONDS">
 <span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">WHISPER_WINDOW_SECONDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">30.0</span></span><a class="headerlink" href="#exordium.text.base.WHISPER_WINDOW_SECONDS" title="Link to this definition">¶</a></dt>
 <dd><p>Length of Whisper’s fixed receptive field; audio longer than this needs long-form decoding.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.text.base.WAV2VEC2_RECEPTIVE_FIELD_SAMPLES">
+<span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">WAV2VEC2_RECEPTIVE_FIELD_SAMPLES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">400</span></span><a class="headerlink" href="#exordium.text.base.WAV2VEC2_RECEPTIVE_FIELD_SAMPLES" title="Link to this definition">¶</a></dt>
+<dd><p>Samples consumed by one wav2vec2 emission frame (the conv frontend’s receptive field).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.text.base.WAV2VEC2_STRIDE_SAMPLES">
+<span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">WAV2VEC2_STRIDE_SAMPLES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">320</span></span><a class="headerlink" href="#exordium.text.base.WAV2VEC2_STRIDE_SAMPLES" title="Link to this definition">¶</a></dt>
+<dd><p>Samples between consecutive wav2vec2 emission frames (the conv frontend’s total stride).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.text.base.MIN_ALIGN_SAMPLES">
+<span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">MIN_ALIGN_SAMPLES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">720</span></span><a class="headerlink" href="#exordium.text.base.MIN_ALIGN_SAMPLES" title="Link to this definition">¶</a></dt>
+<dd><p>Shortest slice (720 samples, 45 ms &#64; 16 kHz) that yields <strong>two</strong> emission frames.</p>
+<p>One frame is never enough: whisperX rescales its timestamps by
+<code class="docutils literal notranslate"><span class="pre">duration</span> <span class="pre">/</span> <span class="pre">(trellis.size(0)</span> <span class="pre">-</span> <span class="pre">1)</span></code>, so a one-row trellis divides by zero
+(<code class="docutils literal notranslate"><span class="pre">ZeroDivisionError</span></code>) and aborts the whole recording, and <code class="docutils literal notranslate"><span class="pre">MMS_FA</span></code> cannot even run
+its conv stack below 400 samples (<code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code>).  This is the floor for <em>any</em> text;
+<a class="reference internal" href="#exordium.text.base.wav2vec2_min_samples" title="exordium.text.base.wav2vec2_min_samples"><code class="xref py py-func docutils literal notranslate"><span class="pre">wav2vec2_min_samples()</span></code></a> gives the real, text-dependent requirement.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.text.base.WIDEN_WINDOW_SECONDS">
+<span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">WIDEN_WINDOW_SECONDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></span><a class="headerlink" href="#exordium.text.base.WIDEN_WINDOW_SECONDS" title="Link to this definition">¶</a></dt>
+<dd><p>Window a degenerate segment is widened to, over and above the geometric minimum.</p>
+<p><a class="reference internal" href="#exordium.text.base.wav2vec2_min_samples" title="exordium.text.base.wav2vec2_min_samples"><code class="xref py py-func docutils literal notranslate"><span class="pre">wav2vec2_min_samples()</span></code></a> says what the <em>model</em> needs; it says nothing about what the
+<em>speech</em> needs.  A 4-token word like <code class="docutils literal notranslate"><span class="pre">&quot;that&quot;</span></code> needs only 85 ms of frames, but takes
+~250 ms to say, so widening to the geometric floor alone hands CTC a window that clips
+the word — it aligns, but the timestamp comes back truncated (measured: <code class="docutils literal notranslate"><span class="pre">&quot;hey&quot;</span></code> scored
+0.02 and returned a 65 ms span against a true 320 ms, starting 137 ms late).</p>
+<p>Half a second gives the word room to sit inside the window; measured start error against
+ground truth drops to ~20 ms (about one emission frame).  Wider windows start to drift,
+as the aligner has more audio in which to mistake a similar-sounding neighbour for the
+word it is looking for.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.text.base.wav2vec2_min_samples">
+<span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">wav2vec2_min_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#wav2vec2_min_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.wav2vec2_min_samples" title="Link to this definition">¶</a></dt>
+<dd><p>Samples needed to force-align <em>num_tokens</em> tokens with a wav2vec2 CTC model.</p>
+<p>The conv frontend turns <code class="docutils literal notranslate"><span class="pre">N</span></code> samples into <code class="docutils literal notranslate"><span class="pre">floor((N</span> <span class="pre">-</span> <span class="pre">400)</span> <span class="pre">/</span> <span class="pre">320)</span> <span class="pre">+</span> <span class="pre">1</span></code> emission
+frames, and CTC cannot emit more tokens than it has frames.  Aligning <code class="docutils literal notranslate"><span class="pre">T</span></code> tokens
+therefore needs <code class="docutils literal notranslate"><span class="pre">T</span></code> frames, i.e. <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">&gt;=</span> <span class="pre">400</span> <span class="pre">+</span> <span class="pre">320</span> <span class="pre">*</span> <span class="pre">(T</span> <span class="pre">-</span> <span class="pre">1)</span></code> — never fewer than
+<a class="reference internal" href="#exordium.text.base.MIN_ALIGN_SAMPLES" title="exordium.text.base.MIN_ALIGN_SAMPLES"><code class="xref py py-data docutils literal notranslate"><span class="pre">MIN_ALIGN_SAMPLES</span></code></a>, since a lone frame breaks both backends outright.</p>
+<p>This is why a <em>constant</em> minimum is the wrong shape: <code class="docutils literal notranslate"><span class="pre">&quot;I&quot;</span></code> needs 720 samples but
+<code class="docutils literal notranslate"><span class="pre">&quot;that&quot;</span></code> needs 1360.  Starving a segment of frames does not merely lose precision —
+<code class="docutils literal notranslate"><span class="pre">MMS_FA</span></code> raises, and whisperX’s backtrack fails and returns the words untimed,
+which drops them silently.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num_tokens</strong> – Number of CTC tokens (characters, for these models) to align.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Minimum slice length in samples.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
@@ -420,6 +507,46 @@ long recordings (a 16-minute waveform never enters a single forward pass).</p>
 <dd><p>Segment end in seconds from the beginning of the audio.</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.text.base.prepare_segments">
+<span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">prepare_segments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#exordium.text.base.Segment" title="exordium.text.base.Segment"><span class="pre">Segment</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_samples_for</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#exordium.text.base.Segment" title="exordium.text.base.Segment"><span class="pre">Segment</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#prepare_segments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.prepare_segments" title="Link to this definition">¶</a></dt>
+<dd><p>Widen segments that are too short for a wav2vec2 aligner to time-stamp.</p>
+<p>Long-form Whisper occasionally emits <strong>degenerate micro-segments</strong>: real text with a
+near-zero span (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;I&quot;</span></code> over 0.02 s).  The text is fine and the surrounding audio
+exists — only the <em>window</em> is too narrow to give CTC one emission frame per token.
+Such a window makes <code class="docutils literal notranslate"><span class="pre">MMS_FA</span></code> raise and makes whisperX divide by zero, so the naive
+remedy is to drop the segment; that throws the word away for no reason.</p>
+<p>Instead, each short segment is grown around its midpoint until it satisfies both
+floors — <a class="reference internal" href="#exordium.text.base.wav2vec2_min_samples" title="exordium.text.base.wav2vec2_min_samples"><code class="xref py py-func docutils literal notranslate"><span class="pre">wav2vec2_min_samples()</span></code></a> (what the model needs) and
+<a class="reference internal" href="#exordium.text.base.WIDEN_WINDOW_SECONDS" title="exordium.text.base.WIDEN_WINDOW_SECONDS"><code class="xref py py-data docutils literal notranslate"><span class="pre">WIDEN_WINDOW_SECONDS</span></code></a> (what the <em>speech</em> needs) — clamped to the audio.  The
+aligner then sees enough audio to actually locate the word, and returns a real
+timestamp for it instead of nothing.</p>
+<p>Healthy segments are passed through with their span clamped to the audio, and are
+otherwise untouched: the speech floor applies only to segments already known to be too
+short for the model, so normal short utterances keep the span Whisper gave them.</p>
+<p>A widened window may overlap its neighbours, so the words two adjacent segments emit
+can interleave in time; <a class="reference internal" href="#exordium.text.base.ForcedAligner.align_segments" title="exordium.text.base.ForcedAligner.align_segments"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ForcedAligner.align_segments()</span></code></a> sorts the merged stream.</p>
+<p>Blank-text segments are skipped.  A segment is dropped when the <em>whole recording</em> is
+too short to carry its text, or when it lies entirely past the end of the audio —
+the two cases widening cannot fix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segments</strong> – Transcript segments, typically straight from Whisper.</p></li>
+<li><p><strong>min_samples_for</strong> – Returns the samples a given text needs. Backends pass their own
+tokenizer-exact version; see <a class="reference internal" href="#exordium.text.base.ForcedAligner.min_align_samples" title="exordium.text.base.ForcedAligner.min_align_samples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ForcedAligner.min_align_samples()</span></code></a>.</p></li>
+<li><p><strong>sample_rate</strong> – Sample rate of the audio the segments refer to.</p></li>
+<li><p><strong>num_samples</strong> – Length of the audio in samples. Windows are clamped to it, so a
+segment running past the end of the audio is judged on the slice that exists.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Alignable segments in chronological order, some with widened spans. Widened and
+dropped segments are logged so neither is silent.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -519,7 +646,7 @@ audio timeline, while <code class="docutils literal notranslate"><span class="pr
 
 <dl class="py class">
 <dt class="sig sig-object py" id="exordium.text.base.TextModelWrapper">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">TextModelWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#TextModelWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.TextModelWrapper" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">TextModelWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#TextModelWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.TextModelWrapper" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
 <p>Abstract base class for HuggingFace encoder-only transformer models.</p>
 <p>Handles device placement and provides the standard
@@ -739,6 +866,23 @@ dataset annotation) and only the timing needs to be recovered.</p>
 (whisperX wav2vec2 alignment; ships with the <code class="docutils literal notranslate"><span class="pre">text</span></code> extra).</p></li>
 </ul>
 <dl class="py method">
+<dt class="sig sig-object py" id="exordium.text.base.ForcedAligner.min_align_samples">
+<span class="sig-name descname"><span class="pre">min_align_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#ForcedAligner.min_align_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.ForcedAligner.min_align_samples" title="Link to this definition">¶</a></dt>
+<dd><p>Samples this backend needs to align <em>text</em>.</p>
+<p>The default counts non-whitespace characters as CTC tokens, which holds for the
+character-level wav2vec2 models both backends use.  Backends with a tokenizer to
+hand should override this and count exactly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>text</strong> – The text to be aligned.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Minimum slice length in samples.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="exordium.text.base.ForcedAligner.align">
 <span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">align</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">audio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transcript</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#exordium.text.base.Word" title="exordium.text.base.Word"><span class="pre">Word</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#ForcedAligner.align"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.ForcedAligner.align" title="Link to this definition">¶</a></dt>
 <dd><p>Align a known transcript to audio and return timed words.</p>
@@ -763,6 +907,9 @@ dataset annotation) and only the timing needs to be recovered.</p>
 <p>Aligning per segment keeps every forward pass short, so recordings of any
 length work without exhausting memory. Word times are shifted back onto
 the full-audio timeline by each segment’s <code class="docutils literal notranslate"><span class="pre">start</span></code>.</p>
+<p>Segments too short to align are widened by <a class="reference internal" href="#exordium.text.base.prepare_segments" title="exordium.text.base.prepare_segments"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_segments()</span></code></a> rather than
+crashing the recording or being thrown away.  Because a widened window may
+overlap its neighbours, the merged stream is sorted by time at the end.</p>
 <p>Backends with a native batched segment API (e.g. whisperX) override this.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -873,13 +1020,20 @@ pluggable <a class="reference internal" href="#exordium.text.base.ForcedAligner"
 <li><a class="reference internal" href="#classes">Classes</a></li>
 <li><a class="reference internal" href="#functions">Functions</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li><a class="reference internal" href="#exordium.text.base.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.WHISPER_WINDOW_SECONDS"><code class="docutils literal notranslate"><span class="pre">WHISPER_WINDOW_SECONDS</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.WAV2VEC2_RECEPTIVE_FIELD_SAMPLES"><code class="docutils literal notranslate"><span class="pre">WAV2VEC2_RECEPTIVE_FIELD_SAMPLES</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.WAV2VEC2_STRIDE_SAMPLES"><code class="docutils literal notranslate"><span class="pre">WAV2VEC2_STRIDE_SAMPLES</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.MIN_ALIGN_SAMPLES"><code class="docutils literal notranslate"><span class="pre">MIN_ALIGN_SAMPLES</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.WIDEN_WINDOW_SECONDS"><code class="docutils literal notranslate"><span class="pre">WIDEN_WINDOW_SECONDS</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.wav2vec2_min_samples"><code class="docutils literal notranslate"><span class="pre">wav2vec2_min_samples()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.Segment"><code class="docutils literal notranslate"><span class="pre">Segment</span></code></a><ul>
 <li><a class="reference internal" href="#exordium.text.base.Segment.text"><code class="docutils literal notranslate"><span class="pre">Segment.text</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.Segment.start"><code class="docutils literal notranslate"><span class="pre">Segment.start</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.Segment.end"><code class="docutils literal notranslate"><span class="pre">Segment.end</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#exordium.text.base.prepare_segments"><code class="docutils literal notranslate"><span class="pre">prepare_segments()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.to_mono_16k"><code class="docutils literal notranslate"><span class="pre">to_mono_16k()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.Word"><code class="docutils literal notranslate"><span class="pre">Word</span></code></a><ul>
 <li><a class="reference internal" href="#exordium.text.base.Word.text"><code class="docutils literal notranslate"><span class="pre">Word.text</span></code></a></li>
@@ -915,6 +1069,7 @@ pluggable <a class="reference internal" href="#exordium.text.base.ForcedAligner"
 </ul>
 </li>
 <li><a class="reference internal" href="#exordium.text.base.ForcedAligner"><code class="docutils literal notranslate"><span class="pre">ForcedAligner</span></code></a><ul>
+<li><a class="reference internal" href="#exordium.text.base.ForcedAligner.min_align_samples"><code class="docutils literal notranslate"><span class="pre">ForcedAligner.min_align_samples()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.ForcedAligner.align"><code class="docutils literal notranslate"><span class="pre">ForcedAligner.align()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.ForcedAligner.align_segments"><code class="docutils literal notranslate"><span class="pre">ForcedAligner.align_segments()</span></code></a></li>
 </ul>

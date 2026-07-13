@@ -415,7 +415,11 @@ given (a mismatch is logged, not enforced).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Words in chronological order. Empty if <em>transcript</em> is blank.</p>
+<dd class="field-even"><p>Words in chronological order. Empty if <em>transcript</em> is blank, or if the
+audio is too short to carry it — see
+<a class="reference internal" href="../base/index.html#exordium.text.base.wav2vec2_min_samples" title="exordium.text.base.wav2vec2_min_samples"><code class="xref py py-func docutils literal notranslate"><span class="pre">wav2vec2_min_samples()</span></code></a>.  Callers aligning whole
+recordings should go through <a class="reference internal" href="#exordium.text.whisperx_align.WhisperxForcedAligner.align_segments" title="exordium.text.whisperx_align.WhisperxForcedAligner.align_segments"><code class="xref py py-meth docutils literal notranslate"><span class="pre">align_segments()</span></code></a>, which widens short
+windows instead of giving up on them.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -427,6 +431,15 @@ given (a mismatch is logged, not enforced).</p></li>
 <p>whisperX slices the audio per segment internally and returns word times
 already on the full-audio timeline, so long recordings stay bounded
 without the per-segment Python loop of the base implementation.</p>
+<p>Segments too short for whisperX to align are widened first by
+<a class="reference internal" href="../base/index.html#exordium.text.base.prepare_segments" title="exordium.text.base.prepare_segments"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_segments()</span></code></a>.  whisperX pads a short slice up to
+wav2vec2’s input floor, but then rescales its timestamps by
+<code class="docutils literal notranslate"><span class="pre">duration</span> <span class="pre">/</span> <span class="pre">(trellis.size(0)</span> <span class="pre">-</span> <span class="pre">1)</span></code> — a one-row trellis divides by zero and
+aborts the entire recording.  Even when it survives that, a frame-starved
+segment fails backtrack and comes back <em>untimed</em>, so its words are silently
+dropped.  Widening the window fixes both.</p>
+<p>Because a widened window may overlap its neighbours, the merged word stream is
+sorted by time before it is returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

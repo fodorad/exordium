@@ -9,6 +9,14 @@ exordium.video.face.gaze.l2csnet
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.l2csnet.logger
+
+
 Classes
 -------
 
@@ -29,7 +37,11 @@ Functions
 Module Contents
 ---------------
 
-.. py:class:: L2csNetWrapper(device_id: int | None = None)
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: L2csNetWrapper(device_id: int | None = None, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.video.face.gaze.base.GazeWrapper`
 

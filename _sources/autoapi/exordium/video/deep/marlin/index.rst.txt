@@ -78,7 +78,7 @@ Module Contents
 
 .. py:data:: logger
 
-.. py:class:: MarlinWrapper(model_name: str = _DEFAULT_MARLIN_MODEL, device_id: int | None = None)
+.. py:class:: MarlinWrapper(model_name: str = _DEFAULT_MARLIN_MODEL, device_id: int | None = None, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
 

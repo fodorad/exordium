@@ -88,7 +88,7 @@ Module Contents
 
    Output feature dimension of the emotion2vec+ seed model.
 
-.. py:class:: Emotion2vecWrapper(device_id: int = -1)
+.. py:class:: Emotion2vecWrapper(device_id: int = -1, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.audio.base.AudioModelWrapper`
 

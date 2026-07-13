@@ -346,7 +346,13 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchaudio</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.audio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_audio</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.text.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForcedAligner</span><span class="p">,</span> <span class="n">Word</span><span class="p">,</span> <span class="n">WordTimestamper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.text.base</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MIN_ALIGN_SAMPLES</span><span class="p">,</span>
+    <span class="n">ForcedAligner</span><span class="p">,</span>
+    <span class="n">Word</span><span class="p">,</span>
+    <span class="n">WordTimestamper</span><span class="p">,</span>
+    <span class="n">wav2vec2_min_samples</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_torch_device</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -404,15 +410,47 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">get_torch_device</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
         <span class="n">bundle</span> <span class="o">=</span> <span class="n">torchaudio</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">MMS_FA</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bundle</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading MMS_FA forced aligner on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading MMS_FA forced aligner on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># The bundle has no public weight-free path, but it builds the architecture</span>
+            <span class="c1"># from these params before loading the checkpoint — so we can too.</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building MMS_FA architecture with random weights (no checkpoint).&quot;</span><span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">torchaudio.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">wav2vec2_model</span>
+
+            <span class="n">model</span> <span class="o">=</span> <span class="n">wav2vec2_model</span><span class="p">(</span><span class="o">**</span><span class="n">bundle</span><span class="o">.</span><span class="n">_params</span><span class="p">)</span>  <span class="c1"># noqa: SLF001 - no public equivalent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">get_tokenizer</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aligner</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">get_aligner</span><span class="p">()</span>
+
+<div class="viewcode-block" id="TorchaudioForcedAligner.min_align_samples">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/alignment/index.html#exordium.text.alignment.TorchaudioForcedAligner.min_align_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">min_align_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Samples ``MMS_FA`` needs to align *text*, counted with its own tokenizer.</span>
+
+<span class="sd">        Overrides the base class&#39;s character estimate: ``normalize_words`` strips</span>
+<span class="sd">        everything outside the ``MMS_FA`` alphabet, so counting raw characters would</span>
+<span class="sd">        demand more audio than the model actually needs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text: The text to be aligned.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Minimum slice length in samples.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">words</span> <span class="o">=</span> <span class="n">normalize_words</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">words</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">MIN_ALIGN_SAMPLES</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;list[list[int]]&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">(</span><span class="n">words</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">wav2vec2_min_samples</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">word_tokens</span><span class="p">)</span> <span class="k">for</span> <span class="n">word_tokens</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">))</span></div>
+
 
 <div class="viewcode-block" id="TorchaudioForcedAligner.align">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/alignment/index.html#exordium.text.alignment.TorchaudioForcedAligner.align">[docs]</a>
@@ -431,8 +469,11 @@
 <span class="sd">                interface compatibility with :class:`ForcedAligner`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Words in chronological order. Empty if *transcript* has no</span>
-<span class="sd">            alignable tokens.</span>
+<span class="sd">            Words in chronological order. Empty if *transcript* has no alignable</span>
+<span class="sd">            tokens, or if the audio is too short to carry them — see</span>
+<span class="sd">            :func:`~exordium.text.base.wav2vec2_min_samples`.  Callers aligning</span>
+<span class="sd">            whole recordings should go through :meth:`align_segments`, which</span>
+<span class="sd">            widens short windows instead of giving up on them.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">del</span> <span class="n">language</span>  <span class="c1"># MMS_FA is a single multilingual model.</span>
@@ -440,6 +481,16 @@
         <span class="n">words</span> <span class="o">=</span> <span class="n">normalize_words</span><span class="p">(</span><span class="n">transcript</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">words</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Transcript has no alignable tokens; returning [].&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="n">num_samples</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">needed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_align_samples</span><span class="p">(</span><span class="n">transcript</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">num_samples</span> <span class="o">&lt;</span> <span class="n">needed</span><span class="p">:</span>
+            <span class="c1"># Too few frames for the tokens: MMS_FA&#39;s conv stack or forced_align raises.</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Audio is </span><span class="si">{</span><span class="n">num_samples</span><span class="si">}</span><span class="s2"> samples but </span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">)</span><span class="si">!r}</span><span class="s2"> needs </span><span class="si">{</span><span class="n">needed</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="s2">&quot;to force-align; returning [].&quot;</span>
+            <span class="p">)</span>
             <span class="k">return</span> <span class="p">[]</span>
 
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
@@ -516,13 +567,20 @@
         <span class="n">whisper</span><span class="p">:</span> <span class="s2">&quot;WhisperWrapper | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">aligner</span><span class="p">:</span> <span class="n">ForcedAligner</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">whisper</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.text.whisper</span><span class="w"> </span><span class="kn">import</span> <span class="n">WhisperWrapper</span>
 
-            <span class="n">whisper</span> <span class="o">=</span> <span class="n">WhisperWrapper</span><span class="p">(</span><span class="n">device_id</span><span class="o">=</span><span class="n">device_id</span> <span class="k">if</span> <span class="n">device_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">whisper</span> <span class="o">=</span> <span class="n">WhisperWrapper</span><span class="p">(</span>
+                <span class="n">device_id</span><span class="o">=</span><span class="n">device_id</span> <span class="k">if</span> <span class="n">device_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">whisper</span> <span class="o">=</span> <span class="n">whisper</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">aligner</span> <span class="o">=</span> <span class="n">aligner</span> <span class="k">if</span> <span class="n">aligner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">TorchaudioForcedAligner</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aligner</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">aligner</span>
+            <span class="k">if</span> <span class="n">aligner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">TorchaudioForcedAligner</span><span class="p">(</span><span class="n">device_id</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">)</span>
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="WhisperWordTimestamper.transcribe_words">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/alignment/index.html#exordium.text.alignment.WhisperWordTimestamper.transcribe_words">[docs]</a>

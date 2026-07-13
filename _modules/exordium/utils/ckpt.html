@@ -325,6 +325,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">urllib.request</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
@@ -333,6 +334,55 @@
 
 <span class="n">_HF_REPO_ID</span> <span class="o">=</span> <span class="s2">&quot;fodorad/exordium-weights&quot;</span>
 <span class="sd">&quot;&quot;&quot;HuggingFace Hub repository ID for exordium model weights.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="build_hf_model">
+<a class="viewcode-back" href="../../../autoapi/exordium/utils/ckpt/index.html#exordium.utils.ckpt.build_hf_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_hf_model</span><span class="p">(</span>
+    <span class="n">model_cls</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">model_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">config_cls</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a HuggingFace model, with or without its pretrained weights.</span>
+
+<span class="sd">    With ``pretrained=False`` only the model&#39;s ``config.json`` is fetched (kilobytes)</span>
+<span class="sd">    and the architecture is instantiated with **random weights** — no checkpoint is</span>
+<span class="sd">    downloaded.  The result has the same shapes and interface as the real model, so it</span>
+<span class="sd">    is enough to exercise input/output contracts, inspect the architecture, or work</span>
+<span class="sd">    offline; its *predictions are meaningless*.</span>
+
+<span class="sd">    For reference, a CLIP ViT-H/14 costs ~15 KB this way instead of ~3.7 GB.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model_cls: The HuggingFace model class (e.g. ``CLIPVisionModelWithProjection``).</span>
+<span class="sd">        model_id: HuggingFace Hub model identifier.</span>
+<span class="sd">        pretrained: ``True`` (default) downloads the real weights. ``False`` builds the</span>
+<span class="sd">            architecture with random weights.</span>
+<span class="sd">        config_cls: Config class to load with. Defaults to ``AutoConfig``; pass a</span>
+<span class="sd">            specific one when the model needs a sub-config (e.g. ``CLIPVisionConfig``</span>
+<span class="sd">            for a vision tower inside a full CLIP checkpoint).</span>
+<span class="sd">        **kwargs: Forwarded to ``from_pretrained`` when *pretrained* is ``True``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The instantiated model. Typed as ``Any`` because the concrete class comes from</span>
+<span class="sd">        *model_cls*, mirroring ``from_pretrained``&#39;s own dynamic return.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="kn">import</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tfm</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Building </span><span class="si">{</span><span class="n">model_id</span><span class="si">}</span><span class="s2"> architecture with random weights (no checkpoint).&quot;</span><span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">(</span><span class="n">config_cls</span> <span class="ow">or</span> <span class="n">tfm</span><span class="o">.</span><span class="n">AutoConfig</span><span class="p">)</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_id</span><span class="p">)</span>
+    <span class="c1"># ``Auto*`` classes are factories and refuse direct construction; concrete model</span>
+    <span class="c1"># classes take the config positionally.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model_cls</span><span class="p">,</span> <span class="s2">&quot;from_config&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model_cls</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="download_file">
@@ -367,41 +417,68 @@
     <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">local_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">repo_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">_HF_REPO_ID</span><span class="p">,</span>
+    <span class="n">upstream_repo_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">upstream_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Download a model weight file from Hugging Face Hub if not already cached.</span>
 
-<span class="sd">    Uses ``huggingface_hub.hf_hub_download`` to fetch ``filename`` from</span>
-<span class="sd">    ``repo_id`` and place it directly in ``local_dir``.  Subsequent calls</span>
-<span class="sd">    with the same arguments are no-ops (file already present).</span>
+<span class="sd">    Fetches *filename* from :data:`_HF_REPO_ID` — our own mirror — and places it in</span>
+<span class="sd">    *local_dir*.  Subsequent calls with the same arguments are no-ops.</span>
+
+<span class="sd">    The mirror is preferred because upstream sources move or vanish (the 6DRepNet</span>
+<span class="sd">    author&#39;s original link already did).  When *upstream_repo_id* is given it is used as</span>
+<span class="sd">    a **fallback**: if the mirror is unreachable or missing the file, the original source</span>
+<span class="sd">    is tried before giving up, so neither location is a single point of failure.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        filename: Name of the file in the HF Hub repository (e.g.</span>
-<span class="sd">            ``&quot;fabnet_weights.pth&quot;``).</span>
-<span class="sd">        local_dir: Local directory where the file will be stored.  The file</span>
-<span class="sd">            will be at ``local_dir / filename``.</span>
-<span class="sd">        repo_id: Hugging Face Hub repository ID.  Defaults to</span>
+<span class="sd">        filename: Name of the file in *repo_id* (e.g. ``&quot;fabnet_weights.pth&quot;``).</span>
+<span class="sd">        local_dir: Directory to store the file in; it lands at ``local_dir / filename``.</span>
+<span class="sd">        repo_id: Hub repo to fetch from. Defaults to our mirror,</span>
 <span class="sd">            ``&quot;fodorad/exordium-weights&quot;``.</span>
+<span class="sd">        upstream_repo_id: Original Hub repo, used only if *repo_id* fails.</span>
+<span class="sd">        upstream_filename: Filename within *upstream_repo_id*, if it differs from</span>
+<span class="sd">            *filename*. Defaults to *filename*.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Path to the downloaded (or already cached) local file.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        FileNotFoundError: If the file is missing after the download attempt.</span>
+<span class="sd">        FileNotFoundError: If the file is missing after every download attempt.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">hf_hub_download</span>
 
     <span class="n">local_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">local_dir</span><span class="p">)</span>
     <span class="n">local_path</span> <span class="o">=</span> <span class="n">local_dir</span> <span class="o">/</span> <span class="n">filename</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">local_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">local_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading </span><span class="si">{</span><span class="n">repo_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">hf_hub_download</span><span class="p">(</span><span class="n">repo_id</span><span class="o">=</span><span class="n">repo_id</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">local_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">local_dir</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">local_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">local_path</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">local_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Weight file missing after download: </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">local_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">sources</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[(</span><span class="n">repo_id</span><span class="p">,</span> <span class="n">filename</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">upstream_repo_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sources</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">upstream_repo_id</span><span class="p">,</span> <span class="n">upstream_filename</span> <span class="ow">or</span> <span class="n">filename</span><span class="p">))</span>
 
-    <span class="k">return</span> <span class="n">local_path</span></div>
+    <span class="k">for</span> <span class="n">source_repo</span><span class="p">,</span> <span class="n">source_file</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading </span><span class="si">{</span><span class="n">source_repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">hf_hub_download</span><span class="p">(</span><span class="n">repo_id</span><span class="o">=</span><span class="n">source_repo</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">source_file</span><span class="p">,</span> <span class="n">local_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">local_dir</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># noqa: BLE001 - any Hub/network failure is a fallback trigger</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not fetch </span><span class="si">{</span><span class="n">source_repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># An upstream file may be named differently from ours; normalise it so the</span>
+        <span class="c1"># local cache key stays stable regardless of which source answered.</span>
+        <span class="n">fetched</span> <span class="o">=</span> <span class="n">local_dir</span> <span class="o">/</span> <span class="n">source_file</span>
+        <span class="k">if</span> <span class="n">fetched</span> <span class="o">!=</span> <span class="n">local_path</span> <span class="ow">and</span> <span class="n">fetched</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">fetched</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">local_path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">local_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">local_path</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source_repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2"> reported success but </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2"> is missing&quot;</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Could not download </span><span class="si">{</span><span class="n">filename</span><span class="si">!r}</span><span class="s2"> from any of: </span><span class="si">{</span><span class="p">[</span><span class="n">repo</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">repo</span><span class="p">,</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">sources</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span></div>
 
 
 

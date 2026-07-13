@@ -51,7 +51,7 @@ Module Contents
 
    Module-level logger.
 
-.. py:class:: EmotiEffNetWrapper(model_name: str = _DEFAULT_MODEL, device_id: int | None = None)
+.. py:class:: EmotiEffNetWrapper(model_name: str = _DEFAULT_MODEL, device_id: int | None = None, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
 

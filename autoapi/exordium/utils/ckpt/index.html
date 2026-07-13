@@ -346,16 +346,19 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.download_file" title="exordium.utils.ckpt.download_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_file</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.build_hf_model" title="exordium.utils.ckpt.build_hf_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_hf_model</span></code></a>(→ Any)</p></td>
+<td><p>Build a HuggingFace model, with or without its pretrained weights.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.ckpt.download_file" title="exordium.utils.ckpt.download_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_file</span></code></a>(→ None)</p></td>
 <td><p>Downloads a file to a given local path using urllib.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.ckpt.download_weight" title="exordium.utils.ckpt.download_weight"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_weight</span></code></a>(→ pathlib.Path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.download_weight" title="exordium.utils.ckpt.download_weight"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_weight</span></code></a>(→ pathlib.Path)</p></td>
 <td><p>Download a model weight file from Hugging Face Hub if not already cached.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.remove_token" title="exordium.utils.ckpt.remove_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_token</span></code></a>(→ dict)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.ckpt.remove_token" title="exordium.utils.ckpt.remove_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_token</span></code></a>(→ dict)</p></td>
 <td><p>Removes a token from the keys of the weight dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.ckpt.load_checkpoint" title="exordium.utils.ckpt.load_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_checkpoint</span></code></a>(→ dict)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.load_checkpoint" title="exordium.utils.ckpt.load_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_checkpoint</span></code></a>(→ dict)</p></td>
 <td><p>Load a torch checkpoint and strip DDP/Lightning key prefixes.</p></td>
 </tr>
 </tbody>
@@ -368,6 +371,36 @@
 <dt class="sig sig-object py" id="exordium.utils.ckpt.logger">
 <span class="sig-prename descclassname"><span class="pre">exordium.utils.ckpt.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#exordium.utils.ckpt.logger" title="Link to this definition">¶</a></dt>
 <dd><p>Module-level logger.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.utils.ckpt.build_hf_model">
+<span class="sig-prename descclassname"><span class="pre">exordium.utils.ckpt.</span></span><span class="sig-name descname"><span class="pre">build_hf_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../../../../_modules/exordium/utils/ckpt.html#build_hf_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.utils.ckpt.build_hf_model" title="Link to this definition">¶</a></dt>
+<dd><p>Build a HuggingFace model, with or without its pretrained weights.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">pretrained=False</span></code> only the model’s <code class="docutils literal notranslate"><span class="pre">config.json</span></code> is fetched (kilobytes)
+and the architecture is instantiated with <strong>random weights</strong> — no checkpoint is
+downloaded.  The result has the same shapes and interface as the real model, so it
+is enough to exercise input/output contracts, inspect the architecture, or work
+offline; its <em>predictions are meaningless</em>.</p>
+<p>For reference, a CLIP ViT-H/14 costs ~15 KB this way instead of ~3.7 GB.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_cls</strong> – The HuggingFace model class (e.g. <code class="docutils literal notranslate"><span class="pre">CLIPVisionModelWithProjection</span></code>).</p></li>
+<li><p><strong>model_id</strong> – HuggingFace Hub model identifier.</p></li>
+<li><p><strong>pretrained</strong> – <code class="docutils literal notranslate"><span class="pre">True</span></code> (default) downloads the real weights. <code class="docutils literal notranslate"><span class="pre">False</span></code> builds the
+architecture with random weights.</p></li>
+<li><p><strong>config_cls</strong> – Config class to load with. Defaults to <code class="docutils literal notranslate"><span class="pre">AutoConfig</span></code>; pass a
+specific one when the model needs a sub-config (e.g. <code class="docutils literal notranslate"><span class="pre">CLIPVisionConfig</span></code>
+for a vision tower inside a full CLIP checkpoint).</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to <code class="docutils literal notranslate"><span class="pre">from_pretrained</span></code> when <em>pretrained</em> is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The instantiated model. Typed as <code class="docutils literal notranslate"><span class="pre">Any</span></code> because the concrete class comes from
+<em>model_cls</em>, mirroring <code class="docutils literal notranslate"><span class="pre">from_pretrained</span></code>’s own dynamic return.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -391,27 +424,31 @@ already exists. Defaults to False.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="exordium.utils.ckpt.download_weight">
-<span class="sig-prename descclassname"><span class="pre">exordium.utils.ckpt.</span></span><span class="sig-name descname"><span class="pre">download_weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repo_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">_HF_REPO_ID</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pathlib.Path</span></span></span><a class="reference internal" href="../../../../_modules/exordium/utils/ckpt.html#download_weight"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.utils.ckpt.download_weight" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">exordium.utils.ckpt.</span></span><span class="sig-name descname"><span class="pre">download_weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repo_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">_HF_REPO_ID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upstream_repo_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upstream_filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pathlib.Path</span></span></span><a class="reference internal" href="../../../../_modules/exordium/utils/ckpt.html#download_weight"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.utils.ckpt.download_weight" title="Link to this definition">¶</a></dt>
 <dd><p>Download a model weight file from Hugging Face Hub if not already cached.</p>
-<p>Uses <code class="docutils literal notranslate"><span class="pre">huggingface_hub.hf_hub_download</span></code> to fetch <code class="docutils literal notranslate"><span class="pre">filename</span></code> from
-<code class="docutils literal notranslate"><span class="pre">repo_id</span></code> and place it directly in <code class="docutils literal notranslate"><span class="pre">local_dir</span></code>.  Subsequent calls
-with the same arguments are no-ops (file already present).</p>
+<p>Fetches <em>filename</em> from <code class="xref py py-data docutils literal notranslate"><span class="pre">_HF_REPO_ID</span></code> — our own mirror — and places it in
+<em>local_dir</em>.  Subsequent calls with the same arguments are no-ops.</p>
+<p>The mirror is preferred because upstream sources move or vanish (the 6DRepNet
+author’s original link already did).  When <em>upstream_repo_id</em> is given it is used as
+a <strong>fallback</strong>: if the mirror is unreachable or missing the file, the original source
+is tried before giving up, so neither location is a single point of failure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> – Name of the file in the HF Hub repository (e.g.
-<code class="docutils literal notranslate"><span class="pre">&quot;fabnet_weights.pth&quot;</span></code>).</p></li>
-<li><p><strong>local_dir</strong> – Local directory where the file will be stored.  The file
-will be at <code class="docutils literal notranslate"><span class="pre">local_dir</span> <span class="pre">/</span> <span class="pre">filename</span></code>.</p></li>
-<li><p><strong>repo_id</strong> – Hugging Face Hub repository ID.  Defaults to
+<li><p><strong>filename</strong> – Name of the file in <em>repo_id</em> (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;fabnet_weights.pth&quot;</span></code>).</p></li>
+<li><p><strong>local_dir</strong> – Directory to store the file in; it lands at <code class="docutils literal notranslate"><span class="pre">local_dir</span> <span class="pre">/</span> <span class="pre">filename</span></code>.</p></li>
+<li><p><strong>repo_id</strong> – Hub repo to fetch from. Defaults to our mirror,
 <code class="docutils literal notranslate"><span class="pre">&quot;fodorad/exordium-weights&quot;</span></code>.</p></li>
+<li><p><strong>upstream_repo_id</strong> – Original Hub repo, used only if <em>repo_id</em> fails.</p></li>
+<li><p><strong>upstream_filename</strong> – Filename within <em>upstream_repo_id</em>, if it differs from
+<em>filename</em>. Defaults to <em>filename</em>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Path to the downloaded (or already cached) local file.</p>
 </dd>
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>FileNotFoundError</strong> – If the file is missing after the download attempt.</p>
+<dd class="field-odd"><p><strong>FileNotFoundError</strong> – If the file is missing after every download attempt.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -527,6 +564,7 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;m
 <li><a class="reference internal" href="#functions">Functions</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li><a class="reference internal" href="#exordium.utils.ckpt.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
+<li><a class="reference internal" href="#exordium.utils.ckpt.build_hf_model"><code class="docutils literal notranslate"><span class="pre">build_hf_model()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.utils.ckpt.download_file"><code class="docutils literal notranslate"><span class="pre">download_file()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.utils.ckpt.download_weight"><code class="docutils literal notranslate"><span class="pre">download_weight()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.utils.ckpt.remove_token"><code class="docutils literal notranslate"><span class="pre">remove_token()</span></code></a></li>

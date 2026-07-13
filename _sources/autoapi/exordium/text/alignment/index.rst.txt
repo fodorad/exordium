@@ -66,7 +66,7 @@ Module Contents
    :returns: List of normalized word tokens (possibly empty).
 
 
-.. py:class:: TorchaudioForcedAligner(device_id: int | None = 0)
+.. py:class:: TorchaudioForcedAligner(device_id: int | None = 0, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.text.base.ForcedAligner`
 
@@ -89,6 +89,20 @@ Module Contents
 
 
 
+   .. py:method:: min_align_samples(text: str) -> int
+
+      Samples ``MMS_FA`` needs to align *text*, counted with its own tokenizer.
+
+      Overrides the base class's character estimate: ``normalize_words`` strips
+      everything outside the ``MMS_FA`` alphabet, so counting raw characters would
+      demand more audio than the model actually needs.
+
+      :param text: The text to be aligned.
+
+      :returns: Minimum slice length in samples.
+
+
+
    .. py:method:: align(audio: pathlib.Path | str | numpy.ndarray | torch.Tensor, transcript: str, language: str | None = None) -> list[exordium.text.base.Word]
 
       Align *transcript* to *audio* and return timed :class:`Word` objects.
@@ -98,12 +112,15 @@ Module Contents
       :param language: Unused — ``MMS_FA`` is multilingual. Accepted for
                        interface compatibility with :class:`ForcedAligner`.
 
-      :returns: Words in chronological order. Empty if *transcript* has no
-                alignable tokens.
+      :returns: Words in chronological order. Empty if *transcript* has no alignable
+                tokens, or if the audio is too short to carry them — see
+                :func:`~exordium.text.base.wav2vec2_min_samples`.  Callers aligning
+                whole recordings should go through :meth:`align_segments`, which
+                widens short windows instead of giving up on them.
 
 
 
-.. py:class:: WhisperWordTimestamper(whisper: WhisperWrapper | None = None, aligner: exordium.text.base.ForcedAligner | None = None, device_id: int | None = 0)
+.. py:class:: WhisperWordTimestamper(whisper: WhisperWrapper | None = None, aligner: exordium.text.base.ForcedAligner | None = None, device_id: int | None = 0, pretrained: bool = True)
 
    Bases: :py:obj:`exordium.text.base.WordTimestamper`
 

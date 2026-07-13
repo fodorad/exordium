@@ -9,6 +9,14 @@ exordium.video.face.landmark.iris
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.landmark.iris.logger
+
+
 Classes
 -------
 
@@ -32,6 +40,10 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
+
+   Module-level logger.
 
 .. py:function:: calculate_iris_diameters(iris_landmarks: numpy.ndarray | torch.Tensor) -> numpy.ndarray | torch.Tensor
 
@@ -92,7 +104,7 @@ Module Contents
    :raises ValueError: If ``landmarks.shape`` is not ``(71, 2)`` or ``(16, 2)``.
 
 
-.. py:class:: IrisWrapper(device_id: int | None = None)
+.. py:class:: IrisWrapper(device_id: int | None = None, pretrained: bool = True)
 
    MediaPipe Iris landmark detector wrapper.
 
