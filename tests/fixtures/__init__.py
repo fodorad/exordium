@@ -1,16 +1,55 @@
 """Test fixture paths and lightweight weight-availability helpers."""
 
+import contextlib
 import gc
+import logging
 import pathlib
 import types
 import unittest
 import urllib.request
+from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from http.client import HTTPResponse
 
 FIXTURES_ROOT = pathlib.Path(__file__).parent
+
+
+def best_anchored_word(words: list) -> object:
+    """Pick the word whose own alignment is trustworthy enough to test against.
+
+    The speech fixtures' reference transcripts cover only part of a long multi-speaker
+    recording, so an aligner smears the unmatched tail across huge spans (whole "words"
+    lasting 12 s). Only tightly-bounded, high-confidence words are usable as ground truth.
+
+    Args:
+        words: Word stream from a forced aligner.
+
+    Returns:
+        The highest-scoring word with a plausible duration.
+
+    """
+    anchored = [w for w in words if 0.05 <= (w.end - w.start) <= 0.4]
+    return max(anchored, key=lambda w: w.score)
+
+
+@contextlib.contextmanager
+def logging_enabled() -> Iterator[None]:
+    """Undo the suite-wide ``logging.disable(WARNING)`` for one block.
+
+    ``tests/__init__`` silences warnings so model-loading noise stays out of the
+    test output, but that also stops :meth:`~unittest.TestCase.assertLogs` from
+    ever seeing a record. Wrap a block in this to assert on log output::
+
+        with logging_enabled(), self.assertLogs("exordium.text.base", "WARNING"):
+            ...
+    """
+    logging.disable(logging.NOTSET)
+    try:
+        yield
+    finally:
+        logging.disable(logging.WARNING)
 
 
 def free_torch_memory() -> None:

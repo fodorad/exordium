@@ -27,7 +27,12 @@ import numpy as np
 import torch
 
 from exordium.audio.io import load_audio
-from exordium.text.base import ForcedAligner, Segment, Word
+from exordium.text.base import (
+    ForcedAligner,
+    Segment,
+    Word,
+    prepare_segments,
+)
 from exordium.utils.device import get_torch_device
 
 logger = logging.getLogger(__name__)
@@ -91,7 +96,11 @@ class WhisperxForcedAligner(ForcedAligner):
                 given (a mismatch is logged, not enforced).
 
         Returns:
-            Words in chronological order. Empty if *transcript* is blank.
+            Words in chronological order. Empty if *transcript* is blank, or if the
+            audio is too short to carry it — see
+            :func:`~exordium.text.base.wav2vec2_min_samples`.  Callers aligning whole
+            recordings should go through :meth:`align_segments`, which widens short
+            windows instead of giving up on them.
 
         """
         self._warn_language(language)
@@ -99,6 +108,14 @@ class WhisperxForcedAligner(ForcedAligner):
             return []
 
         waveform, sr = self._to_array(audio)
+        needed = self.min_align_samples(transcript)
+        if len(waveform) < needed:
+            # Too few frames: whisperX divides by zero, or backtracks to untimed words.
+            logger.warning(
+                f"Audio is {len(waveform)} samples but the transcript needs {needed} "
+                "to force-align; returning []."
+            )
+            return []
         duration = len(waveform) / sr
         return self._run([{"text": transcript, "start": 0.0, "end": duration}], waveform)
 
@@ -114,6 +131,17 @@ class WhisperxForcedAligner(ForcedAligner):
         already on the full-audio timeline, so long recordings stay bounded
         without the per-segment Python loop of the base implementation.
 
+        Segments too short for whisperX to align are widened first by
+        :func:`~exordium.text.base.prepare_segments`.  whisperX pads a short slice up to
+        wav2vec2's input floor, but then rescales its timestamps by
+        ``duration / (trellis.size(0) - 1)`` — a one-row trellis divides by zero and
+        aborts the entire recording.  Even when it survives that, a frame-starved
+        segment fails backtrack and comes back *untimed*, so its words are silently
+        dropped.  Widening the window fixes both.
+
+        Because a widened window may overlap its neighbours, the merged word stream is
+        sorted by time before it is returned.
+
         Args:
             audio: Full audio — file path, numpy array, or torch tensor.
             segments: Timestamped transcript segments covering the audio.
@@ -124,15 +152,18 @@ class WhisperxForcedAligner(ForcedAligner):
 
         """
         self._warn_language(language)
+        if not segments:
+            return []
+        waveform, sr = self._to_array(audio)
         payload = [
             {"text": s.text, "start": float(s.start), "end": float(s.end)}
-            for s in segments
-            if s.text.strip()
+            for s in prepare_segments(segments, self.min_align_samples, sr, len(waveform))
         ]
         if not payload:
             return []
-        waveform, _ = self._to_array(audio)
-        return self._run(payload, waveform)
+        words = self._run(payload, waveform)
+        words.sort(key=lambda w: (w.start, w.end))
+        return words
 
     def _warn_language(self, language: str | None) -> None:
         """Log when a caller asks for a language the loaded model was not built for."""
