@@ -6,6 +6,24 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
 
+    # torch, torchvision, torchaudio and torchcodec are one matched set and must be
+    # bumped together. torchvision is ABI-coupled to torch and hard-pins it
+    # (0.26 -> torch==2.11, 0.28 -> torch==2.13), so a PR that moves only one half
+    # installs cleanly and then fails at import with
+    # "RuntimeError: operator torchvision::nms does not exist" -- which is exactly how
+    # the ungrouped #44 and #45 broke CI. Grouping them means one PR and one CI run, and
+    # a loud resolution error rather than a silent runtime break.
+    #
+    # torchaudio trails the set (its newest release is 2.11.0), so it will usually show
+    # no update here; a uv override in pyproject.toml holds it on top of the newer torch.
+    groups:
+      torch-stack:
+        patterns:
+          - "torch"
+          - "torchvision"
+          - "torchaudio"
+          - "torchcodec"
+
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
