@@ -8,7 +8,13 @@ import torch
 from exordium.audio.clap import CLAP_MODEL_ID, CLAP_SAMPLE_RATE
 from exordium.audio.wav2vec2 import SUPPORTED_MODELS, Wav2vec2Wrapper
 from exordium.audio.wavlm import _MODEL_IDS, WAVLM_SAMPLE_RATE, WavlmWrapper
-from tests.fixtures import AUDIO_MULTISPEAKER, PRETRAINED, ModelTestCase, head_ok, hf_repo_exists
+from tests.fixtures import (
+    AUDIO_MULTISPEAKER,
+    PRETRAINED,
+    ModelTestCase,
+    hf_file_exists,
+    hf_repo_exists,
+)
 
 
 class TestWavlmWrapperInit(unittest.TestCase):
@@ -174,8 +180,11 @@ class TestAudioWeightAvailability(unittest.TestCase):
         self.assertTrue(hf_repo_exists("facebook/wav2vec2-base"))
 
     def test_wav2vec2_iemocap_ckpt(self):
-        url = "https://huggingface.co/speechbrain/emotion-recognition-wav2vec2-IEMOCAP/resolve/main/wav2vec2.ckpt"
-        self.assertTrue(head_ok(url), f"Not reachable: {url}")
+        # Queried through the Hub API rather than a HEAD on /resolve/: that URL
+        # redirects LFS-backed files to a presigned S3 link which refuses HEAD with
+        # 403 AccessDenied, so the raw probe reports a live file as missing.
+        repo, filename = "speechbrain/emotion-recognition-wav2vec2-IEMOCAP", "wav2vec2.ckpt"
+        self.assertTrue(hf_file_exists(repo, filename), f"Not reachable: {repo}/{filename}")
 
 
 if __name__ == "__main__":

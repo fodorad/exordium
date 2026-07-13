@@ -12,7 +12,7 @@ from exordium.audio.emotion2vec import (
     EMOTION2VEC_SAMPLE_RATE,
     Emotion2vecWrapper,
 )
-from tests.fixtures import AUDIO_MULTISPEAKER, PRETRAINED, ModelTestCase, head_ok
+from tests.fixtures import AUDIO_MULTISPEAKER, PRETRAINED, ModelTestCase, hf_file_exists
 
 
 class TestEmotion2vecWrapperInit(unittest.TestCase):
@@ -102,8 +102,11 @@ class TestEmotion2vecWrapper(ModelTestCase):
 
 class TestEmotion2vecWeightAvailability(unittest.TestCase):
     def test_emotion2vec_plus_seed_url(self):
-        url = "https://huggingface.co/emotion2vec/emotion2vec_plus_seed/resolve/main/model.pt"
-        self.assertTrue(head_ok(url), f"Not reachable: {url}")
+        # Queried through the Hub API rather than a HEAD on /resolve/: that URL
+        # redirects LFS-backed files to a presigned S3 link which refuses HEAD with
+        # 403 AccessDenied, so the raw probe reports a live file as missing.
+        repo, filename = "emotion2vec/emotion2vec_plus_seed", "model.pt"
+        self.assertTrue(hf_file_exists(repo, filename), f"Not reachable: {repo}/{filename}")
 
 
 if __name__ == "__main__":
