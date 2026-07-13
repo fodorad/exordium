@@ -28,11 +28,12 @@ class BlinkDenseNet121Wrapper:
         self,
         device_id: int | None = None,
         yaw_threshold: float = 40.0,
+        pretrained: bool = True,
     ) -> None:
         self.device = get_torch_device(device_id)
         self.yaw_threshold = yaw_threshold
 
-        self.model = DenseNet121(weights="densenet121-union")
+        self.model = DenseNet121(weights="densenet121-union" if pretrained else None)
         self.model.to(self.device)
         self.model.eval()
 

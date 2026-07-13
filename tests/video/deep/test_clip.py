@@ -12,6 +12,8 @@ from exordium.video.deep.clip import _CLIP_MEAN, _CLIP_STD, _DEFAULT_CLIP_MODEL,
 from tests.fixtures import (
     IMAGE_EMMA,
     IMAGE_FACE,
+    PRETRAINED,
+    TEST_CLIP_MODEL,
     VIDEO_MULTISPEAKER_SHORT,
     ModelTestCase,
     hf_repo_exists,
@@ -43,7 +45,7 @@ class TestClipConstants(unittest.TestCase):
 class TestClipWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = ClipWrapper(device_id=None)
+        cls.model = ClipWrapper(model_name=TEST_CLIP_MODEL, device_id=None, pretrained=PRETRAINED)
 
     def test_from_image_path(self):
         out = self.model(IMAGE_FACE)

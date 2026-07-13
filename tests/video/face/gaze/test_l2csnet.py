@@ -6,13 +6,13 @@ import numpy as np
 import torch
 
 from exordium.video.face.gaze.l2csnet import L2csNetWrapper
-from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_file_exists
+from tests.fixtures import IMAGE_FACE, PRETRAINED, ModelTestCase, hf_file_exists
 
 
 class TestL2csNetWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = L2csNetWrapper(device_id=None)
+        cls.model = L2csNetWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_returns_yaw_pitch_tensors(self):
         yaw, pitch = self.model(np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8))

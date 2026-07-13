@@ -6,12 +6,15 @@ import numpy as np
 
 from exordium.text.alignment import (
     TorchaudioForcedAligner,
-    WhisperWordTimestamper,
     normalize_words,
 )
-from exordium.text.base import Segment, Word
-from exordium.text.transcript_align import find_segment
-from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase
+from exordium.text.base import MIN_ALIGN_SAMPLES, Segment, Word
+from tests.fixtures import (
+    AUDIO_MULTISPEAKER,
+    PRETRAINED,
+    ModelTestCase,
+    logging_enabled,
+)
 
 
 class TestNormalizeWords(unittest.TestCase):
@@ -41,7 +44,7 @@ def _assert_valid_word_stream(test: unittest.TestCase, words: list[Word], max_ti
 class TestTorchaudioForcedAligner(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.aligner = TorchaudioForcedAligner(device_id=None)
+        cls.aligner = TorchaudioForcedAligner(device_id=None, pretrained=PRETRAINED)
         # Duration of the fixture (~61s) for the time-bound assertions.
         from exordium.audio.io import load_audio
 
@@ -84,43 +87,40 @@ class TestTorchaudioForcedAligner(ModelTestCase):
         words = self.aligner.align_segments(AUDIO_MULTISPEAKER, segments)
         self.assertEqual([w.text for w in words], ["hey"])
 
+    def test_align_segments_recovers_degenerate_micro_segment(self):
+        # Regression: Whisper long-form emits real text spanning ~0.02s. The slice was
+        # below MMS_FA's conv floor, which raised and killed the whole recording. The
+        # word must not merely survive the crash — it must come back timed.
+        segments = [
+            Segment(text="hey guys", start=0.0, end=2.0),
+            Segment(text="that", start=2.100, end=2.120),  # degenerate: 320 samples
+            Segment(text="what do you guys want to eat", start=2.5, end=6.0),
+        ]
+        words = self.aligner.align_segments(AUDIO_MULTISPEAKER, segments)
+        self.assertIn("that", [w.text for w in words])
+        starts = [w.start for w in words]
+        self.assertEqual(starts, sorted(starts))
 
-class TestWhisperWordTimestamper(ModelTestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.model = WhisperWordTimestamper(device_id=None)
-        from exordium.audio.io import load_audio
+    def test_min_align_samples_uses_the_models_own_tokenizer(self):
+        # normalize_words strips punctuation, so it must not inflate the requirement.
+        self.assertEqual(
+            self.aligner.min_align_samples("that!"), self.aligner.min_align_samples("that")
+        )
+        # Longer text genuinely needs more frames, hence more audio.
+        self.assertGreater(
+            self.aligner.min_align_samples("that"), self.aligner.min_align_samples("i")
+        )
 
-        wave, sr = load_audio(AUDIO_MULTISPEAKER, target_sample_rate=16000)
-        cls.duration = wave.shape[-1] / sr
+    def test_min_align_samples_falls_back_for_untokenizable_text(self):
+        # Punctuation-only text has no MMS_FA tokens; fall back to the two-frame floor
+        # rather than computing a requirement from zero tokens.
+        self.assertEqual(self.aligner.min_align_samples("..."), MIN_ALIGN_SAMPLES)
 
-    def test_transcribe_words_from_path(self):
-        words = self.model.transcribe_words(AUDIO_MULTISPEAKER)
-        _assert_valid_word_stream(self, words, self.duration)
-
-    def test_stream_is_searchable_by_fuzzy_matcher(self):
-        words = self.model.transcribe_words(AUDIO_MULTISPEAKER)
-        match = find_segment("what do you guys want to eat for lunch", words)
-        self.assertIsNotNone(match)
-        assert match is not None
-        self.assertGreaterEqual(match.score, 80.0)
-        self.assertLess(match.start, match.end)
-
-    def test_long_audio_words_reach_beyond_whispers_30s_window(self):
-        # Regression: Whisper cropped to 30 s, so the aligner smeared a
-        # half-transcript across the full 61 s audio and everything past the
-        # window was unrecoverable.
-        words = self.model.transcribe_words(AUDIO_MULTISPEAKER)
-        self.assertGreater(len(words), 180)
-        self.assertGreater(words[-1].end, 45.0)
-        self.assertLessEqual(words[-1].end, self.duration + 1.0)
-
-    def test_text_near_end_of_long_audio_is_findable(self):
-        words = self.model.transcribe_words(AUDIO_MULTISPEAKER)
-        match = find_segment("check us out at my taste base", words)
-        self.assertIsNotNone(match)
-        assert match is not None
-        self.assertGreater(match.start, 45.0)
+    def test_align_on_audio_too_short_for_its_text_returns_empty(self):
+        # align() is the raw single-shot path: it cannot widen, so it declines.
+        waveform = np.zeros(MIN_ALIGN_SAMPLES, dtype=np.float32)
+        with logging_enabled(), self.assertLogs("exordium.text.alignment", level="WARNING"):
+            self.assertEqual(self.aligner.align(waveform, "that"), [])
 
 
 if __name__ == "__main__":

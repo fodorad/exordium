@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from exordium.video.face.blink.densenet import BlinkDenseNet121Wrapper
-from tests.fixtures import ModelTestCase
+from tests.fixtures import PRETRAINED, ModelTestCase
 
 
 def _make_landmarks_6(B, left_x=80, left_y=112, right_x=144, right_y=112):
@@ -113,7 +113,7 @@ class TestBlinkDenseNet121WrapperModel(ModelTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.model = BlinkDenseNet121Wrapper(device_id=None)
+        cls.model = BlinkDenseNet121Wrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_call_single_returns_prob(self):
         probs = self.model(torch.rand(1, 3, 64, 64))

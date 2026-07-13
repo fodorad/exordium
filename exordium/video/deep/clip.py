@@ -2,8 +2,9 @@
 
 import torch
 import torchvision.transforms.functional as TF
-from transformers import CLIPVisionModelWithProjection
+from transformers import CLIPVisionConfig, CLIPVisionModelWithProjection
 
+from exordium.utils.ckpt import build_hf_model
 from exordium.video.deep.base import VisualModelWrapper
 
 _CLIP_MEAN = [0.48145466, 0.4578275, 0.40821073]
@@ -33,12 +34,18 @@ class ClipWrapper(VisualModelWrapper):
         self,
         model_name: str = _DEFAULT_CLIP_MODEL,
         device_id: int | None = None,
+        pretrained: bool = True,
     ):
         super().__init__(device_id)
-        self.model = CLIPVisionModelWithProjection.from_pretrained(model_name)
+        self.model = build_hf_model(
+            CLIPVisionModelWithProjection,
+            model_name,
+            pretrained=pretrained,
+            config_cls=CLIPVisionConfig,
+        )
         assert isinstance(self.model, CLIPVisionModelWithProjection)
         self.model.eval()
-        self.model.to(self.device)  # ty: ignore[invalid-argument-type]
+        self.model.to(self.device)
         self._mean = torch.tensor(_CLIP_MEAN, dtype=torch.float32, device=self.device).view(
             1, 3, 1, 1
         )

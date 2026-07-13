@@ -8,13 +8,18 @@ import unittest
 import torch
 
 from exordium.video.deep.clip import ClipWrapper
-from tests.fixtures import IMAGE_FACE, ModelTestCase
+from tests.fixtures import (
+    IMAGE_FACE,
+    PRETRAINED,
+    TEST_CLIP_MODEL,
+    ModelTestCase,
+)
 
 
 class TestVisualModelWrapperBase(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = ClipWrapper(device_id=None)
+        cls.model = ClipWrapper(model_name=TEST_CLIP_MODEL, device_id=None, pretrained=PRETRAINED)
 
     def test_dir_to_feature(self):
         with tempfile.TemporaryDirectory() as tmp:

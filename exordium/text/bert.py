@@ -17,8 +17,8 @@ class BertWrapper(TextModelWrapper):
 
     """
 
-    def __init__(self, device_id: int = -1) -> None:
-        super().__init__("bert-base-uncased", device_id)
+    def __init__(self, device_id: int = -1, pretrained: bool = True) -> None:
+        super().__init__("bert-base-uncased", device_id, pretrained=pretrained)
 
     def inference(self, inputs: dict[str, torch.Tensor]) -> torch.Tensor:
         """Run BERT forward pass.

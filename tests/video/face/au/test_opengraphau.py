@@ -12,7 +12,7 @@ from exordium.video.face.au.opengraphau import (
     AU_names,
     OpenGraphAuWrapper,
 )
-from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_file_exists
+from tests.fixtures import IMAGE_FACE, PRETRAINED, ModelTestCase, hf_file_exists
 
 
 class TestOpenGraphAuInit(unittest.TestCase):
@@ -54,7 +54,7 @@ class TestOpenGraphAuWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            cls.model = OpenGraphAuWrapper(stage=1, device_id=None)
+            cls.model = OpenGraphAuWrapper(stage=1, device_id=None, pretrained=PRETRAINED)
         except Exception as e:
             raise unittest.SkipTest(f"OpenGraphAU weights not available: {e}") from e
 

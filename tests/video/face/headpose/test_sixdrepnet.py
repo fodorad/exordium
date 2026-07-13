@@ -9,7 +9,7 @@ import torch
 
 from exordium.video.face.headpose import draw_headpose_axis, draw_headpose_cube
 from exordium.video.face.headpose.sixdrepnet import _HF_REPO_ID
-from tests.fixtures import IMAGE_FACE, ModelTestCase, hf_repo_exists
+from tests.fixtures import IMAGE_FACE, PRETRAINED, ModelTestCase, hf_repo_exists
 
 
 class TestDrawHeadposeAxis(unittest.TestCase):
@@ -87,7 +87,7 @@ class TestSixDRepNetWrapper(ModelTestCase):
     def setUpClass(cls):
         from exordium.video.face.headpose import SixDRepNetWrapper
 
-        cls.model = SixDRepNetWrapper(device_id=None)
+        cls.model = SixDRepNetWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_single_face_numpy(self):
         out = self.model(np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8))

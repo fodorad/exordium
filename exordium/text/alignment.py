@@ -24,7 +24,13 @@ import torch
 import torchaudio
 
 from exordium.audio.io import load_audio
-from exordium.text.base import ForcedAligner, Word, WordTimestamper
+from exordium.text.base import (
+    MIN_ALIGN_SAMPLES,
+    ForcedAligner,
+    Word,
+    WordTimestamper,
+    wav2vec2_min_samples,
+)
 from exordium.utils.device import get_torch_device
 
 if TYPE_CHECKING:
@@ -77,15 +83,44 @@ class TorchaudioForcedAligner(ForcedAligner):
 
     """
 
-    def __init__(self, device_id: int | None = 0) -> None:
+    def __init__(self, device_id: int | None = 0, pretrained: bool = True) -> None:
         self.device = get_torch_device(device_id)
         bundle = torchaudio.pipelines.MMS_FA
         self.sample_rate: int = int(bundle.sample_rate)
-        logger.info(f"Loading MMS_FA forced aligner on {self.device}...")
-        self.model = bundle.get_model().to(self.device)
+        if pretrained:
+            logger.info(f"Loading MMS_FA forced aligner on {self.device}...")
+            model = bundle.get_model()
+        else:
+            # The bundle has no public weight-free path, but it builds the architecture
+            # from these params before loading the checkpoint — so we can too.
+            logger.info("Building MMS_FA architecture with random weights (no checkpoint).")
+            from torchaudio.models import wav2vec2_model
+
+            model = wav2vec2_model(**bundle._params)  # noqa: SLF001 - no public equivalent
+        self.model = model.to(self.device)
         self.model.eval()
         self.tokenizer = bundle.get_tokenizer()
         self.aligner = bundle.get_aligner()
+
+    def min_align_samples(self, text: str) -> int:
+        """Samples ``MMS_FA`` needs to align *text*, counted with its own tokenizer.
+
+        Overrides the base class's character estimate: ``normalize_words`` strips
+        everything outside the ``MMS_FA`` alphabet, so counting raw characters would
+        demand more audio than the model actually needs.
+
+        Args:
+            text: The text to be aligned.
+
+        Returns:
+            Minimum slice length in samples.
+
+        """
+        words = normalize_words(text)
+        if not words:
+            return MIN_ALIGN_SAMPLES
+        tokens = cast("list[list[int]]", self.tokenizer(words))
+        return wav2vec2_min_samples(sum(len(word_tokens) for word_tokens in tokens))
 
     def align(
         self,
@@ -102,8 +137,11 @@ class TorchaudioForcedAligner(ForcedAligner):
                 interface compatibility with :class:`ForcedAligner`.
 
         Returns:
-            Words in chronological order. Empty if *transcript* has no
-            alignable tokens.
+            Words in chronological order. Empty if *transcript* has no alignable
+            tokens, or if the audio is too short to carry them — see
+            :func:`~exordium.text.base.wav2vec2_min_samples`.  Callers aligning
+            whole recordings should go through :meth:`align_segments`, which
+            widens short windows instead of giving up on them.
 
         """
         del language  # MMS_FA is a single multilingual model.
@@ -111,6 +149,16 @@ class TorchaudioForcedAligner(ForcedAligner):
         words = normalize_words(transcript)
         if not words:
             logger.warning("Transcript has no alignable tokens; returning [].")
+            return []
+
+        num_samples = waveform.size(1)
+        needed = self.min_align_samples(transcript)
+        if num_samples < needed:
+            # Too few frames for the tokens: MMS_FA's conv stack or forced_align raises.
+            logger.warning(
+                f"Audio is {num_samples} samples but {' '.join(words)!r} needs {needed} "
+                "to force-align; returning []."
+            )
             return []
 
         with torch.inference_mode():
@@ -183,13 +231,20 @@ class WhisperWordTimestamper(WordTimestamper):
         whisper: "WhisperWrapper | None" = None,
         aligner: ForcedAligner | None = None,
         device_id: int | None = 0,
+        pretrained: bool = True,
     ) -> None:
         if whisper is None:
             from exordium.text.whisper import WhisperWrapper
 
-            whisper = WhisperWrapper(device_id=device_id if device_id is not None else -1)
+            whisper = WhisperWrapper(
+                device_id=device_id if device_id is not None else -1, pretrained=pretrained
+            )
         self.whisper = whisper
-        self.aligner = aligner if aligner is not None else TorchaudioForcedAligner(device_id)
+        self.aligner = (
+            aligner
+            if aligner is not None
+            else TorchaudioForcedAligner(device_id, pretrained=pretrained)
+        )
 
     def transcribe_words(
         self,

@@ -25,14 +25,17 @@ class FabNetWrapper(VisualModelWrapper):
 
     """
 
-    def __init__(self, device_id: int | None = None):
+    def __init__(self, device_id: int | None = None, pretrained: bool = True):
         super().__init__(device_id)
-        self.local_path = download_weight("fabnet_weights.pth", WEIGHT_DIR / "fabnet")
-        state_dict = torch.load(
-            str(self.local_path), weights_only=False, map_location=torch.device("cpu")
-        )
         self.model = FrontaliseModelMasks_wider()
-        self.model.load_state_dict(state_dict["state_dict_model"])
+        if pretrained:
+            self.local_path = download_weight("fabnet_weights.pth", WEIGHT_DIR / "fabnet")
+            state_dict = torch.load(
+                str(self.local_path), weights_only=False, map_location=torch.device("cpu")
+            )
+            self.model.load_state_dict(state_dict["state_dict_model"])
+        else:
+            logger.info("Building FabNet architecture with random weights (no checkpoint).")
         self.model.to(self.device)
         self.model.eval()
 

@@ -4,6 +4,13 @@
 # make does not inherit DYLD_LIBRARY_PATH, so we set it explicitly here.
 export DYLD_LIBRARY_PATH := /opt/homebrew/opt/ffmpeg/lib:$(DYLD_LIBRARY_PATH)
 
+# Quieten third-party chatter that has nothing to say about our code.
+export HF_HUB_DISABLE_PROGRESS_BARS := 1
+export TOKENIZERS_PARALLELISM := false
+export TRANSFORMERS_VERBOSITY := error
+export GLOG_minloglevel := 3
+export TF_CPP_MIN_LOG_LEVEL := 3
+
 help:
 	@echo "Dev (modify files):  fix"
 	@echo "Checks (read-only):  lint | type-check | test | docs | check"

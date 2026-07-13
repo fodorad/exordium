@@ -1,5 +1,6 @@
 """OpenGraphAU action unit detection wrapper."""
 
+import logging
 import math
 
 import torch
@@ -11,6 +12,9 @@ from exordium import WEIGHT_DIR
 from exordium.utils.ckpt import download_weight, load_checkpoint
 from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD, VisualModelWrapper
 from exordium.video.deep.swint import swin_transformer_tiny
+
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
 
 AU_REGISTRY: list[tuple[str, str]] = [
     ("1", "Inner brow raiser"),
@@ -99,14 +103,20 @@ class OpenGraphAuWrapper(VisualModelWrapper):
         self,
         stage: int = 2,
         device_id: int | None = None,
+        pretrained: bool = True,
     ):
         super().__init__(device_id)
         if stage not in _OPENGRAPHAU_WEIGHTS:
             raise ValueError(f"stage must be 1 or 2, got {stage!r}")
         self.stage = stage
-        self.local_path = download_weight(_OPENGRAPHAU_WEIGHTS[stage], WEIGHT_DIR / "opengraphau")
         model = _MEFARG(num_main_classes=27, num_sub_classes=14, stage=stage)
-        model.load_state_dict(load_checkpoint(self.local_path), strict=False)
+        if pretrained:
+            self.local_path = download_weight(
+                _OPENGRAPHAU_WEIGHTS[stage], WEIGHT_DIR / "opengraphau"
+            )
+            model.load_state_dict(load_checkpoint(self.local_path), strict=False)
+        else:
+            logger.info("Building OpenGraphAU architecture with random weights (no checkpoint).")
         self.model = model
         self.model.to(self.device)
         self.model.eval()

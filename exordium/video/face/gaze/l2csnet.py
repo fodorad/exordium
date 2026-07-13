@@ -1,5 +1,6 @@
 """L2CS-Net gaze estimation model wrapper."""
 
+import logging
 from math import sqrt
 
 import torch
@@ -12,6 +13,9 @@ from exordium.utils.ckpt import download_weight
 from exordium.utils.device import get_torch_device
 from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD
 from exordium.video.face.gaze.base import GazeWrapper
+
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
 
 
 class L2csNetWrapper(GazeWrapper):
@@ -28,15 +32,19 @@ class L2csNetWrapper(GazeWrapper):
 
     """
 
-    def __init__(self, device_id: int | None = None):
+    def __init__(self, device_id: int | None = None, pretrained: bool = True):
         self.device = get_torch_device(device_id)
-        self.local_path = download_weight("l2csnet_weights.pkl", WEIGHT_DIR / "l2csnet")
-        saved_state_dict = torch.load(self.local_path, map_location=self.device, weights_only=True)
-        del saved_state_dict["fc_finetune.weight"]
-        del saved_state_dict["fc_finetune.bias"]
-
         self.model = L2CS_Builder(arch="ResNet50", bins=90)
-        self.model.load_state_dict(saved_state_dict)
+        if pretrained:
+            self.local_path = download_weight("l2csnet_weights.pkl", WEIGHT_DIR / "l2csnet")
+            saved_state_dict = torch.load(
+                self.local_path, map_location=self.device, weights_only=True
+            )
+            del saved_state_dict["fc_finetune.weight"]
+            del saved_state_dict["fc_finetune.bias"]
+            self.model.load_state_dict(saved_state_dict)
+        else:
+            logger.info("Building L2CS-Net architecture with random weights (no checkpoint).")
         self.model.to(self.device)
         self.model.eval()
 

@@ -147,6 +147,7 @@ class EmotiEffNetWrapper(VisualModelWrapper):
         self,
         model_name: str = _DEFAULT_MODEL,
         device_id: int | None = None,
+        pretrained: bool = True,
     ) -> None:
         if model_name not in _MODELS:
             raise ValueError(f"Invalid model_name: {model_name!r}. Choose from {sorted(_MODELS)}.")
@@ -157,23 +158,20 @@ class EmotiEffNetWrapper(VisualModelWrapper):
         self.feature_dim: int = cfg["feature_dim"]
 
         # Download weights from EmotiEffLib GitHub repo.
-        weight_dir = WEIGHT_DIR / "emotieffnet"
-        weight_file = f"{model_name}.pt"
-        local_path = weight_dir / weight_file
-        download_file(
-            _WEIGHT_URL.format(name=model_name),
-            local_path,
-        )
-
         # Create a fresh model from the current timm version and load only the
         # state_dict extracted from the legacy pickle.
-        state_dict = _load_state_dict_from_pickle(str(local_path))
         model = timm.create_model(
             cfg["timm_name"],
             pretrained=False,
             num_classes=cfg["num_classes"],
         )
-        model.load_state_dict(state_dict)
+        if pretrained:
+            weight_dir = WEIGHT_DIR / "emotieffnet"
+            local_path = weight_dir / f"{model_name}.pt"
+            download_file(_WEIGHT_URL.format(name=model_name), local_path)
+            model.load_state_dict(_load_state_dict_from_pickle(str(local_path)))
+        else:
+            logger.info("Building EmotiEffNet architecture with random weights (no checkpoint).")
 
         # Replace the classification head with Identity to expose penultimate
         # features.

@@ -1,7 +1,8 @@
 """Abstract base classes for text and speech-to-text models."""
 
+import logging
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -11,8 +12,68 @@ import transformers as tfm
 
 from exordium.utils.device import get_torch_device
 
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
+
 WHISPER_WINDOW_SECONDS = 30.0
 """Length of Whisper's fixed receptive field; audio longer than this needs long-form decoding."""
+
+WAV2VEC2_RECEPTIVE_FIELD_SAMPLES = 400
+"""Samples consumed by one wav2vec2 emission frame (the conv frontend's receptive field)."""
+
+WAV2VEC2_STRIDE_SAMPLES = 320
+"""Samples between consecutive wav2vec2 emission frames (the conv frontend's total stride)."""
+
+MIN_ALIGN_SAMPLES = WAV2VEC2_RECEPTIVE_FIELD_SAMPLES + WAV2VEC2_STRIDE_SAMPLES
+"""Shortest slice (720 samples, 45 ms @ 16 kHz) that yields **two** emission frames.
+
+One frame is never enough: whisperX rescales its timestamps by
+``duration / (trellis.size(0) - 1)``, so a one-row trellis divides by zero
+(``ZeroDivisionError``) and aborts the whole recording, and ``MMS_FA`` cannot even run
+its conv stack below 400 samples (``RuntimeError``).  This is the floor for *any* text;
+:func:`wav2vec2_min_samples` gives the real, text-dependent requirement.
+"""
+
+
+WIDEN_WINDOW_SECONDS = 0.5
+"""Window a degenerate segment is widened to, over and above the geometric minimum.
+
+:func:`wav2vec2_min_samples` says what the *model* needs; it says nothing about what the
+*speech* needs.  A 4-token word like ``"that"`` needs only 85 ms of frames, but takes
+~250 ms to say, so widening to the geometric floor alone hands CTC a window that clips
+the word — it aligns, but the timestamp comes back truncated (measured: ``"hey"`` scored
+0.02 and returned a 65 ms span against a true 320 ms, starting 137 ms late).
+
+Half a second gives the word room to sit inside the window; measured start error against
+ground truth drops to ~20 ms (about one emission frame).  Wider windows start to drift,
+as the aligner has more audio in which to mistake a similar-sounding neighbour for the
+word it is looking for.
+"""
+
+
+def wav2vec2_min_samples(num_tokens: int) -> int:
+    """Samples needed to force-align *num_tokens* tokens with a wav2vec2 CTC model.
+
+    The conv frontend turns ``N`` samples into ``floor((N - 400) / 320) + 1`` emission
+    frames, and CTC cannot emit more tokens than it has frames.  Aligning ``T`` tokens
+    therefore needs ``T`` frames, i.e. ``N >= 400 + 320 * (T - 1)`` — never fewer than
+    :data:`MIN_ALIGN_SAMPLES`, since a lone frame breaks both backends outright.
+
+    This is why a *constant* minimum is the wrong shape: ``"I"`` needs 720 samples but
+    ``"that"`` needs 1360.  Starving a segment of frames does not merely lose precision —
+    ``MMS_FA`` raises, and whisperX's backtrack fails and returns the words untimed,
+    which drops them silently.
+
+    Args:
+        num_tokens: Number of CTC tokens (characters, for these models) to align.
+
+    Returns:
+        Minimum slice length in samples.
+
+    """
+    tokens = max(1, num_tokens)
+    span = WAV2VEC2_RECEPTIVE_FIELD_SAMPLES + WAV2VEC2_STRIDE_SAMPLES * (tokens - 1)
+    return max(MIN_ALIGN_SAMPLES, span)
 
 
 @dataclass
@@ -34,6 +95,147 @@ class Segment:
     text: str
     start: float
     end: float
+
+
+def _widen(start: int, end: int, target: int, limit: int | None) -> tuple[int, int]:
+    """Grow a ``[start, end)`` sample window to *target* samples around its midpoint.
+
+    Slides the window back inside ``[0, limit)`` if centring would overshoot either edge,
+    so the result is always ``target`` samples long (the caller guarantees the audio is
+    long enough).
+
+    Args:
+        start: Window start in samples.
+        end: Window end in samples.
+        target: Desired window length in samples.
+        limit: Length of the audio in samples, or ``None`` if unbounded.
+
+    Returns:
+        The widened ``(start, end)`` in samples.
+
+    """
+    deficit = target - (end - start)
+    new_start = start - deficit // 2
+    new_end = new_start + target
+    if new_start < 0:
+        new_start, new_end = 0, target
+    if limit is not None and new_end > limit:
+        new_end, new_start = limit, limit - target
+    return max(0, new_start), new_end
+
+
+def prepare_segments(
+    segments: list[Segment],
+    min_samples_for: "Callable[[str], int]",
+    sample_rate: int = 16000,
+    num_samples: int | None = None,
+) -> list[Segment]:
+    """Widen segments that are too short for a wav2vec2 aligner to time-stamp.
+
+    Long-form Whisper occasionally emits **degenerate micro-segments**: real text with a
+    near-zero span (e.g. ``"I"`` over 0.02 s).  The text is fine and the surrounding audio
+    exists — only the *window* is too narrow to give CTC one emission frame per token.
+    Such a window makes ``MMS_FA`` raise and makes whisperX divide by zero, so the naive
+    remedy is to drop the segment; that throws the word away for no reason.
+
+    Instead, each short segment is grown around its midpoint until it satisfies both
+    floors — :func:`wav2vec2_min_samples` (what the model needs) and
+    :data:`WIDEN_WINDOW_SECONDS` (what the *speech* needs) — clamped to the audio.  The
+    aligner then sees enough audio to actually locate the word, and returns a real
+    timestamp for it instead of nothing.
+
+    Healthy segments are passed through with their span clamped to the audio, and are
+    otherwise untouched: the speech floor applies only to segments already known to be too
+    short for the model, so normal short utterances keep the span Whisper gave them.
+
+    A widened window may overlap its neighbours, so the words two adjacent segments emit
+    can interleave in time; :meth:`ForcedAligner.align_segments` sorts the merged stream.
+
+    Blank-text segments are skipped.  A segment is dropped when the *whole recording* is
+    too short to carry its text, or when it lies entirely past the end of the audio —
+    the two cases widening cannot fix.
+
+    Args:
+        segments: Transcript segments, typically straight from Whisper.
+        min_samples_for: Returns the samples a given text needs. Backends pass their own
+            tokenizer-exact version; see :meth:`ForcedAligner.min_align_samples`.
+        sample_rate: Sample rate of the audio the segments refer to.
+        num_samples: Length of the audio in samples. Windows are clamped to it, so a
+            segment running past the end of the audio is judged on the slice that exists.
+
+    Returns:
+        Alignable segments in chronological order, some with widened spans. Widened and
+        dropped segments are logged so neither is silent.
+
+    """
+    limit = num_samples
+    prepared: list[Segment] = []
+    widened: list[Segment] = []
+    dropped: list[Segment] = []
+
+    for segment in segments:
+        text = segment.text
+        if not text.strip():
+            continue
+
+        start = max(0, int(float(segment.start) * sample_rate))
+        end = max(start, int(float(segment.end) * sample_rate))
+        needed = min_samples_for(text)
+
+        clamped = False
+        if limit is not None:
+            # Widening cannot conjure audio: neither for text longer than the whole
+            # recording, nor for a segment that starts past the end of it.
+            if needed > limit or start >= limit:
+                dropped.append(segment)
+                continue
+            clamped = end > limit
+            end = min(end, limit)
+
+        if end - start >= needed:
+            # A segment overrunning the audio is clamped, so whisperX rescales its
+            # timestamps against the audio it really gets — a nominal end past the file
+            # end would otherwise inflate its frame ratio and stretch the word times.
+            prepared.append(_to_segment(text, start, end, sample_rate) if clamped else segment)
+            continue
+
+        # The span is unusable, so give the word a window it can actually be heard in,
+        # not merely the model's bare minimum — but never more audio than we have.
+        target = max(needed, int(WIDEN_WINDOW_SECONDS * sample_rate))
+        if limit is not None:
+            target = max(needed, min(target, limit))
+
+        new_start, new_end = _widen(start, end, target, limit)
+        prepared.append(_to_segment(text, new_start, new_end, sample_rate))
+        widened.append(segment)
+
+    _log_prepared(segments, widened, dropped)
+    return prepared
+
+
+def _to_segment(text: str, start: int, end: int, sample_rate: int) -> Segment:
+    """Build a :class:`Segment` from a sample-space window."""
+    return Segment(text=text, start=start / sample_rate, end=end / sample_rate)
+
+
+def _log_prepared(segments: list[Segment], widened: list[Segment], dropped: list[Segment]) -> None:
+    """Report widened and dropped segments so neither loss is silent."""
+
+    def preview(items: list[Segment]) -> str:
+        shown = ", ".join(f"{s.text.strip()!r} @ {s.start:.2f}s" for s in items[:5])
+        return shown + (f" (+{len(items) - 5} more)" if len(items) > 5 else "")
+
+    if widened:
+        logger.info(
+            f"Widened {len(widened)}/{len(segments)} segment(s) too short to force-align; "
+            f"their word timings are approximate: {preview(widened)}"
+        )
+    if dropped:
+        logger.warning(
+            f"Dropping {len(dropped)}/{len(segments)} segment(s) the audio cannot carry "
+            f"(too short for their text, or past the end of the recording): "
+            f"{preview(dropped)}"
+        )
 
 
 def to_mono_16k(audio: "Path | str | np.ndarray | torch.Tensor") -> tuple[torch.Tensor, int]:
@@ -144,11 +346,13 @@ class TextModelWrapper(ABC):
 
     """
 
-    def __init__(self, model_name: str, device_id: int = -1) -> None:
+    def __init__(self, model_name: str, device_id: int = -1, pretrained: bool = True) -> None:
+        from exordium.utils.ckpt import build_hf_model
+
         self.model_name = model_name
         self.device = get_torch_device(device_id)
         self.tokenizer = tfm.AutoTokenizer.from_pretrained(model_name)
-        self.model = tfm.AutoModel.from_pretrained(model_name)
+        self.model = build_hf_model(tfm.AutoModel, model_name, pretrained=pretrained)
         self.model.eval()
         self.model.to(self.device)
 
@@ -357,6 +561,22 @@ class ForcedAligner(ABC):
 
     """
 
+    def min_align_samples(self, text: str) -> int:
+        """Samples this backend needs to align *text*.
+
+        The default counts non-whitespace characters as CTC tokens, which holds for the
+        character-level wav2vec2 models both backends use.  Backends with a tokenizer to
+        hand should override this and count exactly.
+
+        Args:
+            text: The text to be aligned.
+
+        Returns:
+            Minimum slice length in samples.
+
+        """
+        return wav2vec2_min_samples(sum(1 for c in text if not c.isspace()))
+
     @abstractmethod
     def align(
         self,
@@ -388,6 +608,10 @@ class ForcedAligner(ABC):
         length work without exhausting memory. Word times are shifted back onto
         the full-audio timeline by each segment's ``start``.
 
+        Segments too short to align are widened by :func:`prepare_segments` rather than
+        crashing the recording or being thrown away.  Because a widened window may
+        overlap its neighbours, the merged stream is sorted by time at the end.
+
         Backends with a native batched segment API (e.g. whisperX) override this.
 
         Args:
@@ -400,14 +624,11 @@ class ForcedAligner(ABC):
 
         """
         waveform, sample_rate = to_mono_16k(audio)
+        num_samples = waveform.numel()
         words: list[Word] = []
-        for segment in segments:
-            if not segment.text.strip():
-                continue
+        for segment in prepare_segments(segments, self.min_align_samples, sample_rate, num_samples):
             start = max(0, int(segment.start * sample_rate))
-            end = min(waveform.numel(), int(segment.end * sample_rate))
-            if end - start < sample_rate // 100:  # skip <10 ms slivers
-                continue
+            end = min(num_samples, int(segment.end * sample_rate))
             for word in self.align(waveform[start:end], segment.text, language=language):
                 words.append(
                     Word(
@@ -417,6 +638,7 @@ class ForcedAligner(ABC):
                         score=word.score,
                     )
                 )
+        words.sort(key=lambda w: (w.start, w.end))
         return words
 
 

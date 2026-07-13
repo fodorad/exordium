@@ -14,7 +14,7 @@ from exordium.video.face.landmark.iris import (
     calculate_iris_diameters,
     visualize_iris,
 )
-from tests.fixtures import ModelTestCase, hf_file_exists
+from tests.fixtures import PRETRAINED, ModelTestCase, hf_file_exists
 
 
 class TestIrisWeightAvailability(unittest.TestCase):
@@ -28,7 +28,7 @@ class TestIrisWeightAvailability(unittest.TestCase):
 class TestIrisWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = IrisWrapper(device_id=None)
+        cls.model = IrisWrapper(device_id=None, pretrained=PRETRAINED)
         cls.eye = torch.randint(0, 255, (3, 80, 120), dtype=torch.uint8)
 
     def test_call_single_eye_patch_numpy(self):

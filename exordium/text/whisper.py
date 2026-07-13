@@ -19,6 +19,7 @@ from exordium.text.base import (
     StreamingMixin,
     to_mono_16k,
 )
+from exordium.utils.ckpt import build_hf_model
 from exordium.utils.device import get_torch_device
 
 logger = logging.getLogger(__name__)
@@ -71,6 +72,7 @@ class WhisperWrapper(StreamingMixin, SpeechToText):
         model_name: str = "distil-whisper/distil-large-v3",
         device_id: int = 0,
         dtype: torch.dtype | None = None,
+        pretrained: bool = True,
     ) -> None:
         self.device = get_torch_device(device_id)
         self.model_name = model_name
@@ -81,8 +83,10 @@ class WhisperWrapper(StreamingMixin, SpeechToText):
 
         logger.info(f"Loading {model_name} on {self.device} ({dtype})...")
         self.processor = AutoProcessor.from_pretrained(model_name)
-        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+        self.model = build_hf_model(
+            AutoModelForSpeechSeq2Seq,
             model_name,
+            pretrained=pretrained,
             torch_dtype=dtype,
             low_cpu_mem_usage=True,
         )

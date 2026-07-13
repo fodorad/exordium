@@ -54,6 +54,22 @@ jobs:
         # both 2.11.0+cu130 (PyPI default) and 2.11.0+cpu (CPU index).
         uv pip install --system --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match -e ".[all,dev,docs]"
 
+    # Model weights dominate CI time: the suite pulls several GB of checkpoints
+    # (HuggingFace, torch.hub, exordium-weights) and without this they are
+    # re-downloaded on every run. Bump the key's version suffix when a new model
+    # is added, so the cache is rebuilt to include it.
+    - name: Cache model weights
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/huggingface
+          ~/.cache/torch
+          tools
+        key: weights-v1-${{ runner.os }}
+        restore-keys: |
+          weights-v1-
+          weights-
+
     - name: Audit dependencies for vulnerabilities
       run: uvx pip-audit
       continue-on-error: true  # torch/mediapipe may have known CVEs; treat as warning
