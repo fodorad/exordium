@@ -12,7 +12,14 @@ from exordium.video.deep.emotieffnet import (
     _MODELS,
     EmotiEffNetWrapper,
 )
-from tests.fixtures import IMAGE_EMMA, IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT, ModelTestCase, head_ok
+from tests.fixtures import (
+    IMAGE_EMMA,
+    IMAGE_FACE,
+    PRETRAINED,
+    VIDEO_MULTISPEAKER_SHORT,
+    ModelTestCase,
+    head_ok,
+)
 
 
 class TestEmotiEffNetWrapperInit(unittest.TestCase):
@@ -50,7 +57,9 @@ class TestEmotiEffNetWrapperInit(unittest.TestCase):
 class TestEmotiEffNetWrapperB0(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = EmotiEffNetWrapper(model_name="enet_b0_8_best_vgaf", device_id=None)
+        cls.model = EmotiEffNetWrapper(
+            model_name="enet_b0_8_best_vgaf", device_id=None, pretrained=PRETRAINED
+        )
 
     def test_feature_dim_attribute(self):
         self.assertEqual(self.model.feature_dim, 1280)

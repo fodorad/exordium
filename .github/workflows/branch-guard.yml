@@ -1,0 +1,30 @@
+name: Branch guard
+
+# main only accepts merges from dev (plus release-please's own release PR).
+# GitHub cannot express "restrict the source branch of a pull request" natively,
+# so this runs as a required status check on pull requests targeting main.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  base-guard:
+    name: only-dev-into-main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify the pull request comes from dev
+        env:
+          # Via env, never inlined into the script: a branch name is untrusted input.
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "$HEAD_REF" = "dev" ] || [ "$HEAD_REF" = "release-please--branches--main" ]; then
+            echo "Pull request into main from '$HEAD_REF' — allowed."
+            exit 0
+          fi
+          echo "::error::main only accepts pull requests from 'dev' (or release-please)."
+          echo "::error::This pull request is from '$HEAD_REF'. Merge it into dev first, then promote dev to main."
+          exit 1

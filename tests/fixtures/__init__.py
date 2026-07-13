@@ -15,6 +15,43 @@ if TYPE_CHECKING:
 
 FIXTURES_ROOT = pathlib.Path(__file__).parent
 
+TEST_CLIP_MODEL = "openai/clip-vit-base-patch32"
+"""Smallest CLIP config used by the tests (88M params, vs 632M for the H/14 default)."""
+
+TEST_DINOV2_MODEL = "small"
+"""Smallest DINOv2 variant used by the tests."""
+
+TEST_MARLIN_MODEL = "small"
+"""Smallest MARLIN variant used by the tests."""
+
+TEST_WHISPER_MODEL = "openai/whisper-tiny"
+"""Smallest Whisper config used by the tests (39M params, vs 756M for distil-large-v3).
+
+Since :data:`PRETRAINED` is ``False``, a model id only selects an *architecture* — no
+checkpoint is fetched either way. Building the production-sized variants meant randomly
+initialising hundreds of millions of parameters just to assert a tensor shape, which
+dominated the suite's runtime. The smallest config in each family exercises exactly the
+same wrappers, shapes-by-config and call paths, for a fraction of the setup cost.
+"""
+
+PRETRAINED = False
+"""Whether tests build wrappers with real pretrained weights. Always ``False``.
+
+The suite downloads **no checkpoints**. Wrappers are constructed with
+``pretrained=False``, which fetches a few KB of ``config.json`` and instantiates the
+architecture with random weights instead of pulling gigabytes — the whole suite went
+from ~12 GB of downloads to ~17 MB.
+
+Random weights still exercise everything a unit test should: input/output shapes, device
+placement, batching, preprocessing, and error paths. What they *cannot* check is whether
+a prediction is **correct** — that is a property of the weights, not the code. Those
+correctness demonstrations live in the example notebooks, run client-side, deliberately
+out of CI.
+
+Weights are still verified to be *reachable* — see :func:`hf_file_exists` and
+:func:`hf_repo_exists`, which issue a HEAD request and download nothing.
+"""
+
 
 def best_anchored_word(words: list) -> object:
     """Pick the word whose own alignment is trustworthy enough to test against.

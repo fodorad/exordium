@@ -59,6 +59,8 @@ import torch
 import torchvision.transforms.functional as TF
 from tqdm import tqdm
 
+from exordium import WEIGHT_DIR
+from exordium.utils.ckpt import download_weight
 from exordium.utils.decorator import load_or_create
 from exordium.utils.padding import fill_gaps_with_repeat, repeat_pad_time_dim
 from exordium.video.core.detection import Detection, Track
@@ -72,7 +74,19 @@ _HF_REPO_IDS: dict[str, str] = {
     "base": "ControlNet/marlin_vit_base_ytf",
     "large": "ControlNet/marlin_vit_large_ytf",
 }
-"""Mapping of MARLIN variant names to HuggingFace repo IDs."""
+"""Upstream HuggingFace repo IDs per MARLIN variant, used as a fallback.
+
+Original project: https://github.com/ControlNet/MARLIN (MARLIN — Cai et al., CVPR 2023),
+released under CC BY-NC — **non-commercial use only**. Weights are served from the
+exordium mirror (``fodorad/exordium-weights``, files ``marlin_vit_*_ytf.safetensors``);
+these repos are only the fallback."""
+
+_MIRROR_FILENAMES: dict[str, str] = {
+    "small": "marlin_vit_small_ytf.safetensors",
+    "base": "marlin_vit_base_ytf.safetensors",
+    "large": "marlin_vit_large_ytf.safetensors",
+}
+"""Filenames of the MARLIN weights in the exordium mirror, per variant."""
 
 _FEATURE_DIMS: dict[str, int] = {
     "small": 384,
@@ -157,6 +171,7 @@ class MarlinWrapper(VisualModelWrapper):
         self,
         model_name: str = _DEFAULT_MARLIN_MODEL,
         device_id: int | None = None,
+        pretrained: bool = True,
     ) -> None:
         if model_name not in _HF_REPO_IDS:
             raise ValueError(
@@ -164,35 +179,29 @@ class MarlinWrapper(VisualModelWrapper):
             )
         super().__init__(device_id)
         self.feature_dim = _FEATURE_DIMS[model_name]
-        self.model = self._load_model(model_name)
+        self.model = self._load_model(model_name, pretrained=pretrained)
         self.model.eval()
         self.model.to(self.device)
 
     @staticmethod
-    def _load_model(model_name: str) -> torch.nn.Module:
-        """Download weights from HuggingFace Hub and build the MARLIN encoder.
+    def _load_model(model_name: str, pretrained: bool = True) -> torch.nn.Module:
+        """Build the MARLIN encoder, optionally loading weights from HuggingFace Hub.
 
         Args:
             model_name: One of ``"small"``, ``"base"``, or ``"large"``.
+            pretrained: ``True`` (default) downloads the checkpoint. ``False`` builds the
+                architecture with random weights — no download.
 
         Returns:
-            Loaded ``Marlin`` model in feature-extractor mode.
+            ``Marlin`` model in feature-extractor mode.
 
         """
-        from huggingface_hub import hf_hub_download
         from marlin_pytorch import Marlin
         from marlin_pytorch.config import resolve_config
-        from safetensors.torch import load_file
 
         repo_id = _HF_REPO_IDS[model_name]
         config_name = f"marlin_vit_{model_name}_ytf"
         config = resolve_config(config_name)
-
-        weights_path = hf_hub_download(repo_id, "model.safetensors")
-        state_dict = load_file(weights_path)
-        # HuggingFace weights use a "marlin." prefix that the marlin_pytorch
-        # module does not expect — strip it.
-        state_dict = {k.removeprefix("marlin."): v for k, v in state_dict.items()}
 
         model = Marlin(
             img_size=config.img_size,
@@ -214,7 +223,21 @@ class MarlinWrapper(VisualModelWrapper):
             tubelet_size=config.tubelet_size,
             as_feature_extractor=True,
         )
-        model.load_state_dict(state_dict)
+        if pretrained:
+            from safetensors.torch import load_file
+
+            weights_path = download_weight(
+                _MIRROR_FILENAMES[model_name],
+                WEIGHT_DIR / "marlin",
+                upstream_repo_id=repo_id,
+                upstream_filename="model.safetensors",
+            )
+            # HuggingFace weights use a "marlin." prefix that the marlin_pytorch
+            # module does not expect — strip it.
+            state_dict = {k.removeprefix("marlin."): v for k, v in load_file(weights_path).items()}
+            model.load_state_dict(state_dict)
+        else:
+            logger.info("Building MARLIN architecture with random weights (no checkpoint).")
         logger.info("MARLIN (%s) loaded — feature_dim=%d", model_name, config.encoder_embed_dim)
         return model
 

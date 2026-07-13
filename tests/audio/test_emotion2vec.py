@@ -12,7 +12,7 @@ from exordium.audio.emotion2vec import (
     EMOTION2VEC_SAMPLE_RATE,
     Emotion2vecWrapper,
 )
-from tests.fixtures import AUDIO_MULTISPEAKER, ModelTestCase, head_ok
+from tests.fixtures import AUDIO_MULTISPEAKER, PRETRAINED, ModelTestCase, head_ok
 
 
 class TestEmotion2vecWrapperInit(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestEmotion2vecWrapper(ModelTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.model = Emotion2vecWrapper(device_id=None)
+        cls.model = Emotion2vecWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_call_1d_tensor(self):
         out = self.model(torch.randn(16000))

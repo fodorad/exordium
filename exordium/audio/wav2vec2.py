@@ -20,7 +20,7 @@ import transformers as tfm
 
 from exordium import WEIGHT_DIR
 from exordium.audio.base import AudioModelWrapper
-from exordium.utils.ckpt import download_file
+from exordium.utils.ckpt import build_hf_model, download_file
 from exordium.utils.decorator import load_or_create
 
 logger = logging.getLogger(__name__)
@@ -65,8 +65,10 @@ class Wav2vec2Wrapper(AudioModelWrapper):
     SAMPLE_RATE = 16000
     """Expected audio sample rate for Wav2Vec2 (16 000 Hz)."""
 
-    def __init__(self, device_id: int = -1, model_name: str = "base-960h") -> None:
-        """Initialize Wav2Vec2 wrapper with pretrained model."""
+    def __init__(
+        self, device_id: int = -1, model_name: str = "base-960h", pretrained: bool = True
+    ) -> None:
+        """Initialize Wav2Vec2 wrapper, optionally without downloading weights."""
         super().__init__(device_id)
 
         if model_name not in _MODELS:
@@ -76,14 +78,14 @@ class Wav2vec2Wrapper(AudioModelWrapper):
         hf_id = cfg["hf_id"]
 
         self.preprocessor = tfm.Wav2Vec2Processor.from_pretrained(hf_id)
-        self.model = tfm.Wav2Vec2Model.from_pretrained(hf_id)
+        self.model = build_hf_model(tfm.Wav2Vec2Model, hf_id, pretrained=pretrained)
         assert isinstance(self.model, tfm.Wav2Vec2Model)
 
         # Load custom weights if the variant has a separate checkpoint
-        if "weight_url" in cfg:
+        if pretrained and "weight_url" in cfg:
             self._load_custom_weights(cfg["weight_url"], model_name)
 
-        self.model.to(self.device)  # ty: ignore[invalid-argument-type]
+        self.model.to(self.device)
         self.model.eval()
         logger.info("Wav2Vec2 (%s) loaded to %s.", model_name, self.device)
 

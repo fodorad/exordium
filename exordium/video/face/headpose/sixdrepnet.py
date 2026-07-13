@@ -23,6 +23,7 @@ ICASSP 2022.
 
 from __future__ import annotations
 
+import logging
 import math
 from math import cos, sin
 from pathlib import Path
@@ -36,7 +37,11 @@ import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 
 from exordium import WEIGHT_DIR
+from exordium.utils.ckpt import download_weight
 from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD, VisualModelWrapper
+
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
 
 
 class SixDRepNetWrapper(VisualModelWrapper):
@@ -73,9 +78,15 @@ class SixDRepNetWrapper(VisualModelWrapper):
 
     """
 
-    def __init__(self, device_id: int | None = None) -> None:
+    def __init__(self, device_id: int | None = None, pretrained: bool = True) -> None:
         super().__init__(device_id)
-        self.model = _SixDRepNetModel.from_pretrained(self.device)
+        if pretrained:
+            self.model = _SixDRepNetModel.from_pretrained(self.device)
+        else:
+            logger.info("Building 6DRepNet architecture with random weights (no checkpoint).")
+            self.model = _SixDRepNetModel(deploy=True)
+            self.model.eval()
+            self.model.to(self.device)
         self._mean = torch.tensor(_IMAGENET_MEAN, dtype=torch.float32, device=self.device).view(
             1, 3, 1, 1
         )
@@ -543,11 +554,16 @@ class _RepVGG(nn.Module):  # pragma: no cover
 _G2_MAP = {layer: 2 for layer in [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26]}
 """Mapping of RepVGG layer indices to group count 2 for weight reparameterisation."""
 
-_HF_REPO_ID = "osanseviero/6DRepNet_300W_LP_AFLW2000"
-"""HuggingFace Hub repo hosting the 6DRepNet pretrained weights (300W-LP + AFLW2000).
+_MIRROR_FILENAME = "sixdrepnet_weights.pth"
+"""Filename of the 6DRepNet weights in the exordium mirror."""
 
-The original author-hosted download link went offline; these are the same weights
-(strict ``load_state_dict`` match) mirrored on the Hub.
+_HF_REPO_ID = "osanseviero/6DRepNet_300W_LP_AFLW2000"
+"""Upstream Hub repo for the 6DRepNet weights (300W-LP + AFLW2000), used as a fallback.
+
+Original project: https://github.com/thohemp/6DRepNet (6DRepNet — Hempel et al., MIT).
+The author-hosted download link went offline once already, so these weights are served
+from the exordium mirror (``fodorad/exordium-weights/sixdrepnet_weights.pth``) and this
+repo is only the fallback. They are the same weights (strict ``load_state_dict`` match).
 """
 
 _HF_FILENAME = "model.pth"
@@ -602,15 +618,13 @@ class _SixDRepNetModel(nn.Module):  # pragma: no cover
 
     @classmethod
     def from_pretrained(cls, device: torch.device) -> _SixDRepNetModel:
-        from huggingface_hub import hf_hub_download
 
         model = cls(deploy=True)
-        cache_dir = WEIGHT_DIR / "sixdrepnet"
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        local_path = hf_hub_download(
-            repo_id=_HF_REPO_ID,
-            filename=_HF_FILENAME,
-            local_dir=str(cache_dir),
+        local_path = download_weight(
+            _MIRROR_FILENAME,
+            WEIGHT_DIR / "sixdrepnet",
+            upstream_repo_id=_HF_REPO_ID,
+            upstream_filename=_HF_FILENAME,
         )
         state = torch.load(local_path, map_location=device)
         model.load_state_dict(state)

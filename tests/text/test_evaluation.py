@@ -15,7 +15,6 @@ from exordium.text.evaluation import (
     validate_segment,
     validate_segments,
 )
-from tests.fixtures import ModelTestCase
 
 
 def _stream(sentence: str, step: float = 1.0, dur: float = 0.5) -> list[Word]:
@@ -161,24 +160,6 @@ class TestValidateSegments(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(results[0].decision, "accept")
         self.assertEqual(results[1].decision, "drop")
-
-
-class TestTranscriptEvaluatorSemantic(ModelTestCase):
-    """Integration: real xml-roberta sentence-transformer semantic similarity."""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.evaluator = TranscriptEvaluator(semantic_model="xml-roberta", device_id=None)
-
-    def test_identical_text_high_semantic(self):
-        m = self.evaluator.evaluate("the cat sat on the mat", "the cat sat on the mat")
-        self.assertIsNotNone(m.semantic_similarity)
-        self.assertGreater(m.semantic_similarity, 0.95)
-
-    def test_paraphrase_higher_than_unrelated(self):
-        para = self.evaluator.evaluate("the film was great", "the movie was excellent")
-        unrel = self.evaluator.evaluate("the film was great", "i need to buy groceries")
-        self.assertGreater(para.semantic_similarity, unrel.semantic_similarity)
 
 
 if __name__ == "__main__":

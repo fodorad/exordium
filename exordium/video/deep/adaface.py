@@ -24,6 +24,7 @@ import torchvision.transforms.functional as TF
 from safetensors.torch import load_file
 
 from exordium import WEIGHT_DIR
+from exordium.utils.ckpt import download_weight
 from exordium.video.deep.base import VisualModelWrapper
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,18 @@ _HF_REPO_IDS: dict[str, str] = {
     "ir_50": "minchul/cvlface_adaface_ir50_ms1mv2",
     "ir_101": "minchul/cvlface_adaface_ir101_webface4m",
 }
-"""HuggingFace repo IDs for each supported backbone."""
+"""Upstream HuggingFace repo IDs per backbone, used as a fallback.
+
+Original project: https://github.com/mk-minchul/AdaFace (AdaFace — Kim et al., CVPR 2022).
+Weights are served from the exordium mirror (``fodorad/exordium-weights``, files
+``adaface_ir{18,50,101}.safetensors``); these repos are only the fallback."""
+
+_MIRROR_FILENAMES: dict[str, str] = {
+    "ir_18": "adaface_ir18.safetensors",
+    "ir_50": "adaface_ir50.safetensors",
+    "ir_101": "adaface_ir101.safetensors",
+}
+"""Filenames of the AdaFace weights in the exordium mirror, per backbone."""
 
 _NUM_LAYERS: dict[str, int] = {
     "ir_18": 18,
@@ -74,7 +86,9 @@ class AdaFaceWrapper(VisualModelWrapper):
 
     """
 
-    def __init__(self, backbone: str = "ir_50", device_id: int | None = None):
+    def __init__(
+        self, backbone: str = "ir_50", device_id: int | None = None, pretrained: bool = True
+    ):
         if backbone not in _HF_REPO_IDS:
             msg = f"Unknown backbone {backbone!r}. Choose from {sorted(_HF_REPO_IDS)}."
             raise ValueError(msg)
@@ -90,8 +104,10 @@ class AdaFaceWrapper(VisualModelWrapper):
             output_dim=_FEATURE_DIM,
         )
 
-        state_dict = self._load_weights(backbone)
-        self.model.load_state_dict(state_dict)
+        if pretrained:
+            self.model.load_state_dict(self._load_weights(backbone))
+        else:
+            logger.info("Building AdaFace architecture with random weights (no checkpoint).")
         self.model.to(self.device)
         self.model.eval()
 
@@ -107,21 +123,12 @@ class AdaFaceWrapper(VisualModelWrapper):
             State dict with ``model.net.`` prefix stripped.
 
         """
-        from huggingface_hub import hf_hub_download
-
-        repo_id = _HF_REPO_IDS[backbone]
-        cache_dir = WEIGHT_DIR / "adaface" / backbone
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        local_path = cache_dir / "model.safetensors"
-
-        if not local_path.exists():
-            logger.info(f"Downloading {repo_id}/model.safetensors → {local_path}")
-            hf_hub_download(
-                repo_id=repo_id,
-                filename="model.safetensors",
-                local_dir=str(cache_dir),
-            )
-
+        local_path = download_weight(
+            _MIRROR_FILENAMES[backbone],
+            WEIGHT_DIR / "adaface" / backbone,
+            upstream_repo_id=_HF_REPO_IDS[backbone],
+            upstream_filename="model.safetensors",
+        )
         raw = load_file(str(local_path))
         prefix_len = len(_STATE_DICT_PREFIX)
         return {

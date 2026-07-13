@@ -1,5 +1,6 @@
 """MediaPipe Iris landmark detector wrapper."""
 
+import logging
 import math
 import os
 from pathlib import Path
@@ -16,6 +17,9 @@ from exordium import WEIGHT_DIR
 from exordium.utils.ckpt import download_weight
 from exordium.utils.device import get_torch_device
 from exordium.video.face.landmark.constants import FaceMeshLandmarks, IrisLandmarks
+
+logger = logging.getLogger(__name__)
+"""Module-level logger."""
 
 
 def _norm2d(a, b) -> float:
@@ -199,13 +203,16 @@ class IrisWrapper:
 
     """
 
-    def __init__(self, device_id: int | None = None):
-        self.local_path = download_weight("iris_weights.pth", WEIGHT_DIR / "iris")
+    def __init__(self, device_id: int | None = None, pretrained: bool = True):
         self.device = get_torch_device(device_id)
         self.model = MediaPipeIris()
-        self.model.load_state_dict(
-            torch.load(self.local_path, map_location=torch.device("cpu"), weights_only=True)
-        )
+        if pretrained:
+            self.local_path = download_weight("iris_weights.pth", WEIGHT_DIR / "iris")
+            self.model.load_state_dict(
+                torch.load(self.local_path, map_location=torch.device("cpu"), weights_only=True)
+            )
+        else:
+            logger.info("Building MediaPipeIris architecture with random weights (no checkpoint).")
         self.model.to(self.device)
         self.model.eval()
 

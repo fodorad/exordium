@@ -6,13 +6,13 @@ import numpy as np
 import torch
 
 from exordium.video.face.gaze.unigaze import UnigazeWrapper
-from tests.fixtures import ModelTestCase
+from tests.fixtures import PRETRAINED, ModelTestCase
 
 
 class TestUnigazeWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = UnigazeWrapper(device_id=None)
+        cls.model = UnigazeWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_returns_yaw_pitch_tensors(self):
         img = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)

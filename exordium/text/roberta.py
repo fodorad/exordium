@@ -17,8 +17,8 @@ class RobertaWrapper(TextModelWrapper):
 
     """
 
-    def __init__(self, device_id: int = -1) -> None:
-        super().__init__("roberta-large", device_id)
+    def __init__(self, device_id: int = -1, pretrained: bool = True) -> None:
+        super().__init__("roberta-large", device_id, pretrained=pretrained)
 
     def inference(self, inputs: dict[str, torch.Tensor]) -> torch.Tensor:
         """Run RoBERTa forward pass.
