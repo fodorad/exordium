@@ -1,11 +1,7 @@
-# Dependabot opens its PRs against dev, never main. main only accepts merges from dev
-# (enforced by the only-dev-into-main ruleset), so a PR based on main is blocked on
-# arrival and can never be merged -- which is what happened to #53.
 version: 2
 updates:
   - package-ecosystem: pip
     directory: "/"
-    target-branch: dev
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -30,7 +26,6 @@ updates:
 
   - package-ecosystem: github-actions
     directory: "/"
-    target-branch: dev
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
