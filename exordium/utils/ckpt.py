@@ -89,6 +89,7 @@ def download_weight(
     repo_id: str = _HF_REPO_ID,
     upstream_repo_id: str | None = None,
     upstream_filename: str | None = None,
+    upstream_url: str | None = None,
 ) -> Path:
     """Download a model weight file from Hugging Face Hub if not already cached.
 
@@ -96,9 +97,13 @@ def download_weight(
     *local_dir*.  Subsequent calls with the same arguments are no-ops.
 
     The mirror is preferred because upstream sources move or vanish (the 6DRepNet
-    author's original link already did).  When *upstream_repo_id* is given it is used as
-    a **fallback**: if the mirror is unreachable or missing the file, the original source
+    author's original link already did).  When an upstream is given it is used as a
+    **fallback**: if the mirror is unreachable or missing the file, the original source
     is tried before giving up, so neither location is a single point of failure.
+
+    The fallback may be another Hub repo (*upstream_repo_id*) or a plain URL
+    (*upstream_url*), since not every upstream publishes to the Hub — EmotiEffLib, for
+    instance, serves its checkpoints straight from GitHub.
 
     Args:
         filename: Name of the file in *repo_id* (e.g. ``"fabnet_weights.pth"``).
@@ -108,6 +113,7 @@ def download_weight(
         upstream_repo_id: Original Hub repo, used only if *repo_id* fails.
         upstream_filename: Filename within *upstream_repo_id*, if it differs from
             *filename*. Defaults to *filename*.
+        upstream_url: Original download URL, used only if the Hub sources fail.
 
     Returns:
         Path to the downloaded (or already cached) local file.
@@ -146,9 +152,19 @@ def download_weight(
             return local_path
         logger.warning(f"{source_repo}/{source_file} reported success but {local_path} is missing")
 
-    raise FileNotFoundError(
-        f"Could not download {filename!r} from any of: {[repo for repo, _ in sources]}"
-    )
+    if upstream_url is not None:
+        try:
+            logger.info(f"Falling back to {upstream_url} → {local_path}")
+            download_file(upstream_url, local_path)
+        except Exception as error:  # noqa: BLE001 - any network failure exhausts the sources
+            logger.warning(f"Could not fetch {upstream_url}: {error}")
+        if local_path.exists():
+            return local_path
+
+    attempted = [f"{repo}/{name}" for repo, name in sources]
+    if upstream_url is not None:
+        attempted.append(upstream_url)
+    raise FileNotFoundError(f"Could not download {filename!r} from any of: {attempted}")
 
 
 def remove_token(weights: dict, token: str = "_model.") -> dict:
