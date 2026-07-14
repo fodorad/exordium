@@ -232,6 +232,7 @@
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/index.html">exordium.video</a><input aria-label="Toggle navigation of exordium.video" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/core/index.html">exordium.video.core</a><input aria-label="Toggle navigation of exordium.video.core" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/core/bb/index.html">exordium.video.core.bb</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/core/densify/index.html">exordium.video.core.densify</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/core/detection/index.html">exordium.video.core.detection</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/core/io/index.html">exordium.video.core.io</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/core/transform/index.html">exordium.video.core.transform</a></li>
@@ -332,6 +333,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.decorator</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_or_create</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_torch_device</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.densify</span><span class="w"> </span><span class="kn">import</span> <span class="n">densify</span> <span class="k">as</span> <span class="n">densify_features</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.detection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Track</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">Video</span><span class="p">,</span> <span class="n">batch_iterator</span><span class="p">,</span> <span class="n">to_uint8_tensor</span>
 
@@ -519,21 +521,53 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">track</span><span class="p">:</span> <span class="n">Track</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+        <span class="n">densify</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">start_frame_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">end_frame_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">fill</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="o">**</span><span class="n">_kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract features from all non-interpolated detections in a track.</span>
 
+<span class="sd">        By default the output is **sparse**: one feature row per detection, so</span>
+<span class="sd">        ``N &lt;= num_frames`` when the subject was not detected on every frame.</span>
+<span class="sd">        That is the honest default — it records only what was observed.</span>
+
+<span class="sd">        Set ``densify=True`` to scatter those features onto a gap-free frame</span>
+<span class="sd">        grid instead, which is what a temporal model needs to keep the face</span>
+<span class="sd">        stream aligned with audio and text. Frames with no detection are filled</span>
+<span class="sd">        with ``fill`` and flagged ``False`` in the returned ``mask``.</span>
+
 <span class="sd">        Results are cached as a safetensors file: pass ``output_path`` and</span>
-<span class="sd">        ``overwrite`` via ``_kwargs`` to control caching behaviour.</span>
+<span class="sd">        ``overwrite`` via ``_kwargs`` to control caching behaviour. Sparse and</span>
+<span class="sd">        dense results differ, so give them **different** ``output_path``s.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            track: Track containing a sequence of Detection objects.</span>
 <span class="sd">            batch_size: Detections to process per batch. Defaults to 30.</span>
+<span class="sd">            densify: If True, return a dense grid plus a validity mask. See</span>
+<span class="sd">                :func:`~exordium.video.core.densify.densify`.</span>
+<span class="sd">            start_frame_id: First frame of the dense grid, inclusive. Ignored</span>
+<span class="sd">                unless ``densify``. Defaults to 0.</span>
+<span class="sd">            end_frame_id: One past the last frame of the dense grid (exclusive).</span>
+<span class="sd">                Ignored unless ``densify``. When ``None``, defaults to the last</span>
+<span class="sd">                detected frame + 1, which **undercounts if the video continues</span>
+<span class="sd">                past the last detection** — pass the video&#39;s frame count</span>
+<span class="sd">                explicitly whenever it is known.</span>
+<span class="sd">            fill: Value for frames with no detection — either a scalar or a</span>
+<span class="sd">                ``(D,)`` tensor. Ignored unless ``densify``. Defaults to 0.0.</span>
 <span class="sd">            **_kwargs: Forwarded to ``load_or_create``.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Dict with keys ``&quot;frame_ids&quot;`` (``(N,)`` long tensor) and</span>
-<span class="sd">            ``&quot;features&quot;`` (``(N, D)`` float tensor), both on CPU.</span>
+<span class="sd">            When ``densify=False`` (default), a dict with ``&quot;frame_ids&quot;``</span>
+<span class="sd">            (``(N,)`` long) and ``&quot;features&quot;`` (``(N, D)`` float), both on CPU.</span>
+
+<span class="sd">            When ``densify=True``, a dict with ``&quot;frame_ids&quot;`` (``(T,)`` long,</span>
+<span class="sd">            contiguous), ``&quot;features&quot;`` (``(T, D)``, ``fill`` where undetected)</span>
+<span class="sd">            and ``&quot;mask&quot;`` (``(T,)`` bool, True where a detection existed) —</span>
+<span class="sd">            the same contract</span>
+<span class="sd">            :meth:`~exordium.video.deep.marlin.MarlinWrapper.track_to_feature`</span>
+<span class="sd">            returns.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -545,10 +579,27 @@
             <span class="n">ids</span> <span class="o">+=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">frame_id</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">]</span>
             <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">([</span><span class="n">d</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra_space</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">])</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
 
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;frame_ids&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span>
-            <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
-        <span class="p">}</span>
+        <span class="n">frame_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+        <span class="c1"># An empty track yields no batches, so there is nothing to concatenate. The</span>
+        <span class="c1"># feature width is still needed to build a well-formed (0, D) tensor, and it</span>
+        <span class="c1"># is only knowable by asking the model — not every wrapper exposes it as an</span>
+        <span class="c1"># attribute. One forward pass on a dummy crop is a cheap price for an edge case.</span>
+        <span class="k">if</span> <span class="n">features</span><span class="p">:</span>
+            <span class="n">stacked</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">probe</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">))</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+            <span class="n">stacked</span> <span class="o">=</span> <span class="n">probe</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">probe</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">densify</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;frame_ids&quot;</span><span class="p">:</span> <span class="n">frame_ids</span><span class="p">,</span> <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">stacked</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">densify_features</span><span class="p">(</span>
+            <span class="n">frame_ids</span><span class="p">,</span>
+            <span class="n">stacked</span><span class="p">,</span>
+            <span class="n">start_frame_id</span><span class="o">=</span><span class="n">start_frame_id</span><span class="p">,</span>
+            <span class="n">end_frame_id</span><span class="o">=</span><span class="n">end_frame_id</span><span class="p">,</span>
+            <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="nd">@load_or_create</span><span class="p">(</span><span class="s2">&quot;st&quot;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">video_to_feature</span><span class="p">(</span>

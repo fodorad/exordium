@@ -1,0 +1,129 @@
+exordium.video.core.densify
+===========================
+
+.. py:module:: exordium.video.core.densify
+
+.. autoapi-nested-parse::
+
+   Scatter sparse per-detection features onto a dense, regular time grid.
+
+   Feature extractors return one vector per *detection*, not per *frame*: a face
+   track covers only the frames where the subject was actually detected, so
+   :meth:`~exordium.video.deep.base.VisualModelWrapper.track_to_feature` yields
+   ``(N, D)`` with ``N <= num_frames``. That sparse form is the right default —
+   it wastes nothing and stays honest about what was observed.
+
+   It is the wrong form for a *temporal model*. A sequence head consuming face,
+   audio and text streams needs them on a common, gap-free time axis, so timestep
+   *i* means the same instant in every modality. :func:`densify` performs that
+   conversion: it scatters the sparse features onto the frame grid, fills the
+   frames with no detection with a constant vector, and returns a boolean mask
+   saying which timesteps were real.
+
+   The mask is the load-bearing part. Zero-filled timesteps are *not* observations
+   of a zero-valued face; they are absences, and a model must be told to ignore
+   them (attention masking, packed sequences, masked pooling) rather than fitting
+   them. A dense tensor without its mask silently teaches the model that "no face
+   detected" is a meaningful feature value.
+
+   The output contract — ``frame_ids`` / ``features`` / ``mask`` — is deliberately
+   identical to the one
+   :meth:`~exordium.video.deep.marlin.MarlinWrapper.track_to_feature` already
+   produces, so densified frame-wise features and MARLIN's window-wise features
+   are interchangeable downstream.
+
+   .. note::
+
+      Every **frame-wise** extractor inherits ``densify=`` from
+      :meth:`~exordium.video.deep.base.VisualModelWrapper.track_to_feature` —
+      FaRL, EmotiEffNet, FabNet, CLIP, DINOv2, AdaFace, SwinT, OpenGraphAU and
+      SixDRepNet.
+
+      :class:`~exordium.video.deep.marlin.MarlinWrapper` does **not** take the
+      argument, and does not need it: MARLIN is a *video* model whose timestep is
+      a 16-frame **window**, not a frame, so its ``frame_ids`` are window start
+      indices (``0, 16, 32, ...``). It already emits this exact dense contract
+      natively, zero-filling empty windows. Densifying it would require answering
+      "which frame is window 2?", which has no honest answer — aligning MARLIN to
+      a frame grid means *upsampling* its window features, a different operation.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.core.densify.densify
+
+
+Module Contents
+---------------
+
+.. py:function:: densify(frame_ids: torch.Tensor, features: torch.Tensor, start_frame_id: int = 0, end_frame_id: int | None = None, fill: torch.Tensor | float = 0.0, strict: bool = False) -> dict[str, torch.Tensor]
+
+   Scatter sparse per-detection features onto a dense frame grid.
+
+   Builds the half-open frame range ``[start_frame_id, end_frame_id)``, places
+   each feature at its own frame, and fills the rest with ``fill``.
+
+   Densifying a *window* rather than the whole video keeps this O(window)
+   instead of O(video): a long track through a 10-minute recording can be
+   densified over a 250-frame snippet without materialising the full timeline.
+   Whole-video densification is just the special case
+   ``start_frame_id=0, end_frame_id=num_frames``.
+
+   :param frame_ids: ``(N,)`` long tensor of frame indices, as returned by
+                     ``track_to_feature``. Need not be sorted or contiguous.
+   :param features: ``(N, D)`` float tensor of per-detection features, row-aligned
+                    with ``frame_ids``.
+   :param start_frame_id: First frame of the output grid, inclusive. Defaults to 0.
+   :param end_frame_id: One past the last frame of the output grid (exclusive).
+                        When ``None``, defaults to ``max(frame_ids) + 1`` — which
+                        **undercounts if the video continues past the last detection**, so
+                        pass it explicitly whenever the true length is known.
+   :param fill: Value for frames with no detection. Either a scalar (broadcast
+                across the feature dimension) or a ``(D,)`` tensor. Defaults to 0.0.
+   :param strict: If True, raise when a frame id falls outside the output range.
+                  If False (default), such detections are dropped — a long track
+                  legitimately extends past a short window, so clipping is the normal
+                  case, not an error.
+
+   :returns:
+
+             * ``"frame_ids"`` — ``(T,)`` long tensor, ``start_frame_id`` to
+               ``end_frame_id - 1``. Absolute frame indices, not offsets into the
+               window.
+             * ``"features"`` — ``(T, D)`` tensor, ``fill`` where no detection
+               exists. Same dtype as ``features``.
+             * ``"mask"`` — ``(T,)`` bool tensor. ``True`` where a real detection
+               landed on that frame, ``False`` where the value is ``fill``.
+   :rtype: Dict with, where ``T = end_frame_id - start_frame_id``
+
+   :raises ValueError: If ``features`` is not 2-D, if ``frame_ids`` and ``features``
+       disagree on length, if ``end_frame_id <= start_frame_id``, if ``fill``
+       is a tensor whose shape is not ``(D,)``, or — when ``strict`` — if any
+       frame id falls outside ``[start_frame_id, end_frame_id)``.
+
+   Example::
+
+       from exordium.video.core.densify import densify
+
+       sparse = model.track_to_feature(track)          # (N, D), N <= num_frames
+       dense = densify(
+           sparse["frame_ids"],
+           sparse["features"],
+           end_frame_id=num_frames,                    # full video
+       )
+       dense["features"]  # (num_frames, D), zeros where no face was detected
+       dense["mask"]      # (num_frames,) bool — feed this to your temporal model
+
+       # A 10-second snippet at 25 fps, without materialising the whole video:
+       window = densify(
+           sparse["frame_ids"], sparse["features"],
+           start_frame_id=100, end_frame_id=350,
+       )
+       window["features"].shape  # (250, D)
+
+
+
