@@ -23,22 +23,26 @@ dependencies = [
   "opencv-python",
   "scipy",
   # ── PyTorch ecosystem version pins ───────────────────────────────────────────
-  # torch, torchaudio, torchvision, and torchcodec must all be pinned together.
+  # torch, torchaudio, torchvision and torchcodec are pinned as one matched set and
+  # are only ever bumped together -- see the dependabot group in .github/dependabot.yml.
   #
-  # torchcodec ships pre-compiled native extensions (.so / .dylib) that are
-  # linked against a specific c10::MessageLogger C++ ABI from libc10.  This ABI
-  # is NOT stable across PyTorch minor releases.
+  # torchvision is ABI-coupled to torch and hard-pins it (0.26 -> torch==2.11,
+  # 0.28 -> torch==2.13). Bumping either half alone installs cleanly and then fails at
+  # import with "RuntimeError: operator torchvision::nms does not exist".
   #
-  # Compatibility (from https://github.com/meta-pytorch/torchcodec#readme):
-  #   torchcodec 0.9  → torch 2.9
-  #   torchcodec 0.10 → torch 2.10
-  #   torchcodec 0.11 → torch 2.11
+  # torchaudio and torchcodec declare no torch pin because they are not coupled that
+  # way. torchaudio trails the others (its newest release is 2.11.0, there is no 2.13),
+  # but it runs fine on torch 2.13 -- forced_align and the MMS_FA bundle, the native
+  # ops this repo depends on, both load. It is held at its latest via the uv override
+  # below rather than being allowed to drag torch back down to 2.11.
   #
-  # To upgrade: bump all four pins together and verify CI passes.
+  # To upgrade: bump the set together, then confirm torch.ops.torchvision.nms,
+  # torchaudio.functional.forced_align, torchaudio.pipelines.MMS_FA and the torchcodec
+  # decoders all load before trusting the resolver, and verify CI passes.
   # ─────────────────────────────────────────────────────────────────────────────
-  "torch==2.11.0",
+  "torch==2.13.0",
   "torchaudio==2.11.0",
-  "torchvision==0.26.0",
+  "torchvision==0.28.0",
   "torchcodec==0.14.0",
   "tqdm",
   "matplotlib",
@@ -146,11 +150,16 @@ override-dependencies = [
   "timm>=1.0",  # unigaze pins timm==0.3.2; override it
   # whisperX (and pyannote-audio) declare conservative torch pins (~=2.8) and a
   # requires-python <3.14 upper bound. Empirically whisperx 3.7.2 works fine on
-  # this repo's torch 2.11 / py3.14, so we hold the torch stack at the repo pins
-  # and let uv resolve whisperx against them instead of downgrading torch.
-  "torch==2.11.0",
+  # this repo's torch / py3.14, so we hold the torch stack at the repo pins and let
+  # uv resolve whisperx against them instead of downgrading torch.
+  #
+  # torchaudio is the reason this block matters most: 2.11.0 is its newest release, so
+  # a plain resolve would let it pull torch back to 2.11 and strand torchvision 0.28
+  # (which hard-pins torch==2.13). Overriding holds torchaudio at 2.11 on top of torch
+  # 2.13, which is verified to work -- see the pin block in [project.dependencies].
+  "torch==2.13.0",
   "torchaudio==2.11.0",
-  "torchvision==0.26.0",
+  "torchvision==0.28.0",
   "torchcodec==0.14.0",
   # Hold transformers at latest 5.x; the whisperx stack otherwise pulls it down
   # to 4.57. Verified whisperx alignment + the existing wrappers work on 5.x.

@@ -721,6 +721,14 @@ def to_uint8_tensor(
     Canonical shared implementation used by all model wrappers in the library.
     Avoids the need to duplicate this logic across multiple wrapper classes.
 
+    Sequence elements may have **different spatial sizes** — a face track's boxes
+    drift frame to frame, and edge clipping can even make a crop non-square, so
+    ``[det.crop() for det in track]`` is generally ragged. Such a batch cannot be
+    stacked directly, so the elements are resized to a common size (that of the
+    first element) before stacking. Every wrapper resizes to its own fixed input
+    resolution in ``preprocess`` immediately afterwards, so this only picks the
+    intermediate size, not the one the model sees.
+
     Args:
         frames: One of:
 
@@ -728,6 +736,7 @@ def to_uint8_tensor(
             * ``np.ndarray (H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB
             * ``str | Path`` — single image file path
             * ``Sequence[np.ndarray]`` of ``(H, W, 3)`` arrays
+            * ``Sequence[torch.Tensor]`` of ``(3, H, W)`` or ``(H, W, 3)`` tensors
             * ``Sequence[str | Path]`` of image file paths
 
     Returns:
@@ -753,11 +762,22 @@ def to_uint8_tensor(
     items = list(frames)
     if not items:
         raise ValueError("Empty sequence passed to to_uint8_tensor")
-    if isinstance(items[0], (str, Path)):
-        items = [image_to_np(p, "RGB") for p in items]
-    return torch.stack(
-        [torch.from_numpy(np.ascontiguousarray(item)).permute(2, 0, 1) for item in items]
-    )
+
+    # `image_to_tensor` normalises each element to (3, H, W), handling paths, HWC
+    # arrays and CHW/HWC tensors alike -- the last of which is what Detection.crop
+    # returns.
+    tensors = [image_to_tensor(item, "RGB") for item in items]
+
+    target_hw = tensors[0].shape[-2:]
+    if any(t.shape[-2:] != target_hw for t in tensors):
+        tensors = [
+            t
+            if t.shape[-2:] == target_hw
+            else TF.resize(t, list(target_hw), antialias=True).to(t.dtype)
+            for t in tensors
+        ]
+
+    return torch.stack([t.contiguous() for t in tensors])
 
 
 def images_to_np(
