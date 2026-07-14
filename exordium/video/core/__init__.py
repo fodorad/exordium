@@ -12,6 +12,7 @@ from exordium.video.core.bb import (
     xyxy2full,
     xyxy2xywh,
 )
+from exordium.video.core.densify import densify
 from exordium.video.core.detection import (
     Detection,
     DetectionFactory,
@@ -44,6 +45,7 @@ from exordium.video.core.io import (
 )
 
 __all__ = [
+    "densify",
     "apply_10_crop",
     "center_crop",
     "crop_mid",
