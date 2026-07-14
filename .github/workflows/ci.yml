@@ -59,7 +59,7 @@ jobs:
     # re-downloaded on every run. Bump the key's version suffix when a new model
     # is added, so the cache is rebuilt to include it.
     - name: Cache model weights
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: |
           ~/.cache/huggingface
