@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.8.0](https://github.com/fodorad/exordium/compare/v2.7.0...v2.8.0) (2026-07-14)
+
+
+### Features
+
+* FaRL face wrapper, mirrored weights, and the torch 2.13 stack ([0a4aea7](https://github.com/fodorad/exordium/commit/0a4aea71bf6ca036cba5fb236dce29740eddcb1e))
+* **video:** add FaRL face wrapper; serve EmotiEffNet and FaRL weights from the mirror ([f623f86](https://github.com/fodorad/exordium/commit/f623f860038242737c796de2f29e262d15418e9f))
+
+
+### Bug Fixes
+
+* **deps:** upgrade the torch stack to torch 2.13 as a matched set ([#48](https://github.com/fodorad/exordium/issues/48)) ([aa38394](https://github.com/fodorad/exordium/commit/aa383945835bd941f310211b69a240cc64b7dc5a))
+
 ## [2.7.0](https://github.com/fodorad/exordium/compare/v2.6.2...v2.7.0) (2026-07-13)
 
 
