@@ -4,10 +4,13 @@ Wraps the EmotiEffNet models from the EmotiEffLib project for penultimate-layer
 feature extraction.  Models are EfficientNet backbones (B0 or B2) pre-trained on
 VGGFace2 and fine-tuned on AffectNet for facial expression recognition.
 
-Weights are downloaded on first use from the EmotiEffLib GitHub repository and
-cached locally.  The final classification head is replaced with an identity
-layer so that :meth:`inference` returns penultimate features rather than class
-logits.
+Weights are downloaded on first use and cached locally.  They are served from the
+``fodorad/exordium-weights`` mirror, falling back to the original EmotiEffLib GitHub
+release if the mirror cannot be reached, so neither source is a single point of failure.
+The checkpoints are the unmodified EmotiEffLib files (Apache-2.0); see the References
+below for the original project and authors.  The final classification head is replaced
+with an identity layer so that :meth:`inference` returns penultimate features rather
+than class logits.
 
 The checkpoints from EmotiEffLib are full pickled models saved with an older
 ``timm`` version (0.9.x).  To avoid compatibility issues with newer ``timm``
@@ -28,7 +31,7 @@ import torch.nn as nn
 import torchvision.transforms.functional as TF
 
 from exordium import WEIGHT_DIR
-from exordium.utils.ckpt import download_file
+from exordium.utils.ckpt import download_weight
 from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD, VisualModelWrapper
 
 logger = logging.getLogger(__name__)
@@ -38,7 +41,11 @@ _WEIGHT_URL = (
     "https://github.com/sb-ai-lab/EmotiEffLib/blob/main/"
     "models/affectnet_emotions/{name}.pt?raw=true"
 )
-"""URL template for downloading EmotiEffNet checkpoint files."""
+"""Original EmotiEffLib download URL, kept as the fallback behind the mirror.
+
+GitHub rate-limits unauthenticated requests from shared CI address ranges, which is why
+the mirror is tried first rather than this.
+"""
 
 _MODELS: dict[str, dict] = {
     "enet_b0_8_best_vgaf": {
@@ -166,9 +173,11 @@ class EmotiEffNetWrapper(VisualModelWrapper):
             num_classes=cfg["num_classes"],
         )
         if pretrained:
-            weight_dir = WEIGHT_DIR / "emotieffnet"
-            local_path = weight_dir / f"{model_name}.pt"
-            download_file(_WEIGHT_URL.format(name=model_name), local_path)
+            local_path = download_weight(
+                f"{model_name}.pt",
+                WEIGHT_DIR / "emotieffnet",
+                upstream_url=_WEIGHT_URL.format(name=model_name),
+            )
             model.load_state_dict(_load_state_dict_from_pickle(str(local_path)))
         else:
             logger.info("Building EmotiEffNet architecture with random weights (no checkpoint).")

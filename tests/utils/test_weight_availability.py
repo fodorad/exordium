@@ -30,6 +30,13 @@ MIRRORED_WEIGHTS = [
     "adaface_ir50.safetensors",
     "adaface_ir101.safetensors",
     "emotion2vec_plus_seed.pt",
+    "enet_b0_8_best_vgaf.pt",
+    "enet_b0_8_best_afew.pt",
+    "enet_b0_8_va_mtl.pt",
+    "enet_b2_8.pt",
+    "enet_b2_7.pt",
+    "FaRL-Base-Patch16-LAIONFace20M-ep16.pth",
+    "FaRL-Base-Patch16-LAIONFace20M-ep64.pth",
 ]
 """Every file the wrappers fetch from the exordium mirror."""
 

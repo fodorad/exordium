@@ -6,12 +6,7 @@ import logging
 import pathlib
 import types
 import unittest
-import urllib.request
 from collections.abc import Iterator
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from http.client import HTTPResponse
 
 FIXTURES_ROOT = pathlib.Path(__file__).parent
 
@@ -133,16 +128,6 @@ class ModelTestCase(unittest.TestCase):
             except AttributeError:
                 pass
         free_torch_memory()
-
-
-def head_ok(url: str, timeout: int = 15) -> bool:
-    """Return True if a HEAD request to *url* returns HTTP 2xx or 3xx."""
-    req = urllib.request.Request(url, method="HEAD")
-    try:
-        resp: HTTPResponse = urllib.request.urlopen(req, timeout=timeout)
-        return resp.status < 400
-    except Exception:
-        return False
 
 
 def hf_repo_exists(repo_id: str, timeout: int = 15) -> bool:

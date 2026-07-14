@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 import torch
 
+from exordium.utils.ckpt import _HF_REPO_ID
 from exordium.video.deep.emotieffnet import (
     _DEFAULT_MODEL,
     _MODELS,
@@ -18,7 +19,7 @@ from tests.fixtures import (
     PRETRAINED,
     VIDEO_MULTISPEAKER_SHORT,
     ModelTestCase,
-    head_ok,
+    hf_file_exists,
 )
 
 
@@ -96,9 +97,15 @@ class TestEmotiEffNetWrapperB0(ModelTestCase):
 
 
 class TestEmotiEffNetWeightAvailability(unittest.TestCase):
-    def test_emotieffnet_b0_vgaf_url(self):
-        url = "https://github.com/sb-ai-lab/EmotiEffLib/blob/main/models/affectnet_emotions/enet_b0_8_best_vgaf.pt?raw=true"
-        self.assertTrue(head_ok(url), f"Not reachable: {url}")
+    def test_emotieffnet_b0_vgaf_mirrored(self):
+        # Checked against the mirror, not the EmotiEffLib GitHub URL: GitHub rate-limits
+        # unauthenticated requests from shared CI address ranges, so probing it made the
+        # suite fail on a weight that was perfectly healthy. The GitHub URL remains the
+        # runtime fallback; MIRRORED_WEIGHTS covers every variant.
+        self.assertTrue(
+            hf_file_exists(_HF_REPO_ID, "enet_b0_8_best_vgaf.pt"),
+            f"Not reachable: {_HF_REPO_ID}/enet_b0_8_best_vgaf.pt",
+        )
 
 
 if __name__ == "__main__":

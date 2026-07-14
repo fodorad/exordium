@@ -134,6 +134,37 @@ class TestToUint8Tensor(unittest.TestCase):
         out = to_uint8_tensor(arrays)
         self.assertEqual(out.shape, (3, 3, 40, 40))
 
+    def test_from_list_of_chw_tensors(self):
+        # Detection.crop() returns (3, H, W) torch tensors, so a face track is a
+        # list of these -- not of HWC arrays.
+        crops = [torch.zeros(3, 40, 40, dtype=torch.uint8) for _ in range(3)]
+        out = to_uint8_tensor(crops)
+        self.assertEqual(out.shape, (3, 3, 40, 40))
+
+    def test_from_list_of_hwc_tensors(self):
+        crops = [torch.zeros(40, 40, 3, dtype=torch.uint8) for _ in range(3)]
+        out = to_uint8_tensor(crops)
+        self.assertEqual(out.shape, (3, 3, 40, 40))
+
+    def test_ragged_tensor_crops_are_resized_to_the_first(self):
+        # A tracked face box drifts frame to frame, so its crops differ in size.
+        crops = [
+            torch.zeros(3, 50, 50, dtype=torch.uint8),
+            torch.zeros(3, 64, 64, dtype=torch.uint8),
+            torch.zeros(3, 37, 41, dtype=torch.uint8),  # edge-clipped: non-square
+        ]
+        out = to_uint8_tensor(crops)
+        self.assertEqual(out.shape, (3, 3, 50, 50))
+        self.assertEqual(out.dtype, torch.uint8)
+
+    def test_ragged_numpy_crops_are_resized_to_the_first(self):
+        crops = [
+            np.zeros((50, 50, 3), dtype=np.uint8),
+            np.zeros((64, 70, 3), dtype=np.uint8),
+        ]
+        out = to_uint8_tensor(crops)
+        self.assertEqual(out.shape, (2, 3, 50, 50))
+
     def test_empty_sequence_raises(self):
         with self.assertRaises(ValueError):
             to_uint8_tensor([])
