@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.9.0](https://github.com/fodorad/exordium/compare/v2.8.0...v2.9.0) (2026-07-14)
+
+
+### Features
+
+* **video:** densify sparse track features onto a gap-free frame grid ([2a4368c](https://github.com/fodorad/exordium/commit/2a4368cecc38bcf405273076078963496ebab4f3))
+* **video:** densify sparse track features onto a gap-free frame grid ([cfde4a6](https://github.com/fodorad/exordium/commit/cfde4a6b4c59fcc8765718040b16cac5eed7109e))
+* **video:** densify sparse track features onto a gap-free frame grid ([e873536](https://github.com/fodorad/exordium/commit/e8735364a9752cc6618a35fc2669a4b851035288))
+
 ## [2.8.0](https://github.com/fodorad/exordium/compare/v2.7.0...v2.8.0) (2026-07-14)
 
 
