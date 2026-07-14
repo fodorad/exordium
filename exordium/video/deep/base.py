@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from exordium.utils.decorator import load_or_create
 from exordium.utils.device import get_torch_device
+from exordium.video.core.densify import densify as densify_features
 from exordium.video.core.detection import Track
 from exordium.video.core.io import Video, batch_iterator, to_uint8_tensor
 
@@ -185,21 +186,53 @@ class VisualModelWrapper(ABC):
         self,
         track: Track,
         batch_size: int = 30,
+        densify: bool = False,
+        start_frame_id: int = 0,
+        end_frame_id: int | None = None,
+        fill: torch.Tensor | float = 0.0,
         **_kwargs,
     ) -> dict[str, torch.Tensor]:
         """Extract features from all non-interpolated detections in a track.
 
+        By default the output is **sparse**: one feature row per detection, so
+        ``N <= num_frames`` when the subject was not detected on every frame.
+        That is the honest default — it records only what was observed.
+
+        Set ``densify=True`` to scatter those features onto a gap-free frame
+        grid instead, which is what a temporal model needs to keep the face
+        stream aligned with audio and text. Frames with no detection are filled
+        with ``fill`` and flagged ``False`` in the returned ``mask``.
+
         Results are cached as a safetensors file: pass ``output_path`` and
-        ``overwrite`` via ``_kwargs`` to control caching behaviour.
+        ``overwrite`` via ``_kwargs`` to control caching behaviour. Sparse and
+        dense results differ, so give them **different** ``output_path``s.
 
         Args:
             track: Track containing a sequence of Detection objects.
             batch_size: Detections to process per batch. Defaults to 30.
+            densify: If True, return a dense grid plus a validity mask. See
+                :func:`~exordium.video.core.densify.densify`.
+            start_frame_id: First frame of the dense grid, inclusive. Ignored
+                unless ``densify``. Defaults to 0.
+            end_frame_id: One past the last frame of the dense grid (exclusive).
+                Ignored unless ``densify``. When ``None``, defaults to the last
+                detected frame + 1, which **undercounts if the video continues
+                past the last detection** — pass the video's frame count
+                explicitly whenever it is known.
+            fill: Value for frames with no detection — either a scalar or a
+                ``(D,)`` tensor. Ignored unless ``densify``. Defaults to 0.0.
             **_kwargs: Forwarded to ``load_or_create``.
 
         Returns:
-            Dict with keys ``"frame_ids"`` (``(N,)`` long tensor) and
-            ``"features"`` (``(N, D)`` float tensor), both on CPU.
+            When ``densify=False`` (default), a dict with ``"frame_ids"``
+            (``(N,)`` long) and ``"features"`` (``(N, D)`` float), both on CPU.
+
+            When ``densify=True``, a dict with ``"frame_ids"`` (``(T,)`` long,
+            contiguous), ``"features"`` (``(T, D)``, ``fill`` where undetected)
+            and ``"mask"`` (``(T,)`` bool, True where a detection existed) —
+            the same contract
+            :meth:`~exordium.video.deep.marlin.MarlinWrapper.track_to_feature`
+            returns.
 
         """
         ids: list[int] = []
@@ -211,10 +244,27 @@ class VisualModelWrapper(ABC):
             ids += [d.frame_id for d in subset]
             features.append(self([d.crop(square=True, extra_space=1.5) for d in subset]).cpu())
 
-        return {
-            "frame_ids": torch.tensor(ids, dtype=torch.long),
-            "features": torch.cat(features, dim=0),
-        }
+        frame_ids = torch.tensor(ids, dtype=torch.long)
+        # An empty track yields no batches, so there is nothing to concatenate. The
+        # feature width is still needed to build a well-formed (0, D) tensor, and it
+        # is only knowable by asking the model — not every wrapper exposes it as an
+        # attribute. One forward pass on a dummy crop is a cheap price for an edge case.
+        if features:
+            stacked = torch.cat(features, dim=0)
+        else:
+            probe = self(torch.zeros(1, 3, 224, 224, dtype=torch.uint8)).cpu()
+            stacked = probe.new_zeros((0, probe.shape[-1]))
+
+        if not densify:
+            return {"frame_ids": frame_ids, "features": stacked}
+
+        return densify_features(
+            frame_ids,
+            stacked,
+            start_frame_id=start_frame_id,
+            end_frame_id=end_frame_id,
+            fill=fill,
+        )
 
     @load_or_create("st")
     def video_to_feature(
