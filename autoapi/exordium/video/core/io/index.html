@@ -245,6 +245,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../deep/dinov2/index.html">exordium.video.deep.dinov2</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../deep/emotieffnet/index.html">exordium.video.deep.emotieffnet</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../deep/fabnet/index.html">exordium.video.deep.fabnet</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../deep/farl/index.html">exordium.video.deep.farl</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../deep/marlin/index.html">exordium.video.deep.marlin</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../deep/swint/index.html">exordium.video.deep.swint</a></li>
 </ul>
@@ -786,6 +787,13 @@ Ignored when <code class="docutils literal notranslate"><span class="pre">image<
 <dd><p>Convert any supported input to a uint8 <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">3,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> CPU tensor.</p>
 <p>Canonical shared implementation used by all model wrappers in the library.
 Avoids the need to duplicate this logic across multiple wrapper classes.</p>
+<p>Sequence elements may have <strong>different spatial sizes</strong> — a face track’s boxes
+drift frame to frame, and edge clipping can even make a crop non-square, so
+<code class="docutils literal notranslate"><span class="pre">[det.crop()</span> <span class="pre">for</span> <span class="pre">det</span> <span class="pre">in</span> <span class="pre">track]</span></code> is generally ragged. Such a batch cannot be
+stacked directly, so the elements are resized to a common size (that of the
+first element) before stacking. Every wrapper resizes to its own fixed input
+resolution in <code class="docutils literal notranslate"><span class="pre">preprocess</span></code> immediately afterwards, so this only picks the
+intermediate size, not the one the model sees.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>frames</strong> – <p>One of:</p>
@@ -794,6 +802,7 @@ Avoids the need to duplicate this logic across multiple wrapper classes.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">np.ndarray</span> <span class="pre">(H,</span> <span class="pre">W,</span> <span class="pre">3)</span></code> or <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H,</span> <span class="pre">W,</span> <span class="pre">3)</span></code> uint8 RGB</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">Path</span></code> — single image file path</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Sequence[np.ndarray]</span></code> of <code class="docutils literal notranslate"><span class="pre">(H,</span> <span class="pre">W,</span> <span class="pre">3)</span></code> arrays</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Sequence[torch.Tensor]</span></code> of <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> or <code class="docutils literal notranslate"><span class="pre">(H,</span> <span class="pre">W,</span> <span class="pre">3)</span></code> tensors</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Sequence[str</span> <span class="pre">|</span> <span class="pre">Path]</span></code> of image file paths</p></li>
 </ul>
 </p>

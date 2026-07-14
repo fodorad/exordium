@@ -244,6 +244,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/deep/dinov2/index.html">exordium.video.deep.dinov2</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/deep/emotieffnet/index.html">exordium.video.deep.emotieffnet</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/deep/fabnet/index.html">exordium.video.deep.fabnet</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/deep/farl/index.html">exordium.video.deep.farl</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/deep/marlin/index.html">exordium.video.deep.marlin</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/deep/swint/index.html">exordium.video.deep.swint</a></li>
 </ul>
@@ -1102,6 +1103,14 @@
 <span class="sd">    Canonical shared implementation used by all model wrappers in the library.</span>
 <span class="sd">    Avoids the need to duplicate this logic across multiple wrapper classes.</span>
 
+<span class="sd">    Sequence elements may have **different spatial sizes** — a face track&#39;s boxes</span>
+<span class="sd">    drift frame to frame, and edge clipping can even make a crop non-square, so</span>
+<span class="sd">    ``[det.crop() for det in track]`` is generally ragged. Such a batch cannot be</span>
+<span class="sd">    stacked directly, so the elements are resized to a common size (that of the</span>
+<span class="sd">    first element) before stacking. Every wrapper resizes to its own fixed input</span>
+<span class="sd">    resolution in ``preprocess`` immediately afterwards, so this only picks the</span>
+<span class="sd">    intermediate size, not the one the model sees.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        frames: One of:</span>
 
@@ -1109,6 +1118,7 @@
 <span class="sd">            * ``np.ndarray (H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB</span>
 <span class="sd">            * ``str | Path`` — single image file path</span>
 <span class="sd">            * ``Sequence[np.ndarray]`` of ``(H, W, 3)`` arrays</span>
+<span class="sd">            * ``Sequence[torch.Tensor]`` of ``(3, H, W)`` or ``(H, W, 3)`` tensors</span>
 <span class="sd">            * ``Sequence[str | Path]`` of image file paths</span>
 
 <span class="sd">    Returns:</span>
@@ -1134,11 +1144,22 @@
     <span class="n">items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">items</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Empty sequence passed to to_uint8_tensor&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
-        <span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="n">image_to_np</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;RGB&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-        <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">item</span><span class="p">))</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
-    <span class="p">)</span></div>
+
+    <span class="c1"># `image_to_tensor` normalises each element to (3, H, W), handling paths, HWC</span>
+    <span class="c1"># arrays and CHW/HWC tensors alike -- the last of which is what Detection.crop</span>
+    <span class="c1"># returns.</span>
+    <span class="n">tensors</span> <span class="o">=</span> <span class="p">[</span><span class="n">image_to_tensor</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;RGB&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+
+    <span class="n">target_hw</span> <span class="o">=</span> <span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">target_hw</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensors</span><span class="p">):</span>
+        <span class="n">tensors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">t</span>
+            <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="n">target_hw</span>
+            <span class="k">else</span> <span class="n">TF</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">target_hw</span><span class="p">),</span> <span class="n">antialias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensors</span>
+        <span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensors</span><span class="p">])</span></div>
 
 
 

@@ -76,7 +76,7 @@ Module Contents
    :raises FileNotFoundError: If the file is not present after downloading.
 
 
-.. py:function:: download_weight(filename: str, local_dir: pathlib.Path | str, repo_id: str = _HF_REPO_ID, upstream_repo_id: str | None = None, upstream_filename: str | None = None) -> pathlib.Path
+.. py:function:: download_weight(filename: str, local_dir: pathlib.Path | str, repo_id: str = _HF_REPO_ID, upstream_repo_id: str | None = None, upstream_filename: str | None = None, upstream_url: str | None = None) -> pathlib.Path
 
    Download a model weight file from Hugging Face Hub if not already cached.
 
@@ -84,9 +84,13 @@ Module Contents
    *local_dir*.  Subsequent calls with the same arguments are no-ops.
 
    The mirror is preferred because upstream sources move or vanish (the 6DRepNet
-   author's original link already did).  When *upstream_repo_id* is given it is used as
-   a **fallback**: if the mirror is unreachable or missing the file, the original source
+   author's original link already did).  When an upstream is given it is used as a
+   **fallback**: if the mirror is unreachable or missing the file, the original source
    is tried before giving up, so neither location is a single point of failure.
+
+   The fallback may be another Hub repo (*upstream_repo_id*) or a plain URL
+   (*upstream_url*), since not every upstream publishes to the Hub — EmotiEffLib, for
+   instance, serves its checkpoints straight from GitHub.
 
    :param filename: Name of the file in *repo_id* (e.g. ``"fabnet_weights.pth"``).
    :param local_dir: Directory to store the file in; it lands at ``local_dir / filename``.
@@ -95,6 +99,7 @@ Module Contents
    :param upstream_repo_id: Original Hub repo, used only if *repo_id* fails.
    :param upstream_filename: Filename within *upstream_repo_id*, if it differs from
                              *filename*. Defaults to *filename*.
+   :param upstream_url: Original download URL, used only if the Hub sources fail.
 
    :returns: Path to the downloaded (or already cached) local file.
 

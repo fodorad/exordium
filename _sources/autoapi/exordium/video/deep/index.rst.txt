@@ -16,6 +16,7 @@ Submodules
    /autoapi/exordium/video/deep/dinov2/index
    /autoapi/exordium/video/deep/emotieffnet/index
    /autoapi/exordium/video/deep/fabnet/index
+   /autoapi/exordium/video/deep/farl/index
    /autoapi/exordium/video/deep/marlin/index
    /autoapi/exordium/video/deep/swint/index
 

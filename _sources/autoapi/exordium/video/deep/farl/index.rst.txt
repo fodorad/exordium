@@ -1,0 +1,140 @@
+exordium.video.deep.farl
+========================
+
+.. py:module:: exordium.video.deep.farl
+
+.. autoapi-nested-parse::
+
+   FaRL universal facial representation wrapper.
+
+   Wraps the FaRL (Facial Representation Learning) vision encoder for frame-wise
+   feature extraction.  FaRL is a CLIP ViT-B/16 further pre-trained on LAION-Face
+   (20M face image-text pairs) with combined image-text contrastive learning and
+   masked image modelling, yielding a *general-purpose* face representation that
+   transfers well to attribute prediction, parsing, alignment and expression tasks.
+
+   Unlike :class:`~exordium.video.deep.emotieffnet.EmotiEffNetWrapper` — which is
+   fine-tuned for the 8 AffectNet expression classes and therefore discards cues
+   irrelevant to that head — FaRL is trained without task supervision.  This makes
+   it the better complement for traits that are not pure expression (apparent
+   personality, sentiment), and the two are designed to be concatenated.
+
+   Weights ship as a raw OpenAI-CLIP ``state_dict``.  This wrapper converts it to
+   the HuggingFace ``CLIPVisionModelWithProjection`` layout on load, so no
+   ``openai-clip`` dependency is needed: the fused ``in_proj_weight`` attention
+   matrices are split into separate q/k/v projections and the OpenAI module names
+   are remapped.  FaRL's masked-image-modelling heads (``lm_transformer``,
+   ``lm_head``, ``mask_token``) exist only for pre-training and are discarded.
+
+   License:
+       FaRL code and weights are released under the MIT License by Microsoft.
+
+   .. rubric:: References
+
+   * https://github.com/FacePerceiver/FaRL
+   * Zheng et al. (2022), *General Facial Representation Learning in a
+     Visual-Linguistic Manner*, CVPR (Oral).  https://arxiv.org/abs/2112.03109
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.deep.farl.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.deep.farl.FarlWrapper
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: FarlWrapper(model_name: str = _DEFAULT_MODEL, device_id: int | None = None, pretrained: bool = True)
+
+   Bases: :py:obj:`exordium.video.deep.base.VisualModelWrapper`
+
+
+   FaRL universal face representation extractor.
+
+   Extracts L2-normalised 512-d embeddings from face crops using the FaRL
+   ViT-B/16 vision encoder.  Because FaRL is trained with language supervision
+   on face images rather than fine-tuned on an expression label set, its
+   features stay useful for tasks an expression classifier would throw away —
+   apparent personality, sentiment, and attributes.
+
+   Model weights are downloaded automatically on first use from the official
+   FaRL GitHub release (MIT licensed) and cached under ``WEIGHT_DIR``.
+
+   Supported variants:
+
+   +------------------+--------+----------+
+   | ``model_name``   | Epochs | Feat dim |
+   +==================+========+==========+
+   | ``ep16``         | 16     | 512      |
+   +------------------+--------+----------+
+   | ``ep64``         | 64     | 512      |
+   +------------------+--------+----------+
+
+   :param model_name: FaRL variant — ``"ep16"`` (paper checkpoint) or ``"ep64"``
+                      (longer pre-training, better transfer).  Defaults to ``"ep64"``.
+   :param device_id: GPU device index.  ``None`` or negative uses CPU.
+   :param pretrained: If ``False``, build the architecture with random weights and
+                      download nothing.  Shapes and call paths are identical, but the
+                      features are meaningless — intended for tests and offline use.
+
+   :raises ValueError: If ``model_name`` is not one of the supported variants.
+
+   Example::
+
+       from exordium.video.deep.farl import FarlWrapper
+
+       model = FarlWrapper(model_name="ep64", device_id=0)
+
+       # single face crop -> (1, 512)
+       features = model(face_crop)
+
+       # face track -> one embedding per non-interpolated detection
+       result = model.track_to_feature(track)
+       # result["frame_ids"]: (N,)      result["features"]: (N, 512)
+
+
+
+   .. py:method:: preprocess(frames: torch.Tensor | collections.abc.Sequence) -> torch.Tensor
+
+      Resize and normalise face crops for FaRL.
+
+      Applies bicubic resize to 224x224 and CLIP mean/std normalisation
+      (FaRL inherits OpenAI CLIP's constants, *not* ImageNet's).
+
+      :param frames: Any input supported by
+                     :meth:`~exordium.video.deep.base.VisualModelWrapper._to_uint8_tensor`.
+
+      :returns: Float tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor) -> torch.Tensor
+
+      FaRL vision encoder forward pass.
+
+      Runs the ViT, projects the pooled output into the shared image-text
+      embedding space, and L2-normalises the result.
+
+      :param tensor: Preprocessed face tensor of shape ``(B, 3, 224, 224)`` on
+                     ``self.device``.
+
+      :returns: L2-normalised feature tensor of shape ``(B, 512)``.
+
+
+

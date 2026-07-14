@@ -11,10 +11,13 @@ exordium.video.deep.emotieffnet
    feature extraction.  Models are EfficientNet backbones (B0 or B2) pre-trained on
    VGGFace2 and fine-tuned on AffectNet for facial expression recognition.
 
-   Weights are downloaded on first use from the EmotiEffLib GitHub repository and
-   cached locally.  The final classification head is replaced with an identity
-   layer so that :meth:`inference` returns penultimate features rather than class
-   logits.
+   Weights are downloaded on first use and cached locally.  They are served from the
+   ``fodorad/exordium-weights`` mirror, falling back to the original EmotiEffLib GitHub
+   release if the mirror cannot be reached, so neither source is a single point of failure.
+   The checkpoints are the unmodified EmotiEffLib files (Apache-2.0); see the References
+   below for the original project and authors.  The final classification head is replaced
+   with an identity layer so that :meth:`inference` returns penultimate features rather
+   than class logits.
 
    The checkpoints from EmotiEffLib are full pickled models saved with an older
    ``timm`` version (0.9.x).  To avoid compatibility issues with newer ``timm``

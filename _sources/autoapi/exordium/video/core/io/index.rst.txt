@@ -364,12 +364,21 @@ Module Contents
    Canonical shared implementation used by all model wrappers in the library.
    Avoids the need to duplicate this logic across multiple wrapper classes.
 
+   Sequence elements may have **different spatial sizes** — a face track's boxes
+   drift frame to frame, and edge clipping can even make a crop non-square, so
+   ``[det.crop() for det in track]`` is generally ragged. Such a batch cannot be
+   stacked directly, so the elements are resized to a common size (that of the
+   first element) before stacking. Every wrapper resizes to its own fixed input
+   resolution in ``preprocess`` immediately afterwards, so this only picks the
+   intermediate size, not the one the model sees.
+
    :param frames: One of:
 
                   * ``torch.Tensor (C, H, W)`` or ``(B, C, H, W)`` uint8 RGB
                   * ``np.ndarray (H, W, 3)`` or ``(B, H, W, 3)`` uint8 RGB
                   * ``str | Path`` — single image file path
                   * ``Sequence[np.ndarray]`` of ``(H, W, 3)`` arrays
+                  * ``Sequence[torch.Tensor]`` of ``(3, H, W)`` or ``(H, W, 3)`` tensors
                   * ``Sequence[str | Path]`` of image file paths
 
    :returns: uint8 tensor of shape ``(B, 3, H, W)`` on CPU.

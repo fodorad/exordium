@@ -244,6 +244,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/dinov2/index.html">exordium.video.deep.dinov2</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/emotieffnet/index.html">exordium.video.deep.emotieffnet</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/fabnet/index.html">exordium.video.deep.fabnet</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/farl/index.html">exordium.video.deep.farl</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/marlin/index.html">exordium.video.deep.marlin</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../autoapi/exordium/video/deep/swint/index.html">exordium.video.deep.swint</a></li>
 </ul>
@@ -419,6 +420,7 @@
     <span class="n">repo_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">_HF_REPO_ID</span><span class="p">,</span>
     <span class="n">upstream_repo_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">upstream_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">upstream_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Download a model weight file from Hugging Face Hub if not already cached.</span>
 
@@ -426,9 +428,13 @@
 <span class="sd">    *local_dir*.  Subsequent calls with the same arguments are no-ops.</span>
 
 <span class="sd">    The mirror is preferred because upstream sources move or vanish (the 6DRepNet</span>
-<span class="sd">    author&#39;s original link already did).  When *upstream_repo_id* is given it is used as</span>
-<span class="sd">    a **fallback**: if the mirror is unreachable or missing the file, the original source</span>
+<span class="sd">    author&#39;s original link already did).  When an upstream is given it is used as a</span>
+<span class="sd">    **fallback**: if the mirror is unreachable or missing the file, the original source</span>
 <span class="sd">    is tried before giving up, so neither location is a single point of failure.</span>
+
+<span class="sd">    The fallback may be another Hub repo (*upstream_repo_id*) or a plain URL</span>
+<span class="sd">    (*upstream_url*), since not every upstream publishes to the Hub — EmotiEffLib, for</span>
+<span class="sd">    instance, serves its checkpoints straight from GitHub.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        filename: Name of the file in *repo_id* (e.g. ``&quot;fabnet_weights.pth&quot;``).</span>
@@ -438,6 +444,7 @@
 <span class="sd">        upstream_repo_id: Original Hub repo, used only if *repo_id* fails.</span>
 <span class="sd">        upstream_filename: Filename within *upstream_repo_id*, if it differs from</span>
 <span class="sd">            *filename*. Defaults to *filename*.</span>
+<span class="sd">        upstream_url: Original download URL, used only if the Hub sources fail.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Path to the downloaded (or already cached) local file.</span>
@@ -476,9 +483,19 @@
             <span class="k">return</span> <span class="n">local_path</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source_repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2"> reported success but </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2"> is missing&quot;</span><span class="p">)</span>
 
-    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Could not download </span><span class="si">{</span><span class="n">filename</span><span class="si">!r}</span><span class="s2"> from any of: </span><span class="si">{</span><span class="p">[</span><span class="n">repo</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">repo</span><span class="p">,</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">sources</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="p">)</span></div>
+    <span class="k">if</span> <span class="n">upstream_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Falling back to </span><span class="si">{</span><span class="n">upstream_url</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">download_file</span><span class="p">(</span><span class="n">upstream_url</span><span class="p">,</span> <span class="n">local_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># noqa: BLE001 - any network failure exhausts the sources</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not fetch </span><span class="si">{</span><span class="n">upstream_url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">local_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">local_path</span>
+
+    <span class="n">attempted</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">repo</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">upstream_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">attempted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">upstream_url</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not download </span><span class="si">{</span><span class="n">filename</span><span class="si">!r}</span><span class="s2"> from any of: </span><span class="si">{</span><span class="n">attempted</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 
