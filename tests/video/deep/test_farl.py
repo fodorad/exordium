@@ -210,6 +210,65 @@ class TestFarlWrapper(ModelTestCase):
         self.assertEqual(result["features"].shape[1], _FEATURE_DIM)
 
 
+class TestFarlTrackDensification(ModelTestCase):
+    """densify=True must put a real wrapper's sparse output on a gap-free grid."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model = FarlWrapper(model_name=_DEFAULT_MODEL, device_id=None, pretrained=PRETRAINED)
+
+    @staticmethod
+    def _gapped_track(frame_ids: list[int]) -> Track:
+        """A track detected only on `frame_ids` — i.e. with holes, like a real one."""
+        frame = torch.randint(0, 255, (3, 400, 400), dtype=torch.uint8)
+        track = Track(track_id=0)
+        for fid in frame_ids:
+            track.add(
+                DetectionFromTorchTensor(
+                    frame_id=fid,
+                    source=frame,
+                    score=0.99,
+                    bb_xywh=torch.tensor([150, 150, 100, 100], dtype=torch.long),
+                    landmarks=torch.zeros(5, 2, dtype=torch.long),
+                )
+            )
+        return track
+
+    def test_sparse_is_still_the_default(self):
+        out = self.model.track_to_feature(self._gapped_track([0, 2, 7]))
+        self.assertEqual(out["features"].shape, (3, _FEATURE_DIM))
+        self.assertNotIn("mask", out)
+
+    def test_densify_fills_gaps_and_flags_them(self):
+        out = self.model.track_to_feature(
+            self._gapped_track([0, 2, 7]), densify=True, end_frame_id=8
+        )
+        self.assertEqual(out["features"].shape, (8, _FEATURE_DIM))
+        self.assertEqual(
+            out["mask"].tolist(), [True, False, True, False, False, False, False, True]
+        )
+        # Undetected frames hold the fill value, not a stale or garbage embedding.
+        self.assertTrue(torch.equal(out["features"][1], torch.zeros(_FEATURE_DIM)))
+
+    def test_densified_rows_match_the_sparse_features(self):
+        track = self._gapped_track([0, 2])
+        sparse = self.model.track_to_feature(track)
+        dense = self.model.track_to_feature(track, densify=True, end_frame_id=4)
+        torch.testing.assert_close(dense["features"][0], sparse["features"][0])
+        torch.testing.assert_close(dense["features"][2], sparse["features"][1])
+
+    def test_window_densification_does_not_materialise_the_whole_video(self):
+        out = self.model.track_to_feature(
+            self._gapped_track([0, 120, 200]),
+            densify=True,
+            start_frame_id=100,
+            end_frame_id=150,
+        )
+        self.assertEqual(out["features"].shape, (50, _FEATURE_DIM))
+        self.assertEqual(out["frame_ids"][0].item(), 100)
+        self.assertEqual(int(out["mask"].sum()), 1)  # only frame 120 falls in the window
+
+
 class TestFarlWeightAvailability(unittest.TestCase):
     def test_checkpoints_mirrored(self):
         # Checked against the mirror, not the FaRL GitHub release: GitHub rate-limits
