@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.9.1](https://github.com/fodorad/exordium/compare/v2.9.0...v2.9.1) (2026-07-17)
+
+
+### Performance Improvements
+
+* **video:** reuse decoders and batch track decoding ([#62](https://github.com/fodorad/exordium/issues/62)) ([b1d08c2](https://github.com/fodorad/exordium/commit/b1d08c2f8708c1aa896d381b6a86da280c98f92c))
+
 ## [2.9.0](https://github.com/fodorad/exordium/compare/v2.8.0...v2.9.0) (2026-07-14)
 
 
