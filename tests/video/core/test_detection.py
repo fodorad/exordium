@@ -26,7 +26,13 @@ from exordium.video.core.detection import (
     visualize_detection,
     visualize_detection_crop,
 )
-from tests.fixtures import IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT, ModelTestCase
+from exordium.video.core.io import Video, clear_video_cache
+from tests.fixtures import (
+    IMAGE_FACE,
+    VIDEO_FI_PROTAGONIST,
+    VIDEO_MULTISPEAKER_SHORT,
+    ModelTestCase,
+)
 
 
 def _make_fd(frame_id: int, x: int, y: int, w: int = 60, h: int = 80) -> FrameDetections:
@@ -324,6 +330,54 @@ class TestDetectionFromVideo(ModelTestCase):
     def test_crop_square_with_extra_space(self):
         crop = self.det.crop(square=True, extra_space=1.5)
         self.assertIsInstance(crop, torch.Tensor)
+
+
+class TestDetectionFromVideoSharedDecoder(ModelTestCase):
+    """``frame()`` reads through a shared decoder handle; it must stay exact.
+
+    The handle is reused across detections and carries a seek position, so these
+    guard against a stale or mis-seeked frame being returned -- a failure that would
+    silently crop the wrong pixels rather than raise.
+    """
+
+    def setUp(self):
+        clear_video_cache()
+
+    def tearDown(self):
+        clear_video_cache()
+
+    def _det(self, frame_id: int):
+        return DetectionFactory.create_detection(
+            frame_id=frame_id,
+            source=str(VIDEO_FI_PROTAGONIST),
+            score=0.9,
+            bb_xywh=torch.tensor([400, 150, 220, 220], dtype=torch.long),
+            landmarks=torch.zeros((5, 2), dtype=torch.long),
+        )
+
+    def test_frame_matches_fresh_decoder_out_of_order(self):
+        for frame_id in (0, 60, 9, 60, 1, 0):
+            fresh = Video(VIDEO_FI_PROTAGONIST).get_frames_at([frame_id])[0]
+            self.assertTrue(
+                torch.equal(self._det(frame_id).frame(), fresh),
+                f"frame {frame_id} differs from a fresh decode",
+            )
+
+    def test_frame_center_matches_decoded_dimensions(self):
+        det = self._det(0)
+        _, height, width = det.frame().shape
+        self.assertTrue(
+            torch.equal(
+                det.frame_center(),
+                torch.tensor([width // 2, height // 2], dtype=torch.long),
+            )
+        )
+
+    def test_crop_survives_cache_clear(self):
+        det = self._det(12)
+        expected = det.crop(square=True, extra_space=1.5)
+        clear_video_cache()
+        self.assertTrue(torch.equal(det.crop(square=True, extra_space=1.5), expected))
 
 
 class TestDetectionFromTorchTensor(ModelTestCase):

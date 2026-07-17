@@ -1,8 +1,11 @@
 """Video input/output utilities."""
 
 import logging
+import threading
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from collections.abc import Generator, Iterable, Sequence
+from contextlib import contextmanager
 from itertools import islice
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
@@ -1060,3 +1063,98 @@ class Video:
     def close(self) -> None:
         """Release the decoder."""
         self._decoder = None  # ty: ignore[invalid-assignment]
+
+
+# ---------------------------------------------------------------------------
+# Shared decoder handle cache
+# ---------------------------------------------------------------------------
+
+_VIDEO_CACHE_MAXSIZE = 4
+"""Maximum number of open decoder handles kept alive by :func:`open_video`.
+
+Each handle holds one file descriptor plus demuxer/codec state, so this stays far
+below any file-descriptor limit while comfortably covering the realistic access
+patterns (one video at a time; a handful for multi-source tracks).
+"""
+
+_video_cache: "OrderedDict[tuple[Path, str | None], tuple[Video, threading.RLock]]" = OrderedDict()
+"""LRU cache of open :class:`Video` handles, keyed by ``(resolved_path, device)``.
+
+Each handle is paired with a **reentrant** lock.  A plain lock would deadlock a single
+thread that borrows the same video twice at once — e.g. a caller reading a frame inside
+its own ``open_video`` block — which is a legitimate thing to write and should not hang.
+"""
+
+_video_cache_lock = threading.Lock()
+"""Guards :data:`_video_cache` itself (not the decoders inside it)."""
+
+
+@contextmanager
+def open_video(
+    path: str | Path,
+    device: str | torch.device | None = None,
+) -> Generator["Video", None, None]:
+    """Borrow a cached, shared :class:`Video` handle for the duration of a block.
+
+    Constructing a :class:`Video` builds a torchcodec decoder, which parses the
+    container and costs orders of magnitude more than the seek it precedes.  Code
+    that reads frames one at a time — every :meth:`~exordium.video.core.detection.
+    Detection.frame` call, and therefore every ``crop()`` — would otherwise pay that
+    cost per frame.  Reusing one open decoder removes it entirely.
+
+    The handle is **shared and borrowed, not owned**.  A decoder carries a seek
+    position, so two threads reading one decoder would interleave seeks and return
+    each other's frames.  This context manager holds the handle's lock for the whole
+    block, which makes that impossible to get wrong — do not stash the yielded
+    :class:`Video` and use it after the block, and do not :meth:`Video.close` it.
+
+    Prefer ``with Video(path) as v`` when you need exclusive ownership (e.g. a long
+    sequential streaming pass); use this for scattered, repeated random access.
+
+    Note:
+        A cached handle holds an open descriptor to the file as it was when first
+        opened.  Videos are treated as read-only inputs; rewriting one in place
+        during a run is not supported.
+
+    Args:
+        path: Path to the video file.
+        device: Decoder device (e.g. ``"cuda:0"``).  ``None`` decodes on CPU.
+
+    Yields:
+        The shared :class:`Video`, exclusively held for the duration of the block.
+
+    Example:
+        >>> with open_video("clip.mp4") as video:
+        ...     frame = video.get_frames_at([42])[0]
+
+    """
+    key = (Path(path).resolve(), str(device) if device is not None else None)
+
+    with _video_cache_lock:
+        entry = _video_cache.get(key)
+        if entry is None:
+            entry = (Video(path, device=device), threading.RLock())
+            _video_cache[key] = entry
+        else:
+            _video_cache.move_to_end(key)
+
+        # Evicting only drops the cache's reference. The decoder is closed by garbage
+        # collection once the last borrower is done with it, so evicting a handle that
+        # another caller is still holding is harmless -- closing it here would not be.
+        while len(_video_cache) > _VIDEO_CACHE_MAXSIZE:
+            _video_cache.popitem(last=False)
+
+    video, lock = entry
+    with lock:
+        yield video
+
+
+def clear_video_cache() -> None:
+    """Drop every handle held by :func:`open_video`.
+
+    Each decoder is closed once the last borrower releases it, freeing its file
+    descriptor.  Safe to call at any time, including while another thread holds a
+    handle; subsequent :func:`open_video` calls simply reopen what they need.
+    """
+    with _video_cache_lock:
+        _video_cache.clear()

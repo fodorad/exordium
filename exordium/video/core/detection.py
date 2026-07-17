@@ -28,7 +28,7 @@ import torch
 from tqdm import tqdm
 
 from exordium.video.core.bb import crop_mid, crop_xyxy, iou_xywh, xywh2midwh, xywh2xyxy
-from exordium.video.core.io import image_to_tensor, load_frames
+from exordium.video.core.io import image_to_tensor, open_video
 
 logger = logging.getLogger(__name__)
 """Module-level logger."""
@@ -166,13 +166,37 @@ class Detection(ABC):
             crop = det.crop(square=True, extra_space=1.5)  # square + 50 % pad
 
         """
-        f = self.frame()
+        return self._crop_from(self.frame(), square=square, extra_space=extra_space)
+
+    def _crop_from(
+        self,
+        frame: torch.Tensor,
+        square: bool = False,
+        extra_space: float = 1.0,
+    ) -> torch.Tensor:
+        """Apply :meth:`crop`'s geometry to an already-decoded frame.
+
+        Deliberately **private**.  Nothing checks that ``frame`` is this detection's
+        frame, and no such check is possible without decoding ``frame_id`` — the very
+        work a caller passing a frame is trying to avoid.  A mismatched frame crops
+        the wrong pixels silently, so this stays internal to callers that decoded the
+        frame themselves and can guarantee the pairing.  Public code uses
+        :meth:`crop`, whose frame is determined by ``source`` + ``frame_id``.
+
+        Args:
+            frame: ``(3, H, W)`` uint8 RGB tensor for this detection's ``frame_id``.
+            square: See :meth:`crop`.
+            extra_space: See :meth:`crop`.
+
+        Returns:
+            ``(3, H', W')`` uint8 RGB torch tensor.
+
+        """
         if square:
             mid = xywh2midwh(self.bb_xywh)[:2]
             size = int(max(float(self.bb_xywh[2]), float(self.bb_xywh[3])) * extra_space)
-            return cast("torch.Tensor", crop_mid(f, mid, size))
-        else:
-            return cast("torch.Tensor", crop_xyxy(f, self.bb_xyxy))
+            return cast("torch.Tensor", crop_mid(frame, mid, size))
+        return cast("torch.Tensor", crop_xyxy(frame, self.bb_xyxy))
 
     def crop_landmarks(
         self,
@@ -318,9 +342,19 @@ class DetectionFromVideo(Detection):
     """Detection from a video file on disk.
 
     ``source`` is the path to the video.  ``frame()`` loads the single frame
-    at ``frame_id`` on the fly using
-    :func:`~exordium.video.core.io.load_frames` (CPU decode, no GPU
-    round-trip) and returns it as a ``(3, H, W)`` uint8 RGB tensor.
+    at ``frame_id`` on the fly from a shared decoder handle
+    (:func:`~exordium.video.core.io.open_video`) and returns it as a
+    ``(3, H, W)`` uint8 RGB tensor.
+
+    Note:
+        Frames are decoded lazily and are **not** cached per detection — each
+        detection is normally asked for its frame once.  What is reused is the
+        *decoder*, which is what makes repeated access cheap.  Reading a track's
+        detections in frame order is therefore much faster than reading them in
+        random order, because a backward seek forces the decoder to start again
+        from the preceding keyframe.  To read scattered frames efficiently, decode
+        them in one batched call rather than one at a time; see
+        :meth:`~exordium.video.deep.base.VisualModelWrapper.track_to_feature`.
     """
 
     source: str | Path
@@ -329,15 +363,19 @@ class DetectionFromVideo(Detection):
     def frame(self) -> torch.Tensor:
         """Load ``frame_id`` from the video as a ``(3, H, W)`` uint8 RGB tensor.
 
-        Uses CPU-side torchcodec decoding; no numpy conversion.
+        Uses CPU-side torchcodec decoding via a shared decoder handle; no numpy
+        conversion.
         """
-        frames = load_frames(input_path=self.source, frame_ids=[self.frame_id], device_id=None)
-        return frames[0]  # (3, H, W) uint8 RGB
+        with open_video(self.source) as video:
+            return video.get_frames_at([self.frame_id])[0]  # (3, H, W) uint8 RGB
 
     def frame_center(self) -> torch.Tensor:
-        """Frame centre as ``(2,)`` long tensor ``[x, y]``."""
-        _, h, w = self.frame().shape
-        return torch.tensor([w // 2, h // 2], dtype=torch.long)
+        """Frame centre as ``(2,)`` long tensor ``[x, y]``.
+
+        Reads the dimensions from the video's metadata — no frame is decoded.
+        """
+        with open_video(self.source) as video:
+            return torch.tensor([video.width // 2, video.height // 2], dtype=torch.long)
 
 
 @dataclass(frozen=True, kw_only=True, eq=False)

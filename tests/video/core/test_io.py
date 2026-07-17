@@ -1,7 +1,9 @@
 """Tests for exordium.video.core.io: image/video loading, to_uint8_tensor, Video class."""
 
+import contextlib
 import shutil
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 
@@ -11,9 +13,12 @@ import torch
 
 from exordium.video.core.io import (
     _BACKEND,
+    _VIDEO_CACHE_MAXSIZE,
     ImageSequenceReader,
     Video,
+    _video_cache,
     batch_iterator,
+    clear_video_cache,
     get_video_metadata,
     image_to_np,
     image_to_tensor,
@@ -21,6 +26,7 @@ from exordium.video.core.io import (
     interpolate_1d,
     load_frames,
     load_video,
+    open_video,
     save_frames,
     save_frames_with_ids,
     save_video,
@@ -28,7 +34,7 @@ from exordium.video.core.io import (
     to_uint8_tensor,
     video_to_frames,
 )
-from tests.fixtures import IMAGE_FACE, VIDEO_MULTISPEAKER_SHORT
+from tests.fixtures import IMAGE_FACE, VIDEO_FI_PROTAGONIST, VIDEO_MULTISPEAKER_SHORT
 
 
 class TestImageToNp(unittest.TestCase):
@@ -655,6 +661,160 @@ class TestBatchIterator(unittest.TestCase):
         self.assertEqual(len(batches), 4)  # 3+3+3+1
         self.assertEqual(len(batches[0]), 3)
         self.assertEqual(len(batches[-1]), 1)
+
+
+class TestOpenVideoCache(unittest.TestCase):
+    """Shared decoder handles returned by :func:`open_video`."""
+
+    def setUp(self):
+        clear_video_cache()
+
+    def tearDown(self):
+        clear_video_cache()
+
+    def test_same_path_returns_same_handle(self):
+        with open_video(VIDEO_FI_PROTAGONIST) as first:
+            pass
+        with open_video(VIDEO_FI_PROTAGONIST) as second:
+            pass
+        self.assertIs(first, second)
+
+    def test_equivalent_paths_share_one_handle(self):
+        # The key resolves the path, so these must not open two decoders.
+        indirect = VIDEO_FI_PROTAGONIST.parent / ".." / "video" / VIDEO_FI_PROTAGONIST.name
+        with open_video(VIDEO_FI_PROTAGONIST) as direct_handle:
+            pass
+        with open_video(indirect) as indirect_handle:
+            pass
+        self.assertIs(direct_handle, indirect_handle)
+
+    def test_different_paths_return_different_handles(self):
+        with open_video(VIDEO_FI_PROTAGONIST) as first:
+            pass
+        with open_video(VIDEO_MULTISPEAKER_SHORT) as second:
+            pass
+        self.assertIsNot(first, second)
+
+    def test_cache_evicts_beyond_maxsize(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            copies = []
+            for i in range(_VIDEO_CACHE_MAXSIZE + 2):
+                dst = Path(tmp) / f"copy{i}.mp4"
+                shutil.copy(VIDEO_FI_PROTAGONIST, dst)
+                copies.append(dst)
+                with open_video(dst):
+                    pass
+            self.assertEqual(len(_video_cache), _VIDEO_CACHE_MAXSIZE)
+            # The most recent maxsize paths survive; the oldest were evicted.
+            cached = {key[0] for key in _video_cache}
+            self.assertEqual(cached, {p.resolve() for p in copies[-_VIDEO_CACHE_MAXSIZE:]})
+
+    def test_eviction_reopens_on_next_access(self):
+        # An evicted handle must not leave a closed decoder behind for its path.
+        with tempfile.TemporaryDirectory() as tmp:
+            first = Path(tmp) / "first.mp4"
+            shutil.copy(VIDEO_FI_PROTAGONIST, first)
+            with open_video(first) as original:
+                pass
+            for i in range(_VIDEO_CACHE_MAXSIZE):
+                other = Path(tmp) / f"other{i}.mp4"
+                shutil.copy(VIDEO_MULTISPEAKER_SHORT, other)
+                with open_video(other):
+                    pass
+            with open_video(first) as reopened:
+                self.assertIsNot(reopened, original)
+                self.assertEqual(reopened.get_frames_at([0]).shape[0], 1)
+
+    def test_eviction_does_not_break_an_active_borrower(self):
+        # Evicting must only drop the cache's reference -- never close a decoder that
+        # someone is still using. Closing on eviction made this exact case raise
+        # AttributeError on a caller that had done nothing wrong.
+        with tempfile.TemporaryDirectory() as tmp:
+            held = Path(tmp) / "held.mp4"
+            shutil.copy(VIDEO_FI_PROTAGONIST, held)
+            with open_video(held) as video:
+                for i in range(_VIDEO_CACHE_MAXSIZE + 1):
+                    other = Path(tmp) / f"evictor{i}.mp4"
+                    shutil.copy(VIDEO_MULTISPEAKER_SHORT, other)
+                    with open_video(other):
+                        pass
+                # The handle was evicted from the cache while this block held it.
+                self.assertNotIn(held.resolve(), {key[0] for key in _video_cache})
+                fresh = Video(held).get_frames_at([5])[0]
+                self.assertTrue(torch.equal(video.get_frames_at([5])[0], fresh))
+
+    def test_clear_video_cache_empties_cache(self):
+        with open_video(VIDEO_FI_PROTAGONIST):
+            pass
+        self.assertEqual(len(_video_cache), 1)
+        clear_video_cache()
+        self.assertEqual(len(_video_cache), 0)
+
+    def test_clear_does_not_break_an_active_borrower(self):
+        with open_video(VIDEO_FI_PROTAGONIST) as video:
+            clear_video_cache()
+            fresh = Video(VIDEO_FI_PROTAGONIST).get_frames_at([3])[0]
+            self.assertTrue(torch.equal(video.get_frames_at([3])[0], fresh))
+
+    def test_cached_handle_matches_fresh_decoder(self):
+        # A reused decoder must return the same pixels a fresh one would, including
+        # when frames are read backwards and repeatedly (a backward seek makes the
+        # decoder restart from the preceding keyframe -- it must not return stale data).
+        for frame_id in (0, 40, 7, 40, 1, 0):
+            with open_video(VIDEO_FI_PROTAGONIST) as video:
+                cached = video.get_frames_at([frame_id])[0]
+            fresh = Video(VIDEO_FI_PROTAGONIST).get_frames_at([frame_id])[0]
+            self.assertTrue(torch.equal(cached, fresh), f"frame {frame_id} differs")
+
+    def test_concurrent_reads_return_correct_frames(self):
+        # exordium.utils.concurrent runs threaded workers, and a decoder carries a seek
+        # position, so unguarded sharing would interleave seeks across threads.
+        expected = {i: Video(VIDEO_FI_PROTAGONIST).get_frames_at([i])[0] for i in range(0, 40, 8)}
+        results: dict[int, torch.Tensor] = {}
+        errors: list[BaseException] = []
+
+        def read(frame_id: int) -> None:
+            try:
+                for _ in range(5):
+                    with open_video(VIDEO_FI_PROTAGONIST) as video:
+                        results[frame_id] = video.get_frames_at([frame_id])[0]
+            except BaseException as exc:  # noqa: BLE001 - surfaced via the assert below
+                errors.append(exc)
+
+        threads = [threading.Thread(target=read, args=(i,)) for i in expected]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        self.assertEqual(errors, [])
+        for frame_id, frame in expected.items():
+            self.assertTrue(torch.equal(results[frame_id], frame), f"frame {frame_id} differs")
+
+    def test_nested_borrow_of_same_video_does_not_deadlock(self):
+        # Borrowing the same video twice in one thread is legitimate (e.g. reading a
+        # frame inside an open_video block). A non-reentrant lock hangs forever here.
+        done: list[torch.Tensor] = []
+
+        def nested() -> None:
+            with open_video(VIDEO_FI_PROTAGONIST) as outer:
+                with open_video(VIDEO_FI_PROTAGONIST) as inner:
+                    self.assertIs(inner, outer)
+                    done.append(inner.get_frames_at([0])[0])
+
+        thread = threading.Thread(target=nested, daemon=True)
+        thread.start()
+        thread.join(timeout=30)
+        self.assertFalse(thread.is_alive(), "nested borrow deadlocked")
+        self.assertEqual(len(done), 1)
+
+    def test_lock_is_released_when_block_raises(self):
+        # A handle whose block raised must not stay locked, or every later reader
+        # of that video would deadlock.
+        with contextlib.suppress(RuntimeError), open_video(VIDEO_FI_PROTAGONIST):
+            raise RuntimeError("boom")
+        with open_video(VIDEO_FI_PROTAGONIST) as video:
+            self.assertEqual(video.get_frames_at([0]).shape[0], 1)
 
 
 if __name__ == "__main__":

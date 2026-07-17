@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
+from typing import cast
 
 import torch
 from tqdm import tqdm
@@ -10,8 +11,8 @@ from tqdm import tqdm
 from exordium.utils.decorator import load_or_create
 from exordium.utils.device import get_torch_device
 from exordium.video.core.densify import densify as densify_features
-from exordium.video.core.detection import Track
-from exordium.video.core.io import Video, batch_iterator, to_uint8_tensor
+from exordium.video.core.detection import Detection, DetectionFromVideo, Track
+from exordium.video.core.io import Video, batch_iterator, open_video, to_uint8_tensor
 
 _IMAGENET_MEAN = [0.485, 0.456, 0.406]
 """ImageNet RGB channel means used for normalisation."""
@@ -181,6 +182,51 @@ class VisualModelWrapper(ABC):
             "features": torch.cat(features, dim=0),
         }
 
+    @staticmethod
+    def _crops_for(detections: list[Detection]) -> list[torch.Tensor]:
+        """Crop a batch of detections, decoding video frames in one pass.
+
+        Video-backed detections are decoded with a single
+        :meth:`~exordium.video.core.io.Video.get_frames_at` call rather than one
+        seek per detection.  This is not merely an amortisation of the decoder
+        handle — ``get_frames_at`` sorts the requested indices internally, so the
+        decoder only ever seeks forward.  Seeking backwards forces it to restart
+        from the preceding keyframe, which makes out-of-order single-frame reads
+        drastically slower than the same reads issued as one batch.
+
+        Detections from other sources (images, in-memory arrays and tensors) have no
+        seek cost and fall back to :meth:`~exordium.video.core.detection.Detection.crop`.
+
+        Args:
+            detections: Detections to crop.  May mix sources.
+
+        Returns:
+            One ``(3, H', W')`` uint8 RGB crop per detection, in input order.
+
+        """
+        crops: list[torch.Tensor | None] = [None] * len(detections)
+
+        # Group the video-backed detections by source: one batched decode per video.
+        by_source: dict[str, list[int]] = {}
+        for i, d in enumerate(detections):
+            if isinstance(d, DetectionFromVideo):
+                by_source.setdefault(str(d.source), []).append(i)
+
+        for source, indices in by_source.items():
+            with open_video(source) as video:
+                # Detections carry absolute frame ids, so no start_frame offset applies.
+                frames = video.get_frames_at([detections[i].frame_id for i in indices])
+            # Crop outside the block: the decoder is shared, so it is released as soon
+            # as the pixels are in hand rather than held across the crop work.
+            for i, frame in zip(indices, frames, strict=True):
+                crops[i] = detections[i]._crop_from(frame, square=True, extra_space=1.5)  # noqa: SLF001
+
+        for i, d in enumerate(detections):
+            if crops[i] is None:
+                crops[i] = d.crop(square=True, extra_space=1.5)
+
+        return cast("list[torch.Tensor]", crops)
+
     @load_or_create("st")
     def track_to_feature(
         self,
@@ -242,7 +288,7 @@ class VisualModelWrapper(ABC):
             if not subset:
                 continue
             ids += [d.frame_id for d in subset]
-            features.append(self([d.crop(square=True, extra_space=1.5) for d in subset]).cpu())
+            features.append(self(self._crops_for(subset)).cpu())
 
         frame_ids = torch.tensor(ids, dtype=torch.long)
         # An empty track yields no batches, so there is nothing to concatenate. The
