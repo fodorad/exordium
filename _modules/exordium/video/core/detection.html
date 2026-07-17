@@ -352,7 +352,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.bb</span><span class="w"> </span><span class="kn">import</span> <span class="n">crop_mid</span><span class="p">,</span> <span class="n">crop_xyxy</span><span class="p">,</span> <span class="n">iou_xywh</span><span class="p">,</span> <span class="n">xywh2midwh</span><span class="p">,</span> <span class="n">xywh2xyxy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">image_to_tensor</span><span class="p">,</span> <span class="n">load_frames</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">image_to_tensor</span><span class="p">,</span> <span class="n">open_video</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="sd">&quot;&quot;&quot;Module-level logger.&quot;&quot;&quot;</span>
@@ -494,14 +494,38 @@
 <span class="sd">            crop = det.crop(square=True, extra_space=1.5)  # square + 50 % pad</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">frame</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_crop_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame</span><span class="p">(),</span> <span class="n">square</span><span class="o">=</span><span class="n">square</span><span class="p">,</span> <span class="n">extra_space</span><span class="o">=</span><span class="n">extra_space</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_crop_from</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">frame</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">square</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">extra_space</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply :meth:`crop`&#39;s geometry to an already-decoded frame.</span>
+
+<span class="sd">        Deliberately **private**.  Nothing checks that ``frame`` is this detection&#39;s</span>
+<span class="sd">        frame, and no such check is possible without decoding ``frame_id`` — the very</span>
+<span class="sd">        work a caller passing a frame is trying to avoid.  A mismatched frame crops</span>
+<span class="sd">        the wrong pixels silently, so this stays internal to callers that decoded the</span>
+<span class="sd">        frame themselves and can guarantee the pairing.  Public code uses</span>
+<span class="sd">        :meth:`crop`, whose frame is determined by ``source`` + ``frame_id``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            frame: ``(3, H, W)`` uint8 RGB tensor for this detection&#39;s ``frame_id``.</span>
+<span class="sd">            square: See :meth:`crop`.</span>
+<span class="sd">            extra_space: See :meth:`crop`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``(3, H&#39;, W&#39;)`` uint8 RGB torch tensor.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">square</span><span class="p">:</span>
             <span class="n">mid</span> <span class="o">=</span> <span class="n">xywh2midwh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bb_xywh</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
             <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bb_xywh</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bb_xywh</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span> <span class="o">*</span> <span class="n">extra_space</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;torch.Tensor&quot;</span><span class="p">,</span> <span class="n">crop_mid</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">size</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;torch.Tensor&quot;</span><span class="p">,</span> <span class="n">crop_xyxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bb_xyxy</span><span class="p">))</span></div>
-
+            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;torch.Tensor&quot;</span><span class="p">,</span> <span class="n">crop_mid</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">size</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;torch.Tensor&quot;</span><span class="p">,</span> <span class="n">crop_xyxy</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bb_xyxy</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Detection.crop_landmarks">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.Detection.crop_landmarks">[docs]</a>
@@ -677,9 +701,19 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Detection from a video file on disk.</span>
 
 <span class="sd">    ``source`` is the path to the video.  ``frame()`` loads the single frame</span>
-<span class="sd">    at ``frame_id`` on the fly using</span>
-<span class="sd">    :func:`~exordium.video.core.io.load_frames` (CPU decode, no GPU</span>
-<span class="sd">    round-trip) and returns it as a ``(3, H, W)`` uint8 RGB tensor.</span>
+<span class="sd">    at ``frame_id`` on the fly from a shared decoder handle</span>
+<span class="sd">    (:func:`~exordium.video.core.io.open_video`) and returns it as a</span>
+<span class="sd">    ``(3, H, W)`` uint8 RGB tensor.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Frames are decoded lazily and are **not** cached per detection — each</span>
+<span class="sd">        detection is normally asked for its frame once.  What is reused is the</span>
+<span class="sd">        *decoder*, which is what makes repeated access cheap.  Reading a track&#39;s</span>
+<span class="sd">        detections in frame order is therefore much faster than reading them in</span>
+<span class="sd">        random order, because a backward seek forces the decoder to start again</span>
+<span class="sd">        from the preceding keyframe.  To read scattered frames efficiently, decode</span>
+<span class="sd">        them in one batched call rather than one at a time; see</span>
+<span class="sd">        :meth:`~exordium.video.deep.base.VisualModelWrapper.track_to_feature`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span>
@@ -690,18 +724,22 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">frame</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load ``frame_id`` from the video as a ``(3, H, W)`` uint8 RGB tensor.</span>
 
-<span class="sd">        Uses CPU-side torchcodec decoding; no numpy conversion.</span>
+<span class="sd">        Uses CPU-side torchcodec decoding via a shared decoder handle; no numpy</span>
+<span class="sd">        conversion.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">frames</span> <span class="o">=</span> <span class="n">load_frames</span><span class="p">(</span><span class="n">input_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">frame_ids</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_id</span><span class="p">],</span> <span class="n">device_id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">frames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># (3, H, W) uint8 RGB</span></div>
+        <span class="k">with</span> <span class="n">open_video</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)</span> <span class="k">as</span> <span class="n">video</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">video</span><span class="o">.</span><span class="n">get_frames_at</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_id</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># (3, H, W) uint8 RGB</span></div>
 
 
 <div class="viewcode-block" id="DetectionFromVideo.frame_center">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.DetectionFromVideo.frame_center">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">frame_center</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Frame centre as ``(2,)`` long tensor ``[x, y]``.&quot;&quot;&quot;</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">frame</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">h</span> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Frame centre as ``(2,)`` long tensor ``[x, y]``.</span>
+
+<span class="sd">        Reads the dimensions from the video&#39;s metadata — no frame is decoded.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">open_video</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)</span> <span class="k">as</span> <span class="n">video</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">video</span><span class="o">.</span><span class="n">width</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">video</span><span class="o">.</span><span class="n">height</span> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span></div>
 </div>
 
 

@@ -255,9 +255,20 @@ Module Contents
    Detection from a video file on disk.
 
    ``source`` is the path to the video.  ``frame()`` loads the single frame
-   at ``frame_id`` on the fly using
-   :func:`~exordium.video.core.io.load_frames` (CPU decode, no GPU
-   round-trip) and returns it as a ``(3, H, W)`` uint8 RGB tensor.
+   at ``frame_id`` on the fly from a shared decoder handle
+   (:func:`~exordium.video.core.io.open_video`) and returns it as a
+   ``(3, H, W)`` uint8 RGB tensor.
+
+   .. note::
+
+      Frames are decoded lazily and are **not** cached per detection — each
+      detection is normally asked for its frame once.  What is reused is the
+      *decoder*, which is what makes repeated access cheap.  Reading a track's
+      detections in frame order is therefore much faster than reading them in
+      random order, because a backward seek forces the decoder to start again
+      from the preceding keyframe.  To read scattered frames efficiently, decode
+      them in one batched call rather than one at a time; see
+      :meth:`~exordium.video.deep.base.VisualModelWrapper.track_to_feature`.
 
 
    .. py:attribute:: source
@@ -270,13 +281,16 @@ Module Contents
 
       Load ``frame_id`` from the video as a ``(3, H, W)`` uint8 RGB tensor.
 
-      Uses CPU-side torchcodec decoding; no numpy conversion.
+      Uses CPU-side torchcodec decoding via a shared decoder handle; no numpy
+      conversion.
 
 
 
    .. py:method:: frame_center() -> torch.Tensor
 
       Frame centre as ``(2,)`` long tensor ``[x, y]``.
+
+      Reads the dimensions from the video's metadata — no frame is decoded.
 
 
 

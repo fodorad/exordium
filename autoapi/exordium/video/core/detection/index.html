@@ -622,9 +622,20 @@ a <code class="docutils literal notranslate"><span class="pre">(3,</span> <span 
 <dd><p>Bases: <a class="reference internal" href="#exordium.video.core.detection.Detection" title="exordium.video.core.detection.Detection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Detection</span></code></a></p>
 <p>Detection from a video file on disk.</p>
 <p><code class="docutils literal notranslate"><span class="pre">source</span></code> is the path to the video.  <code class="docutils literal notranslate"><span class="pre">frame()</span></code> loads the single frame
-at <code class="docutils literal notranslate"><span class="pre">frame_id</span></code> on the fly using
-<a class="reference internal" href="../io/index.html#exordium.video.core.io.load_frames" title="exordium.video.core.io.load_frames"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_frames()</span></code></a> (CPU decode, no GPU
-round-trip) and returns it as a <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> uint8 RGB tensor.</p>
+at <code class="docutils literal notranslate"><span class="pre">frame_id</span></code> on the fly from a shared decoder handle
+(<a class="reference internal" href="../io/index.html#exordium.video.core.io.open_video" title="exordium.video.core.io.open_video"><code class="xref py py-func docutils literal notranslate"><span class="pre">open_video()</span></code></a>) and returns it as a
+<code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> uint8 RGB tensor.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Frames are decoded lazily and are <strong>not</strong> cached per detection — each
+detection is normally asked for its frame once.  What is reused is the
+<em>decoder</em>, which is what makes repeated access cheap.  Reading a track’s
+detections in frame order is therefore much faster than reading them in
+random order, because a backward seek forces the decoder to start again
+from the preceding keyframe.  To read scattered frames efficiently, decode
+them in one batched call rather than one at a time; see
+<a class="reference internal" href="../../deep/base/index.html#exordium.video.deep.base.VisualModelWrapper.track_to_feature" title="exordium.video.deep.base.VisualModelWrapper.track_to_feature"><code class="xref py py-meth docutils literal notranslate"><span class="pre">track_to_feature()</span></code></a>.</p>
+</div>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="exordium.video.core.detection.DetectionFromVideo.source">
 <span class="sig-name descname"><span class="pre">source</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pathlib.Path</span></span><a class="headerlink" href="#exordium.video.core.detection.DetectionFromVideo.source" title="Link to this definition">¶</a></dt>
@@ -635,13 +646,15 @@ round-trip) and returns it as a <code class="docutils literal notranslate"><span
 <dt class="sig sig-object py" id="exordium.video.core.detection.DetectionFromVideo.frame">
 <span class="sig-name descname"><span class="pre">frame</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/core/detection.html#DetectionFromVideo.frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.core.detection.DetectionFromVideo.frame" title="Link to this definition">¶</a></dt>
 <dd><p>Load <code class="docutils literal notranslate"><span class="pre">frame_id</span></code> from the video as a <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> uint8 RGB tensor.</p>
-<p>Uses CPU-side torchcodec decoding; no numpy conversion.</p>
+<p>Uses CPU-side torchcodec decoding via a shared decoder handle; no numpy
+conversion.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="exordium.video.core.detection.DetectionFromVideo.frame_center">
 <span class="sig-name descname"><span class="pre">frame_center</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/core/detection.html#DetectionFromVideo.frame_center"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.core.detection.DetectionFromVideo.frame_center" title="Link to this definition">¶</a></dt>
 <dd><p>Frame centre as <code class="docutils literal notranslate"><span class="pre">(2,)</span></code> long tensor <code class="docutils literal notranslate"><span class="pre">[x,</span> <span class="pre">y]</span></code>.</p>
+<p>Reads the dimensions from the video’s metadata — no frame is decoded.</p>
 </dd></dl>
 
 </dd></dl>

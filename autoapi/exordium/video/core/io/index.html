@@ -411,6 +411,12 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.interpolate_1d" title="exordium.video.core.io.interpolate_1d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_1d</span></code></a>(→ numpy.ndarray)</p></td>
 <td><p>Interpolates data using a range.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.open_video" title="exordium.video.core.io.open_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_video</span></code></a>(→ collections.abc.Generator[Video, None, None])</p></td>
+<td><p>Borrow a cached, shared <a class="reference internal" href="#exordium.video.core.io.Video" title="exordium.video.core.io.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a> handle for the duration of a block.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.clear_video_cache" title="exordium.video.core.io.clear_video_cache"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear_video_cache</span></code></a>(→ None)</p></td>
+<td><p>Drop every handle held by <a class="reference internal" href="#exordium.video.core.io.open_video" title="exordium.video.core.io.open_video"><code class="xref py py-func docutils literal notranslate"><span class="pre">open_video()</span></code></a>.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -1076,6 +1082,54 @@ MPS decoding is not supported by torchcodec.</p>
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.video.core.io.open_video">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.core.io.</span></span><span class="sig-name descname"><span class="pre">open_video</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">collections.abc.Generator</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#exordium.video.core.io.Video" title="exordium.video.core.io.Video"><span class="pre">Video</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/core/io.html#open_video"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.core.io.open_video" title="Link to this definition">¶</a></dt>
+<dd><p>Borrow a cached, shared <a class="reference internal" href="#exordium.video.core.io.Video" title="exordium.video.core.io.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a> handle for the duration of a block.</p>
+<p>Constructing a <a class="reference internal" href="#exordium.video.core.io.Video" title="exordium.video.core.io.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a> builds a torchcodec decoder, which parses the
+container and costs orders of magnitude more than the seek it precedes.  Code
+that reads frames one at a time — every <code class="xref py py-meth docutils literal notranslate"><span class="pre">frame()</span></code> call, and therefore every <code class="docutils literal notranslate"><span class="pre">crop()</span></code> — would otherwise pay that
+cost per frame.  Reusing one open decoder removes it entirely.</p>
+<p>The handle is <strong>shared and borrowed, not owned</strong>.  A decoder carries a seek
+position, so two threads reading one decoder would interleave seeks and return
+each other’s frames.  This context manager holds the handle’s lock for the whole
+block, which makes that impossible to get wrong — do not stash the yielded
+<a class="reference internal" href="#exordium.video.core.io.Video" title="exordium.video.core.io.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a> and use it after the block, and do not <a class="reference internal" href="#exordium.video.core.io.Video.close" title="exordium.video.core.io.Video.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Video.close()</span></code></a> it.</p>
+<p>Prefer <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">Video(path)</span> <span class="pre">as</span> <span class="pre">v</span></code> when you need exclusive ownership (e.g. a long
+sequential streaming pass); use this for scattered, repeated random access.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A cached handle holds an open descriptor to the file as it was when first
+opened.  Videos are treated as read-only inputs; rewriting one in place
+during a run is not supported.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – Path to the video file.</p></li>
+<li><p><strong>device</strong> – Decoder device (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;cuda:0&quot;</span></code>).  <code class="docutils literal notranslate"><span class="pre">None</span></code> decodes on CPU.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Yields<span class="colon">:</span></dt>
+<dd class="field-even"><p>The shared <a class="reference internal" href="#exordium.video.core.io.Video" title="exordium.video.core.io.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a>, exclusively held for the duration of the block.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">open_video</span><span class="p">(</span><span class="s2">&quot;clip.mp4&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">video</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">frame</span> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">get_frames_at</span><span class="p">([</span><span class="mi">42</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.video.core.io.clear_video_cache">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.core.io.</span></span><span class="sig-name descname"><span class="pre">clear_video_cache</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/core/io.html#clear_video_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.core.io.clear_video_cache" title="Link to this definition">¶</a></dt>
+<dd><p>Drop every handle held by <a class="reference internal" href="#exordium.video.core.io.open_video" title="exordium.video.core.io.open_video"><code class="xref py py-func docutils literal notranslate"><span class="pre">open_video()</span></code></a>.</p>
+<p>Each decoder is closed once the last borrower releases it, freeing its file
+descriptor.  Safe to call at any time, including while another thread holds a
+handle; subsequent <a class="reference internal" href="#exordium.video.core.io.open_video" title="exordium.video.core.io.open_video"><code class="xref py py-func docutils literal notranslate"><span class="pre">open_video()</span></code></a> calls simply reopen what they need.</p>
+</dd></dl>
+
 </section>
 </section>
 
@@ -1188,6 +1242,8 @@ MPS decoding is not supported by torchcodec.</p>
 <li><a class="reference internal" href="#exordium.video.core.io.Video.close"><code class="docutils literal notranslate"><span class="pre">Video.close()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#exordium.video.core.io.open_video"><code class="docutils literal notranslate"><span class="pre">open_video()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.core.io.clear_video_cache"><code class="docutils literal notranslate"><span class="pre">clear_video_cache()</span></code></a></li>
 </ul>
 </li>
 </ul>

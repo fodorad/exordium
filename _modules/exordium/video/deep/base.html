@@ -327,6 +327,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
@@ -334,8 +335,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.decorator</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_or_create</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_torch_device</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.densify</span><span class="w"> </span><span class="kn">import</span> <span class="n">densify</span> <span class="k">as</span> <span class="n">densify_features</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.detection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Track</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">Video</span><span class="p">,</span> <span class="n">batch_iterator</span><span class="p">,</span> <span class="n">to_uint8_tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.detection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detection</span><span class="p">,</span> <span class="n">DetectionFromVideo</span><span class="p">,</span> <span class="n">Track</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">Video</span><span class="p">,</span> <span class="n">batch_iterator</span><span class="p">,</span> <span class="n">open_video</span><span class="p">,</span> <span class="n">to_uint8_tensor</span>
 
 <span class="n">_IMAGENET_MEAN</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">]</span>
 <span class="sd">&quot;&quot;&quot;ImageNet RGB channel means used for normalisation.&quot;&quot;&quot;</span>
@@ -516,6 +517,51 @@
             <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
         <span class="p">}</span>
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_crops_for</span><span class="p">(</span><span class="n">detections</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Detection</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Crop a batch of detections, decoding video frames in one pass.</span>
+
+<span class="sd">        Video-backed detections are decoded with a single</span>
+<span class="sd">        :meth:`~exordium.video.core.io.Video.get_frames_at` call rather than one</span>
+<span class="sd">        seek per detection.  This is not merely an amortisation of the decoder</span>
+<span class="sd">        handle — ``get_frames_at`` sorts the requested indices internally, so the</span>
+<span class="sd">        decoder only ever seeks forward.  Seeking backwards forces it to restart</span>
+<span class="sd">        from the preceding keyframe, which makes out-of-order single-frame reads</span>
+<span class="sd">        drastically slower than the same reads issued as one batch.</span>
+
+<span class="sd">        Detections from other sources (images, in-memory arrays and tensors) have no</span>
+<span class="sd">        seek cost and fall back to :meth:`~exordium.video.core.detection.Detection.crop`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            detections: Detections to crop.  May mix sources.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            One ``(3, H&#39;, W&#39;)`` uint8 RGB crop per detection, in input order.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">crops</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">detections</span><span class="p">)</span>
+
+        <span class="c1"># Group the video-backed detections by source: one batched decode per video.</span>
+        <span class="n">by_source</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">detections</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">DetectionFromVideo</span><span class="p">):</span>
+                <span class="n">by_source</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">source</span><span class="p">),</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">source</span><span class="p">,</span> <span class="n">indices</span> <span class="ow">in</span> <span class="n">by_source</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">with</span> <span class="n">open_video</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="k">as</span> <span class="n">video</span><span class="p">:</span>
+                <span class="c1"># Detections carry absolute frame ids, so no start_frame offset applies.</span>
+                <span class="n">frames</span> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">get_frames_at</span><span class="p">([</span><span class="n">detections</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">frame_id</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">])</span>
+            <span class="c1"># Crop outside the block: the decoder is shared, so it is released as soon</span>
+            <span class="c1"># as the pixels are in hand rather than held across the crop work.</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">frame</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                <span class="n">crops</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">detections</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">_crop_from</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra_space</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>  <span class="c1"># noqa: SLF001</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">detections</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">crops</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">crops</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra_space</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;list[torch.Tensor]&quot;</span><span class="p">,</span> <span class="n">crops</span><span class="p">)</span>
+
     <span class="nd">@load_or_create</span><span class="p">(</span><span class="s2">&quot;st&quot;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">track_to_feature</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -577,7 +623,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">subset</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="n">ids</span> <span class="o">+=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">frame_id</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">]</span>
-            <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">([</span><span class="n">d</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra_space</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">])</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
+            <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_crops_for</span><span class="p">(</span><span class="n">subset</span><span class="p">))</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
 
         <span class="n">frame_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
         <span class="c1"># An empty track yields no batches, so there is nothing to concatenate. The</span>

@@ -325,8 +325,11 @@
 <span></span><span class="sd">&quot;&quot;&quot;Video input/output utilities.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">islice</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">cast</span>
@@ -1488,6 +1491,107 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Release the decoder.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># ty: ignore[invalid-assignment]</span></div>
 </div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Shared decoder handle cache</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="n">_VIDEO_CACHE_MAXSIZE</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="sd">&quot;&quot;&quot;Maximum number of open decoder handles kept alive by :func:`open_video`.</span>
+
+<span class="sd">Each handle holds one file descriptor plus demuxer/codec state, so this stays far</span>
+<span class="sd">below any file-descriptor limit while comfortably covering the realistic access</span>
+<span class="sd">patterns (one video at a time; a handful for multi-source tracks).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">_video_cache</span><span class="p">:</span> <span class="s2">&quot;OrderedDict[tuple[Path, str | None], tuple[Video, threading.RLock]]&quot;</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+<span class="sd">&quot;&quot;&quot;LRU cache of open :class:`Video` handles, keyed by ``(resolved_path, device)``.</span>
+
+<span class="sd">Each handle is paired with a **reentrant** lock.  A plain lock would deadlock a single</span>
+<span class="sd">thread that borrows the same video twice at once — e.g. a caller reading a frame inside</span>
+<span class="sd">its own ``open_video`` block — which is a legitimate thing to write and should not hang.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">_video_cache_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+<span class="sd">&quot;&quot;&quot;Guards :data:`_video_cache` itself (not the decoders inside it).&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="open_video">
+<a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.open_video">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">open_video</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="s2">&quot;Video&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Borrow a cached, shared :class:`Video` handle for the duration of a block.</span>
+
+<span class="sd">    Constructing a :class:`Video` builds a torchcodec decoder, which parses the</span>
+<span class="sd">    container and costs orders of magnitude more than the seek it precedes.  Code</span>
+<span class="sd">    that reads frames one at a time — every :meth:`~exordium.video.core.detection.</span>
+<span class="sd">    Detection.frame` call, and therefore every ``crop()`` — would otherwise pay that</span>
+<span class="sd">    cost per frame.  Reusing one open decoder removes it entirely.</span>
+
+<span class="sd">    The handle is **shared and borrowed, not owned**.  A decoder carries a seek</span>
+<span class="sd">    position, so two threads reading one decoder would interleave seeks and return</span>
+<span class="sd">    each other&#39;s frames.  This context manager holds the handle&#39;s lock for the whole</span>
+<span class="sd">    block, which makes that impossible to get wrong — do not stash the yielded</span>
+<span class="sd">    :class:`Video` and use it after the block, and do not :meth:`Video.close` it.</span>
+
+<span class="sd">    Prefer ``with Video(path) as v`` when you need exclusive ownership (e.g. a long</span>
+<span class="sd">    sequential streaming pass); use this for scattered, repeated random access.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        A cached handle holds an open descriptor to the file as it was when first</span>
+<span class="sd">        opened.  Videos are treated as read-only inputs; rewriting one in place</span>
+<span class="sd">        during a run is not supported.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path: Path to the video file.</span>
+<span class="sd">        device: Decoder device (e.g. ``&quot;cuda:0&quot;``).  ``None`` decodes on CPU.</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        The shared :class:`Video`, exclusively held for the duration of the block.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; with open_video(&quot;clip.mp4&quot;) as video:</span>
+<span class="sd">        ...     frame = video.get_frames_at([42])[0]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">(),</span> <span class="nb">str</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">_video_cache_lock</span><span class="p">:</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">_video_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">entry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="p">(</span><span class="n">Video</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">),</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">())</span>
+            <span class="n">_video_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_video_cache</span><span class="o">.</span><span class="n">move_to_end</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="c1"># Evicting only drops the cache&#39;s reference. The decoder is closed by garbage</span>
+        <span class="c1"># collection once the last borrower is done with it, so evicting a handle that</span>
+        <span class="c1"># another caller is still holding is harmless -- closing it here would not be.</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">_video_cache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_VIDEO_CACHE_MAXSIZE</span><span class="p">:</span>
+            <span class="n">_video_cache</span><span class="o">.</span><span class="n">popitem</span><span class="p">(</span><span class="n">last</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">video</span><span class="p">,</span> <span class="n">lock</span> <span class="o">=</span> <span class="n">entry</span>
+    <span class="k">with</span> <span class="n">lock</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">video</span></div>
+
+
+
+<div class="viewcode-block" id="clear_video_cache">
+<a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.clear_video_cache">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">clear_video_cache</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Drop every handle held by :func:`open_video`.</span>
+
+<span class="sd">    Each decoder is closed once the last borrower releases it, freeing its file</span>
+<span class="sd">    descriptor.  Safe to call at any time, including while another thread holds a</span>
+<span class="sd">    handle; subsequent :func:`open_video` calls simply reopen what they need.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">_video_cache_lock</span><span class="p">:</span>
+        <span class="n">_video_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
 
 </pre></div>
         </article>
