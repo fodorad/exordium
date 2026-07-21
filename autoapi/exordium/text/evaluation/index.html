@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../../../genindex.html"><link rel="search" title="Search" href="../../../../search.html"><link rel="next" title="exordium.text.pipeline" href="../pipeline/index.html"><link rel="prev" title="exordium.text.bert" href="../bert/index.html">
+<link rel="index" title="Index" href="../../../../genindex.html"><link rel="search" title="Search" href="../../../../search.html"><link rel="next" title="exordium.text.mmbert" href="../mmbert/index.html"><link rel="prev" title="exordium.text.eurobert" href="../eurobert/index.html">
         <link rel="canonical" href="https://fodorad.github.io/exordium/autoapi/exordium/text/evaluation/index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
@@ -211,7 +211,9 @@
 <li class="toctree-l4"><a class="reference internal" href="../alignment/index.html">exordium.text.alignment</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../base/index.html">exordium.text.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../bert/index.html">exordium.text.bert</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../eurobert/index.html">exordium.text.eurobert</a></li>
 <li class="toctree-l4 current current-page"><a class="current reference internal" href="#">exordium.text.evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mmbert/index.html">exordium.text.mmbert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../pipeline/index.html">exordium.text.pipeline</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../roberta/index.html">exordium.text.roberta</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../transcript_align/index.html">exordium.text.transcript_align</a></li>
@@ -615,10 +617,10 @@ still accepted.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> – One of <code class="docutils literal notranslate"><span class="pre">&quot;xlm-roberta&quot;</span></code> (default;
 <a class="reference internal" href="../xlm_roberta/index.html#exordium.text.xlm_roberta.XlmRobertaWrapper" title="exordium.text.xlm_roberta.XlmRobertaWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">XlmRobertaWrapper</span></code></a>, a multilingual
-sentence-transformer fine-tuned for semantic similarity — recommended),
-<code class="docutils literal notranslate"><span class="pre">&quot;roberta&quot;</span></code> (<a class="reference internal" href="../roberta/index.html#exordium.text.roberta.RobertaWrapper" title="exordium.text.roberta.RobertaWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">RobertaWrapper</span></code></a>, CLS
-token), or <code class="docutils literal notranslate"><span class="pre">&quot;bert&quot;</span></code> (<a class="reference internal" href="../bert/index.html#exordium.text.bert.BertWrapper" title="exordium.text.bert.BertWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">BertWrapper</span></code></a>, CLS
-token).</p></li>
+sentence-transformer whose embeddings are cross-lingually aligned —
+recommended for semantic similarity), <code class="docutils literal notranslate"><span class="pre">&quot;roberta&quot;</span></code>
+(<a class="reference internal" href="../roberta/index.html#exordium.text.roberta.RobertaWrapper" title="exordium.text.roberta.RobertaWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">RobertaWrapper</span></code></a>, CLS token), or
+<code class="docutils literal notranslate"><span class="pre">&quot;bert&quot;</span></code> (<a class="reference internal" href="../bert/index.html#exordium.text.bert.BertWrapper" title="exordium.text.bert.BertWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">BertWrapper</span></code></a>, CLS token).</p></li>
 <li><p><strong>device_id</strong> – Device index. <code class="docutils literal notranslate"><span class="pre">-1</span></code> or <code class="docutils literal notranslate"><span class="pre">None</span></code> → CPU, <code class="docutils literal notranslate"><span class="pre">0+</span></code> → GPU/MPS.</p></li>
 <li><p><strong>pretrained</strong> – <code class="docutils literal notranslate"><span class="pre">True</span></code> (default) loads the real weights. <code class="docutils literal notranslate"><span class="pre">False</span></code> builds the
 architecture with random weights — embeddings are then meaningless, but the
@@ -793,23 +795,23 @@ recordings with many annotations stay cheap.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../pipeline/index.html">
+          <a class="next-page" href="../mmbert/index.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">exordium.text.pipeline</div>
+                <div class="title">exordium.text.mmbert</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../bert/index.html">
+          <a class="prev-page" href="../eurobert/index.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">exordium.text.bert</div>
+                <div class="title">exordium.text.eurobert</div>
                 
               </div>
             </a>

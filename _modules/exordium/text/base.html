@@ -210,7 +210,9 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/alignment/index.html">exordium.text.alignment</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/base/index.html">exordium.text.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/bert/index.html">exordium.text.bert</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/eurobert/index.html">exordium.text.eurobert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/evaluation/index.html">exordium.text.evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/mmbert/index.html">exordium.text.mmbert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/pipeline/index.html">exordium.text.pipeline</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/roberta/index.html">exordium.text.roberta</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/transcript_align/index.html">exordium.text.transcript_align</a></li>
@@ -823,6 +825,127 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">attention_mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">last_hidden_state</span><span class="o">.</span><span class="n">size</span><span class="p">())</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">last_hidden_state</span> <span class="o">*</span> <span class="n">mask</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="nb">min</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PooledTokenTextWrapper">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.PooledTokenTextWrapper">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PooledTokenTextWrapper</span><span class="p">(</span><span class="n">TextModelWrapper</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Encoder wrapper exposing both token-level and pooled outputs via ``pooling``.</span>
+
+<span class="sd">    A :class:`TextModelWrapper` whose ``preprocess → inference → __call__``</span>
+<span class="sd">    pipeline is parameterised by a ``pooling`` mode, so one wrapper serves both</span>
+<span class="sd">    an affective-computing fusion layer (which wants the token sequence) and a</span>
+<span class="sd">    sentence-similarity consumer (which wants one vector per input):</span>
+
+<span class="sd">    * ``pooling=&quot;none&quot;`` — the raw token sequence ``last_hidden_state`` of shape</span>
+<span class="sd">      ``(B, T, H)`` (token-level; feed to a cross-modal sequence model such as</span>
+<span class="sd">      MulT/LinMulT alongside the ``attention_mask``).</span>
+<span class="sd">    * ``pooling=&quot;mean&quot;`` (default) — the attention-masked mean-pooled sentence</span>
+<span class="sd">      embedding of shape ``(B, H)``.</span>
+
+<span class="sd">    A single ``str`` is encoded as a batch of one, so one sentence yields</span>
+<span class="sd">    ``(1, T, H)`` (token) or ``(1, H)`` (pooled); index ``[0]`` for the per-sample</span>
+<span class="sd">    ``(T, H)`` / ``(H,)`` views. ``H`` is read from the model config into</span>
+<span class="sd">    :attr:`hidden_size`, so it is never assumed.</span>
+
+<span class="sd">    Subclasses only need to call ``super().__init__(model_name, ...)`` with their</span>
+<span class="sd">    HuggingFace model id; the pooling API is inherited unchanged.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        hidden_size: The backbone&#39;s hidden size ``H``, read from the model config.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">hidden_size</span>
+
+<div class="viewcode-block" id="PooledTokenTextWrapper.inference">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.PooledTokenTextWrapper.inference">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">inputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+        <span class="n">pooling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the encoder forward pass and return token-level or pooled features.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            inputs: Tokenizer output dict on ``self.device``.</span>
+<span class="sd">            pooling: ``&quot;none&quot;`` returns the raw token sequence</span>
+<span class="sd">                ``last_hidden_state`` of shape ``(B, T, H)`` (token-level, for a</span>
+<span class="sd">                cross-modal sequence model). ``&quot;mean&quot;`` (default) returns the</span>
+<span class="sd">                attention-masked mean-pooled sentence embedding of shape</span>
+<span class="sd">                ``(B, H)``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Token embeddings ``(B, T, H)`` when ``pooling=&quot;none&quot;``, or pooled</span>
+<span class="sd">            sentence embeddings ``(B, H)`` when ``pooling=&quot;mean&quot;``.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If ``pooling`` is not ``&quot;none&quot;`` or ``&quot;mean&quot;``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">last_hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">)</span><span class="o">.</span><span class="n">last_hidden_state</span>
+        <span class="k">if</span> <span class="n">pooling</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">last_hidden</span>
+        <span class="k">if</span> <span class="n">pooling</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mean_pool</span><span class="p">(</span><span class="n">last_hidden</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">])</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown pooling </span><span class="si">{</span><span class="n">pooling</span><span class="si">!r}</span><span class="s2">; use &#39;none&#39; or &#39;mean&#39;.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PooledTokenTextWrapper.__call__">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.PooledTokenTextWrapper.__call__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">pooling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize and encode text, returning a feature tensor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text: Single string or list of strings.</span>
+<span class="sd">            max_length: Maximum sequence length. ``None`` uses tokenizer default.</span>
+<span class="sd">            padding: Padding strategy. Default: ``True`` (pad to longest).</span>
+<span class="sd">            pooling: Forwarded to :meth:`inference`. ``&quot;mean&quot;`` (default) returns</span>
+<span class="sd">                pooled ``(B, H)``; ``&quot;none&quot;`` returns token-level ``(B, T, H)``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Feature tensor on ``self.device``: ``(B, H)`` pooled by default, or</span>
+<span class="sd">            ``(B, T, H)`` token-level when ``pooling=&quot;none&quot;``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">padding</span><span class="p">),</span> <span class="n">pooling</span><span class="o">=</span><span class="n">pooling</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PooledTokenTextWrapper.predict">
+<a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.PooledTokenTextWrapper.predict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">pooling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize and encode text, returning a numpy feature array.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text: Single string or list of strings.</span>
+<span class="sd">            max_length: Maximum sequence length.</span>
+<span class="sd">            padding: Padding strategy.</span>
+<span class="sd">            pooling: Forwarded to :meth:`inference`. ``&quot;mean&quot;`` (default) returns</span>
+<span class="sd">                pooled ``(B, H)``; ``&quot;none&quot;`` returns token-level ``(B, T, H)``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Feature array: ``(B, H)`` pooled by default, or ``(B, T, H)``</span>
+<span class="sd">            token-level when ``pooling=&quot;none&quot;``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">pooling</span><span class="o">=</span><span class="n">pooling</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span></div>
+</div>
 
 
 

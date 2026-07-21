@@ -211,7 +211,9 @@
 <li class="toctree-l4"><a class="reference internal" href="../alignment/index.html">exordium.text.alignment</a></li>
 <li class="toctree-l4 current current-page"><a class="current reference internal" href="#">exordium.text.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../bert/index.html">exordium.text.bert</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../eurobert/index.html">exordium.text.eurobert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../evaluation/index.html">exordium.text.evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mmbert/index.html">exordium.text.mmbert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../pipeline/index.html">exordium.text.pipeline</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../roberta/index.html">exordium.text.roberta</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../transcript_align/index.html">exordium.text.transcript_align</a></li>
@@ -375,16 +377,19 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.TextModelWrapper" title="exordium.text.base.TextModelWrapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TextModelWrapper</span></code></a></p></td>
 <td><p>Abstract base class for HuggingFace encoder-only transformer models.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.SpeechToText" title="exordium.text.base.SpeechToText"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpeechToText</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.PooledTokenTextWrapper" title="exordium.text.base.PooledTokenTextWrapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PooledTokenTextWrapper</span></code></a></p></td>
+<td><p>Encoder wrapper exposing both token-level and pooled outputs via <code class="docutils literal notranslate"><span class="pre">pooling</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.SpeechToText" title="exordium.text.base.SpeechToText"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpeechToText</span></code></a></p></td>
 <td><p>Abstract base class for speech-to-text models.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.StreamingMixin" title="exordium.text.base.StreamingMixin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StreamingMixin</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.StreamingMixin" title="exordium.text.base.StreamingMixin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StreamingMixin</span></code></a></p></td>
 <td><p>Mixin for STT backends that support word-by-word streaming output.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.ForcedAligner" title="exordium.text.base.ForcedAligner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ForcedAligner</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.ForcedAligner" title="exordium.text.base.ForcedAligner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ForcedAligner</span></code></a></p></td>
 <td><p>Abstract base class for transcript-to-audio forced aligners.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.WordTimestamper" title="exordium.text.base.WordTimestamper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WordTimestamper</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.WordTimestamper" title="exordium.text.base.WordTimestamper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WordTimestamper</span></code></a></p></td>
 <td><p>Abstract base class for open-vocabulary word-timestamp backends.</p></td>
 </tr>
 </tbody>
@@ -772,6 +777,109 @@ whether to pool, etc.) belongs here.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="exordium.text.base.PooledTokenTextWrapper">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">PooledTokenTextWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#PooledTokenTextWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.PooledTokenTextWrapper" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#exordium.text.base.TextModelWrapper" title="exordium.text.base.TextModelWrapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TextModelWrapper</span></code></a></p>
+<p>Encoder wrapper exposing both token-level and pooled outputs via <code class="docutils literal notranslate"><span class="pre">pooling</span></code>.</p>
+<p>A <a class="reference internal" href="#exordium.text.base.TextModelWrapper" title="exordium.text.base.TextModelWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">TextModelWrapper</span></code></a> whose <code class="docutils literal notranslate"><span class="pre">preprocess</span> <span class="pre">→</span> <span class="pre">inference</span> <span class="pre">→</span> <span class="pre">__call__</span></code>
+pipeline is parameterised by a <code class="docutils literal notranslate"><span class="pre">pooling</span></code> mode, so one wrapper serves both
+an affective-computing fusion layer (which wants the token sequence) and a
+sentence-similarity consumer (which wants one vector per input):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pooling=&quot;none&quot;</span></code> — the raw token sequence <code class="docutils literal notranslate"><span class="pre">last_hidden_state</span></code> of shape
+<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T,</span> <span class="pre">H)</span></code> (token-level; feed to a cross-modal sequence model such as
+MulT/LinMulT alongside the <code class="docutils literal notranslate"><span class="pre">attention_mask</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pooling=&quot;mean&quot;</span></code> (default) — the attention-masked mean-pooled sentence
+embedding of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H)</span></code>.</p></li>
+</ul>
+<p>A single <code class="docutils literal notranslate"><span class="pre">str</span></code> is encoded as a batch of one, so one sentence yields
+<code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">T,</span> <span class="pre">H)</span></code> (token) or <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">H)</span></code> (pooled); index <code class="docutils literal notranslate"><span class="pre">[0]</span></code> for the per-sample
+<code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">H)</span></code> / <code class="docutils literal notranslate"><span class="pre">(H,)</span></code> views. <code class="docutils literal notranslate"><span class="pre">H</span></code> is read from the model config into
+<a class="reference internal" href="#exordium.text.base.PooledTokenTextWrapper.hidden_size" title="exordium.text.base.PooledTokenTextWrapper.hidden_size"><code class="xref py py-attr docutils literal notranslate"><span class="pre">hidden_size</span></code></a>, so it is never assumed.</p>
+<p>Subclasses only need to call <code class="docutils literal notranslate"><span class="pre">super().__init__(model_name,</span> <span class="pre">...)</span></code> with their
+HuggingFace model id; the pooling API is inherited unchanged.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.base.PooledTokenTextWrapper.hidden_size">
+<span class="sig-name descname"><span class="pre">hidden_size</span></span><a class="headerlink" href="#exordium.text.base.PooledTokenTextWrapper.hidden_size" title="Link to this definition">¶</a></dt>
+<dd><p>The backbone’s hidden size <code class="docutils literal notranslate"><span class="pre">H</span></code>, read from the model config.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="exordium.text.base.PooledTokenTextWrapper.inference">
+<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pooling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#PooledTokenTextWrapper.inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.PooledTokenTextWrapper.inference" title="Link to this definition">¶</a></dt>
+<dd><p>Run the encoder forward pass and return token-level or pooled features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inputs</strong> – Tokenizer output dict on <code class="docutils literal notranslate"><span class="pre">self.device</span></code>.</p></li>
+<li><p><strong>pooling</strong> – <code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code> returns the raw token sequence
+<code class="docutils literal notranslate"><span class="pre">last_hidden_state</span></code> of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T,</span> <span class="pre">H)</span></code> (token-level, for a
+cross-modal sequence model). <code class="docutils literal notranslate"><span class="pre">&quot;mean&quot;</span></code> (default) returns the
+attention-masked mean-pooled sentence embedding of shape
+<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Token embeddings <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T,</span> <span class="pre">H)</span></code> when <code class="docutils literal notranslate"><span class="pre">pooling=&quot;none&quot;</span></code>, or pooled
+sentence embeddings <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H)</span></code> when <code class="docutils literal notranslate"><span class="pre">pooling=&quot;mean&quot;</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">pooling</span></code> is not <code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;mean&quot;</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="exordium.text.base.PooledTokenTextWrapper.__call__">
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pooling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#PooledTokenTextWrapper.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.PooledTokenTextWrapper.__call__" title="Link to this definition">¶</a></dt>
+<dd><p>Tokenize and encode text, returning a feature tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> – Single string or list of strings.</p></li>
+<li><p><strong>max_length</strong> – Maximum sequence length. <code class="docutils literal notranslate"><span class="pre">None</span></code> uses tokenizer default.</p></li>
+<li><p><strong>padding</strong> – Padding strategy. Default: <code class="docutils literal notranslate"><span class="pre">True</span></code> (pad to longest).</p></li>
+<li><p><strong>pooling</strong> – Forwarded to <a class="reference internal" href="#exordium.text.base.PooledTokenTextWrapper.inference" title="exordium.text.base.PooledTokenTextWrapper.inference"><code class="xref py py-meth docutils literal notranslate"><span class="pre">inference()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">&quot;mean&quot;</span></code> (default) returns
+pooled <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H)</span></code>; <code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code> returns token-level <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T,</span> <span class="pre">H)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H)</span></code> pooled by default, or
+<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T,</span> <span class="pre">H)</span></code> token-level when <code class="docutils literal notranslate"><span class="pre">pooling=&quot;none&quot;</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Feature tensor on <code class="docutils literal notranslate"><span class="pre">self.device</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="exordium.text.base.PooledTokenTextWrapper.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pooling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#PooledTokenTextWrapper.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.PooledTokenTextWrapper.predict" title="Link to this definition">¶</a></dt>
+<dd><p>Tokenize and encode text, returning a numpy feature array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> – Single string or list of strings.</p></li>
+<li><p><strong>max_length</strong> – Maximum sequence length.</p></li>
+<li><p><strong>padding</strong> – Padding strategy.</p></li>
+<li><p><strong>pooling</strong> – Forwarded to <a class="reference internal" href="#exordium.text.base.PooledTokenTextWrapper.inference" title="exordium.text.base.PooledTokenTextWrapper.inference"><code class="xref py py-meth docutils literal notranslate"><span class="pre">inference()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">&quot;mean&quot;</span></code> (default) returns
+pooled <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H)</span></code>; <code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code> returns token-level <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T,</span> <span class="pre">H)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H)</span></code> pooled by default, or <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T,</span> <span class="pre">H)</span></code>
+token-level when <code class="docutils literal notranslate"><span class="pre">pooling=&quot;none&quot;</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Feature array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="exordium.text.base.SpeechToText">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.base.</span></span><span class="sig-name descname"><span class="pre">SpeechToText</span></span><a class="reference internal" href="../../../../_modules/exordium/text/base.html#SpeechToText"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.base.SpeechToText" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
@@ -1058,6 +1166,13 @@ pluggable <a class="reference internal" href="#exordium.text.base.ForcedAligner"
 <li><a class="reference internal" href="#exordium.text.base.TextModelWrapper.inference"><code class="docutils literal notranslate"><span class="pre">TextModelWrapper.inference()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.TextModelWrapper.__call__"><code class="docutils literal notranslate"><span class="pre">TextModelWrapper.__call__()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.text.base.TextModelWrapper.predict"><code class="docutils literal notranslate"><span class="pre">TextModelWrapper.predict()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exordium.text.base.PooledTokenTextWrapper"><code class="docutils literal notranslate"><span class="pre">PooledTokenTextWrapper</span></code></a><ul>
+<li><a class="reference internal" href="#exordium.text.base.PooledTokenTextWrapper.hidden_size"><code class="docutils literal notranslate"><span class="pre">PooledTokenTextWrapper.hidden_size</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.PooledTokenTextWrapper.inference"><code class="docutils literal notranslate"><span class="pre">PooledTokenTextWrapper.inference()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.PooledTokenTextWrapper.__call__"><code class="docutils literal notranslate"><span class="pre">PooledTokenTextWrapper.__call__()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.base.PooledTokenTextWrapper.predict"><code class="docutils literal notranslate"><span class="pre">PooledTokenTextWrapper.predict()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#exordium.text.base.SpeechToText"><code class="docutils literal notranslate"><span class="pre">SpeechToText</span></code></a><ul>

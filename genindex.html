@@ -209,7 +209,9 @@
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/alignment/index.html">exordium.text.alignment</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/base/index.html">exordium.text.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/bert/index.html">exordium.text.bert</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/eurobert/index.html">exordium.text.eurobert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/evaluation/index.html">exordium.text.evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/mmbert/index.html">exordium.text.mmbert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/pipeline/index.html">exordium.text.pipeline</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/roberta/index.html">exordium.text.roberta</a></li>
 <li class="toctree-l4"><a class="reference internal" href="autoapi/exordium/text/transcript_align/index.html">exordium.text.transcript_align</a></li>
@@ -340,13 +342,13 @@
 </li>
           <li><a href="autoapi/exordium/audio/wavlm/index.html#exordium.audio.wavlm.WavlmWrapper.__call__">(exordium.audio.wavlm.WavlmWrapper method)</a>
 </li>
+          <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.PooledTokenTextWrapper.__call__">(exordium.text.base.PooledTokenTextWrapper method)</a>
+</li>
           <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.SpeechToText.__call__">(exordium.text.base.SpeechToText method)</a>
 </li>
           <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.TextModelWrapper.__call__">(exordium.text.base.TextModelWrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/text/whisper/index.html#exordium.text.whisper.WhisperWrapper.__call__">(exordium.text.whisper.WhisperWrapper method)</a>
-</li>
-          <li><a href="autoapi/exordium/text/xlm_roberta/index.html#exordium.text.xlm_roberta.XlmRobertaWrapper.__call__">(exordium.text.xlm_roberta.XlmRobertaWrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/video/core/transform/index.html#exordium.video.core.transform.CenterCrop.__call__">(exordium.video.core.transform.CenterCrop method)</a>
 </li>
@@ -505,6 +507,8 @@
   <h2>B</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="autoapi/exordium/text/xlm_roberta/index.html#exordium.text.xlm_roberta.XlmRobertaWrapper.backbone">backbone (exordium.text.xlm_roberta.XlmRobertaWrapper attribute)</a>
+</li>
         <li><a href="autoapi/exordium/video/deep/swint/index.html#exordium.video.deep.swint.BasicLayer">BasicLayer (class in exordium.video.deep.swint)</a>
 </li>
         <li><a href="autoapi/exordium/audio/base/index.html#exordium.audio.base.AudioModelWrapper.batch_audio_to_features">batch_audio_to_features() (exordium.audio.base.AudioModelWrapper method)</a>
@@ -737,6 +741,8 @@
 </li>
         <li><a href="autoapi/exordium/text/transcript_align/index.html#exordium.text.transcript_align.WordIndex.ends">ends (exordium.text.transcript_align.WordIndex attribute)</a>
 </li>
+        <li><a href="autoapi/exordium/text/eurobert/index.html#exordium.text.eurobert.EurobertWrapper">EurobertWrapper (class in exordium.text.eurobert)</a>
+</li>
         <li><a href="autoapi/exordium/text/evaluation/index.html#exordium.text.evaluation.TranscriptEvaluator.evaluate">evaluate() (exordium.text.evaluation.TranscriptEvaluator method)</a>
 </li>
         <li><a href="autoapi/exordium/text/pipeline/index.html#exordium.text.pipeline.SpeechAlignmentPipeline.evaluate_annotation">evaluate_annotation() (exordium.text.pipeline.SpeechAlignmentPipeline method)</a>
@@ -842,10 +848,24 @@
 </li>
         </ul></li>
         <li>
+    exordium.text.eurobert
+
+        <ul>
+          <li><a href="autoapi/exordium/text/eurobert/index.html#module-exordium.text.eurobert">module</a>
+</li>
+        </ul></li>
+        <li>
     exordium.text.evaluation
 
         <ul>
           <li><a href="autoapi/exordium/text/evaluation/index.html#module-exordium.text.evaluation">module</a>
+</li>
+        </ul></li>
+        <li>
+    exordium.text.mmbert
+
+        <ul>
+          <li><a href="autoapi/exordium/text/mmbert/index.html#module-exordium.text.mmbert">module</a>
 </li>
         </ul></li>
         <li>
@@ -953,6 +973,8 @@
           <li><a href="autoapi/exordium/video/index.html#module-exordium.video">module</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     exordium.video.core
 
@@ -960,8 +982,6 @@
           <li><a href="autoapi/exordium/video/core/index.html#module-exordium.video.core">module</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     exordium.video.core.bb
 
@@ -1404,10 +1424,20 @@
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/text/transcript_align/index.html#exordium.text.transcript_align.WordIndex.haystack">haystack (exordium.text.transcript_align.WordIndex attribute)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video.height">height (exordium.video.core.io.Video property)</a>
 </li>
+        <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.PooledTokenTextWrapper.hidden_size">hidden_size (exordium.text.base.PooledTokenTextWrapper attribute)</a>
+
+        <ul>
+          <li><a href="autoapi/exordium/text/eurobert/index.html#exordium.text.eurobert.EurobertWrapper.hidden_size">(exordium.text.eurobert.EurobertWrapper attribute)</a>
+</li>
+          <li><a href="autoapi/exordium/text/mmbert/index.html#exordium.text.mmbert.MmbertWrapper.hidden_size">(exordium.text.mmbert.MmbertWrapper attribute)</a>
+</li>
+          <li><a href="autoapi/exordium/text/xlm_roberta/index.html#exordium.text.xlm_roberta.XlmRobertaWrapper.hidden_size">(exordium.text.xlm_roberta.XlmRobertaWrapper attribute)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/text/evaluation/index.html#exordium.text.evaluation.TranscriptMetrics.hypothesis">hypothesis (exordium.text.evaluation.TranscriptMetrics attribute)</a>
 </li>
     </ul></td>
@@ -1439,6 +1469,8 @@
 </li>
           <li><a href="autoapi/exordium/audio/wavlm/index.html#exordium.audio.wavlm.WavlmWrapper.inference">(exordium.audio.wavlm.WavlmWrapper method)</a>
 </li>
+          <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.PooledTokenTextWrapper.inference">(exordium.text.base.PooledTokenTextWrapper method)</a>
+</li>
           <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.SpeechToText.inference">(exordium.text.base.SpeechToText method)</a>
 </li>
           <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.TextModelWrapper.inference">(exordium.text.base.TextModelWrapper method)</a>
@@ -1448,8 +1480,6 @@
           <li><a href="autoapi/exordium/text/roberta/index.html#exordium.text.roberta.RobertaWrapper.inference">(exordium.text.roberta.RobertaWrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/text/whisper/index.html#exordium.text.whisper.WhisperWrapper.inference">(exordium.text.whisper.WhisperWrapper method)</a>
-</li>
-          <li><a href="autoapi/exordium/text/xlm_roberta/index.html#exordium.text.xlm_roberta.XlmRobertaWrapper.inference">(exordium.text.xlm_roberta.XlmRobertaWrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/video/deep/adaface/index.html#exordium.video.deep.adaface.AdaFaceWrapper.inference">(exordium.video.deep.adaface.AdaFaceWrapper method)</a>
 </li>
@@ -1692,6 +1722,8 @@
         </ul></li>
         <li><a href="autoapi/exordium/video/deep/swint/index.html#exordium.video.deep.swint.Mlp">Mlp (class in exordium.video.deep.swint)</a>
 </li>
+        <li><a href="autoapi/exordium/text/mmbert/index.html#exordium.text.mmbert.MmbertWrapper">MmbertWrapper (class in exordium.text.mmbert)</a>
+</li>
         <li><a href="autoapi/exordium/video/deep/swint/index.html#exordium.video.deep.swint.model_name">model_name (in module exordium.video.deep.swint)</a>
 </li>
         <li>
@@ -1726,7 +1758,11 @@
 </li>
           <li><a href="autoapi/exordium/text/bert/index.html#module-exordium.text.bert">exordium.text.bert</a>
 </li>
+          <li><a href="autoapi/exordium/text/eurobert/index.html#module-exordium.text.eurobert">exordium.text.eurobert</a>
+</li>
           <li><a href="autoapi/exordium/text/evaluation/index.html#module-exordium.text.evaluation">exordium.text.evaluation</a>
+</li>
+          <li><a href="autoapi/exordium/text/mmbert/index.html#module-exordium.text.mmbert">exordium.text.mmbert</a>
 </li>
           <li><a href="autoapi/exordium/text/pipeline/index.html#module-exordium.text.pipeline">exordium.text.pipeline</a>
 </li>
@@ -1923,10 +1959,12 @@
 </li>
         <li><a href="autoapi/exordium/video/face/gaze/base/index.html#exordium.video.face.gaze.base.pitchyaw_to_pixel">pitchyaw_to_pixel() (in module exordium.video.face.gaze.base)</a>
 </li>
-        <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.TextModelWrapper.predict">predict() (exordium.text.base.TextModelWrapper method)</a>
+        <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.PooledTokenTextWrapper">PooledTokenTextWrapper (class in exordium.text.base)</a>
+</li>
+        <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.PooledTokenTextWrapper.predict">predict() (exordium.text.base.PooledTokenTextWrapper method)</a>
 
         <ul>
-          <li><a href="autoapi/exordium/text/xlm_roberta/index.html#exordium.text.xlm_roberta.XlmRobertaWrapper.predict">(exordium.text.xlm_roberta.XlmRobertaWrapper method)</a>
+          <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.TextModelWrapper.predict">(exordium.text.base.TextModelWrapper method)</a>
 </li>
           <li><a href="autoapi/exordium/video/face/gaze/base/index.html#exordium.video.face.gaze.base.GazeWrapper.predict">(exordium.video.face.gaze.base.GazeWrapper method)</a>
 </li>

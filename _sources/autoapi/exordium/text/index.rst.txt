@@ -13,7 +13,9 @@ Submodules
    /autoapi/exordium/text/alignment/index
    /autoapi/exordium/text/base/index
    /autoapi/exordium/text/bert/index
+   /autoapi/exordium/text/eurobert/index
    /autoapi/exordium/text/evaluation/index
+   /autoapi/exordium/text/mmbert/index
    /autoapi/exordium/text/pipeline/index
    /autoapi/exordium/text/roberta/index
    /autoapi/exordium/text/transcript_align/index

@@ -31,6 +31,7 @@ Classes
    exordium.text.base.Word
    exordium.text.base.SegmentMatch
    exordium.text.base.TextModelWrapper
+   exordium.text.base.PooledTokenTextWrapper
    exordium.text.base.SpeechToText
    exordium.text.base.StreamingMixin
    exordium.text.base.ForcedAligner
@@ -349,6 +350,87 @@ Module Contents
       :param padding: Padding strategy.
 
       :returns: Feature array. Shape is determined by :meth:`inference`.
+
+
+
+.. py:class:: PooledTokenTextWrapper(model_name: str, device_id: int = -1, pretrained: bool = True)
+
+   Bases: :py:obj:`TextModelWrapper`
+
+
+   Encoder wrapper exposing both token-level and pooled outputs via ``pooling``.
+
+   A :class:`TextModelWrapper` whose ``preprocess → inference → __call__``
+   pipeline is parameterised by a ``pooling`` mode, so one wrapper serves both
+   an affective-computing fusion layer (which wants the token sequence) and a
+   sentence-similarity consumer (which wants one vector per input):
+
+   * ``pooling="none"`` — the raw token sequence ``last_hidden_state`` of shape
+     ``(B, T, H)`` (token-level; feed to a cross-modal sequence model such as
+     MulT/LinMulT alongside the ``attention_mask``).
+   * ``pooling="mean"`` (default) — the attention-masked mean-pooled sentence
+     embedding of shape ``(B, H)``.
+
+   A single ``str`` is encoded as a batch of one, so one sentence yields
+   ``(1, T, H)`` (token) or ``(1, H)`` (pooled); index ``[0]`` for the per-sample
+   ``(T, H)`` / ``(H,)`` views. ``H`` is read from the model config into
+   :attr:`hidden_size`, so it is never assumed.
+
+   Subclasses only need to call ``super().__init__(model_name, ...)`` with their
+   HuggingFace model id; the pooling API is inherited unchanged.
+
+   .. attribute:: hidden_size
+
+      The backbone's hidden size ``H``, read from the model config.
+
+
+   .. py:method:: inference(inputs: dict[str, torch.Tensor], pooling: str = 'mean') -> torch.Tensor
+
+      Run the encoder forward pass and return token-level or pooled features.
+
+      :param inputs: Tokenizer output dict on ``self.device``.
+      :param pooling: ``"none"`` returns the raw token sequence
+                      ``last_hidden_state`` of shape ``(B, T, H)`` (token-level, for a
+                      cross-modal sequence model). ``"mean"`` (default) returns the
+                      attention-masked mean-pooled sentence embedding of shape
+                      ``(B, H)``.
+
+      :returns: Token embeddings ``(B, T, H)`` when ``pooling="none"``, or pooled
+                sentence embeddings ``(B, H)`` when ``pooling="mean"``.
+
+      :raises ValueError: If ``pooling`` is not ``"none"`` or ``"mean"``.
+
+
+
+   .. py:method:: __call__(text: str | list[str], max_length: int | None = None, padding: bool | str = True, pooling: str = 'mean') -> torch.Tensor
+
+      Tokenize and encode text, returning a feature tensor.
+
+      :param text: Single string or list of strings.
+      :param max_length: Maximum sequence length. ``None`` uses tokenizer default.
+      :param padding: Padding strategy. Default: ``True`` (pad to longest).
+      :param pooling: Forwarded to :meth:`inference`. ``"mean"`` (default) returns
+                      pooled ``(B, H)``; ``"none"`` returns token-level ``(B, T, H)``.
+
+      :returns: ``(B, H)`` pooled by default, or
+                ``(B, T, H)`` token-level when ``pooling="none"``.
+      :rtype: Feature tensor on ``self.device``
+
+
+
+   .. py:method:: predict(text: str | list[str], max_length: int | None = None, padding: bool | str = True, pooling: str = 'mean') -> numpy.ndarray
+
+      Tokenize and encode text, returning a numpy feature array.
+
+      :param text: Single string or list of strings.
+      :param max_length: Maximum sequence length.
+      :param padding: Padding strategy.
+      :param pooling: Forwarded to :meth:`inference`. ``"mean"`` (default) returns
+                      pooled ``(B, H)``; ``"none"`` returns token-level ``(B, T, H)``.
+
+      :returns: ``(B, H)`` pooled by default, or ``(B, T, H)``
+                token-level when ``pooling="none"``.
+      :rtype: Feature array
 
 
 

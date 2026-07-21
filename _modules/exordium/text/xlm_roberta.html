@@ -210,7 +210,9 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/alignment/index.html">exordium.text.alignment</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/base/index.html">exordium.text.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/bert/index.html">exordium.text.bert</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/eurobert/index.html">exordium.text.eurobert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/evaluation/index.html">exordium.text.evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/mmbert/index.html">exordium.text.mmbert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/pipeline/index.html">exordium.text.pipeline</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/roberta/index.html">exordium.text.roberta</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../autoapi/exordium/text/transcript_align/index.html">exordium.text.transcript_align</a></li>
@@ -322,126 +324,89 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.text.xlm_roberta</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;XLM-RoBERTa multilingual text encoding wrapper.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;XLM-RoBERTa multilingual text encoder wrapper (token-level or pooled).</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="sd">Both backbones here are genuinely **XLM-RoBERTa architecture** encoders. For the</span>
+<span class="sd">newer non-XLM-RoBERTa multilingual encoders see</span>
+<span class="sd">:class:`~exordium.text.mmbert.MmbertWrapper` (ModernBERT) and</span>
+<span class="sd">:class:`~exordium.text.eurobert.EurobertWrapper` (EuroBERT); they share the same</span>
+<span class="sd">``pooling`` API but are separate classes so the naming stays architecture-honest.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.text.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TextModelWrapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">exordium.text.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PooledTokenTextWrapper</span>
+
+<span class="n">_BACKBONES</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;mpnet&quot;</span><span class="p">:</span> <span class="s2">&quot;sentence-transformers/paraphrase-multilingual-mpnet-base-v2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;e5&quot;</span><span class="p">:</span> <span class="s2">&quot;intfloat/multilingual-e5-base&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="sd">&quot;&quot;&quot;Named XLM-RoBERTa-architecture backbones. Keys are the short aliases accepted</span>
+<span class="sd">by :class:`XlmRobertaWrapper`; values are their HuggingFace Hub ids. A raw Hub id</span>
+<span class="sd">passed as ``backbone`` is used verbatim, so other XLM-RoBERTa checkpoints work too.&quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="XlmRobertaWrapper">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/xlm_roberta/index.html#exordium.text.xlm_roberta.XlmRobertaWrapper">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">XlmRobertaWrapper</span><span class="p">(</span><span class="n">TextModelWrapper</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;XLM-RoBERTa sentence-transformer wrapper. Hidden size: 768.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">XlmRobertaWrapper</span><span class="p">(</span><span class="n">PooledTokenTextWrapper</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;XLM-RoBERTa multilingual encoder — token-level ``(B, T, H)`` or pooled ``(B, H)``.</span>
 
-<span class="sd">    This model is a sentence-transformer fine-tuned for semantic similarity, so</span>
-<span class="sd">    :meth:`inference` mean-pools the token embeddings internally and returns a</span>
-<span class="sd">    **pooled sentence embedding**: one ``(768,)`` vector per input, shape</span>
-<span class="sd">    ``(B, 768)``. There is *no* time axis — the pooled vector is not a length-1</span>
-<span class="sd">    sequence, and consumers should not treat ``(B, 768)`` as ``(B, T=1, 768)``.</span>
+<span class="sd">    Loads an **XLM-RoBERTa-architecture** multilingual encoder and returns either</span>
+<span class="sd">    the token-level sequence (``pooling=&quot;none&quot;``, for a cross-modal sequence model</span>
+<span class="sd">    such as MulT/LinMulT) or a pooled sentence embedding (``pooling=&quot;mean&quot;``, the</span>
+<span class="sd">    default, for sentence similarity). See</span>
+<span class="sd">    :class:`~exordium.text.base.PooledTokenTextWrapper` for the full shape contract</span>
+<span class="sd">    and the ``pooling`` semantics, and</span>
+<span class="sd">    :class:`~exordium.text.roberta.RobertaWrapper` for the English-only counterpart.</span>
 
-<span class="sd">    A time-series consumer that genuinely wants a length-1 sequence (e.g. a</span>
-<span class="sd">    LinMulT/LinT model with ``time_dim_reducer=&#39;gap&#39;`` that expects ``(B, T, D)``)</span>
-<span class="sd">    can request the promoted rank explicitly via ``as_sequence=True``, which</span>
-<span class="sd">    returns ``(B, 1, 768)``. That unsqueeze is a consumer *choice* named here in</span>
-<span class="sd">    exordium rather than re-derived in every downstream repo; it adds no new</span>
-<span class="sd">    information over the pooled vector.</span>
+<span class="sd">    Both backbones have hidden size 768; :attr:`hidden_size` reports it from the</span>
+<span class="sd">    model config regardless.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        backbone: Which XLM-RoBERTa encoder to load — a key of :data:`_BACKBONES`</span>
+<span class="sd">            or a raw HuggingFace Hub id. Options:</span>
+
+<span class="sd">            * ``&quot;mpnet&quot;`` (default) — XLM-RoBERTa sentence-transformer fine-tuned</span>
+<span class="sd">              for semantic similarity (50+ languages, hidden 768); its embeddings</span>
+<span class="sd">              are **cross-lingually aligned**, so it is the right choice for the</span>
+<span class="sd">              pooled similarity path.</span>
+<span class="sd">              `Sentence-BERT, Reimers &amp; Gurevych 2019</span>
+<span class="sd">              &lt;https://arxiv.org/abs/1908.10084&gt;`_ · `card &lt;https://huggingface.co/sentence-transformers/paraphrase-multilingual-mpnet-base-v2&gt;`_</span>
+<span class="sd">            * ``&quot;e5&quot;`` — multilingual E5, initialized from XLM-RoBERTa and</span>
+<span class="sd">              contrastively retrained (100+ languages, hidden 768). Its *pooled*</span>
+<span class="sd">              mode expects ``&quot;query: &quot;`` / ``&quot;passage: &quot;`` prefixes on the input;</span>
+<span class="sd">              the token-level output is unaffected.</span>
+<span class="sd">              `Multilingual E5 Text Embeddings, Wang et al. 2024</span>
+<span class="sd">              &lt;https://arxiv.org/abs/2402.05672&gt;`_ · `card &lt;https://huggingface.co/intfloat/multilingual-e5-base&gt;`_</span>
+
+<span class="sd">        device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.</span>
+<span class="sd">        pretrained: ``True`` (default) loads the real weights. ``False`` builds</span>
+<span class="sd">            the architecture with random weights — outputs are meaningless but the</span>
+<span class="sd">            shapes and call contract hold (used by the test suite to avoid downloads).</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        backbone: The ``backbone`` argument as given (alias or raw id).</span>
+<span class="sd">        hidden_size: The backbone&#39;s hidden size ``H`` (768), read from the config.</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        m = XlmRobertaWrapper()                                 # default: mpnet</span>
+<span class="sd">        tokens = m(&quot;Ich bin sehr glücklich.&quot;, pooling=&quot;none&quot;)   # (1, T, 768)</span>
+<span class="sd">        pooled = m(&quot;Ich bin sehr glücklich.&quot;)                   # (1, 768)</span>
+<span class="sd">        e5 = XlmRobertaWrapper(backbone=&quot;e5&quot;)                   # one-keyword switch</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">backbone</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mpnet&quot;</span><span class="p">,</span>
+        <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="s2">&quot;sentence-transformers/paraphrase-multilingual-mpnet-base-v2&quot;</span><span class="p">,</span>
+            <span class="n">_BACKBONES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">backbone</span><span class="p">),</span>
             <span class="n">device_id</span><span class="p">,</span>
             <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">,</span>
         <span class="p">)</span>
-
-<div class="viewcode-block" id="XlmRobertaWrapper.inference">
-<a class="viewcode-back" href="../../../autoapi/exordium/text/xlm_roberta/index.html#exordium.text.xlm_roberta.XlmRobertaWrapper.inference">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">inputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
-        <span class="n">as_sequence</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run XLM-RoBERTa forward pass with mean pooling.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            inputs: Tokenizer output dict on ``self.device``.</span>
-<span class="sd">            as_sequence: When ``False`` (default), return the pooled sentence</span>
-<span class="sd">                embedding of shape ``(B, 768)`` — one ``(768,)`` vector per input,</span>
-<span class="sd">                with no time axis. When ``True``, unsqueeze a length-1 time axis</span>
-<span class="sd">                and return ``(B, 1, 768)``; this is a length-1 *sequence* view of</span>
-<span class="sd">                the same pooled vector, not additional information.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Pooled sentence embeddings of shape ``(B, 768)``, or ``(B, 1, 768)``</span>
-<span class="sd">            when ``as_sequence`` is ``True``.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">last_hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">)</span><span class="o">.</span><span class="n">last_hidden_state</span>
-        <span class="n">pooled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mean_pool</span><span class="p">(</span><span class="n">last_hidden</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">as_sequence</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">pooled</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">pooled</span></div>
-
-
-<div class="viewcode-block" id="XlmRobertaWrapper.__call__">
-<a class="viewcode-back" href="../../../autoapi/exordium/text/xlm_roberta/index.html#exordium.text.xlm_roberta.XlmRobertaWrapper.__call__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">as_sequence</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize and encode text, returning a pooled sentence-embedding tensor.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            text: Single string or list of strings.</span>
-<span class="sd">            max_length: Maximum sequence length. ``None`` uses tokenizer default.</span>
-<span class="sd">            padding: Padding strategy. Default: ``True`` (pad to longest).</span>
-<span class="sd">            as_sequence: Forwarded to :meth:`inference`. ``False`` returns</span>
-<span class="sd">                ``(B, 768)`` (pooled, no time axis); ``True`` returns</span>
-<span class="sd">                ``(B, 1, 768)`` (length-1 sequence view).</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Feature tensor on ``self.device``: ``(B, 768)`` by default, or</span>
-<span class="sd">            ``(B, 1, 768)`` when ``as_sequence`` is ``True``.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">padding</span><span class="p">),</span> <span class="n">as_sequence</span><span class="o">=</span><span class="n">as_sequence</span>
-            <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="XlmRobertaWrapper.predict">
-<a class="viewcode-back" href="../../../autoapi/exordium/text/xlm_roberta/index.html#exordium.text.xlm_roberta.XlmRobertaWrapper.predict">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">as_sequence</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize and encode text, returning a pooled sentence-embedding array.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            text: Single string or list of strings.</span>
-<span class="sd">            max_length: Maximum sequence length.</span>
-<span class="sd">            padding: Padding strategy.</span>
-<span class="sd">            as_sequence: Forwarded to :meth:`inference`. ``False`` returns</span>
-<span class="sd">                ``(B, 768)`` (pooled, no time axis); ``True`` returns</span>
-<span class="sd">                ``(B, 1, 768)`` (length-1 sequence view).</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Feature array: ``(B, 768)`` by default, or ``(B, 1, 768)`` when</span>
-<span class="sd">            ``as_sequence`` is ``True``.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">as_sequence</span><span class="o">=</span><span class="n">as_sequence</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span></div>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span> <span class="o">=</span> <span class="n">backbone</span></div>
 
 </pre></div>
         </article>

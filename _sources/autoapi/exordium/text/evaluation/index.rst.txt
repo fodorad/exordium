@@ -215,10 +215,10 @@ Module Contents
 
    :param model: One of ``"xlm-roberta"`` (default;
                  :class:`~exordium.text.xlm_roberta.XlmRobertaWrapper`, a multilingual
-                 sentence-transformer fine-tuned for semantic similarity — recommended),
-                 ``"roberta"`` (:class:`~exordium.text.roberta.RobertaWrapper`, CLS
-                 token), or ``"bert"`` (:class:`~exordium.text.bert.BertWrapper`, CLS
-                 token).
+                 sentence-transformer whose embeddings are cross-lingually aligned —
+                 recommended for semantic similarity), ``"roberta"``
+                 (:class:`~exordium.text.roberta.RobertaWrapper`, CLS token), or
+                 ``"bert"`` (:class:`~exordium.text.bert.BertWrapper`, CLS token).
    :param device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.
    :param pretrained: ``True`` (default) loads the real weights. ``False`` builds the
                       architecture with random weights — embeddings are then meaningless, but the

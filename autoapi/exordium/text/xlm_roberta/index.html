@@ -211,7 +211,9 @@
 <li class="toctree-l4"><a class="reference internal" href="../alignment/index.html">exordium.text.alignment</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../base/index.html">exordium.text.base</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../bert/index.html">exordium.text.bert</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../eurobert/index.html">exordium.text.eurobert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../evaluation/index.html">exordium.text.evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mmbert/index.html">exordium.text.mmbert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../pipeline/index.html">exordium.text.pipeline</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../roberta/index.html">exordium.text.roberta</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../transcript_align/index.html">exordium.text.transcript_align</a></li>
@@ -330,14 +332,19 @@
         <article role="main" id="furo-main-content">
           <section id="module-exordium.text.xlm_roberta">
 <span id="exordium-text-xlm-roberta"></span><h1>exordium.text.xlm_roberta<a class="headerlink" href="#module-exordium.text.xlm_roberta" title="Link to this heading">¶</a></h1>
-<p>XLM-RoBERTa multilingual text encoding wrapper.</p>
+<p>XLM-RoBERTa multilingual text encoder wrapper (token-level or pooled).</p>
+<p>Both backbones here are genuinely <strong>XLM-RoBERTa architecture</strong> encoders. For the
+newer non-XLM-RoBERTa multilingual encoders see
+<a class="reference internal" href="../mmbert/index.html#exordium.text.mmbert.MmbertWrapper" title="exordium.text.mmbert.MmbertWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">MmbertWrapper</span></code></a> (ModernBERT) and
+<a class="reference internal" href="../eurobert/index.html#exordium.text.eurobert.EurobertWrapper" title="exordium.text.eurobert.EurobertWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">EurobertWrapper</span></code></a> (EuroBERT); they share the same
+<code class="docutils literal notranslate"><span class="pre">pooling</span></code> API but are separate classes so the naming stays architecture-honest.</p>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper" title="exordium.text.xlm_roberta.XlmRobertaWrapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XlmRobertaWrapper</span></code></a></p></td>
-<td><p>XLM-RoBERTa sentence-transformer wrapper. Hidden size: 768.</p></td>
+<td><p>XLM-RoBERTa multilingual encoder — token-level <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T,</span> <span class="pre">H)</span></code> or pooled <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H)</span></code>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -347,92 +354,62 @@
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="exordium.text.xlm_roberta.XlmRobertaWrapper">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.xlm_roberta.</span></span><span class="sig-name descname"><span class="pre">XlmRobertaWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/exordium/text/xlm_roberta.html#XlmRobertaWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.xlm_roberta.XlmRobertaWrapper" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="../base/index.html#exordium.text.base.TextModelWrapper" title="exordium.text.base.TextModelWrapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exordium.text.base.TextModelWrapper</span></code></a></p>
-<p>XLM-RoBERTa sentence-transformer wrapper. Hidden size: 768.</p>
-<p>This model is a sentence-transformer fine-tuned for semantic similarity, so
-<a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.inference" title="exordium.text.xlm_roberta.XlmRobertaWrapper.inference"><code class="xref py py-meth docutils literal notranslate"><span class="pre">inference()</span></code></a> mean-pools the token embeddings internally and returns a
-<strong>pooled sentence embedding</strong>: one <code class="docutils literal notranslate"><span class="pre">(768,)</span></code> vector per input, shape
-<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">768)</span></code>. There is <em>no</em> time axis — the pooled vector is not a length-1
-sequence, and consumers should not treat <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">768)</span></code> as <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T=1,</span> <span class="pre">768)</span></code>.</p>
-<p>A time-series consumer that genuinely wants a length-1 sequence (e.g. a
-LinMulT/LinT model with <code class="docutils literal notranslate"><span class="pre">time_dim_reducer='gap'</span></code> that expects <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T,</span> <span class="pre">D)</span></code>)
-can request the promoted rank explicitly via <code class="docutils literal notranslate"><span class="pre">as_sequence=True</span></code>, which
-returns <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">1,</span> <span class="pre">768)</span></code>. That unsqueeze is a consumer <em>choice</em> named here in
-exordium rather than re-derived in every downstream repo; it adds no new
-information over the pooled vector.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="exordium.text.xlm_roberta.XlmRobertaWrapper.inference">
-<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/xlm_roberta.html#XlmRobertaWrapper.inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.inference" title="Link to this definition">¶</a></dt>
-<dd><p>Run XLM-RoBERTa forward pass with mean pooling.</p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.text.xlm_roberta.</span></span><span class="sig-name descname"><span class="pre">XlmRobertaWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mpnet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/exordium/text/xlm_roberta.html#XlmRobertaWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.xlm_roberta.XlmRobertaWrapper" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base/index.html#exordium.text.base.PooledTokenTextWrapper" title="exordium.text.base.PooledTokenTextWrapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exordium.text.base.PooledTokenTextWrapper</span></code></a></p>
+<p>XLM-RoBERTa multilingual encoder — token-level <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">T,</span> <span class="pre">H)</span></code> or pooled <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">H)</span></code>.</p>
+<p>Loads an <strong>XLM-RoBERTa-architecture</strong> multilingual encoder and returns either
+the token-level sequence (<code class="docutils literal notranslate"><span class="pre">pooling=&quot;none&quot;</span></code>, for a cross-modal sequence model
+such as MulT/LinMulT) or a pooled sentence embedding (<code class="docutils literal notranslate"><span class="pre">pooling=&quot;mean&quot;</span></code>, the
+default, for sentence similarity). See
+<a class="reference internal" href="../base/index.html#exordium.text.base.PooledTokenTextWrapper" title="exordium.text.base.PooledTokenTextWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">PooledTokenTextWrapper</span></code></a> for the full shape contract
+and the <code class="docutils literal notranslate"><span class="pre">pooling</span></code> semantics, and
+<a class="reference internal" href="../roberta/index.html#exordium.text.roberta.RobertaWrapper" title="exordium.text.roberta.RobertaWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">RobertaWrapper</span></code></a> for the English-only counterpart.</p>
+<p>Both backbones have hidden size 768; <a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.hidden_size" title="exordium.text.xlm_roberta.XlmRobertaWrapper.hidden_size"><code class="xref py py-attr docutils literal notranslate"><span class="pre">hidden_size</span></code></a> reports it from the
+model config regardless.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> – Tokenizer output dict on <code class="docutils literal notranslate"><span class="pre">self.device</span></code>.</p></li>
-<li><p><strong>as_sequence</strong> – When <code class="docutils literal notranslate"><span class="pre">False</span></code> (default), return the pooled sentence
-embedding of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">768)</span></code> — one <code class="docutils literal notranslate"><span class="pre">(768,)</span></code> vector per input,
-with no time axis. When <code class="docutils literal notranslate"><span class="pre">True</span></code>, unsqueeze a length-1 time axis
-and return <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">1,</span> <span class="pre">768)</span></code>; this is a length-1 <em>sequence</em> view of
-the same pooled vector, not additional information.</p></li>
+<li><p><strong>backbone</strong> – <p>Which XLM-RoBERTa encoder to load — a key of <code class="xref py py-data docutils literal notranslate"><span class="pre">_BACKBONES</span></code>
+or a raw HuggingFace Hub id. Options:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;mpnet&quot;</span></code> (default) — XLM-RoBERTa sentence-transformer fine-tuned
+for semantic similarity (50+ languages, hidden 768); its embeddings
+are <strong>cross-lingually aligned</strong>, so it is the right choice for the
+pooled similarity path.
+<a class="reference external" href="https://arxiv.org/abs/1908.10084">Sentence-BERT, Reimers &amp; Gurevych 2019</a> · <a class="reference external" href="https://huggingface.co/sentence-transformers/paraphrase-multilingual-mpnet-base-v2">card</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;e5&quot;</span></code> — multilingual E5, initialized from XLM-RoBERTa and
+contrastively retrained (100+ languages, hidden 768). Its <em>pooled</em>
+mode expects <code class="docutils literal notranslate"><span class="pre">&quot;query:</span> <span class="pre">&quot;</span></code> / <code class="docutils literal notranslate"><span class="pre">&quot;passage:</span> <span class="pre">&quot;</span></code> prefixes on the input;
+the token-level output is unaffected.
+<a class="reference external" href="https://arxiv.org/abs/2402.05672">Multilingual E5 Text Embeddings, Wang et al. 2024</a> · <a class="reference external" href="https://huggingface.co/intfloat/multilingual-e5-base">card</a></p></li>
+</ul>
+</p></li>
+<li><p><strong>device_id</strong> – Device index. <code class="docutils literal notranslate"><span class="pre">-1</span></code> or <code class="docutils literal notranslate"><span class="pre">None</span></code> → CPU, <code class="docutils literal notranslate"><span class="pre">0+</span></code> → GPU/MPS.</p></li>
+<li><p><strong>pretrained</strong> – <code class="docutils literal notranslate"><span class="pre">True</span></code> (default) loads the real weights. <code class="docutils literal notranslate"><span class="pre">False</span></code> builds
+the architecture with random weights — outputs are meaningless but the
+shapes and call contract hold (used by the test suite to avoid downloads).</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Pooled sentence embeddings of shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">768)</span></code>, or <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">1,</span> <span class="pre">768)</span></code>
-when <code class="docutils literal notranslate"><span class="pre">as_sequence</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
-</dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.xlm_roberta.XlmRobertaWrapper.backbone">
+<span class="sig-name descname"><span class="pre">backbone</span></span><a class="headerlink" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.backbone" title="Link to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">backbone</span></code> argument as given (alias or raw id).</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="exordium.text.xlm_roberta.XlmRobertaWrapper.__call__">
-<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/xlm_roberta.html#XlmRobertaWrapper.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.__call__" title="Link to this definition">¶</a></dt>
-<dd><p>Tokenize and encode text, returning a pooled sentence-embedding tensor.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>text</strong> – Single string or list of strings.</p></li>
-<li><p><strong>max_length</strong> – Maximum sequence length. <code class="docutils literal notranslate"><span class="pre">None</span></code> uses tokenizer default.</p></li>
-<li><p><strong>padding</strong> – Padding strategy. Default: <code class="docutils literal notranslate"><span class="pre">True</span></code> (pad to longest).</p></li>
-<li><p><strong>as_sequence</strong> – Forwarded to <a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.inference" title="exordium.text.xlm_roberta.XlmRobertaWrapper.inference"><code class="xref py py-meth docutils literal notranslate"><span class="pre">inference()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">False</span></code> returns
-<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">768)</span></code> (pooled, no time axis); <code class="docutils literal notranslate"><span class="pre">True</span></code> returns
-<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">1,</span> <span class="pre">768)</span></code> (length-1 sequence view).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">768)</span></code> by default, or
-<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">1,</span> <span class="pre">768)</span></code> when <code class="docutils literal notranslate"><span class="pre">as_sequence</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Feature tensor on <code class="docutils literal notranslate"><span class="pre">self.device</span></code></p>
-</dd>
-</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="exordium.text.xlm_roberta.XlmRobertaWrapper.hidden_size">
+<span class="sig-name descname"><span class="pre">hidden_size</span></span><a class="headerlink" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.hidden_size" title="Link to this definition">¶</a></dt>
+<dd><p>The backbone’s hidden size <code class="docutils literal notranslate"><span class="pre">H</span></code> (768), read from the config.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="exordium.text.xlm_roberta.XlmRobertaWrapper.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../../../../_modules/exordium/text/xlm_roberta.html#XlmRobertaWrapper.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.predict" title="Link to this definition">¶</a></dt>
-<dd><p>Tokenize and encode text, returning a pooled sentence-embedding array.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>text</strong> – Single string or list of strings.</p></li>
-<li><p><strong>max_length</strong> – Maximum sequence length.</p></li>
-<li><p><strong>padding</strong> – Padding strategy.</p></li>
-<li><p><strong>as_sequence</strong> – Forwarded to <a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.inference" title="exordium.text.xlm_roberta.XlmRobertaWrapper.inference"><code class="xref py py-meth docutils literal notranslate"><span class="pre">inference()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">False</span></code> returns
-<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">768)</span></code> (pooled, no time axis); <code class="docutils literal notranslate"><span class="pre">True</span></code> returns
-<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">1,</span> <span class="pre">768)</span></code> (length-1 sequence view).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">768)</span></code> by default, or <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">1,</span> <span class="pre">768)</span></code> when
-<code class="docutils literal notranslate"><span class="pre">as_sequence</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Feature array</p>
-</dd>
-</dl>
-</dd></dl>
-
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">m</span> <span class="o">=</span> <span class="n">XlmRobertaWrapper</span><span class="p">()</span>                                 <span class="c1"># default: mpnet</span>
+<span class="n">tokens</span> <span class="o">=</span> <span class="n">m</span><span class="p">(</span><span class="s2">&quot;Ich bin sehr glücklich.&quot;</span><span class="p">,</span> <span class="n">pooling</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>   <span class="c1"># (1, T, 768)</span>
+<span class="n">pooled</span> <span class="o">=</span> <span class="n">m</span><span class="p">(</span><span class="s2">&quot;Ich bin sehr glücklich.&quot;</span><span class="p">)</span>                   <span class="c1"># (1, 768)</span>
+<span class="n">e5</span> <span class="o">=</span> <span class="n">XlmRobertaWrapper</span><span class="p">(</span><span class="n">backbone</span><span class="o">=</span><span class="s2">&quot;e5&quot;</span><span class="p">)</span>                   <span class="c1"># one-keyword switch</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>
@@ -497,9 +474,8 @@ when <code class="docutils literal notranslate"><span class="pre">as_sequence</s
 <li><a class="reference internal" href="#classes">Classes</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li><a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper"><code class="docutils literal notranslate"><span class="pre">XlmRobertaWrapper</span></code></a><ul>
-<li><a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.inference"><code class="docutils literal notranslate"><span class="pre">XlmRobertaWrapper.inference()</span></code></a></li>
-<li><a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.__call__"><code class="docutils literal notranslate"><span class="pre">XlmRobertaWrapper.__call__()</span></code></a></li>
-<li><a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.predict"><code class="docutils literal notranslate"><span class="pre">XlmRobertaWrapper.predict()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.backbone"><code class="docutils literal notranslate"><span class="pre">XlmRobertaWrapper.backbone</span></code></a></li>
+<li><a class="reference internal" href="#exordium.text.xlm_roberta.XlmRobertaWrapper.hidden_size"><code class="docutils literal notranslate"><span class="pre">XlmRobertaWrapper.hidden_size</span></code></a></li>
 </ul>
 </li>
 </ul>
