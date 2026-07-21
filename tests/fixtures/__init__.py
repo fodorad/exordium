@@ -3,10 +3,25 @@
 import contextlib
 import gc
 import logging
+import os
 import pathlib
+import time
 import types
 import unittest
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+
+logger = logging.getLogger(__name__)
+
+# Force anonymous HuggingFace Hub access for the whole test process.
+#
+# Every test module imports this package, so setting the flag here runs before
+# any Hub call is made. It stops huggingface_hub from attaching a locally stored
+# token to requests. A *stale or invalid* token is worse than none: the Hub 401s
+# the whole request instead of falling back to anonymous access, which mass-fails
+# the weight-availability and wrapper setUpClass tests even though every repo they
+# touch is public. Setting it with ``setdefault`` lets CI still opt into an
+# explicit token by exporting HF_HUB_DISABLE_IMPLICIT_TOKEN=0 if ever needed.
+os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")
 
 FIXTURES_ROOT = pathlib.Path(__file__).parent
 
@@ -130,32 +145,72 @@ class ModelTestCase(unittest.TestCase):
         free_torch_memory()
 
 
-def hf_repo_exists(repo_id: str, timeout: int = 15) -> bool:
-    """Return True if a HuggingFace Hub model repo exists and is reachable."""
-    from huggingface_hub import model_info
+_HF_PROBE_RETRY_PAUSES_S = (0.0, 1.0)
+"""Pause before each retry after a transient failure, in seconds.
+
+One initial attempt plus one retry per entry: the first retry is instant, the
+second waits 1s. Three attempts total.
+"""
+
+
+def _hf_probe(probe: Callable[[], bool]) -> bool:
+    """Run a Hub availability *probe*, retrying only on transient failures.
+
+    A ``RepositoryNotFoundError`` (or a probe returning ``False``) is a
+    definitive answer and is returned immediately -- retrying would only waste
+    time. Any other exception is treated as transient (network blip, momentary
+    5xx, presigned-URL hiccup) and retried, so a single flaky call among
+    hundreds does not fail an otherwise-green suite. Retries follow
+    :data:`_HF_PROBE_RETRY_PAUSES_S`: the first is instant, the second waits 1s.
+    If every attempt raises, the probe is reported as unreachable (``False``).
+    """
     from huggingface_hub.utils import RepositoryNotFoundError
 
-    try:
-        model_info(repo_id, timeout=timeout)
+    attempts = len(_HF_PROBE_RETRY_PAUSES_S) + 1
+    for attempt in range(attempts):
+        try:
+            return probe()
+        except RepositoryNotFoundError:
+            return False
+        except Exception as error:  # noqa: BLE001 - transient Hub/network failure, retry
+            if attempt == attempts - 1:
+                logger.warning(f"Hub probe failed after {attempts} attempts: {error}")
+                return False
+            time.sleep(_HF_PROBE_RETRY_PAUSES_S[attempt])
+    return False
+
+
+def hf_repo_exists(repo_id: str, timeout: int = 15) -> bool:
+    """Return True if a HuggingFace Hub model repo exists and is reachable.
+
+    ``token=False`` forces an anonymous request so a stale or invalid token in
+    the local HuggingFace cache cannot poison the check: the repos under test are
+    public, and an anonymous call succeeds where an invalid credential would 401.
+    Transient failures are retried; see :func:`_hf_probe`.
+    """
+    from huggingface_hub import model_info
+
+    def probe() -> bool:
+        model_info(repo_id, timeout=timeout, token=False)
         return True
-    except RepositoryNotFoundError:
-        return False
-    except Exception:
-        return False
+
+    return _hf_probe(probe)
 
 
 def hf_file_exists(repo_id: str, filename: str) -> bool:
-    """Return True if *filename* exists in a HuggingFace Hub model repo."""
-    from huggingface_hub import list_repo_files
-    from huggingface_hub.utils import RepositoryNotFoundError
+    """Return True if *filename* exists in a HuggingFace Hub model repo.
 
-    try:
-        files = list(list_repo_files(repo_id))
-        return filename in files
-    except RepositoryNotFoundError:
-        return False
-    except Exception:
-        return False
+    ``token=False`` forces an anonymous request so a stale or invalid token in
+    the local HuggingFace cache cannot poison the check: the repos under test are
+    public, and an anonymous call succeeds where an invalid credential would 401.
+    Transient failures are retried; see :func:`_hf_probe`.
+    """
+    from huggingface_hub import list_repo_files
+
+    def probe() -> bool:
+        return filename in list(list_repo_files(repo_id, token=False))
+
+    return _hf_probe(probe)
 
 
 AUDIO_MULTISPEAKER = FIXTURES_ROOT / "audio" / "multispeaker.wav"
