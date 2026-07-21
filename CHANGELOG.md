@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.10.0](https://github.com/fodorad/exordium/compare/v2.9.1...v2.10.0) (2026-07-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* exordium.text.xml_roberta and XmlRobertaWrapper are removed with no alias; import XlmRobertaWrapper from exordium.text.xlm_roberta. The semantic model id 'xml-roberta' is no longer accepted; use 'xlm-roberta'.
+
+### Features
+
+* rename xml_roberta to xlm_roberta and add pooled/sequence output contract ([#70](https://github.com/fodorad/exordium/issues/70)) ([74af1ba](https://github.com/fodorad/exordium/commit/74af1ba5b4044e543593fc25a3e8bf4883b32dee))
+
+
+### Miscellaneous Chores
+
+* release 2.10.0 ([#72](https://github.com/fodorad/exordium/issues/72)) ([7c20008](https://github.com/fodorad/exordium/commit/7c20008790837f25fc6060e82b5bc035ed50eabc))
+
 ## [2.9.1](https://github.com/fodorad/exordium/compare/v2.9.0...v2.9.1) (2026-07-17)
 
 
