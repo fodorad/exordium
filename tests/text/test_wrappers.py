@@ -11,6 +11,7 @@ from tests.fixtures import (
     PRETRAINED,
     TEST_WHISPER_MODEL,
     ModelTestCase,
+    PooledTokenWrapperContract,
     hf_repo_exists,
 )
 
@@ -86,20 +87,12 @@ class TestRobertaWrapper(ModelTestCase):
         self.assertIsInstance(out, np.ndarray)
 
 
-class TestXlmRobertaWrapper(ModelTestCase):
+class TestXlmRobertaWrapper(PooledTokenWrapperContract, ModelTestCase):
     @classmethod
     def setUpClass(cls):
         from exordium.text.xlm_roberta import XlmRobertaWrapper
 
         cls.model = XlmRobertaWrapper(device_id=None, pretrained=PRETRAINED)
-
-    def test_call_returns_tensor(self):
-        out = self.model("hello world")
-        self.assertIsInstance(out, torch.Tensor)
-
-    def test_output_is_sentence_level(self):
-        out = self.model("hello world")
-        self.assertEqual(out.ndim, 2)
 
 
 class TestWhisperWrapper(ModelTestCase):
@@ -143,6 +136,13 @@ class TestTextWeightAvailability(unittest.TestCase):
 
     def test_xlm_roberta_base_repo(self):
         self.assertTrue(hf_repo_exists("FacebookAI/xlm-roberta-base"))
+
+    def test_xlm_roberta_backbone_repos(self):
+        from exordium.text.xlm_roberta import _BACKBONES
+
+        for repo_id in _BACKBONES.values():
+            with self.subTest(repo_id=repo_id):
+                self.assertTrue(hf_repo_exists(repo_id))
 
 
 if __name__ == "__main__":

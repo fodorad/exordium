@@ -1,109 +1,81 @@
-"""XLM-RoBERTa multilingual text encoding wrapper."""
+"""XLM-RoBERTa multilingual text encoder wrapper (token-level or pooled).
 
-import numpy as np
-import torch
+Both backbones here are genuinely **XLM-RoBERTa architecture** encoders. For the
+newer non-XLM-RoBERTa multilingual encoders see
+:class:`~exordium.text.mmbert.MmbertWrapper` (ModernBERT) and
+:class:`~exordium.text.eurobert.EurobertWrapper` (EuroBERT); they share the same
+``pooling`` API but are separate classes so the naming stays architecture-honest.
+"""
 
-from exordium.text.base import TextModelWrapper
+from exordium.text.base import PooledTokenTextWrapper
+
+_BACKBONES: dict[str, str] = {
+    "mpnet": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+    "e5": "intfloat/multilingual-e5-base",
+}
+"""Named XLM-RoBERTa-architecture backbones. Keys are the short aliases accepted
+by :class:`XlmRobertaWrapper`; values are their HuggingFace Hub ids. A raw Hub id
+passed as ``backbone`` is used verbatim, so other XLM-RoBERTa checkpoints work too."""
 
 
-class XlmRobertaWrapper(TextModelWrapper):
-    """XLM-RoBERTa sentence-transformer wrapper. Hidden size: 768.
+class XlmRobertaWrapper(PooledTokenTextWrapper):
+    r"""XLM-RoBERTa multilingual encoder — token-level ``(B, T, H)`` or pooled ``(B, H)``.
 
-    This model is a sentence-transformer fine-tuned for semantic similarity, so
-    :meth:`inference` mean-pools the token embeddings internally and returns a
-    **pooled sentence embedding**: one ``(768,)`` vector per input, shape
-    ``(B, 768)``. There is *no* time axis — the pooled vector is not a length-1
-    sequence, and consumers should not treat ``(B, 768)`` as ``(B, T=1, 768)``.
+    Loads an **XLM-RoBERTa-architecture** multilingual encoder and returns either
+    the token-level sequence (``pooling="none"``, for a cross-modal sequence model
+    such as MulT/LinMulT) or a pooled sentence embedding (``pooling="mean"``, the
+    default, for sentence similarity). See
+    :class:`~exordium.text.base.PooledTokenTextWrapper` for the full shape contract
+    and the ``pooling`` semantics, and
+    :class:`~exordium.text.roberta.RobertaWrapper` for the English-only counterpart.
 
-    A time-series consumer that genuinely wants a length-1 sequence (e.g. a
-    LinMulT/LinT model with ``time_dim_reducer='gap'`` that expects ``(B, T, D)``)
-    can request the promoted rank explicitly via ``as_sequence=True``, which
-    returns ``(B, 1, 768)``. That unsqueeze is a consumer *choice* named here in
-    exordium rather than re-derived in every downstream repo; it adds no new
-    information over the pooled vector.
+    Both backbones have hidden size 768; :attr:`hidden_size` reports it from the
+    model config regardless.
+
+    Args:
+        backbone: Which XLM-RoBERTa encoder to load — a key of :data:`_BACKBONES`
+            or a raw HuggingFace Hub id. Options:
+
+            * ``"mpnet"`` (default) — XLM-RoBERTa sentence-transformer fine-tuned
+              for semantic similarity (50+ languages, hidden 768); its embeddings
+              are **cross-lingually aligned**, so it is the right choice for the
+              pooled similarity path.
+              `Sentence-BERT, Reimers & Gurevych 2019
+              <https://arxiv.org/abs/1908.10084>`_ · `card <https://huggingface.co/sentence-transformers/paraphrase-multilingual-mpnet-base-v2>`_
+            * ``"e5"`` — multilingual E5, initialized from XLM-RoBERTa and
+              contrastively retrained (100+ languages, hidden 768). Its *pooled*
+              mode expects ``"query: "`` / ``"passage: "`` prefixes on the input;
+              the token-level output is unaffected.
+              `Multilingual E5 Text Embeddings, Wang et al. 2024
+              <https://arxiv.org/abs/2402.05672>`_ · `card <https://huggingface.co/intfloat/multilingual-e5-base>`_
+
+        device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.
+        pretrained: ``True`` (default) loads the real weights. ``False`` builds
+            the architecture with random weights — outputs are meaningless but the
+            shapes and call contract hold (used by the test suite to avoid downloads).
+
+    Attributes:
+        backbone: The ``backbone`` argument as given (alias or raw id).
+        hidden_size: The backbone's hidden size ``H`` (768), read from the config.
+
+    Example::
+
+        m = XlmRobertaWrapper()                                 # default: mpnet
+        tokens = m("Ich bin sehr glücklich.", pooling="none")   # (1, T, 768)
+        pooled = m("Ich bin sehr glücklich.")                   # (1, 768)
+        e5 = XlmRobertaWrapper(backbone="e5")                   # one-keyword switch
 
     """
 
-    def __init__(self, device_id: int = -1, pretrained: bool = True) -> None:
+    def __init__(
+        self,
+        backbone: str = "mpnet",
+        device_id: int = -1,
+        pretrained: bool = True,
+    ) -> None:
         super().__init__(
-            "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+            _BACKBONES.get(backbone, backbone),
             device_id,
             pretrained=pretrained,
         )
-
-    def inference(
-        self,
-        inputs: dict[str, torch.Tensor],
-        as_sequence: bool = False,
-    ) -> torch.Tensor:
-        """Run XLM-RoBERTa forward pass with mean pooling.
-
-        Args:
-            inputs: Tokenizer output dict on ``self.device``.
-            as_sequence: When ``False`` (default), return the pooled sentence
-                embedding of shape ``(B, 768)`` — one ``(768,)`` vector per input,
-                with no time axis. When ``True``, unsqueeze a length-1 time axis
-                and return ``(B, 1, 768)``; this is a length-1 *sequence* view of
-                the same pooled vector, not additional information.
-
-        Returns:
-            Pooled sentence embeddings of shape ``(B, 768)``, or ``(B, 1, 768)``
-            when ``as_sequence`` is ``True``.
-
-        """
-        last_hidden = self.model(**inputs).last_hidden_state
-        pooled = self._mean_pool(last_hidden, inputs["attention_mask"])
-        if as_sequence:
-            return pooled.unsqueeze(1)
-        return pooled
-
-    def __call__(
-        self,
-        text: str | list[str],
-        max_length: int | None = None,
-        padding: bool | str = True,
-        as_sequence: bool = False,
-    ) -> torch.Tensor:
-        """Tokenize and encode text, returning a pooled sentence-embedding tensor.
-
-        Args:
-            text: Single string or list of strings.
-            max_length: Maximum sequence length. ``None`` uses tokenizer default.
-            padding: Padding strategy. Default: ``True`` (pad to longest).
-            as_sequence: Forwarded to :meth:`inference`. ``False`` returns
-                ``(B, 768)`` (pooled, no time axis); ``True`` returns
-                ``(B, 1, 768)`` (length-1 sequence view).
-
-        Returns:
-            Feature tensor on ``self.device``: ``(B, 768)`` by default, or
-            ``(B, 1, 768)`` when ``as_sequence`` is ``True``.
-
-        """
-        with torch.inference_mode():
-            return self.inference(
-                self.preprocess(text, max_length, padding), as_sequence=as_sequence
-            )
-
-    def predict(
-        self,
-        text: str | list[str],
-        max_length: int | None = None,
-        padding: bool | str = True,
-        as_sequence: bool = False,
-    ) -> np.ndarray:
-        """Tokenize and encode text, returning a pooled sentence-embedding array.
-
-        Args:
-            text: Single string or list of strings.
-            max_length: Maximum sequence length.
-            padding: Padding strategy.
-            as_sequence: Forwarded to :meth:`inference`. ``False`` returns
-                ``(B, 768)`` (pooled, no time axis); ``True`` returns
-                ``(B, 1, 768)`` (length-1 sequence view).
-
-        Returns:
-            Feature array: ``(B, 768)`` by default, or ``(B, 1, 768)`` when
-            ``as_sequence`` is ``True``.
-
-        """
-        return self(text, max_length, padding, as_sequence=as_sequence).cpu().numpy()
+        self.backbone = backbone
