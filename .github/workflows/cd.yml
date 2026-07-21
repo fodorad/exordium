@@ -34,7 +34,10 @@ jobs:
       run: uv build
 
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@2834a314042ef964da07689278dd1e9d773e8afd  # v1.14.1
+      # Docker-based action: GitHub resolves the container image by this ref, and
+      # pypa only publishes images under version tags -- not commit SHAs -- so a
+      # SHA pin fails with "manifest unknown". Pin to the release tag instead.
+      uses: pypa/gh-action-pypi-publish@release/v1
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228  # v3
