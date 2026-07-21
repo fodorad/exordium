@@ -86,12 +86,12 @@ class TestRobertaWrapper(ModelTestCase):
         self.assertIsInstance(out, np.ndarray)
 
 
-class TestXmlRobertaWrapper(ModelTestCase):
+class TestXlmRobertaWrapper(ModelTestCase):
     @classmethod
     def setUpClass(cls):
-        from exordium.text.xml_roberta import XmlRobertaWrapper
+        from exordium.text.xlm_roberta import XlmRobertaWrapper
 
-        cls.model = XmlRobertaWrapper(device_id=None, pretrained=PRETRAINED)
+        cls.model = XlmRobertaWrapper(device_id=None, pretrained=PRETRAINED)
 
     def test_call_returns_tensor(self):
         out = self.model("hello world")

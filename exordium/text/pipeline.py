@@ -65,7 +65,7 @@ class SpeechAlignmentPipeline:
         semantic_model: Sentence-embedding model for the optional semantic
             similarity in :meth:`evaluate_annotation` (see
             :func:`~exordium.text.evaluation.build_embedder`); default
-            ``"xml-roberta"``. Loaded lazily only when ``semantic=True``.
+            ``"xlm-roberta"``. Loaded lazily only when ``semantic=True``.
 
     Example::
 
@@ -87,7 +87,7 @@ class SpeechAlignmentPipeline:
         whisper_model: str = "distil-whisper/distil-large-v3",
         device_id: int | None = 0,
         whisper: "WhisperWrapper | None" = None,
-        semantic_model: str = "xml-roberta",
+        semantic_model: str = "xlm-roberta",
         pretrained: bool = True,
     ) -> None:
         if backend not in _BACKENDS:

@@ -41,7 +41,7 @@ excellent, ``0.10–0.20`` good, ``0.20–0.35`` fair, ``>0.5`` poor. The defaul
 DEFAULT_MIN_SEMANTIC_SIMILARITY = 0.70
 """Default rescue threshold: semantic cosine at/over this counts as same-meaning.
 
-Heuristic for the ``xml-roberta`` sentence-transformer: ``>0.85`` near-identical
+Heuristic for the ``xlm-roberta`` sentence-transformer: ``>0.85`` near-identical
 meaning, ``0.70–0.85`` clearly related/paraphrase, ``<0.5`` different. The default
 ``0.70`` accepts clearly-related/paraphrase pairs. Tune per dataset.
 """
@@ -234,13 +234,13 @@ def is_acceptable(
 
 
 def build_embedder(
-    model: str = "xml-roberta", device_id: int | None = -1, pretrained: bool = True
+    model: str = "xlm-roberta", device_id: int | None = -1, pretrained: bool = True
 ) -> Embedder:
     """Build a sentence embedder for :attr:`TranscriptMetrics.semantic_similarity`.
 
     Args:
-        model: One of ``"xml-roberta"`` (default;
-            :class:`~exordium.text.xml_roberta.XmlRobertaWrapper`, a multilingual
+        model: One of ``"xlm-roberta"`` (default;
+            :class:`~exordium.text.xlm_roberta.XlmRobertaWrapper`, a multilingual
             sentence-transformer fine-tuned for semantic similarity — recommended),
             ``"roberta"`` (:class:`~exordium.text.roberta.RobertaWrapper`, CLS
             token), or ``"bert"`` (:class:`~exordium.text.bert.BertWrapper`, CLS
@@ -256,10 +256,10 @@ def build_embedder(
     """
     name = model.lower()
     dev = device_id if device_id is not None else -1
-    if name in ("xml-roberta", "xlm-roberta"):
-        from exordium.text.xml_roberta import XmlRobertaWrapper
+    if name == "xlm-roberta":
+        from exordium.text.xlm_roberta import XlmRobertaWrapper
 
-        wrapper = XmlRobertaWrapper(device_id=dev, pretrained=pretrained)
+        wrapper = XlmRobertaWrapper(device_id=dev, pretrained=pretrained)
         return lambda texts: wrapper(texts).detach().cpu().numpy()  # already (N, 768)
     if name == "roberta":
         from exordium.text.roberta import RobertaWrapper
@@ -271,7 +271,7 @@ def build_embedder(
 
         bert = BertWrapper(device_id=dev, pretrained=pretrained)
         return lambda texts: bert(texts)[:, 0].detach().cpu().numpy()  # [CLS] token
-    raise ValueError(f"Unknown semantic model {model!r}; use 'xml-roberta', 'roberta', or 'bert'.")
+    raise ValueError(f"Unknown semantic model {model!r}; use 'xlm-roberta', 'roberta', or 'bert'.")
 
 
 class TranscriptEvaluator:
@@ -290,7 +290,7 @@ class TranscriptEvaluator:
 
     Example::
 
-        evaluator = TranscriptEvaluator()  # xml-roberta semantic
+        evaluator = TranscriptEvaluator()  # xlm-roberta semantic
         metrics = evaluator.evaluate(annotation_text, predicted_text)
         print(metrics.normalized_wer, metrics.semantic_similarity)
 
@@ -298,7 +298,7 @@ class TranscriptEvaluator:
 
     def __init__(
         self,
-        semantic_model: str | None = "xml-roberta",
+        semantic_model: str | None = "xlm-roberta",
         device_id: int | None = -1,
         normalizer: str = "english",
         pretrained: bool = True,
