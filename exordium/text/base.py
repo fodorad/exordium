@@ -469,6 +469,115 @@ class TextModelWrapper(ABC):
         return torch.sum(last_hidden_state * mask, dim=1) / torch.clamp(mask.sum(dim=1), min=1e-9)
 
 
+class PooledTokenTextWrapper(TextModelWrapper):
+    r"""Encoder wrapper exposing both token-level and pooled outputs via ``pooling``.
+
+    A :class:`TextModelWrapper` whose ``preprocess → inference → __call__``
+    pipeline is parameterised by a ``pooling`` mode, so one wrapper serves both
+    an affective-computing fusion layer (which wants the token sequence) and a
+    sentence-similarity consumer (which wants one vector per input):
+
+    * ``pooling="none"`` — the raw token sequence ``last_hidden_state`` of shape
+      ``(B, T, H)`` (token-level; feed to a cross-modal sequence model such as
+      MulT/LinMulT alongside the ``attention_mask``).
+    * ``pooling="mean"`` (default) — the attention-masked mean-pooled sentence
+      embedding of shape ``(B, H)``.
+
+    A single ``str`` is encoded as a batch of one, so one sentence yields
+    ``(1, T, H)`` (token) or ``(1, H)`` (pooled); index ``[0]`` for the per-sample
+    ``(T, H)`` / ``(H,)`` views. ``H`` is read from the model config into
+    :attr:`hidden_size`, so it is never assumed.
+
+    Subclasses only need to call ``super().__init__(model_name, ...)`` with their
+    HuggingFace model id; the pooling API is inherited unchanged.
+
+    Attributes:
+        hidden_size: The backbone's hidden size ``H``, read from the model config.
+
+    """
+
+    def __init__(self, model_name: str, device_id: int = -1, pretrained: bool = True) -> None:
+        super().__init__(model_name, device_id, pretrained=pretrained)
+        self.hidden_size: int = self.model.config.hidden_size
+
+    def inference(
+        self,
+        inputs: dict[str, torch.Tensor],
+        pooling: str = "mean",
+    ) -> torch.Tensor:
+        """Run the encoder forward pass and return token-level or pooled features.
+
+        Args:
+            inputs: Tokenizer output dict on ``self.device``.
+            pooling: ``"none"`` returns the raw token sequence
+                ``last_hidden_state`` of shape ``(B, T, H)`` (token-level, for a
+                cross-modal sequence model). ``"mean"`` (default) returns the
+                attention-masked mean-pooled sentence embedding of shape
+                ``(B, H)``.
+
+        Returns:
+            Token embeddings ``(B, T, H)`` when ``pooling="none"``, or pooled
+            sentence embeddings ``(B, H)`` when ``pooling="mean"``.
+
+        Raises:
+            ValueError: If ``pooling`` is not ``"none"`` or ``"mean"``.
+
+        """
+        last_hidden = self.model(**inputs).last_hidden_state
+        if pooling == "none":
+            return last_hidden
+        if pooling == "mean":
+            return self._mean_pool(last_hidden, inputs["attention_mask"])
+        raise ValueError(f"Unknown pooling {pooling!r}; use 'none' or 'mean'.")
+
+    def __call__(
+        self,
+        text: str | list[str],
+        max_length: int | None = None,
+        padding: bool | str = True,
+        pooling: str = "mean",
+    ) -> torch.Tensor:
+        """Tokenize and encode text, returning a feature tensor.
+
+        Args:
+            text: Single string or list of strings.
+            max_length: Maximum sequence length. ``None`` uses tokenizer default.
+            padding: Padding strategy. Default: ``True`` (pad to longest).
+            pooling: Forwarded to :meth:`inference`. ``"mean"`` (default) returns
+                pooled ``(B, H)``; ``"none"`` returns token-level ``(B, T, H)``.
+
+        Returns:
+            Feature tensor on ``self.device``: ``(B, H)`` pooled by default, or
+            ``(B, T, H)`` token-level when ``pooling="none"``.
+
+        """
+        with torch.inference_mode():
+            return self.inference(self.preprocess(text, max_length, padding), pooling=pooling)
+
+    def predict(
+        self,
+        text: str | list[str],
+        max_length: int | None = None,
+        padding: bool | str = True,
+        pooling: str = "mean",
+    ) -> np.ndarray:
+        """Tokenize and encode text, returning a numpy feature array.
+
+        Args:
+            text: Single string or list of strings.
+            max_length: Maximum sequence length.
+            padding: Padding strategy.
+            pooling: Forwarded to :meth:`inference`. ``"mean"`` (default) returns
+                pooled ``(B, H)``; ``"none"`` returns token-level ``(B, T, H)``.
+
+        Returns:
+            Feature array: ``(B, H)`` pooled by default, or ``(B, T, H)``
+            token-level when ``pooling="none"``.
+
+        """
+        return self(text, max_length, padding, pooling=pooling).cpu().numpy()
+
+
 class SpeechToText(ABC):
     """Abstract base class for speech-to-text models.
 

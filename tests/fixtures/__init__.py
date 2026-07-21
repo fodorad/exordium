@@ -145,6 +145,66 @@ class ModelTestCase(unittest.TestCase):
         free_torch_memory()
 
 
+class PooledTokenWrapperContract:
+    """Shared real-model contract for the multilingual token/pooled wrappers.
+
+    Mix into a :class:`ModelTestCase` whose ``setUpClass`` sets ``cls.model`` to a
+    :class:`~exordium.text.base.PooledTokenTextWrapper` subclass. Asserts the
+    ``pooling`` API on the concrete class without duplicating the body across the
+    per-model test files (``test_xlm_roberta`` / ``test_mmbert`` / ``test_eurobert``)::
+
+        class TestMmbertWrapper(PooledTokenWrapperContract, ModelTestCase):
+            @classmethod
+            def setUpClass(cls):
+                from exordium.text.mmbert import MmbertWrapper
+                cls.model = MmbertWrapper(device_id=None, pretrained=PRETRAINED)
+    """
+
+    def test_call_returns_tensor(self):
+        """Calling the wrapper on a string returns a torch tensor."""
+        import torch
+
+        out = self.model("hello world")
+        self.assertIsInstance(out, torch.Tensor)
+
+    def test_default_output_is_pooled(self):
+        """The default output is a pooled ``(B, H)`` vector — rank 2."""
+        out = self.model("hello world")
+        self.assertEqual(out.ndim, 2)
+        self.assertEqual(out.shape[-1], self.model.hidden_size)
+
+    def test_pooling_none_is_token_level(self):
+        """``pooling='none'`` returns a token-level ``(B, T, H)`` sequence — rank 3."""
+        out = self.model("hello world", pooling="none")
+        self.assertEqual(out.ndim, 3)
+        self.assertEqual(out.shape[-1], self.model.hidden_size)
+
+    def test_hidden_size_matches_config(self):
+        """``hidden_size`` mirrors the backbone's ``config.hidden_size``."""
+        self.assertEqual(self.model.hidden_size, self.model.model.config.hidden_size)
+
+    def test_predict_returns_numpy(self):
+        """``predict`` returns a rank-2 numpy array by default (pooled)."""
+        import numpy as np
+
+        out = self.model.predict("hello world")
+        self.assertIsInstance(out, np.ndarray)
+        self.assertEqual(out.ndim, 2)
+
+    def test_batch_input_pooled(self):
+        """A batch of two pooled vectors is rank 2 with a leading batch of 2."""
+        out = self.model(["hello world", "a slightly longer second sentence"])
+        self.assertEqual(out.ndim, 2)
+        self.assertEqual(out.shape, (2, self.model.hidden_size))
+
+    def test_batch_input_token_level(self):
+        """A batch of two token sequences is rank 3; padded to a shared length T."""
+        out = self.model(["hello world", "a slightly longer second sentence"], pooling="none")
+        self.assertEqual(out.ndim, 3)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[-1], self.model.hidden_size)
+
+
 _HF_PROBE_RETRY_PAUSES_S = (0.0, 1.0)
 """Pause before each retry after a transient failure, in seconds.
 

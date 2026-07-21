@@ -241,10 +241,10 @@ def build_embedder(
     Args:
         model: One of ``"xlm-roberta"`` (default;
             :class:`~exordium.text.xlm_roberta.XlmRobertaWrapper`, a multilingual
-            sentence-transformer fine-tuned for semantic similarity — recommended),
-            ``"roberta"`` (:class:`~exordium.text.roberta.RobertaWrapper`, CLS
-            token), or ``"bert"`` (:class:`~exordium.text.bert.BertWrapper`, CLS
-            token).
+            sentence-transformer whose embeddings are cross-lingually aligned —
+            recommended for semantic similarity), ``"roberta"``
+            (:class:`~exordium.text.roberta.RobertaWrapper`, CLS token), or
+            ``"bert"`` (:class:`~exordium.text.bert.BertWrapper`, CLS token).
         device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.
         pretrained: ``True`` (default) loads the real weights. ``False`` builds the
             architecture with random weights — embeddings are then meaningless, but the
@@ -259,8 +259,9 @@ def build_embedder(
     if name == "xlm-roberta":
         from exordium.text.xlm_roberta import XlmRobertaWrapper
 
-        wrapper = XlmRobertaWrapper(device_id=dev, pretrained=pretrained)
-        return lambda texts: wrapper(texts).detach().cpu().numpy()  # already (N, 768)
+        # mpnet is the cross-lingually aligned sentence-transformer (the wrapper default).
+        wrapper = XlmRobertaWrapper(backbone="mpnet", device_id=dev, pretrained=pretrained)
+        return lambda texts: wrapper(texts).detach().cpu().numpy()  # already pooled (N, H)
     if name == "roberta":
         from exordium.text.roberta import RobertaWrapper
 
