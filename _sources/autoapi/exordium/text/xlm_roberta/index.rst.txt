@@ -1,0 +1,94 @@
+exordium.text.xlm_roberta
+=========================
+
+.. py:module:: exordium.text.xlm_roberta
+
+.. autoapi-nested-parse::
+
+   XLM-RoBERTa multilingual text encoding wrapper.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.text.xlm_roberta.XlmRobertaWrapper
+
+
+Module Contents
+---------------
+
+.. py:class:: XlmRobertaWrapper(device_id: int = -1, pretrained: bool = True)
+
+   Bases: :py:obj:`exordium.text.base.TextModelWrapper`
+
+
+   XLM-RoBERTa sentence-transformer wrapper. Hidden size: 768.
+
+   This model is a sentence-transformer fine-tuned for semantic similarity, so
+   :meth:`inference` mean-pools the token embeddings internally and returns a
+   **pooled sentence embedding**: one ``(768,)`` vector per input, shape
+   ``(B, 768)``. There is *no* time axis — the pooled vector is not a length-1
+   sequence, and consumers should not treat ``(B, 768)`` as ``(B, T=1, 768)``.
+
+   A time-series consumer that genuinely wants a length-1 sequence (e.g. a
+   LinMulT/LinT model with ``time_dim_reducer='gap'`` that expects ``(B, T, D)``)
+   can request the promoted rank explicitly via ``as_sequence=True``, which
+   returns ``(B, 1, 768)``. That unsqueeze is a consumer *choice* named here in
+   exordium rather than re-derived in every downstream repo; it adds no new
+   information over the pooled vector.
+
+
+
+   .. py:method:: inference(inputs: dict[str, torch.Tensor], as_sequence: bool = False) -> torch.Tensor
+
+      Run XLM-RoBERTa forward pass with mean pooling.
+
+      :param inputs: Tokenizer output dict on ``self.device``.
+      :param as_sequence: When ``False`` (default), return the pooled sentence
+                          embedding of shape ``(B, 768)`` — one ``(768,)`` vector per input,
+                          with no time axis. When ``True``, unsqueeze a length-1 time axis
+                          and return ``(B, 1, 768)``; this is a length-1 *sequence* view of
+                          the same pooled vector, not additional information.
+
+      :returns: Pooled sentence embeddings of shape ``(B, 768)``, or ``(B, 1, 768)``
+                when ``as_sequence`` is ``True``.
+
+
+
+   .. py:method:: __call__(text: str | list[str], max_length: int | None = None, padding: bool | str = True, as_sequence: bool = False) -> torch.Tensor
+
+      Tokenize and encode text, returning a pooled sentence-embedding tensor.
+
+      :param text: Single string or list of strings.
+      :param max_length: Maximum sequence length. ``None`` uses tokenizer default.
+      :param padding: Padding strategy. Default: ``True`` (pad to longest).
+      :param as_sequence: Forwarded to :meth:`inference`. ``False`` returns
+                          ``(B, 768)`` (pooled, no time axis); ``True`` returns
+                          ``(B, 1, 768)`` (length-1 sequence view).
+
+      :returns: ``(B, 768)`` by default, or
+                ``(B, 1, 768)`` when ``as_sequence`` is ``True``.
+      :rtype: Feature tensor on ``self.device``
+
+
+
+   .. py:method:: predict(text: str | list[str], max_length: int | None = None, padding: bool | str = True, as_sequence: bool = False) -> numpy.ndarray
+
+      Tokenize and encode text, returning a pooled sentence-embedding array.
+
+      :param text: Single string or list of strings.
+      :param max_length: Maximum sequence length.
+      :param padding: Padding strategy.
+      :param as_sequence: Forwarded to :meth:`inference`. ``False`` returns
+                          ``(B, 768)`` (pooled, no time axis); ``True`` returns
+                          ``(B, 1, 768)`` (length-1 sequence view).
+
+      :returns: ``(B, 768)`` by default, or ``(B, 1, 768)`` when
+                ``as_sequence`` is ``True``.
+      :rtype: Feature array
+
+
+

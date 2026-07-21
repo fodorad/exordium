@@ -32,7 +32,7 @@ Module Contents
    mean-pooling its outputs does not produce meaningful sentence embeddings.
    Use the ``[CLS]`` token (index 0) for sequence-level tasks, or use a
    dedicated sentence-transformer such as
-   :class:`~exordium.text.xml_roberta.XmlRobertaWrapper` instead.
+   :class:`~exordium.text.xlm_roberta.XlmRobertaWrapper` instead.
 
 
 

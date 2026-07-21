@@ -19,6 +19,6 @@ Submodules
    /autoapi/exordium/text/transcript_align/index
    /autoapi/exordium/text/whisper/index
    /autoapi/exordium/text/whisperx_align/index
-   /autoapi/exordium/text/xml_roberta/index
+   /autoapi/exordium/text/xlm_roberta/index
 
 

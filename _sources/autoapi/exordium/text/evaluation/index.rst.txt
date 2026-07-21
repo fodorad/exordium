@@ -83,7 +83,7 @@ Module Contents
 
    semantic cosine at/over this counts as same-meaning.
 
-   Heuristic for the ``xml-roberta`` sentence-transformer: ``>0.85`` near-identical
+   Heuristic for the ``xlm-roberta`` sentence-transformer: ``>0.85`` near-identical
    meaning, ``0.70–0.85`` clearly related/paraphrase, ``<0.5`` different. The default
    ``0.70`` accepts clearly-related/paraphrase pairs. Tune per dataset.
 
@@ -209,12 +209,12 @@ Module Contents
    :returns: ``True`` if the annotation should be trusted, else ``False``.
 
 
-.. py:function:: build_embedder(model: str = 'xml-roberta', device_id: int | None = -1, pretrained: bool = True) -> Embedder
+.. py:function:: build_embedder(model: str = 'xlm-roberta', device_id: int | None = -1, pretrained: bool = True) -> Embedder
 
    Build a sentence embedder for :attr:`TranscriptMetrics.semantic_similarity`.
 
-   :param model: One of ``"xml-roberta"`` (default;
-                 :class:`~exordium.text.xml_roberta.XmlRobertaWrapper`, a multilingual
+   :param model: One of ``"xlm-roberta"`` (default;
+                 :class:`~exordium.text.xlm_roberta.XlmRobertaWrapper`, a multilingual
                  sentence-transformer fine-tuned for semantic similarity — recommended),
                  ``"roberta"`` (:class:`~exordium.text.roberta.RobertaWrapper`, CLS
                  token), or ``"bert"`` (:class:`~exordium.text.bert.BertWrapper`, CLS
@@ -227,7 +227,7 @@ Module Contents
    :returns: A callable mapping a list of texts to an ``(N, H)`` embedding array.
 
 
-.. py:class:: TranscriptEvaluator(semantic_model: str | None = 'xml-roberta', device_id: int | None = -1, normalizer: str = 'english', pretrained: bool = True)
+.. py:class:: TranscriptEvaluator(semantic_model: str | None = 'xlm-roberta', device_id: int | None = -1, normalizer: str = 'english', pretrained: bool = True)
 
    Standalone transcript comparator — two strings in, metrics out.
 
@@ -243,7 +243,7 @@ Module Contents
 
    Example::
 
-       evaluator = TranscriptEvaluator()  # xml-roberta semantic
+       evaluator = TranscriptEvaluator()  # xlm-roberta semantic
        metrics = evaluator.evaluate(annotation_text, predicted_text)
        print(metrics.normalized_wer, metrics.semantic_similarity)
 
