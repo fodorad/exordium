@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.10.1](https://github.com/fodorad/exordium/compare/v2.10.0...v2.10.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* use release tag for pypa publish Docker action ([#73](https://github.com/fodorad/exordium/issues/73)) ([e70517c](https://github.com/fodorad/exordium/commit/e70517c4412ea80e4c8a98c790c7d94546ccf257))
+
 ## [2.10.0](https://github.com/fodorad/exordium/compare/v2.9.1...v2.10.0) (2026-07-21)
 
 
