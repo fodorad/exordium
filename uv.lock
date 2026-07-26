@@ -400,20 +400,6 @@ wheels = [
 ]
 
 [[package]]
-name = "blinklinmult"
-version = "1.0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "linmult" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d6/2a/6204187e726aeafdd8efd8556860dec7b4c72607764380b1da3a65624762/blinklinmult-1.0.4.tar.gz", hash = "sha256:d17b8f079b49b62ff08c335089acb9aad0a94b8a6c6fbe576a55190717fece5b", size = 27257, upload-time = "2026-03-30T09:51:35.756Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/40/82/2f855bdde2288546cc2d72c0bec5a72f1bf541608cfafc58ab1e97ab3844/blinklinmult-1.0.4-py3-none-any.whl", hash = "sha256:2ba96f946f73a7434294f6710b7406040a27f1418840b8dead7bc90a194573f5", size = 35026, upload-time = "2026-03-30T09:51:36.929Z" },
-]
-
-[[package]]
 name = "certifi"
 version = "2026.6.17"
 source = { registry = "https://pypi.org/simple" }
@@ -909,7 +895,6 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
-    { name = "blinklinmult" },
     { name = "einops" },
     { name = "marlin-pytorch" },
     { name = "mediapipe" },
@@ -947,7 +932,6 @@ text = [
     { name = "whisperx" },
 ]
 video = [
-    { name = "blinklinmult" },
     { name = "einops" },
     { name = "marlin-pytorch" },
     { name = "mediapipe" },
@@ -958,8 +942,6 @@ video = [
 
 [package.metadata]
 requires-dist = [
-    { name = "blinklinmult", marker = "extra == 'all'" },
-    { name = "blinklinmult", marker = "extra == 'video'" },
     { name = "coverage", marker = "extra == 'dev'" },
     { name = "einops", marker = "extra == 'all'" },
     { name = "einops", marker = "extra == 'video'" },
@@ -1623,15 +1605,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f1/45/7fa8f56b17dc0f0a41ec70dd307ecd6787254483549843bef4c30ab5adce/lightning_utilities-0.15.3.tar.gz", hash = "sha256:792ae0204c79f6859721ac7f386c237a33b0ed06ba775009cb894e010a842033", size = 33553, upload-time = "2026-02-22T14:48:53.348Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/25/f4/ead6e0e37209b07c9baa3e984ccdb0348ca370b77cea3aaea8ddbb097e00/lightning_utilities-0.15.3-py3-none-any.whl", hash = "sha256:6c55f1bee70084a1cbeaa41ada96e4b3a0fea5909e844dd335bd80f5a73c5f91", size = 31906, upload-time = "2026-02-22T14:48:52.488Z" },
-]
-
-[[package]]
-name = "linmult"
-version = "1.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8e/dc/e619de0254d3094ef142c59b4b64f5928e035597360306bdabf6e394849b/linmult-1.1.0.tar.gz", hash = "sha256:a26530e51c8f8811cd59275e168ef19a83453719fcf484a55c9b9ae4db8770d3", size = 15339, upload-time = "2024-11-26T07:57:43.101Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e8/11/5de784889ed291f6551380e4b7a7d7200e02c21b534717e88d9ab54e06a3/linmult-1.1.0-py3-none-any.whl", hash = "sha256:e6a8dcc8ba9aa180d800d0217388c21c86c9af39421d9abf962bb107d43c33b2", size = 18130, upload-time = "2024-11-26T07:57:42.008Z" },
 ]
 
 [[package]]

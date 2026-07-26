@@ -58,7 +58,6 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Head pose | [6DRepNet](https://github.com/thohemp/6DRepNet) (300W-LP + AFLW2000) | yaw, pitch, roll (degrees) |
 | Gaze estimation | [L2CS-Net](https://github.com/Ahmednull/L2CS-Net) (ResNet-50, MPIIFaceGaze) | pitch, yaw (radians) |
 | Gaze estimation | [UniGaze](https://github.com/darijakre/unigaze) (ViT-based) | pitch, yaw (radians) |
-| Eye blink detection | [BlinkDenseNet121](https://github.com/fodorad/BlinkLinMulT) (DenseNet-121) | per-eye open/closed probability |
 | Facial action units | [OpenGraphAU](https://github.com/lingjivoo/OpenGraphAU) (Swin-T backbone) | 41-dim AU intensity vector |
 
 #### Deep Visual Features
@@ -125,7 +124,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 |---|---|
 | `audio` | OpenSMILE, torchaudio — audio feature extraction |
 | `text` | transformers, torchaudio, rapidfuzz, whisperX — text, speech & alignment |
-| `video` | MediaPipe, Ultralytics, blinklinmult, unigaze, timm — face & video models |
+| `video` | MediaPipe, Ultralytics, unigaze, timm — face & video models |
 | `all` | all previously described extras |
 
 ---
