@@ -69,7 +69,6 @@ text = [
 video = [
   "mediapipe",
   "ultralytics",
-  "blinklinmult",
   "unigaze",
   "timm",
   "marlin-pytorch",

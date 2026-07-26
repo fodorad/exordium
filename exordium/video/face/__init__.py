@@ -5,7 +5,6 @@ from exordium.video.face.au import (
     AU_names,
     OpenGraphAuWrapper,
 )
-from exordium.video.face.blink import BlinkDenseNet121
 from exordium.video.face.detector.yolo11 import YoloFace11Detector
 from exordium.video.face.gaze import (
     GazeWrapper,
@@ -31,7 +30,6 @@ __all__ = [
     "AU_ids",
     "AU_names",
     "OpenGraphAuWrapper",
-    "BlinkDenseNet121",
     "YoloFace11Detector",
     "GazeWrapper",
     "L2CS_Builder",
