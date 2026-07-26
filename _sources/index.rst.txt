@@ -29,7 +29,6 @@ Features
 - Head pose — SixDRepNet (yaw, pitch, roll in degrees)
 - Gaze direction — L2CS-Net (ResNet-50), UniGaze (ViT), roll correction
 - Iris landmarks — MediaPipe Iris 71 eye pts + 5 iris pts, EAR, iris diameters
-- Blink detection — BlinkDenseNet121 per-eye open/closed probability
 - Action units — OpenGraphAU 41-dim intensity vector
 - Deep visual features — Swin Transformer (768-d), AdaFace IResNet-18/50/101 (512-d identity embeddings), FAb-Net (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384 / 768 / 1024 / 1536-d), EmotiEffNet (1280 / 1408-d), MARLIN (384 / 768 / 1024-d, 16-frame clips)
 - Tracking — IoU-based multi-face tracker; face-ID tracker (AdaFace embeddings + IoU gating) with occlusion recovery and identity-aware merge
@@ -79,7 +78,7 @@ Extras
    * - ``text``
      - transformers, torchaudio, rapidfuzz, whisperX — text, speech, and alignment
    * - ``video``
-     - MediaPipe, Ultralytics, blinklinmult, unigaze, timm — face & video models
+     - MediaPipe, Ultralytics, unigaze, timm — face & video models
    * - ``all``
      - all previously described extras
 
@@ -108,8 +107,6 @@ downloaded automatically on first run.
      - Head pose (SixDRepNet) — yaw/pitch/roll with axis and cube overlays
    * - ``demo_video_face_gaze.ipynb``
      - Gaze direction: L2CS-Net (ResNet-50) and UniGaze (ViT), roll correction
-   * - ``demo_video_face_blink.ipynb``
-     - Per-eye blink detection on video — frame-wise score plot, patch examples
    * - ``demo_video_face_iris.ipynb``
      - Iris landmarks: 71 eye pts + 5 iris pts, EAR, iris diameters (YOLO11 + FaceMesh pipeline)
    * - ``demo_video_face_action_units.ipynb``
