@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.11.1](https://github.com/fodorad/exordium/compare/v2.11.0...v2.11.1) (2026-07-26)
+
+
+### Bug Fixes
+
+* remove blinklinmult dependency to break import cycle ([#77](https://github.com/fodorad/exordium/issues/77)) ([89e7ea4](https://github.com/fodorad/exordium/commit/89e7ea47c7ea9acd4c442f29711d208b0f40ee39))
+
 ## [2.11.0](https://github.com/fodorad/exordium/compare/v2.10.1...v2.11.0) (2026-07-21)
 
 
