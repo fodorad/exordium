@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.11.2](https://github.com/fodorad/exordium/compare/v2.11.1...v2.11.2) (2026-08-09)
+
+
+### Bug Fixes
+
+* lower supported Python floor to 3.12 ([#83](https://github.com/fodorad/exordium/issues/83)) ([ed31e17](https://github.com/fodorad/exordium/commit/ed31e179fe2f0e53d992c8f28b15af605d7218d2))
+
 ## [2.11.1](https://github.com/fodorad/exordium/compare/v2.11.0...v2.11.1) (2026-07-26)
 
 
