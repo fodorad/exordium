@@ -23,28 +23,32 @@ dependencies = [
   "numpy",
   "opencv-python",
   "scipy",
-  # ── PyTorch ecosystem version pins ───────────────────────────────────────────
-  # torch, torchaudio, torchvision and torchcodec are pinned as one matched set and
-  # are only ever bumped together -- see the dependabot group in .github/dependabot.yml.
+  # ── PyTorch ecosystem version range ──────────────────────────────────────────
+  # These declare a *range* rather than one exact generation, so a downstream repo
+  # (e.g. a gradio ZeroGPU demo held at torch 2.11) can install exordium without a
+  # conflict, while development and CI resolve to the newest set in the window.
   #
-  # torchvision is ABI-coupled to torch and hard-pins it (0.26 -> torch==2.11,
-  # 0.28 -> torch==2.13). Bumping either half alone installs cleanly and then fails at
-  # import with "RuntimeError: operator torchvision::nms does not exist".
+  # torchvision is ABI-coupled to torch and hard-pins one exact torch per release
+  # (0.26 -> torch 2.11, 0.27 -> 2.12, 0.28 -> 2.13). Mixing halves across generations
+  # installs cleanly then fails at import: "operator torchvision::nms does not exist".
+  # The coupled ranges keep torch and torchvision in lock-step, so the resolver can
+  # only land on a valid pair; the consumer's own pin picks which one (>=2.11 floor).
   #
-  # torchaudio and torchcodec declare no torch pin because they are not coupled that
-  # way. torchaudio trails the others (its newest release is 2.11.0, there is no 2.13),
-  # but it runs fine on torch 2.13 -- forced_align and the MMS_FA bundle, the native
-  # ops this repo depends on, both load. It is held at its latest via the uv override
-  # below rather than being allowed to drag torch back down to 2.11.
+  # torchaudio is NOT co-versioned with torch. On PyPI -- the index this repo resolves
+  # from -- its newest release is 2.11.0 (2.12/2.13 exist only on download.pytorch.org).
+  # 2.11.0 runs fine on the whole torch 2.11-2.13 range: forced_align and the MMS_FA
+  # bundle, the native ops used here, both load. The range below resolves it to 2.11.0.
   #
-  # To upgrade: bump the set together, then confirm torch.ops.torchvision.nms,
-  # torchaudio.functional.forced_align, torchaudio.pipelines.MMS_FA and the torchcodec
-  # decoders all load before trusting the resolver, and verify CI passes.
+  # torchcodec (0.14-0.15) supports torch >= 2.11 and is not torch-co-versioned.
+  #
+  # Load-bearing ops to re-verify if you shift the floor: torch.ops.torchvision.nms,
+  # torchaudio.functional.forced_align, torchaudio.pipelines.MMS_FA, torchcodec decoders.
+  # CI's 3.12/3.13/3.14 matrix resolves and exercises the top of the range.
   # ─────────────────────────────────────────────────────────────────────────────
-  "torch==2.13.0",
-  "torchaudio==2.11.0",
-  "torchvision==0.28.0",
-  "torchcodec==0.15.0",
+  "torch>=2.11,<2.14",
+  "torchaudio>=2.11,<2.14",
+  "torchvision>=0.26,<0.29",
+  "torchcodec>=0.14,<0.16",
   "tqdm",
   "matplotlib",
   "huggingface_hub",
@@ -149,18 +153,17 @@ directory = "coverage_html"
 override-dependencies = [
   "timm>=1.0",  # unigaze pins timm==0.3.2; override it
   # whisperX (and pyannote-audio) declare conservative torch pins (~=2.8) and a
-  # requires-python <3.14 upper bound. Empirically whisperx 3.7.2 works fine on
-  # this repo's torch / py3.14, so we hold the torch stack at the repo pins and let
-  # uv resolve whisperx against them instead of downgrading torch.
+  # requires-python <3.14 upper bound. Empirically whisperx 3.7.2 works fine on this
+  # repo's torch / py3.14, so we override its pins and let uv resolve whisperx against
+  # the repo's torch range instead of dragging torch below the 2.11 floor.
   #
-  # torchaudio is the reason this block matters most: 2.11.0 is its newest release, so
-  # a plain resolve would let it pull torch back to 2.11 and strand torchvision 0.28
-  # (which hard-pins torch==2.13). Overriding holds torchaudio at 2.11 on top of torch
-  # 2.13, which is verified to work -- see the pin block in [project.dependencies].
-  "torch==2.13.0",
-  "torchaudio==2.11.0",
-  "torchvision==0.28.0",
-  "torchcodec==0.15.0",
+  # These mirror the coupled ranges in [project.dependencies] (see the comment there
+  # for the three valid matched sets). They stay ranges, not exact pins, so a consumer
+  # can hold the stack at torch 2.11 without exordium's override forcing it to 2.13.
+  "torch>=2.11,<2.14",
+  "torchaudio>=2.11,<2.14",
+  "torchvision>=0.26,<0.29",
+  "torchcodec>=0.14,<0.16",
   # Hold transformers at latest 5.x; the whisperx stack otherwise pulls it down
   # to 4.57. Verified whisperx alignment + the existing wrappers work on 5.x.
   "transformers>=5.5",
