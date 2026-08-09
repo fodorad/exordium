@@ -28,13 +28,22 @@ permissions:
 
 jobs:
   test:
-    name: test (py${{ matrix.python-version }})
+    name: test (py${{ matrix.python-version }}${{ matrix.torch-floor && ', torch2.11' || '' }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         # Oldest supported (requires-python floor) through the latest stable release.
+        # Each leg installs the newest torch set the ranges allow (currently 2.13).
         python-version: ["3.12", "3.13", "3.14"]
+        include:
+          # exordium declares torch>=2.11 so downstream demos (gradio ZeroGPU) can
+          # hold the stack at torch 2.11. This extra leg pins the 2.11-generation set
+          # and runs the full suite against it, so the *floor* of the range is proven
+          # to work -- not just the latest. One leg on the Python floor (3.12) is
+          # enough; the ABI-matched set is Python-independent within our support range.
+          - python-version: "3.12"
+            torch-floor: true
 
     steps:
     - uses: actions/checkout@v7
@@ -56,13 +65,27 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y ffmpeg libgles2 libegl1
 
+    # Pin the torch 2.11-generation ABI-matched set for the floor leg. torchvision is
+    # co-versioned with torch (0.26 <-> 2.11); torchaudio/torchcodec follow their ranges.
+    - name: Constrain torch stack to the 2.11 floor
+      if: matrix.torch-floor
+      run: |
+        printf 'torch==2.11.0\ntorchvision==0.26.0\n' > /tmp/torch-floor.txt
+        echo "UV_CONSTRAINT=/tmp/torch-floor.txt" >> "$GITHUB_ENV"
+
     - name: Install dependencies
       run: |
         # On Linux CI, use CPU-only PyTorch wheels to avoid CUDA runtime
         # dependencies (e.g. libnppicc.so) that are absent on the runner.
         # PEP 440 ignores local version segments, so torch==2.11.0 matches
         # both 2.11.0+cu130 (PyPI default) and 2.11.0+cpu (CPU index).
+        # UV_CONSTRAINT (set only on the torch-floor leg) pins the 2.11 set.
         uv pip install --system --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match -e ".[all,dev,docs]"
+
+    - name: Show resolved torch stack
+      run: |
+        uv pip show --system torch torchvision torchaudio torchcodec 2>/dev/null \
+          | grep -E '^(Name|Version):' || true
 
     # Model weights dominate CI time: the suite pulls several GB of checkpoints
     # (HuggingFace, torch.hub, exordium-weights) and without this they are
@@ -101,9 +124,9 @@ jobs:
         coverage xml -o coverage.xml
 
     - name: Upload coverage reports to Codecov
-      # Coverage is identical across the matrix; upload once (from the floor version)
-      # to avoid duplicate/conflicting reports on Codecov.
-      if: matrix.python-version == '3.12'
+      # Coverage is identical across the matrix; upload once (from the plain 3.12 leg,
+      # excluding the torch-floor leg) to avoid duplicate/conflicting reports on Codecov.
+      if: matrix.python-version == '3.12' && !matrix.torch-floor
       uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -111,8 +134,8 @@ jobs:
         fail_ci_if_error: true
 
     - name: Upload coverage HTML
-      # One artifact name across the matrix would collide; upload from one version only.
-      if: always() && matrix.python-version == '3.12'
+      # One artifact name across the matrix would collide; upload from one leg only.
+      if: always() && matrix.python-version == '3.12' && !matrix.torch-floor
       uses: actions/upload-artifact@v7
       with:
         name: coverage-report
