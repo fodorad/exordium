@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.11.3](https://github.com/fodorad/exordium/compare/v2.11.2...v2.11.3) (2026-08-09)
+
+
+### Bug Fixes
+
+* widen torch stack to &gt;=2.11 for downstream demos ([73bc9ee](https://github.com/fodorad/exordium/commit/73bc9ee3ea67bdb7774a82079dab0d611a3f211c))
+
 ## [2.11.2](https://github.com/fodorad/exordium/compare/v2.11.1...v2.11.2) (2026-08-09)
 
 
