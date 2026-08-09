@@ -32,16 +32,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # Every leg is listed explicitly under `include` (no bare axis) so job identities
+      # never collide: a bare `python-version` axis plus an `include` that re-uses an
+      # existing value MERGES into that combination instead of adding a new job, which
+      # would silently drop the plain "py3.12" leg (and its required-check name).
+      #
+      # Legs: the Python floor (3.12) through the latest stable (3.14), each on the
+      # newest torch set the ranges allow (currently 2.13); PLUS one floor leg that
+      # pins the torch 2.11 generation so the *bottom* of torch>=2.11 is proven too
+      # (downstream gradio ZeroGPU demos hold the stack there). One torch-floor leg on
+      # Python 3.12 is enough -- the ABI-matched set is Python-independent in our range.
       matrix:
-        # Oldest supported (requires-python floor) through the latest stable release.
-        # Each leg installs the newest torch set the ranges allow (currently 2.13).
-        python-version: ["3.12", "3.13", "3.14"]
         include:
-          # exordium declares torch>=2.11 so downstream demos (gradio ZeroGPU) can
-          # hold the stack at torch 2.11. This extra leg pins the 2.11-generation set
-          # and runs the full suite against it, so the *floor* of the range is proven
-          # to work -- not just the latest. One leg on the Python floor (3.12) is
-          # enough; the ABI-matched set is Python-independent within our support range.
+          - python-version: "3.12"
+          - python-version: "3.13"
+          - python-version: "3.14"
           - python-version: "3.12"
             torch-floor: true
 
