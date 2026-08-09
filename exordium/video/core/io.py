@@ -492,7 +492,7 @@ def save_video(
         arr = frames
         if arr.ndim == 4 and arr.shape[1] == 3:
             arr = np.transpose(arr, (0, 2, 3, 1))  # → (T, H, W, C)
-        frames_list = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in arr]  # ty: ignore[no-matching-overload]
+        frames_list = [cv2.cvtColor(np.asarray(f), cv2.COLOR_RGB2BGR) for f in arr]
     elif isinstance(frames[0], torch.Tensor):
         # Sequence of (C, H, W) or (H, W, C) tensors
         tensor_seq = cast("Sequence[torch.Tensor]", frames)
@@ -504,7 +504,7 @@ def save_video(
             frames_list.append(cv2.cvtColor(nf, cv2.COLOR_RGB2BGR))
     else:
         # Sequence of numpy arrays (H, W, C)
-        frames_list = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in frames]  # ty: ignore[no-matching-overload]
+        frames_list = [cv2.cvtColor(np.asarray(f), cv2.COLOR_RGB2BGR) for f in frames]
 
     # Get dimensions
     height, width = frames_list[0].shape[:2]
