@@ -28,18 +28,23 @@ permissions:
 
 jobs:
   test:
-    name: test
+    name: test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest supported (requires-python floor) through the latest stable release.
+        python-version: ["3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v7
       with:
         fetch-depth: 0  # required for hatch-vcs git describe
 
-    - name: Set up Python 3.14
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v7
       with:
-        python-version: "3.14"
+        python-version: ${{ matrix.python-version }}
 
     - name: Set up uv
       uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
@@ -96,6 +101,9 @@ jobs:
         coverage xml -o coverage.xml
 
     - name: Upload coverage reports to Codecov
+      # Coverage is identical across the matrix; upload once (from the floor version)
+      # to avoid duplicate/conflicting reports on Codecov.
+      if: matrix.python-version == '3.12'
       uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -103,11 +111,12 @@ jobs:
         fail_ci_if_error: true
 
     - name: Upload coverage HTML
+      # One artifact name across the matrix would collide; upload from one version only.
+      if: always() && matrix.python-version == '3.12'
       uses: actions/upload-artifact@v7
       with:
         name: coverage-report
         path: coverage_html/
-      if: always()
 
     - name: Build docs
       run: sphinx-build -b html docs/ site/
