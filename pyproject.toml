@@ -48,7 +48,7 @@ dependencies = [
   "torch>=2.11,<2.14",
   "torchaudio>=2.11,<2.14",
   "torchvision>=0.26,<0.29",
-  "torchcodec>=0.14,<0.16",
+  "torchcodec>=0.14,<0.17",
   "tqdm",
   "matplotlib",
   "huggingface_hub",
@@ -163,7 +163,7 @@ override-dependencies = [
   "torch>=2.11,<2.14",
   "torchaudio>=2.11,<2.14",
   "torchvision>=0.26,<0.29",
-  "torchcodec>=0.14,<0.16",
+  "torchcodec>=0.14,<0.17",
   # Hold transformers at latest 5.x; the whisperx stack otherwise pulls it down
   # to 4.57. Verified whisperx alignment + the existing wrappers work on 5.x.
   "transformers>=5.5",
