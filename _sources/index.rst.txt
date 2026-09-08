@@ -27,7 +27,7 @@ Features
 - Face detection — YOLOv8-Face, YOLO11-pose, BlazeFace
 - Facial landmarks — YOLO11 5-pt coarse keypoints, FaceMesh 478-pt dense mesh
 - Head pose — SixDRepNet (yaw, pitch, roll in degrees)
-- Gaze direction — L2CS-Net (ResNet-50), UniGaze (ViT), roll correction
+- Gaze direction — L2CS-Net (ResNet-50), roll correction
 - Iris landmarks — MediaPipe Iris 71 eye pts + 5 iris pts, EAR, iris diameters
 - Action units — OpenGraphAU 41-dim intensity vector
 - Deep visual features — Swin Transformer (768-d), AdaFace IResNet-18/50/101 (512-d identity embeddings), FAb-Net (256-d), CLIP ViT-H/14 (1024-d), DINOv2 (384 / 768 / 1024 / 1536-d), EmotiEffNet (1280 / 1408-d), MARLIN (384 / 768 / 1024-d, 16-frame clips)
@@ -78,7 +78,7 @@ Extras
    * - ``text``
      - transformers, torchaudio, rapidfuzz, whisperX — text, speech, and alignment
    * - ``video``
-     - MediaPipe, Ultralytics, unigaze, timm — face & video models
+     - MediaPipe, Ultralytics, timm — face & video models
    * - ``all``
      - all previously described extras
 
@@ -106,7 +106,7 @@ downloaded automatically on first run.
    * - ``demo_video_face_headpose.ipynb``
      - Head pose (SixDRepNet) — yaw/pitch/roll with axis and cube overlays
    * - ``demo_video_face_gaze.ipynb``
-     - Gaze direction: L2CS-Net (ResNet-50) and UniGaze (ViT), roll correction
+     - Gaze direction: L2CS-Net (ResNet-50), roll correction
    * - ``demo_video_face_iris.ipynb``
      - Iris landmarks: 71 eye pts + 5 iris pts, EAR, iris diameters (YOLO11 + FaceMesh pipeline)
    * - ``demo_video_face_action_units.ipynb``

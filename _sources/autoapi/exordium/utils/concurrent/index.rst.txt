@@ -21,7 +21,7 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: processes_eval(fcn: collections.abc.Callable[Ellipsis, Any], data: collections.abc.Iterable[collections.abc.Iterable[Any]], use_mp: bool = True, verbose: bool = False) -> list
+.. py:function:: processes_eval(fcn: collections.abc.Callable[..., Any], data: collections.abc.Iterable[collections.abc.Iterable[Any]], use_mp: bool = True, verbose: bool = False) -> list
 
    Eval function using multiple processes.
 
@@ -38,7 +38,7 @@ Module Contents
    :rtype: list
 
 
-.. py:function:: threads_eval(fcn: collections.abc.Callable[Ellipsis, Any], data: collections.abc.Sequence[Any], *args, **kwargs) -> None
+.. py:function:: threads_eval(fcn: collections.abc.Callable[..., Any], data: collections.abc.Sequence[Any], *args, **kwargs) -> None
 
    Eval function using multiple threads.
 

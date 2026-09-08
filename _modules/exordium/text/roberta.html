@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.text.roberta</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;RoBERTa text encoding model wrapper.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""RoBERTa text encoding model wrapper."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
@@ -330,7 +329,7 @@
 <div class="viewcode-block" id="RobertaWrapper">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/roberta/index.html#exordium.text.roberta.RobertaWrapper">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RobertaWrapper</span><span class="p">(</span><span class="n">TextModelWrapper</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;RoBERTa-large token-level encoder. Hidden size: 1024.</span>
+<span class="w">    </span><span class="sd">"""RoBERTa-large token-level encoder. Hidden size: 1024.</span>
 
 <span class="sd">    Returns all token hidden states of shape ``(B, T, 1024)``.  RoBERTa is not</span>
 <span class="sd">    a sentence-transformer — it was not fine-tuned for semantic similarity, so</span>
@@ -339,15 +338,15 @@
 <span class="sd">    dedicated sentence-transformer such as</span>
 <span class="sd">    :class:`~exordium.text.xlm_roberta.XlmRobertaWrapper` instead.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;roberta-large&quot;</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">"roberta-large"</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">)</span>
 
 <div class="viewcode-block" id="RobertaWrapper.inference">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/roberta/index.html#exordium.text.roberta.RobertaWrapper.inference">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run RoBERTa forward pass.</span>
+<span class="w">        </span><span class="sd">"""Run RoBERTa forward pass.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            inputs: Tokenizer output dict on ``self.device``.</span>
@@ -355,7 +354,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Token embeddings of shape ``(B, T, 1024)``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">)</span><span class="o">.</span><span class="n">last_hidden_state</span></div>
 </div>
 

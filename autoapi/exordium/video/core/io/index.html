@@ -267,7 +267,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -527,8 +526,8 @@
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span> <span class="o">=</span> <span class="n">get_video_metadata</span><span class="p">(</span><span class="s2">&quot;video.mp4&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Video: </span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;num_frames&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> frames at </span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;fps&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> fps&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span> <span class="o">=</span> <span class="n">get_video_metadata</span><span class="p">(</span><span class="s2">"video.mp4"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Video: </span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">'num_frames'</span><span class="p">]</span><span class="si">}</span><span class="s2"> frames at </span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">'fps'</span><span class="p">]</span><span class="si">}</span><span class="s2"> fps"</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -577,7 +576,7 @@ sequence (equals <code class="docutils literal notranslate"><span class="pre">fp
 limitation).  Passing an MPS <code class="docutils literal notranslate"><span class="pre">device_id</span></code> will raise an error.</p>
 </div>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frames</span><span class="p">,</span> <span class="n">fps</span> <span class="o">=</span> <span class="n">load_video</span><span class="p">(</span><span class="s2">&quot;clip.mp4&quot;</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">resize</span><span class="o">=</span><span class="mi">224</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frames</span><span class="p">,</span> <span class="n">fps</span> <span class="o">=</span> <span class="n">load_video</span><span class="p">(</span><span class="s2">"clip.mp4"</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">resize</span><span class="o">=</span><span class="mi">224</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">frames</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">fps</span><span class="p">)</span>  <span class="c1"># (T, 3, 224, 224), 5.0</span>
 </pre></div>
 </div>
@@ -623,7 +622,7 @@ in the same order as the input indices.</p>
 limitation).  Passing an MPS <code class="docutils literal notranslate"><span class="pre">device_id</span></code> will raise an error.</p>
 </div>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frames</span> <span class="o">=</span> <span class="n">load_frames</span><span class="p">(</span><span class="s2">&quot;video.mp4&quot;</span><span class="p">,</span> <span class="n">frame_ids</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frames</span> <span class="o">=</span> <span class="n">load_frames</span><span class="p">(</span><span class="s2">"video.mp4"</span><span class="p">,</span> <span class="n">frame_ids</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">frames</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (4, 3, H, W)</span>
 </pre></div>
 </div>
@@ -676,8 +675,8 @@ tensors or numpy arrays.</p></li>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frames</span><span class="p">,</span> <span class="n">fps</span> <span class="o">=</span> <span class="n">load_video</span><span class="p">(</span><span class="s2">&quot;input.mp4&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">save_video</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="s2">&quot;output.mp4&quot;</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frames</span><span class="p">,</span> <span class="n">fps</span> <span class="o">=</span> <span class="n">load_video</span><span class="p">(</span><span class="s2">"input.mp4"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">save_video</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="s2">"output.mp4"</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -922,8 +921,8 @@ Defaults to None (CPU).</p></li>
 MPS decoding is not supported by torchcodec.</p>
 </div>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Video</span><span class="p">(</span><span class="s2">&quot;long_video.mp4&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">v</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="o">.</span><span class="n">num_frames</span><span class="si">}</span><span class="s2"> frames at </span><span class="si">{</span><span class="n">v</span><span class="o">.</span><span class="n">fps</span><span class="si">}</span><span class="s2"> fps&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Video</span><span class="p">(</span><span class="s2">"long_video.mp4"</span><span class="p">)</span> <span class="k">as</span> <span class="n">v</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">v</span><span class="o">.</span><span class="n">num_frames</span><span class="si">}</span><span class="s2"> frames at </span><span class="si">{</span><span class="n">v</span><span class="o">.</span><span class="n">fps</span><span class="si">}</span><span class="s2"> fps"</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">iter_batches</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">):</span>
 <span class="gp">... </span>        <span class="n">process</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>  <span class="c1"># batch is (T, C, H, W)</span>
 </pre></div>
@@ -1113,7 +1112,7 @@ during a run is not supported.</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">open_video</span><span class="p">(</span><span class="s2">&quot;clip.mp4&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">video</span><span class="p">:</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">open_video</span><span class="p">(</span><span class="s2">"clip.mp4"</span><span class="p">)</span> <span class="k">as</span> <span class="n">video</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">frame</span> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">get_frames_at</span><span class="p">([</span><span class="mi">42</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
 </pre></div>
 </div>

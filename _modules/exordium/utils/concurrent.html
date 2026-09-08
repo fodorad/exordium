@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.utils.concurrent</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Concurrent execution utilities.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Concurrent execution utilities."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">multiprocessing</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
@@ -332,7 +331,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_split_evenly</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split a sequence into n roughly equal chunks.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Split a sequence into n roughly equal chunks."""</span>
     <span class="n">k</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">n</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="p">:</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
 
@@ -345,7 +344,7 @@
     <span class="n">use_mp</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Eval function using multiple processes.</span>
+<span class="w">    </span><span class="sd">"""Eval function using multiple processes.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        fcn (Callable[..., Any]): function.</span>
@@ -356,19 +355,19 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        list: return values of fcn.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
     <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">use_mp</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">processes</span><span class="o">=</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">())</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
-                <span class="n">pool</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">fcn</span><span class="p">,</span> <span class="n">data</span><span class="p">),</span> <span class="n">total</span><span class="o">=</span><span class="n">total</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing&quot;</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">fcn</span><span class="p">,</span> <span class="n">data</span><span class="p">),</span> <span class="n">total</span><span class="o">=</span><span class="n">total</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Processing"</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span>
             <span class="p">):</span>
                 <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
             <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="n">total</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing&quot;</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="n">total</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Processing"</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">):</span>
             <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fcn</span><span class="p">(</span><span class="o">*</span><span class="n">d</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">results</span></div>
 
@@ -377,7 +376,7 @@
 <div class="viewcode-block" id="threads_eval">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/concurrent/index.html#exordium.utils.concurrent.threads_eval">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">threads_eval</span><span class="p">(</span><span class="n">fcn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">data</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Eval function using multiple threads.</span>
+<span class="w">    </span><span class="sd">"""Eval function using multiple threads.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        fcn: Function to evaluate.</span>
@@ -385,8 +384,8 @@
 <span class="sd">        *args: Additional positional arguments passed to fcn.</span>
 <span class="sd">        **kwargs: Additional keyword arguments passed to fcn.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">devices</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">())]</span>
+<span class="sd">    """</span>
+    <span class="n">devices</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"cuda:</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">())]</span>
     <span class="n">splits</span> <span class="o">=</span> <span class="n">_split_evenly</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">devices</span><span class="p">))</span>
 
     <span class="n">threads</span> <span class="o">=</span> <span class="p">[]</span>

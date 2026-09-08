@@ -48,7 +48,7 @@ Module Contents
 
    Module-level logger.
 
-.. py:function:: timer(func: collections.abc.Callable[Ellipsis, Any]) -> collections.abc.Callable[Ellipsis, Any]
+.. py:function:: timer(func: collections.abc.Callable[..., Any]) -> collections.abc.Callable[..., Any]
 
    Decorator that prints the execution time of a function.
 

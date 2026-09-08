@@ -267,7 +267,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -1549,8 +1548,8 @@ projected into crop-local space via <a class="reference internal" href="#exordiu
 <span class="kn">import</span><span class="w"> </span><span class="nn">cv2</span>
 
 <span class="n">crop_vis</span> <span class="o">=</span> <span class="n">visualize_detection_crop</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_indices</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="c1"># crop_vis is (H&#39;, W&#39;, 3) RGB numpy array</span>
-<span class="n">cv2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="s2">&quot;face&quot;</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">crop_vis</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2BGR</span><span class="p">))</span>
+<span class="c1"># crop_vis is (H', W', 3) RGB numpy array</span>
+<span class="n">cv2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="s2">"face"</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">crop_vis</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2BGR</span><span class="p">))</span>
 </pre></div>
 </div>
 <dl class="field-list simple">

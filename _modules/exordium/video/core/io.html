@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.video.core.io</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Video input/output utilities.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Video input/output utilities."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
@@ -344,13 +343,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_torch_device</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;Module-level logger.&quot;&quot;&quot;</span>
+<span class="sd">"""Module-level logger."""</span>
 
 
 <div class="viewcode-block" id="VideoBackend">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.VideoBackend">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">VideoBackend</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract interface for video decoding backends.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Abstract interface for video decoding backends."""</span>
 
 <div class="viewcode-block" id="VideoBackend.decode_frames">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.VideoBackend.decode_frames">[docs]</a>
@@ -361,7 +360,7 @@
         <span class="n">indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode frames at specific indices.</span>
+<span class="w">        </span><span class="sd">"""Decode frames at specific indices.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path: Video file path</span>
@@ -371,14 +370,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Tensor of shape (T, C, H, W) with decoded frames</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="VideoBackend.decode_all">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.VideoBackend.decode_all">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">decode_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode entire video.</span>
+<span class="w">        </span><span class="sd">"""Decode entire video.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path: Video file path</span>
@@ -387,14 +386,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Tensor of shape (T, C, H, W) with all frames</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="VideoBackend.get_metadata">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.VideoBackend.get_metadata">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get video metadata.</span>
+<span class="w">        </span><span class="sd">"""Get video metadata.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path: Video file path</span>
@@ -402,7 +401,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            dict with keys: fps, num_frames, height, width, duration</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 </div>
 
 
@@ -410,7 +409,7 @@
 <div class="viewcode-block" id="TorchCodecBackend">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.TorchCodecBackend">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TorchCodecBackend</span><span class="p">(</span><span class="n">VideoBackend</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;TorchCodec implementation of VideoBackend.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""TorchCodec implementation of VideoBackend."""</span>
 
 <div class="viewcode-block" id="TorchCodecBackend.decode_frames">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.TorchCodecBackend.decode_frames">[docs]</a>
@@ -420,7 +419,7 @@
         <span class="n">indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode frames at specific indices using torchcodec.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Decode frames at specific indices using torchcodec."""</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">torchcodec.decoders</span><span class="w"> </span><span class="kn">import</span> <span class="n">VideoDecoder</span>
 
         <span class="n">decoder</span> <span class="o">=</span> <span class="n">VideoDecoder</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
@@ -435,7 +434,7 @@
         <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
         <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode entire video using torchcodec.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Decode entire video using torchcodec."""</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">torchcodec.decoders</span><span class="w"> </span><span class="kn">import</span> <span class="n">VideoDecoder</span>
 
         <span class="n">decoder</span> <span class="o">=</span> <span class="n">VideoDecoder</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
@@ -447,17 +446,17 @@
 <div class="viewcode-block" id="TorchCodecBackend.get_metadata">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.TorchCodecBackend.get_metadata">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get video metadata from torchcodec.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get video metadata from torchcodec."""</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">torchcodec.decoders</span><span class="w"> </span><span class="kn">import</span> <span class="n">VideoDecoder</span>
 
         <span class="n">decoder</span> <span class="o">=</span> <span class="n">VideoDecoder</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
         <span class="n">m</span> <span class="o">=</span> <span class="n">decoder</span><span class="o">.</span><span class="n">metadata</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">average_fps</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="s2">&quot;num_frames&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">num_frames</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">height</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">width</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">((</span><span class="n">m</span><span class="o">.</span><span class="n">num_frames</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">average_fps</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)),</span>
+            <span class="s2">"fps"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">average_fps</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">"num_frames"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">num_frames</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">"height"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">height</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">"width"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">width</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">"duration"</span><span class="p">:</span> <span class="nb">float</span><span class="p">((</span><span class="n">m</span><span class="o">.</span><span class="n">num_frames</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">average_fps</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)),</span>
         <span class="p">}</span></div>
 </div>
 
@@ -465,13 +464,13 @@
 
 <span class="c1"># Global backend configuration</span>
 <span class="n">_BACKEND</span> <span class="o">=</span> <span class="n">TorchCodecBackend</span><span class="p">()</span>
-<span class="sd">&quot;&quot;&quot;Module-level video decode backend instance (TorchCodec).&quot;&quot;&quot;</span>
+<span class="sd">"""Module-level video decode backend instance (TorchCodec)."""</span>
 
 
 <div class="viewcode-block" id="get_video_metadata">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.get_video_metadata">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_video_metadata</span><span class="p">(</span><span class="n">input_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get video metadata using the configured backend.</span>
+<span class="w">    </span><span class="sd">"""Get video metadata using the configured backend.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        input_path: Path to video file</span>
@@ -480,10 +479,10 @@
 <span class="sd">        dict with keys: fps, num_frames, height, width, duration</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; meta = get_video_metadata(&quot;video.mp4&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; print(f&quot;Video: {meta[&#39;num_frames&#39;]} frames at {meta[&#39;fps&#39;]} fps&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; meta = get_video_metadata("video.mp4")</span>
+<span class="sd">        &gt;&gt;&gt; print(f"Video: {meta['num_frames']} frames at {meta['fps']} fps")</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">_BACKEND</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">input_path</span><span class="p">))</span></div>
 
 
@@ -500,7 +499,7 @@
     <span class="n">crop</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a contiguous range of video frames, optionally resampled to a target FPS.</span>
+<span class="w">    </span><span class="sd">"""Load a contiguous range of video frames, optionally resampled to a target FPS.</span>
 
 <span class="sd">    Use this function when you need sequential frames from a video — the full clip,</span>
 <span class="sd">    a temporal window, or a downsampled version at a lower frame rate.  For</span>
@@ -538,18 +537,18 @@
 <span class="sd">        limitation).  Passing an MPS ``device_id`` will raise an error.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; frames, fps = load_video(&quot;clip.mp4&quot;, fps=5, resize=224)</span>
+<span class="sd">        &gt;&gt;&gt; frames, fps = load_video("clip.mp4", fps=5, resize=224)</span>
 <span class="sd">        &gt;&gt;&gt; print(frames.shape, fps)  # (T, 3, 224, 224), 5.0</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">device</span> <span class="o">=</span> <span class="n">get_torch_device</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
 
     <span class="c1"># Get metadata using backend</span>
     <span class="n">metadata</span> <span class="o">=</span> <span class="n">_BACKEND</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">input_path</span><span class="p">))</span>
-    <span class="n">native_fps</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;fps&quot;</span><span class="p">]</span>
-    <span class="n">num_frames</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;num_frames&quot;</span><span class="p">]</span>
-    <span class="n">height</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;height&quot;</span><span class="p">]</span>
-    <span class="n">width</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">]</span>
+    <span class="n">native_fps</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"fps"</span><span class="p">]</span>
+    <span class="n">num_frames</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"num_frames"</span><span class="p">]</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"height"</span><span class="p">]</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"width"</span><span class="p">]</span>
 
     <span class="c1"># Calculate frame indices based on FPS conversion</span>
     <span class="k">if</span> <span class="n">end_frame</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -597,7 +596,7 @@
         <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span>
         <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">decoder_device</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">decoder_device</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"cuda"</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="k">with</span> <span class="n">Video</span><span class="p">(</span><span class="n">input_path</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">decoder_device</span><span class="p">)</span> <span class="k">as</span> <span class="n">video</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">batch_start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame_indices</span><span class="p">),</span> <span class="n">batch_size</span><span class="p">):</span>
             <span class="n">batch_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batch_start</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame_indices</span><span class="p">))</span>
@@ -636,7 +635,7 @@
     <span class="n">crop</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load specific, non-contiguous video frames by absolute frame index.</span>
+<span class="w">    </span><span class="sd">"""Load specific, non-contiguous video frames by absolute frame index.</span>
 
 <span class="sd">    Use this function when you already know exactly which frames you need — for</span>
 <span class="sd">    example, frames identified by a detector, sparse keyframes, or a custom</span>
@@ -670,16 +669,16 @@
 <span class="sd">        limitation).  Passing an MPS ``device_id`` will raise an error.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; frames = load_frames(&quot;video.mp4&quot;, frame_ids=[0, 10, 20, 30])</span>
+<span class="sd">        &gt;&gt;&gt; frames = load_frames("video.mp4", frame_ids=[0, 10, 20, 30])</span>
 <span class="sd">        &gt;&gt;&gt; print(frames.shape)  # (4, 3, H, W)</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">device</span> <span class="o">=</span> <span class="n">get_torch_device</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
 
     <span class="c1"># Get metadata using backend</span>
     <span class="n">metadata</span> <span class="o">=</span> <span class="n">_BACKEND</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">input_path</span><span class="p">))</span>
-    <span class="n">height</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;height&quot;</span><span class="p">]</span>
-    <span class="n">width</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">]</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"height"</span><span class="p">]</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"width"</span><span class="p">]</span>
 
     <span class="c1"># Convert frame_ids to absolute indices</span>
     <span class="n">frame_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">frame_ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span> <span class="o">+</span> <span class="n">start_frame</span>
@@ -713,7 +712,7 @@
 
     <span class="c1"># Decode frames in batches using persistent decoder</span>
     <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">)</span>
-    <span class="n">decoder_device</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">decoder_device</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"cuda"</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="k">with</span> <span class="n">Video</span><span class="p">(</span><span class="n">input_path</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">decoder_device</span><span class="p">)</span> <span class="k">as</span> <span class="n">video</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">batch_start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame_indices</span><span class="p">),</span> <span class="n">batch_size</span><span class="p">):</span>
             <span class="n">batch_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batch_start</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame_indices</span><span class="p">))</span>
@@ -751,10 +750,10 @@
     <span class="n">smallest_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">crop</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.png&quot;</span><span class="p">,</span>
+    <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">".png"</span><span class="p">,</span>
     <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts and saves the frames from a video.</span>
+<span class="w">    </span><span class="sd">"""Extracts and saves the frames from a video.</span>
 
 <span class="sd">    Note:</span>
 <span class="sd">        Prefer ``start_number=0`` — most functions in this package assume it</span>
@@ -771,17 +770,17 @@
 <span class="sd">            ``cx`` the left offset, ``ch`` the height, and ``cw`` the width.</span>
 <span class="sd">            When set, the video is first scaled then cropped. Defaults to ``None``.</span>
 <span class="sd">        device_id: GPU device id for decoding. None or -1 means CPU decoding. Defaults to None.</span>
-<span class="sd">        extension: File extension for saved frames. Defaults to &quot;.png&quot;.</span>
+<span class="sd">        extension: File extension for saved frames. Defaults to ".png".</span>
 <span class="sd">        overwrite: If True, overwrites existing output directory. Defaults to False.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;output_dir must be specified&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"output_dir must be specified"</span><span class="p">)</span>
     <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
 
     <span class="c1"># Skip if directory exists and overwrite is False</span>
     <span class="k">if</span> <span class="n">output_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output directory already exists, skipping: </span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Output directory already exists, skipping: </span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span>
 
     <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -797,14 +796,14 @@
 
     <span class="n">metadata</span> <span class="o">=</span> <span class="n">get_video_metadata</span><span class="p">(</span><span class="n">input_path</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Extracting frames from </span><span class="si">{</span><span class="n">input_path</span><span class="si">}</span><span class="s2">: &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;num_frames&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> frames at </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;fps&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> fps, &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;output fps=</span><span class="si">{</span><span class="n">actual_fps</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;extracting </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span><span class="si">}</span><span class="s2"> frames&quot;</span>
+        <span class="sa">f</span><span class="s2">"Extracting frames from </span><span class="si">{</span><span class="n">input_path</span><span class="si">}</span><span class="s2">: "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">'num_frames'</span><span class="p">]</span><span class="si">}</span><span class="s2"> frames at </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">'fps'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> fps, "</span>
+        <span class="sa">f</span><span class="s2">"output fps=</span><span class="si">{</span><span class="n">actual_fps</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, "</span>
+        <span class="sa">f</span><span class="s2">"extracting </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span><span class="si">}</span><span class="s2"> frames"</span>
     <span class="p">)</span>
 
     <span class="n">save_frames</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">zfill</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">start_number</span><span class="o">=</span><span class="n">start_number</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="n">extension</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span><span class="si">}</span><span class="s2"> frames to </span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span><span class="si">}</span><span class="s2"> frames to </span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
@@ -814,10 +813,10 @@
     <span class="n">frames</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
     <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">fps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
-    <span class="n">codec</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mp4v&quot;</span><span class="p">,</span>
+    <span class="n">codec</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"mp4v"</span><span class="p">,</span>
     <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Saves frames as a video file.</span>
+<span class="w">    </span><span class="sd">"""Saves frames as a video file.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        frames: Video frames as a ``(T, C, H, W)`` or ``(T, H, W, C)`` tensor or</span>
@@ -825,18 +824,18 @@
 <span class="sd">            tensors or numpy arrays.</span>
 <span class="sd">        output_path: Path to output video file</span>
 <span class="sd">        fps: Frames per second for output video</span>
-<span class="sd">        codec: FourCC codec string (e.g., &quot;mp4v&quot;, &quot;avc1&quot;, &quot;h264&quot;)</span>
+<span class="sd">        codec: FourCC codec string (e.g., "mp4v", "avc1", "h264")</span>
 <span class="sd">        overwrite: If True, overwrites existing file</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; frames, fps = load_video(&quot;input.mp4&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; save_video(frames, &quot;output.mp4&quot;, fps=30)</span>
+<span class="sd">        &gt;&gt;&gt; frames, fps = load_video("input.mp4")</span>
+<span class="sd">        &gt;&gt;&gt; save_video(frames, "output.mp4", fps=30)</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">output_path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Video already exists: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Video already exists: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span>
 
     <span class="c1"># Convert frames to numpy array (H, W, C) BGR format for cv2</span>
@@ -855,7 +854,7 @@
         <span class="n">frames_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2BGR</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">arr</span><span class="p">]</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frames</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="c1"># Sequence of (C, H, W) or (H, W, C) tensors</span>
-        <span class="n">tensor_seq</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;Sequence[torch.Tensor]&quot;</span><span class="p">,</span> <span class="n">frames</span><span class="p">)</span>
+        <span class="n">tensor_seq</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">"Sequence[torch.Tensor]"</span><span class="p">,</span> <span class="n">frames</span><span class="p">)</span>
         <span class="n">frames_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">ft</span> <span class="ow">in</span> <span class="n">tensor_seq</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">ft</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">ft</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
@@ -878,7 +877,7 @@
         <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
 
     <span class="n">writer</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved video to: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">frames_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> frames at </span><span class="si">{</span><span class="n">fps</span><span class="si">}</span><span class="s2"> fps)&quot;</span><span class="p">)</span></div>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saved video to: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">frames_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> frames at </span><span class="si">{</span><span class="n">fps</span><span class="si">}</span><span class="s2"> fps)"</span><span class="p">)</span></div>
 
 
 
@@ -890,7 +889,7 @@
     <span class="n">fps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
     <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Saves a video to a .mp4 file without audio.</span>
+<span class="w">    </span><span class="sd">"""Saves a video to a .mp4 file without audio.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        frames (Sequence[np.ndarray]): sequence of frames of shape (H, W, 3) and RGB channel order.</span>
@@ -898,7 +897,7 @@
 <span class="sd">        fps (int | float, optional): frame per sec. Defaults to 25.</span>
 <span class="sd">        overwrite (bool, optional): if True it overwrites the existing file. Defaults to True.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Handle directory input - load all frames as file paths then as numpy</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
         <span class="n">frame_paths</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span><span class="o">.</span><span class="n">iterdir</span><span class="p">())])</span>
@@ -910,7 +909,7 @@
         <span class="n">save_video</span><span class="p">(</span><span class="n">np_frames</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="n">fps</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
         <span class="k">return</span>
 
-    <span class="n">seq</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;Sequence[np.ndarray] | Sequence[Path]&quot;</span><span class="p">,</span> <span class="n">frames</span><span class="p">)</span>
+    <span class="n">seq</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">"Sequence[np.ndarray] | Sequence[Path]"</span><span class="p">,</span> <span class="n">frames</span><span class="p">)</span>
 
     <span class="c1"># Handle file paths - load as numpy arrays</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
@@ -923,7 +922,7 @@
         <span class="k">return</span>
 
     <span class="c1"># Use save_video() for actual encoding</span>
-    <span class="n">save_video</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;Sequence[np.ndarray]&quot;</span><span class="p">,</span> <span class="n">seq</span><span class="p">),</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="n">fps</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span></div>
+    <span class="n">save_video</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="s2">"Sequence[np.ndarray]"</span><span class="p">,</span> <span class="n">seq</span><span class="p">),</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="n">fps</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span></div>
 
 
 
@@ -934,9 +933,9 @@
     <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">start_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">zfill</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
-    <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.jpg&quot;</span><span class="p">,</span>
+    <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">".jpg"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Saves a sequence of frames to individual image files in a directory.</span>
+<span class="w">    </span><span class="sd">"""Saves a sequence of frames to individual image files in a directory.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        frames (torch.Tensor | np.ndarray | Sequence[torch.Tensor] | Sequence[np.ndarray]):</span>
@@ -945,16 +944,16 @@
 <span class="sd">        output_dir (str | Path): directory to save the frames.</span>
 <span class="sd">        start_number (int, optional): starting index for frame file names. Defaults to 0.</span>
 <span class="sd">        zfill (int, optional): zero-padding width for frame file names. Defaults to 6.</span>
-<span class="sd">        extension (str, optional): file extension for saved frames. Defaults to &quot;.jpg&quot;.</span>
+<span class="sd">        extension (str, optional): file extension for saved frames. Defaults to ".jpg".</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
     <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">frame_ind</span><span class="p">,</span> <span class="n">frame</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">frames</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
             <span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># (H,W,C)</span>
         <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span>
-            <span class="nb">str</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">start_number</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">frame_ind</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="n">zfill</span><span class="p">)</span><span class="si">}{</span><span class="n">extension</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">start_number</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">frame_ind</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="n">zfill</span><span class="p">)</span><span class="si">}{</span><span class="n">extension</span><span class="si">}</span><span class="s2">"</span><span class="p">),</span>
             <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2BGR</span><span class="p">),</span>
         <span class="p">)</span></div>
 
@@ -967,9 +966,9 @@
     <span class="n">frame_ids</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">output_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">zfill</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
-    <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.jpg&quot;</span><span class="p">,</span>
+    <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">".jpg"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Saves a sequence of frames to individual image files in a directory, using frame IDs.</span>
+<span class="w">    </span><span class="sd">"""Saves a sequence of frames to individual image files in a directory, using frame IDs.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        frames (torch.Tensor | np.ndarray | Sequence[torch.Tensor] | Sequence[np.ndarray]):</span>
@@ -978,16 +977,16 @@
 <span class="sd">        frame_ids (Sequence[int] | np.ndarray): frame IDs for each frame.</span>
 <span class="sd">        output_dir (Path): directory to save the frames.</span>
 <span class="sd">        zfill (int, optional): zero-padding width for frame file names. Defaults to 6.</span>
-<span class="sd">        extension (str, optional): file extension for saved frames. Defaults to &quot;.jpg&quot;.</span>
+<span class="sd">        extension (str, optional): file extension for saved frames. Defaults to ".jpg".</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
     <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">frame_ind</span><span class="p">,</span> <span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">frame_id</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="n">frame_ids</span><span class="p">)):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
             <span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># (H,W,C)</span>
         <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span>
-            <span class="nb">str</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">frame_id</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="n">zfill</span><span class="p">)</span><span class="si">}{</span><span class="n">extension</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">frame_id</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="n">zfill</span><span class="p">)</span><span class="si">}{</span><span class="n">extension</span><span class="si">}</span><span class="s2">"</span><span class="p">),</span>
             <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2BGR</span><span class="p">),</span>
         <span class="p">)</span></div>
 
@@ -996,7 +995,7 @@
 <div class="viewcode-block" id="batch_iterator">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.batch_iterator">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">batch_iterator</span><span class="p">(</span><span class="n">iterable</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Yields batch size list of objects from an iterable.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Yields batch size list of objects from an iterable."""</span>
     <span class="n">iterator</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
 
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
@@ -1011,39 +1010,39 @@
 
 <div class="viewcode-block" id="image_to_np">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.image_to_np">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">image_to_np</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">channel_order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;RGB&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts commonly used image formats to standardized numpy array.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">image_to_np</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">channel_order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"RGB"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Converts commonly used image formats to standardized numpy array.</span>
 
 <span class="sd">    Converts image of shape (H, W) or (H, W, 1) or (H, W, 3) and BGR channel order</span>
 <span class="sd">    to image of shape (H, W, 3) and RGB channel order.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        image (np.ndarray | str | Path): image or path to the image.</span>
-<span class="sd">        channel_order (str, optional): channel order. Supported values are &#39;RGB&#39;, &#39;BGR&#39;, &#39;HSV&#39;,</span>
-<span class="sd">                                       &#39;LAB&#39; and &#39;GRAY&#39;. Defaults to RGB.</span>
+<span class="sd">        channel_order (str, optional): channel order. Supported values are 'RGB', 'BGR', 'HSV',</span>
+<span class="sd">                                       'LAB' and 'GRAY'. Defaults to RGB.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        np.ndarray: image of shape (H, W, 3) and RGB channel order.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">image</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The file cannot be found: </span><span class="si">{</span><span class="n">image</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The file cannot be found: </span><span class="si">{</span><span class="n">image</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="n">image_bgr</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">image</span><span class="p">),</span> <span class="n">cv2</span><span class="o">.</span><span class="n">IMREAD_UNCHANGED</span><span class="p">)</span>  <span class="c1"># BGR</span>
-        <span class="k">assert</span> <span class="n">image_bgr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;cv2.imread failed to load: </span><span class="si">{</span><span class="n">image</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="n">image_bgr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"cv2.imread failed to load: </span><span class="si">{</span><span class="n">image</span><span class="si">}</span><span class="s2">"</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">image_bgr</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2RGB</span><span class="p">)</span>  <span class="c1"># RGB</span>
 
     <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
         <span class="n">flag</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">match</span> <span class="n">channel_order</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
-            <span class="k">case</span> <span class="s2">&quot;bgr&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"bgr"</span><span class="p">:</span>
                 <span class="n">flag</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2BGR</span>
-            <span class="k">case</span> <span class="s2">&quot;hsv&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"hsv"</span><span class="p">:</span>
                 <span class="n">flag</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2HSV</span>
-            <span class="k">case</span> <span class="s2">&quot;lab&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"lab"</span><span class="p">:</span>
                 <span class="n">flag</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2LAB</span>
-            <span class="k">case</span> <span class="s2">&quot;gray&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"gray"</span><span class="p">:</span>
                 <span class="n">flag</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2GRAY</span>
             <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>  <span class="c1"># stay in RGB</span>
                 <span class="k">pass</span>
@@ -1065,9 +1064,9 @@
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.image_to_tensor">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">image_to_tensor</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-    <span class="n">channel_order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;RGB&quot;</span><span class="p">,</span>
+    <span class="n">channel_order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"RGB"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load or convert a single image to a uint8 ``(3, H, W)`` CPU tensor.</span>
+<span class="w">    </span><span class="sd">"""Load or convert a single image to a uint8 ``(3, H, W)`` CPU tensor.</span>
 
 <span class="sd">    Wraps :func:`image_to_np` for the file-path and numpy cases, then</span>
 <span class="sd">    permutes to channel-first.  If a tensor is supplied it is returned</span>
@@ -1083,7 +1082,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        uint8 tensor of shape ``(3, H, W)`` on CPU.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
             <span class="c1"># (H, W, C) → (C, H, W)</span>
@@ -1100,12 +1099,12 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">to_uint8_tensor</span><span class="p">(</span>
     <span class="n">frames</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert any supported input to a uint8 ``(B, 3, H, W)`` CPU tensor.</span>
+<span class="w">    </span><span class="sd">"""Convert any supported input to a uint8 ``(B, 3, H, W)`` CPU tensor.</span>
 
 <span class="sd">    Canonical shared implementation used by all model wrappers in the library.</span>
 <span class="sd">    Avoids the need to duplicate this logic across multiple wrapper classes.</span>
 
-<span class="sd">    Sequence elements may have **different spatial sizes** — a face track&#39;s boxes</span>
+<span class="sd">    Sequence elements may have **different spatial sizes** — a face track's boxes</span>
 <span class="sd">    drift frame to frame, and edge clipping can even make a crop non-square, so</span>
 <span class="sd">    ``[det.crop() for det in track]`` is generally ragged. Such a batch cannot be</span>
 <span class="sd">    stacked directly, so the elements are resized to a common size (that of the</span>
@@ -1129,14 +1128,14 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If an empty sequence is passed.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">frames</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
             <span class="n">frames</span> <span class="o">=</span> <span class="n">frames</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">frames</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">image_to_np</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="s2">&quot;RGB&quot;</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">image_to_np</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="s2">"RGB"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">img</span><span class="p">))</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
@@ -1145,12 +1144,12 @@
 
     <span class="n">items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">items</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Empty sequence passed to to_uint8_tensor&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Empty sequence passed to to_uint8_tensor"</span><span class="p">)</span>
 
     <span class="c1"># `image_to_tensor` normalises each element to (3, H, W), handling paths, HWC</span>
     <span class="c1"># arrays and CHW/HWC tensors alike -- the last of which is what Detection.crop</span>
     <span class="c1"># returns.</span>
-    <span class="n">tensors</span> <span class="o">=</span> <span class="p">[</span><span class="n">image_to_tensor</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;RGB&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+    <span class="n">tensors</span> <span class="o">=</span> <span class="p">[</span><span class="n">image_to_tensor</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">"RGB"</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
 
     <span class="n">target_hw</span> <span class="o">=</span> <span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">target_hw</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensors</span><span class="p">):</span>
@@ -1169,15 +1168,15 @@
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.images_to_np">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">images_to_np</span><span class="p">(</span>
     <span class="n">images</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">],</span>
-    <span class="n">channel_order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;RGB&quot;</span><span class="p">,</span>
+    <span class="n">channel_order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"RGB"</span><span class="p">,</span>
     <span class="n">resize</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts multiple images to a single np.ndarray of shape (H, W, 3) and RGB channel order.</span>
+<span class="w">    </span><span class="sd">"""Converts multiple images to a single np.ndarray of shape (H, W, 3) and RGB channel order.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        images (Sequence[np.ndarray | str | Path]): multiple images or image paths.</span>
-<span class="sd">        channel_order (str, optional): channel order. Supported values are &#39;RGB&#39;, &#39;BGR&#39;, &#39;HSV&#39;,</span>
-<span class="sd">                                       &#39;LAB&#39; and &#39;GRAY&#39;. Defaults to RGB.</span>
+<span class="sd">        channel_order (str, optional): channel order. Supported values are 'RGB', 'BGR', 'HSV',</span>
+<span class="sd">                                       'LAB' and 'GRAY'. Defaults to RGB.</span>
 <span class="sd">        resize (tuple[int, int] | None, optional): resize images to a common H x W size.</span>
 <span class="sd">            None means that the resize is applied. Defaults to None.</span>
 
@@ -1187,7 +1186,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        np.ndarray: images of shape (N, H, W, 3) and RGB channel order.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">resize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1214,7 +1213,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">interpolate_1d</span><span class="p">(</span>
     <span class="n">start_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">start_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">end_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interpolates data using a range.</span>
+<span class="w">    </span><span class="sd">"""Interpolates data using a range.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        start_index (int): start index.</span>
@@ -1225,7 +1224,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        np.ndarray: interpolated data between start and end data.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
 
     <span class="n">interp</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start_data</span><span class="p">,</span> <span class="n">end_data</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
@@ -1237,7 +1236,7 @@
 <div class="viewcode-block" id="ImageSequenceReader">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.ImageSequenceReader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ImageSequenceReader</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;PyTorch Dataset for loading image sequences from a directory.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""PyTorch Dataset for loading image sequences from a directory."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frames_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">frames_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">frames_dir</span><span class="p">)</span>
@@ -1247,19 +1246,19 @@
 <div class="viewcode-block" id="ImageSequenceReader.__len__">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.ImageSequenceReader.__len__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return number of frames in sequence.</span>
+<span class="w">        </span><span class="sd">"""Return number of frames in sequence.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Number of frames.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ImageSequenceReader.__getitem__">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.ImageSequenceReader.__getitem__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>  <span class="c1"># ty: ignore[invalid-method-override]</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load image at index.</span>
+<span class="w">        </span><span class="sd">"""Load image at index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            idx: Frame index.</span>
@@ -1267,7 +1266,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Image as numpy array or transformed tensor.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">img</span> <span class="o">=</span> <span class="n">image_to_np</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frames_dir</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1281,14 +1280,14 @@
 <div class="viewcode-block" id="Video">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Video</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stateful video reader that keeps the decoder open across operations.</span>
+<span class="w">    </span><span class="sd">"""Stateful video reader that keeps the decoder open across operations.</span>
 
 <span class="sd">    Wraps torchcodec.VideoDecoder with a persistent handle for efficient</span>
 <span class="sd">    batch-wise iteration over long videos without reopening the file.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        path: Path to the video file.</span>
-<span class="sd">        device: Device for decoded tensors (e.g., &quot;cpu&quot;, &quot;cuda:0&quot;).</span>
+<span class="sd">        device: Device for decoded tensors (e.g., "cpu", "cuda:0").</span>
 <span class="sd">            Defaults to None (CPU).</span>
 
 <span class="sd">    Note:</span>
@@ -1296,21 +1295,21 @@
 <span class="sd">        MPS decoding is not supported by torchcodec.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; with Video(&quot;long_video.mp4&quot;) as v:</span>
-<span class="sd">        ...     print(f&quot;{v.num_frames} frames at {v.fps} fps&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; with Video("long_video.mp4") as v:</span>
+<span class="sd">        ...     print(f"{v.num_frames} frames at {v.fps} fps")</span>
 <span class="sd">        ...     for batch in v.iter_batches(batch_size=64):</span>
 <span class="sd">        ...         process(batch)  # batch is (T, C, H, W)</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">_decoder</span><span class="p">:</span> <span class="s2">&quot;VideoDecoder&quot;</span>
+    <span class="n">_decoder</span><span class="p">:</span> <span class="s2">"VideoDecoder"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">torchcodec.decoders</span><span class="w"> </span><span class="kn">import</span> <span class="n">VideoDecoder</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Video file not found: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Video file not found: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">device</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span> <span class="o">=</span> <span class="n">VideoDecoder</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
@@ -1318,33 +1317,33 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">fps</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Average frames per second.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Average frames per second."""</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">average_fps</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">num_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total number of frames.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Total number of frames."""</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">num_frames</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Frame height in pixels.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Frame height in pixels."""</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">height</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Frame width in pixels.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Frame width in pixels."""</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">width</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">duration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Video duration in seconds.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Video duration in seconds."""</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">num_frames</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">average_fps</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Video.get_batch">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video.get_batch">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stop</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode a range of frames.</span>
+<span class="w">        </span><span class="sd">"""Decode a range of frames.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            start: Start frame index (inclusive).</span>
@@ -1354,14 +1353,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Tensor of shape (T, C, H, W).</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">get_frames_in_range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">data</span></div>
 
 
 <div class="viewcode-block" id="Video.get_frames_at">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video.get_frames_at">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_frames_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode frames at specific indices.</span>
+<span class="w">        </span><span class="sd">"""Decode frames at specific indices.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            indices: List of frame indices to decode.</span>
@@ -1369,14 +1368,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Tensor of shape (T, C, H, W).</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">get_frames_at</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span><span class="o">.</span><span class="n">data</span></div>
 
 
 <div class="viewcode-block" id="Video.iter_batches">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video.iter_batches">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">iter_batches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over all frames in fixed-size batches.</span>
+<span class="w">        </span><span class="sd">"""Iterate over all frames in fixed-size batches.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            batch_size: Number of frames per batch.</span>
@@ -1384,7 +1383,7 @@
 <span class="sd">        Yields:</span>
 <span class="sd">            Tensor of shape (T, C, H, W) where T &lt;= batch_size.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_frames</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
             <span class="n">stop</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_frames</span><span class="p">)</span>
             <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_batch</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span></div>
@@ -1393,19 +1392,19 @@
 <div class="viewcode-block" id="Video.__len__">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video.__len__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return total number of frames.</span>
+<span class="w">        </span><span class="sd">"""Return total number of frames.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Number of frames in video.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_frames</span></div>
 
 
 <div class="viewcode-block" id="Video.__getitem__">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video.__getitem__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">slice</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get frame(s) by index or slice.</span>
+<span class="w">        </span><span class="sd">"""Get frame(s) by index or slice.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            key: Frame index (int) or slice of frame indices.</span>
@@ -1417,13 +1416,13 @@
 <span class="sd">            IndexError: If frame index is out of bounds.</span>
 <span class="sd">            TypeError: If key is not int or slice.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">key</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_frames</span>
             <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_frames</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Frame index </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> out of range for video with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_frames</span><span class="si">}</span><span class="s2"> frames&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Frame index </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> out of range for video with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_frames</span><span class="si">}</span><span class="s2"> frames"</span>
                 <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">get_frame_at</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">data</span>
 
@@ -1436,57 +1435,57 @@
             <span class="n">indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">get_frames_at</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span><span class="o">.</span><span class="n">data</span>
 
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid key type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. Expected int or slice.&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid key type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. Expected int or slice."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Video.__repr__">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video.__repr__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return string representation of video.</span>
+<span class="w">        </span><span class="sd">"""Return string representation of video.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            String with video metadata.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Video(path=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;frames=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_frames</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;fps=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fps</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;duration=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s)&quot;</span>
+            <span class="sa">f</span><span class="s2">"Video(path=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"frames=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_frames</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"fps=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fps</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"duration=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s)"</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Video.__enter__">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video.__enter__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Video&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enter context manager.</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Video"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Enter context manager.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Video instance.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="Video.__exit__">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video.__exit__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Exit context manager.</span>
+<span class="w">        </span><span class="sd">"""Exit context manager.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            exc_type: Exception type if an error occurred.</span>
 <span class="sd">            exc_val: Exception value if an error occurred.</span>
 <span class="sd">            exc_tb: Exception traceback if an error occurred.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Video.close">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.Video.close">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Release the decoder.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Release the decoder."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># ty: ignore[invalid-assignment]</span></div>
 </div>
 
@@ -1497,23 +1496,23 @@
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
 <span class="n">_VIDEO_CACHE_MAXSIZE</span> <span class="o">=</span> <span class="mi">4</span>
-<span class="sd">&quot;&quot;&quot;Maximum number of open decoder handles kept alive by :func:`open_video`.</span>
+<span class="sd">"""Maximum number of open decoder handles kept alive by :func:`open_video`.</span>
 
 <span class="sd">Each handle holds one file descriptor plus demuxer/codec state, so this stays far</span>
 <span class="sd">below any file-descriptor limit while comfortably covering the realistic access</span>
 <span class="sd">patterns (one video at a time; a handful for multi-source tracks).</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
-<span class="n">_video_cache</span><span class="p">:</span> <span class="s2">&quot;OrderedDict[tuple[Path, str | None], tuple[Video, threading.RLock]]&quot;</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
-<span class="sd">&quot;&quot;&quot;LRU cache of open :class:`Video` handles, keyed by ``(resolved_path, device)``.</span>
+<span class="n">_video_cache</span><span class="p">:</span> <span class="s2">"OrderedDict[tuple[Path, str | None], tuple[Video, threading.RLock]]"</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+<span class="sd">"""LRU cache of open :class:`Video` handles, keyed by ``(resolved_path, device)``.</span>
 
 <span class="sd">Each handle is paired with a **reentrant** lock.  A plain lock would deadlock a single</span>
 <span class="sd">thread that borrows the same video twice at once — e.g. a caller reading a frame inside</span>
 <span class="sd">its own ``open_video`` block — which is a legitimate thing to write and should not hang.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="n">_video_cache_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
-<span class="sd">&quot;&quot;&quot;Guards :data:`_video_cache` itself (not the decoders inside it).&quot;&quot;&quot;</span>
+<span class="sd">"""Guards :data:`_video_cache` itself (not the decoders inside it)."""</span>
 
 
 <div class="viewcode-block" id="open_video">
@@ -1522,8 +1521,8 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">open_video</span><span class="p">(</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="s2">&quot;Video&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Borrow a cached, shared :class:`Video` handle for the duration of a block.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="s2">"Video"</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Borrow a cached, shared :class:`Video` handle for the duration of a block.</span>
 
 <span class="sd">    Constructing a :class:`Video` builds a torchcodec decoder, which parses the</span>
 <span class="sd">    container and costs orders of magnitude more than the seek it precedes.  Code</span>
@@ -1533,7 +1532,7 @@
 
 <span class="sd">    The handle is **shared and borrowed, not owned**.  A decoder carries a seek</span>
 <span class="sd">    position, so two threads reading one decoder would interleave seeks and return</span>
-<span class="sd">    each other&#39;s frames.  This context manager holds the handle&#39;s lock for the whole</span>
+<span class="sd">    each other's frames.  This context manager holds the handle's lock for the whole</span>
 <span class="sd">    block, which makes that impossible to get wrong — do not stash the yielded</span>
 <span class="sd">    :class:`Video` and use it after the block, and do not :meth:`Video.close` it.</span>
 
@@ -1547,16 +1546,16 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        path: Path to the video file.</span>
-<span class="sd">        device: Decoder device (e.g. ``&quot;cuda:0&quot;``).  ``None`` decodes on CPU.</span>
+<span class="sd">        device: Decoder device (e.g. ``"cuda:0"``).  ``None`` decodes on CPU.</span>
 
 <span class="sd">    Yields:</span>
 <span class="sd">        The shared :class:`Video`, exclusively held for the duration of the block.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; with open_video(&quot;clip.mp4&quot;) as video:</span>
+<span class="sd">        &gt;&gt;&gt; with open_video("clip.mp4") as video:</span>
 <span class="sd">        ...     frame = video.get_frames_at([42])[0]</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">(),</span> <span class="nb">str</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="k">with</span> <span class="n">_video_cache_lock</span><span class="p">:</span>
@@ -1567,7 +1566,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">_video_cache</span><span class="o">.</span><span class="n">move_to_end</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-        <span class="c1"># Evicting only drops the cache&#39;s reference. The decoder is closed by garbage</span>
+        <span class="c1"># Evicting only drops the cache's reference. The decoder is closed by garbage</span>
         <span class="c1"># collection once the last borrower is done with it, so evicting a handle that</span>
         <span class="c1"># another caller is still holding is harmless -- closing it here would not be.</span>
         <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">_video_cache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_VIDEO_CACHE_MAXSIZE</span><span class="p">:</span>
@@ -1582,12 +1581,12 @@
 <div class="viewcode-block" id="clear_video_cache">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.clear_video_cache">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">clear_video_cache</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Drop every handle held by :func:`open_video`.</span>
+<span class="w">    </span><span class="sd">"""Drop every handle held by :func:`open_video`.</span>
 
 <span class="sd">    Each decoder is closed once the last borrower releases it, freeing its file</span>
 <span class="sd">    descriptor.  Safe to call at any time, including while another thread holds a</span>
 <span class="sd">    handle; subsequent :func:`open_video` calls simply reopen what they need.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">with</span> <span class="n">_video_cache_lock</span><span class="p">:</span>
         <span class="n">_video_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
 

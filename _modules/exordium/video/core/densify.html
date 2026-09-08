@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.video.core.densify</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Scatter sparse per-detection features onto a dense, regular time grid.</span>
+<span></span><span class="sd">"""Scatter sparse per-detection features onto a dense, regular time grid.</span>
 
 <span class="sd">Feature extractors return one vector per *detection*, not per *frame*: a face</span>
 <span class="sd">track covers only the frames where the subject was actually detected, so</span>
@@ -338,13 +337,13 @@
 <span class="sd">The mask is the load-bearing part. Zero-filled timesteps are *not* observations</span>
 <span class="sd">of a zero-valued face; they are absences, and a model must be told to ignore</span>
 <span class="sd">them (attention masking, packed sequences, masked pooling) rather than fitting</span>
-<span class="sd">them. A dense tensor without its mask silently teaches the model that &quot;no face</span>
-<span class="sd">detected&quot; is a meaningful feature value.</span>
+<span class="sd">them. A dense tensor without its mask silently teaches the model that "no face</span>
+<span class="sd">detected" is a meaningful feature value.</span>
 
 <span class="sd">The output contract — ``frame_ids`` / ``features`` / ``mask`` — is deliberately</span>
 <span class="sd">identical to the one</span>
 <span class="sd">:meth:`~exordium.video.deep.marlin.MarlinWrapper.track_to_feature` already</span>
-<span class="sd">produces, so densified frame-wise features and MARLIN&#39;s window-wise features</span>
+<span class="sd">produces, so densified frame-wise features and MARLIN's window-wise features</span>
 <span class="sd">are interchangeable downstream.</span>
 
 <span class="sd">.. note::</span>
@@ -359,13 +358,13 @@
 <span class="sd">   a 16-frame **window**, not a frame, so its ``frame_ids`` are window start</span>
 <span class="sd">   indices (``0, 16, 32, ...``). It already emits this exact dense contract</span>
 <span class="sd">   natively, zero-filling empty windows. Densifying it would require answering</span>
-<span class="sd">   &quot;which frame is window 2?&quot;, which has no honest answer — aligning MARLIN to</span>
+<span class="sd">   "which frame is window 2?", which has no honest answer — aligning MARLIN to</span>
 <span class="sd">   a frame grid means *upsampling* its window features, a different operation.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;densify&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"densify"</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="densify">
@@ -378,7 +377,7 @@
     <span class="n">fill</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scatter sparse per-detection features onto a dense frame grid.</span>
+<span class="w">    </span><span class="sd">"""Scatter sparse per-detection features onto a dense frame grid.</span>
 
 <span class="sd">    Builds the half-open frame range ``[start_frame_id, end_frame_id)``, places</span>
 <span class="sd">    each feature at its own frame, and fills the rest with ``fill``.</span>
@@ -409,12 +408,12 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict with, where ``T = end_frame_id - start_frame_id``:</span>
 
-<span class="sd">        * ``&quot;frame_ids&quot;`` — ``(T,)`` long tensor, ``start_frame_id`` to</span>
+<span class="sd">        * ``"frame_ids"`` — ``(T,)`` long tensor, ``start_frame_id`` to</span>
 <span class="sd">          ``end_frame_id - 1``. Absolute frame indices, not offsets into the</span>
 <span class="sd">          window.</span>
-<span class="sd">        * ``&quot;features&quot;`` — ``(T, D)`` tensor, ``fill`` where no detection</span>
+<span class="sd">        * ``"features"`` — ``(T, D)`` tensor, ``fill`` where no detection</span>
 <span class="sd">          exists. Same dtype as ``features``.</span>
-<span class="sd">        * ``&quot;mask&quot;`` — ``(T,)`` bool tensor. ``True`` where a real detection</span>
+<span class="sd">        * ``"mask"`` — ``(T,)`` bool tensor. ``True`` where a real detection</span>
 <span class="sd">          landed on that frame, ``False`` where the value is ``fill``.</span>
 
 <span class="sd">    Raises:</span>
@@ -429,27 +428,27 @@
 
 <span class="sd">        sparse = model.track_to_feature(track)          # (N, D), N &lt;= num_frames</span>
 <span class="sd">        dense = densify(</span>
-<span class="sd">            sparse[&quot;frame_ids&quot;],</span>
-<span class="sd">            sparse[&quot;features&quot;],</span>
+<span class="sd">            sparse["frame_ids"],</span>
+<span class="sd">            sparse["features"],</span>
 <span class="sd">            end_frame_id=num_frames,                    # full video</span>
 <span class="sd">        )</span>
-<span class="sd">        dense[&quot;features&quot;]  # (num_frames, D), zeros where no face was detected</span>
-<span class="sd">        dense[&quot;mask&quot;]      # (num_frames,) bool — feed this to your temporal model</span>
+<span class="sd">        dense["features"]  # (num_frames, D), zeros where no face was detected</span>
+<span class="sd">        dense["mask"]      # (num_frames,) bool — feed this to your temporal model</span>
 
 <span class="sd">        # A 10-second snippet at 25 fps, without materialising the whole video:</span>
 <span class="sd">        window = densify(</span>
-<span class="sd">            sparse[&quot;frame_ids&quot;], sparse[&quot;features&quot;],</span>
+<span class="sd">            sparse["frame_ids"], sparse["features"],</span>
 <span class="sd">            start_frame_id=100, end_frame_id=350,</span>
 <span class="sd">        )</span>
-<span class="sd">        window[&quot;features&quot;].shape  # (250, D)</span>
+<span class="sd">        window["features"].shape  # (250, D)</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">features</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;features must be 2-D (N, D), got shape </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"features must be 2-D (N, D), got shape </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">frame_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;frame_ids and features disagree on length: &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">frame_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> ids vs </span><span class="si">{</span><span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> feature rows.&quot;</span>
+            <span class="sa">f</span><span class="s2">"frame_ids and features disagree on length: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">frame_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> ids vs </span><span class="si">{</span><span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> feature rows."</span>
         <span class="p">)</span>
 
     <span class="n">feature_dim</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -461,7 +460,7 @@
 
     <span class="k">if</span> <span class="n">end_frame_id</span> <span class="o">&lt;</span> <span class="n">start_frame_id</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;end_frame_id (</span><span class="si">{</span><span class="n">end_frame_id</span><span class="si">}</span><span class="s2">) must be &gt;= start_frame_id (</span><span class="si">{</span><span class="n">start_frame_id</span><span class="si">}</span><span class="s2">).&quot;</span>
+            <span class="sa">f</span><span class="s2">"end_frame_id (</span><span class="si">{</span><span class="n">end_frame_id</span><span class="si">}</span><span class="s2">) must be &gt;= start_frame_id (</span><span class="si">{</span><span class="n">start_frame_id</span><span class="si">}</span><span class="s2">)."</span>
         <span class="p">)</span>
 
     <span class="n">num_timesteps</span> <span class="o">=</span> <span class="n">end_frame_id</span> <span class="o">-</span> <span class="n">start_frame_id</span>
@@ -469,8 +468,8 @@
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fill</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">fill</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="n">feature_dim</span><span class="p">,):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;fill tensor must have shape (</span><span class="si">{</span><span class="n">feature_dim</span><span class="si">}</span><span class="s2">,) to match the feature &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;dimension, got </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">fill</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"fill tensor must have shape (</span><span class="si">{</span><span class="n">feature_dim</span><span class="si">}</span><span class="s2">,) to match the feature "</span>
+                <span class="sa">f</span><span class="s2">"dimension, got </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">fill</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
         <span class="n">dense</span> <span class="o">=</span> <span class="n">fill</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">features</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">features</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span>
             <span class="n">num_timesteps</span><span class="p">,</span> <span class="n">feature_dim</span>
@@ -490,8 +489,8 @@
     <span class="k">if</span> <span class="n">strict</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">in_range</span><span class="o">.</span><span class="n">all</span><span class="p">()):</span>
         <span class="n">out_of_range</span> <span class="o">=</span> <span class="n">frame_ids</span><span class="p">[</span><span class="o">~</span><span class="n">in_range</span><span class="p">]</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">out_of_range</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="si">}</span><span class="s2"> frame id(s) outside &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">start_frame_id</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">end_frame_id</span><span class="si">}</span><span class="s2">), e.g. </span><span class="si">{</span><span class="n">out_of_range</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">out_of_range</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="si">}</span><span class="s2"> frame id(s) outside "</span>
+            <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">start_frame_id</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">end_frame_id</span><span class="si">}</span><span class="s2">), e.g. </span><span class="si">{</span><span class="n">out_of_range</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">."</span>
         <span class="p">)</span>
 
     <span class="c1"># Absolute frame ids -&gt; offsets into the window.</span>
@@ -500,11 +499,11 @@
     <span class="n">mask</span><span class="p">[</span><span class="n">positions</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;frame_ids&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+        <span class="s2">"frame_ids"</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
             <span class="n">start_frame_id</span><span class="p">,</span> <span class="n">end_frame_id</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">features</span><span class="o">.</span><span class="n">device</span>
         <span class="p">),</span>
-        <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">dense</span><span class="p">,</span>
-        <span class="s2">&quot;mask&quot;</span><span class="p">:</span> <span class="n">mask</span><span class="p">,</span>
+        <span class="s2">"features"</span><span class="p">:</span> <span class="n">dense</span><span class="p">,</span>
+        <span class="s2">"mask"</span><span class="p">:</span> <span class="n">mask</span><span class="p">,</span>
     <span class="p">}</span></div>
 
 </pre></div>

@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.utils.decorator</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Decorator utilities for caching and timing.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Decorator utilities for caching and timing."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
@@ -335,13 +334,13 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;Module-level logger.&quot;&quot;&quot;</span>
+<span class="sd">"""Module-level logger."""</span>
 
 
 <div class="viewcode-block" id="timer">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.timer">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">timer</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that prints the execution time of a function.</span>
+<span class="w">    </span><span class="sd">"""Decorator that prints the execution time of a function.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        func (Callable[..., Any]): The function to time.</span>
@@ -350,13 +349,13 @@
 <span class="sd">        Callable[..., Any]: Wrapped function that prints elapsed time on each</span>
 <span class="sd">            call and returns the original return value.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">before</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Function took: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">before</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Function took: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">before</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2"> seconds."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="k">return</span> <span class="n">wrapper</span></div>
@@ -366,13 +365,13 @@
 <div class="viewcode-block" id="Loader">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.Loader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Loader</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for serialization helpers.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Abstract base class for serialization helpers."""</span>
 
 <div class="viewcode-block" id="Loader.load">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.Loader.load">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads and returns data from the given path.</span>
+<span class="w">        </span><span class="sd">"""Loads and returns data from the given path.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path (str | Path): File path to load from.</span>
@@ -380,20 +379,20 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Any: Deserialized data.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="Loader.save">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.Loader.save">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serializes data and writes it to the given path.</span>
+<span class="w">        </span><span class="sd">"""Serializes data and writes it to the given path.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: Data to serialize.</span>
 <span class="sd">            path (str | Path): Destination file path.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 </div>
 
 
@@ -401,12 +400,12 @@
 <div class="viewcode-block" id="PickleLoader">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.PickleLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PickleLoader</span><span class="p">(</span><span class="n">Loader</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loader implementation using Python&#39;s pickle serialization format.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Loader implementation using Python's pickle serialization format."""</span>
 
 <div class="viewcode-block" id="PickleLoader.load">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.PickleLoader.load">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads a pickled object from the given file.</span>
+<span class="w">        </span><span class="sd">"""Loads a pickled object from the given file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path (str | Path): Path to the pickle file.</span>
@@ -414,8 +413,8 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Any: Deserialized Python object.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">val</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">val</span></div>
 
@@ -423,15 +422,15 @@
 <div class="viewcode-block" id="PickleLoader.save">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.PickleLoader.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves a Python object as a pickle file.</span>
+<span class="w">        </span><span class="sd">"""Saves a Python object as a pickle file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: Object to serialize.</span>
 <span class="sd">            path (str | Path): Destination file path.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
 </div>
 
@@ -440,12 +439,12 @@
 <div class="viewcode-block" id="FrameDetLoader">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.FrameDetLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FrameDetLoader</span><span class="p">(</span><span class="n">Loader</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loader implementation for FrameDetections objects.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Loader implementation for FrameDetections objects."""</span>
 
 <div class="viewcode-block" id="FrameDetLoader.load">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.FrameDetLoader.load">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads a FrameDetections object from the given file.</span>
+<span class="w">        </span><span class="sd">"""Loads a FrameDetections object from the given file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path (str | Path): Path to the serialized FrameDetections file.</span>
@@ -453,7 +452,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            FrameDetections: Loaded detections for a single frame.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.detection</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrameDetections</span>  <span class="c1"># noqa: PLC0415</span>
 
         <span class="k">return</span> <span class="n">FrameDetections</span><span class="p">()</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
@@ -462,13 +461,13 @@
 <div class="viewcode-block" id="FrameDetLoader.save">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.FrameDetLoader.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves a FrameDetections object to the given file.</span>
+<span class="w">        </span><span class="sd">"""Saves a FrameDetections object to the given file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: FrameDetections instance to serialize.</span>
 <span class="sd">            path (str | Path): Destination file path.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">data</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
 </div>
 
@@ -477,12 +476,12 @@
 <div class="viewcode-block" id="VideoDetLoader">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.VideoDetLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">VideoDetLoader</span><span class="p">(</span><span class="n">Loader</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loader implementation for VideoDetections objects.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Loader implementation for VideoDetections objects."""</span>
 
 <div class="viewcode-block" id="VideoDetLoader.load">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.VideoDetLoader.load">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads a VideoDetections object from the given file.</span>
+<span class="w">        </span><span class="sd">"""Loads a VideoDetections object from the given file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path (str | Path): Path to the serialized VideoDetections file.</span>
@@ -490,7 +489,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            VideoDetections: Loaded detections for a video.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.detection</span><span class="w"> </span><span class="kn">import</span> <span class="n">VideoDetections</span>  <span class="c1"># noqa: PLC0415</span>
 
         <span class="k">return</span> <span class="n">VideoDetections</span><span class="p">()</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
@@ -499,13 +498,13 @@
 <div class="viewcode-block" id="VideoDetLoader.save">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.VideoDetLoader.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves a VideoDetections object to the given file.</span>
+<span class="w">        </span><span class="sd">"""Saves a VideoDetections object to the given file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: VideoDetections instance to serialize.</span>
 <span class="sd">            path (str | Path): Destination file path.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">data</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
 </div>
 
@@ -514,12 +513,12 @@
 <div class="viewcode-block" id="TrackLoader">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.TrackLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TrackLoader</span><span class="p">(</span><span class="n">Loader</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loader implementation for Track objects.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Loader implementation for Track objects."""</span>
 
 <div class="viewcode-block" id="TrackLoader.load">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.TrackLoader.load">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads a Track object from the given file.</span>
+<span class="w">        </span><span class="sd">"""Loads a Track object from the given file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path (str | Path): Path to the serialized Track file.</span>
@@ -527,7 +526,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Track: Loaded track.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.detection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Track</span>  <span class="c1"># noqa: PLC0415</span>
 
         <span class="k">return</span> <span class="n">Track</span><span class="p">()</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
@@ -536,13 +535,13 @@
 <div class="viewcode-block" id="TrackLoader.save">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.TrackLoader.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves a Track object to the given file.</span>
+<span class="w">        </span><span class="sd">"""Saves a Track object to the given file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: Track instance to serialize.</span>
 <span class="sd">            path (str | Path): Destination file path.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">data</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
 </div>
 
@@ -551,12 +550,12 @@
 <div class="viewcode-block" id="NpyLoader">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.NpyLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">NpyLoader</span><span class="p">(</span><span class="n">Loader</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loader implementation for NumPy .npy files.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Loader implementation for NumPy .npy files."""</span>
 
 <div class="viewcode-block" id="NpyLoader.load">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.NpyLoader.load">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads a NumPy array from the given .npy file.</span>
+<span class="w">        </span><span class="sd">"""Loads a NumPy array from the given .npy file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path (str | Path): Path to the .npy file.</span>
@@ -564,20 +563,20 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            np.ndarray: Loaded array.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="NpyLoader.save">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.NpyLoader.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves a NumPy array to the given .npy file.</span>
+<span class="w">        </span><span class="sd">"""Saves a NumPy array to the given .npy file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: Array-like data to save.</span>
 <span class="sd">            path (str | Path): Destination file path.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
 </div>
 
@@ -586,11 +585,11 @@
 <div class="viewcode-block" id="SafetensorsLoader">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.SafetensorsLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SafetensorsLoader</span><span class="p">(</span><span class="n">Loader</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loader implementation using the safetensors format for torch tensors.</span>
+<span class="w">    </span><span class="sd">"""Loader implementation using the safetensors format for torch tensors.</span>
 
 <span class="sd">    Accepts either a single ``torch.Tensor`` or a ``dict[str, torch.Tensor]``:</span>
 
-<span class="sd">    * **Single tensor** — stored under the key ``&quot;data&quot;`` and returned as a</span>
+<span class="sd">    * **Single tensor** — stored under the key ``"data"`` and returned as a</span>
 <span class="sd">      plain ``torch.Tensor`` on load, so the round-trip is transparent.</span>
 <span class="sd">    * **Dict of tensors** — stored as-is and returned as</span>
 <span class="sd">      ``dict[str, torch.Tensor]`` on load.</span>
@@ -599,14 +598,14 @@
 <span class="sd">    only the raw float bytes plus a compact JSON header — making them the</span>
 <span class="sd">    smallest and safest option for persisting feature tensors.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">_KEY</span> <span class="o">=</span> <span class="s2">&quot;data&quot;</span>
+    <span class="n">_KEY</span> <span class="o">=</span> <span class="s2">"data"</span>
 
 <div class="viewcode-block" id="SafetensorsLoader.load">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.SafetensorsLoader.load">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads tensor(s) from a safetensors file.</span>
+<span class="w">        </span><span class="sd">"""Loads tensor(s) from a safetensors file.</span>
 
 <span class="sd">        Returns a plain ``torch.Tensor`` if the file was saved from a single</span>
 <span class="sd">        tensor, or a ``dict[str, torch.Tensor]`` if saved from a dict.</span>
@@ -617,7 +616,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            torch.Tensor or dict[str, torch.Tensor].</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">safetensors.torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_file</span>
 
         <span class="n">tensors</span> <span class="o">=</span> <span class="n">load_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
@@ -629,7 +628,7 @@
 <div class="viewcode-block" id="SafetensorsLoader.save">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.SafetensorsLoader.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves tensor(s) to a safetensors file.</span>
+<span class="w">        </span><span class="sd">"""Saves tensor(s) to a safetensors file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: A single ``torch.Tensor`` or a ``dict[str, torch.Tensor]``.</span>
@@ -639,7 +638,7 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            TypeError: If ``data`` is not a tensor or dict of tensors.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">safetensors.torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_file</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
@@ -648,8 +647,8 @@
             <span class="n">tensor_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;SafetensorsLoader expects a torch.Tensor or dict[str, torch.Tensor], &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">"SafetensorsLoader expects a torch.Tensor or dict[str, torch.Tensor], "</span>
+                <span class="sa">f</span><span class="s2">"got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">save_file</span><span class="p">(</span><span class="n">tensor_dict</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span></div>
@@ -660,30 +659,30 @@
 <div class="viewcode-block" id="LoaderFactory">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.LoaderFactory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LoaderFactory</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Factory that maps file format strings to Loader instances.</span>
+<span class="w">    </span><span class="sd">"""Factory that maps file format strings to Loader instances.</span>
 
-<span class="sd">    Supported formats: &quot;fdet&quot;, &quot;vdet&quot;, &quot;track&quot;, &quot;npy&quot;, &quot;pkl&quot;, &quot;st&quot;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    Supported formats: "fdet", "vdet", "track", "npy", "pkl", "st".</span>
+<span class="sd">    """</span>
 
     <span class="n">LOADERS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">[</span><span class="n">Loader</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;fdet&quot;</span><span class="p">:</span> <span class="n">FrameDetLoader</span><span class="p">,</span>
-        <span class="s2">&quot;vdet&quot;</span><span class="p">:</span> <span class="n">VideoDetLoader</span><span class="p">,</span>
-        <span class="s2">&quot;track&quot;</span><span class="p">:</span> <span class="n">TrackLoader</span><span class="p">,</span>
-        <span class="s2">&quot;npy&quot;</span><span class="p">:</span> <span class="n">NpyLoader</span><span class="p">,</span>
-        <span class="s2">&quot;pkl&quot;</span><span class="p">:</span> <span class="n">PickleLoader</span><span class="p">,</span>
-        <span class="s2">&quot;st&quot;</span><span class="p">:</span> <span class="n">SafetensorsLoader</span><span class="p">,</span>
+        <span class="s2">"fdet"</span><span class="p">:</span> <span class="n">FrameDetLoader</span><span class="p">,</span>
+        <span class="s2">"vdet"</span><span class="p">:</span> <span class="n">VideoDetLoader</span><span class="p">,</span>
+        <span class="s2">"track"</span><span class="p">:</span> <span class="n">TrackLoader</span><span class="p">,</span>
+        <span class="s2">"npy"</span><span class="p">:</span> <span class="n">NpyLoader</span><span class="p">,</span>
+        <span class="s2">"pkl"</span><span class="p">:</span> <span class="n">PickleLoader</span><span class="p">,</span>
+        <span class="s2">"st"</span><span class="p">:</span> <span class="n">SafetensorsLoader</span><span class="p">,</span>
     <span class="p">}</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Registry mapping format keys to their :class:`Loader` implementations.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Registry mapping format keys to their :class:`Loader` implementations."""</span>
 
 <div class="viewcode-block" id="LoaderFactory.get">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.LoaderFactory.get">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Loader</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a Loader instance for the specified file format.</span>
+<span class="w">        </span><span class="sd">"""Returns a Loader instance for the specified file format.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            format (str): File format key. One of &quot;fdet&quot;, &quot;vdet&quot;, &quot;track&quot;,</span>
-<span class="sd">                &quot;npy&quot;, or &quot;pkl&quot;.</span>
+<span class="sd">            format (str): File format key. One of "fdet", "vdet", "track",</span>
+<span class="sd">                "npy", or "pkl".</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Loader: Loader instance for the given format.</span>
@@ -691,10 +690,10 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: If format is not a recognised key.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">loader_class</span> <span class="o">=</span> <span class="n">LoaderFactory</span><span class="o">.</span><span class="n">LOADERS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">format</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">loader_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Format </span><span class="si">{</span><span class="nb">format</span><span class="si">}</span><span class="s2"> is not supported.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Format </span><span class="si">{</span><span class="nb">format</span><span class="si">}</span><span class="s2"> is not supported."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">loader_class</span><span class="p">()</span></div>
 </div>
 
@@ -703,7 +702,7 @@
 <div class="viewcode-block" id="load_or_create">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/decorator/index.html#exordium.utils.decorator.load_or_create">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_or_create</span><span class="p">(</span><span class="nb">format</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator factory that caches function results to disk.</span>
+<span class="w">    </span><span class="sd">"""Decorator factory that caches function results to disk.</span>
 
 <span class="sd">    If the wrapped function is called with an ``output_path`` keyword argument</span>
 <span class="sd">    and the file already exists (and ``overwrite`` is False), the cached value</span>
@@ -712,20 +711,20 @@
 <span class="sd">    is saved.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        format (str): File format key accepted by LoaderFactory (e.g. &quot;st&quot;,</span>
-<span class="sd">            &quot;npy&quot;, &quot;pkl&quot;, &quot;fdet&quot;, &quot;vdet&quot;, &quot;track&quot;).</span>
+<span class="sd">        format (str): File format key accepted by LoaderFactory (e.g. "st",</span>
+<span class="sd">            "npy", "pkl", "fdet", "vdet", "track").</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Callable: A decorator that wraps a function with load-or-create</span>
 <span class="sd">            caching behaviour.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">loader</span> <span class="o">=</span> <span class="n">LoaderFactory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">format</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-            <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_path&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"output_path"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"overwrite"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="p">(</span>
                 <span class="n">output_path</span> <span class="ow">is</span> <span class="kc">None</span>
@@ -734,11 +733,11 @@
             <span class="p">):</span>
                 <span class="n">val</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">output_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Save to </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Save to </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
                     <span class="n">Path</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                     <span class="n">loader</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Load from </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Load from </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
                 <span class="n">val</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">val</span>

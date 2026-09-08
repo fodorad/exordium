@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.video.deep.dinov2</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;DINOv2 vision encoder wrapper using HuggingFace Transformers.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""DINOv2 vision encoder wrapper using HuggingFace Transformers."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchvision.transforms.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">TF</span>
@@ -330,43 +329,43 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.deep.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_IMAGENET_MEAN</span><span class="p">,</span> <span class="n">_IMAGENET_STD</span><span class="p">,</span> <span class="n">VisualModelWrapper</span>
 
 <span class="n">_MODEL_IDS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;small&quot;</span><span class="p">:</span> <span class="s2">&quot;facebook/dinov2-small&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;base&quot;</span><span class="p">:</span> <span class="s2">&quot;facebook/dinov2-base&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;large&quot;</span><span class="p">:</span> <span class="s2">&quot;facebook/dinov2-large&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;giant&quot;</span><span class="p">:</span> <span class="s2">&quot;facebook/dinov2-giant&quot;</span><span class="p">,</span>
+    <span class="s2">"small"</span><span class="p">:</span> <span class="s2">"facebook/dinov2-small"</span><span class="p">,</span>
+    <span class="s2">"base"</span><span class="p">:</span> <span class="s2">"facebook/dinov2-base"</span><span class="p">,</span>
+    <span class="s2">"large"</span><span class="p">:</span> <span class="s2">"facebook/dinov2-large"</span><span class="p">,</span>
+    <span class="s2">"giant"</span><span class="p">:</span> <span class="s2">"facebook/dinov2-giant"</span><span class="p">,</span>
 <span class="p">}</span>
-<span class="sd">&quot;&quot;&quot;Mapping of DINOv2 variant names to HuggingFace model IDs.&quot;&quot;&quot;</span>
+<span class="sd">"""Mapping of DINOv2 variant names to HuggingFace model IDs."""</span>
 
 <span class="n">_FEATURE_DIMS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;small&quot;</span><span class="p">:</span> <span class="mi">384</span><span class="p">,</span>
-    <span class="s2">&quot;base&quot;</span><span class="p">:</span> <span class="mi">768</span><span class="p">,</span>
-    <span class="s2">&quot;large&quot;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
-    <span class="s2">&quot;giant&quot;</span><span class="p">:</span> <span class="mi">1536</span><span class="p">,</span>
+    <span class="s2">"small"</span><span class="p">:</span> <span class="mi">384</span><span class="p">,</span>
+    <span class="s2">"base"</span><span class="p">:</span> <span class="mi">768</span><span class="p">,</span>
+    <span class="s2">"large"</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
+    <span class="s2">"giant"</span><span class="p">:</span> <span class="mi">1536</span><span class="p">,</span>
 <span class="p">}</span>
-<span class="sd">&quot;&quot;&quot;Output embedding dimension per DINOv2 variant.&quot;&quot;&quot;</span>
+<span class="sd">"""Output embedding dimension per DINOv2 variant."""</span>
 
-<span class="n">_DEFAULT_DINOV2_MODEL</span> <span class="o">=</span> <span class="s2">&quot;base&quot;</span>
-<span class="sd">&quot;&quot;&quot;Default DINOv2 variant (ViT-B/14, 768-d).&quot;&quot;&quot;</span>
+<span class="n">_DEFAULT_DINOV2_MODEL</span> <span class="o">=</span> <span class="s2">"base"</span>
+<span class="sd">"""Default DINOv2 variant (ViT-B/14, 768-d)."""</span>
 
 
 <div class="viewcode-block" id="DINOv2Wrapper">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/deep/dinov2/index.html#exordium.video.deep.dinov2.DINOv2Wrapper">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DINOv2Wrapper</span><span class="p">(</span><span class="n">VisualModelWrapper</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for DINOv2 frame-wise feature extraction via HuggingFace Transformers.</span>
+<span class="w">    </span><span class="sd">"""Wrapper for DINOv2 frame-wise feature extraction via HuggingFace Transformers.</span>
 
 <span class="sd">    Loads a DINOv2 vision encoder and extracts L2-normalised CLS-token embeddings.</span>
 <span class="sd">    DINOv2 is a self-supervised ViT trained without language supervision, which</span>
 <span class="sd">    makes it particularly effective for dense visual tasks such as emotion</span>
 <span class="sd">    recognition from faces and body pose.</span>
 
-<span class="sd">    The default variant is ``&quot;base&quot;`` (ViT-B/14, 768-d, ~86M parameters),</span>
+<span class="sd">    The default variant is ``"base"`` (ViT-B/14, 768-d, ~86M parameters),</span>
 <span class="sd">    offering approximately 5–7× faster inference than CLIP ViT-H/14 at</span>
 <span class="sd">    competitive representation quality.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        model_name: DINOv2 variant — ``&quot;small&quot;`` (384-d), ``&quot;base&quot;`` (768-d),</span>
-<span class="sd">            ``&quot;large&quot;`` (1024-d), or ``&quot;giant&quot;`` (1536-d).</span>
-<span class="sd">            Defaults to ``&quot;base&quot;``.</span>
+<span class="sd">        model_name: DINOv2 variant — ``"small"`` (384-d), ``"base"`` (768-d),</span>
+<span class="sd">            ``"large"`` (1024-d), or ``"giant"`` (1536-d).</span>
+<span class="sd">            Defaults to ``"base"``.</span>
 <span class="sd">        device_id: GPU device index. ``None`` or negative uses CPU.</span>
 
 <span class="sd">    Raises:</span>
@@ -376,11 +375,11 @@
 
 <span class="sd">        from exordium.video.deep.dinov2 import DINOv2Wrapper</span>
 
-<span class="sd">        model = DINOv2Wrapper(model_name=&quot;base&quot;, device_id=0)</span>
-<span class="sd">        result = model.video_to_feature(&quot;clip.mp4&quot;)</span>
-<span class="sd">        # result[&quot;features&quot;]: (T, 768) — one embedding per frame</span>
+<span class="sd">        model = DINOv2Wrapper(model_name="base", device_id=0)</span>
+<span class="sd">        result = model.video_to_feature("clip.mp4")</span>
+<span class="sd">        # result["features"]: (T, 768) — one embedding per frame</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -389,7 +388,7 @@
         <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">model_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_MODEL_IDS</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid model_name: </span><span class="si">{</span><span class="n">model_name</span><span class="si">!r}</span><span class="s2">. Choose from </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_MODEL_IDS</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid model_name: </span><span class="si">{</span><span class="n">model_name</span><span class="si">!r}</span><span class="s2">. Choose from </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_MODEL_IDS</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">feature_dim</span> <span class="o">=</span> <span class="n">_FEATURE_DIMS</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">build_hf_model</span><span class="p">(</span><span class="n">Dinov2Model</span><span class="p">,</span> <span class="n">_MODEL_IDS</span><span class="p">[</span><span class="n">model_name</span><span class="p">],</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">)</span>
@@ -406,7 +405,7 @@
 <div class="viewcode-block" id="DINOv2Wrapper.preprocess">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/deep/dinov2/index.html#exordium.video.deep.dinov2.DINOv2Wrapper.preprocess">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frames</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resize and normalise frames to DINOv2 input convention.</span>
+<span class="w">        </span><span class="sd">"""Resize and normalise frames to DINOv2 input convention.</span>
 
 <span class="sd">        Applies bicubic resize to 224×224 and normalises with ImageNet</span>
 <span class="sd">        mean/std as used during DINOv2 pre-training.</span>
@@ -418,7 +417,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Float tensor of shape ``(B, 3, 224, 224)`` on ``self.device``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_uint8_tensor</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">TF</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">],</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">TF</span><span class="o">.</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span><span class="p">,</span> <span class="n">antialias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
@@ -428,7 +427,7 @@
 <div class="viewcode-block" id="DINOv2Wrapper.inference">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/deep/dinov2/index.html#exordium.video.deep.dinov2.DINOv2Wrapper.inference">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;DINOv2 encoder forward pass.</span>
+<span class="w">        </span><span class="sd">"""DINOv2 encoder forward pass.</span>
 
 <span class="sd">        Runs the vision transformer and extracts the CLS token from</span>
 <span class="sd">        ``last_hidden_state[:, 0, :]``, then L2-normalises the result.</span>
@@ -440,9 +439,9 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            L2-normalised CLS-token tensor of shape ``(B, D)`` where ``D``</span>
 <span class="sd">            is the feature dimension of the selected variant (e.g. 768 for</span>
-<span class="sd">            ``&quot;base&quot;``).</span>
+<span class="sd">            ``"base"``).</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">pixel_values</span><span class="o">=</span><span class="n">tensor</span><span class="p">)</span>
         <span class="bp">cls</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">last_hidden_state</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>  <span class="c1"># (B, D) — CLS token</span>
         <span class="k">return</span> <span class="bp">cls</span> <span class="o">/</span> <span class="bp">cls</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>

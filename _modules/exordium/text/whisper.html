@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.text.whisper</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Whisper speech-to-text model wrapper.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Whisper speech-to-text model wrapper."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
@@ -345,16 +344,16 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_torch_device</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;Module-level logger.&quot;&quot;&quot;</span>
+<span class="sd">"""Module-level logger."""</span>
 
-<span class="n">_TIMESTAMP_TOKEN_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;&lt;\|[\d.]+\|&gt;&quot;</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;Matches Whisper timestamp tokens (e.g. ``&lt;|12.34|&gt;``) emitted during long-form decoding.&quot;&quot;&quot;</span>
+<span class="n">_TIMESTAMP_TOKEN_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;\|[\d.]+\|&gt;"</span><span class="p">)</span>
+<span class="sd">"""Matches Whisper timestamp tokens (e.g. ``&lt;|12.34|&gt;``) emitted during long-form decoding."""</span>
 
 
 <div class="viewcode-block" id="WhisperWrapper">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/whisper/index.html#exordium.text.whisper.WhisperWrapper">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">WhisperWrapper</span><span class="p">(</span><span class="n">StreamingMixin</span><span class="p">,</span> <span class="n">SpeechToText</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for HuggingFace Whisper speech-to-text models.</span>
+<span class="w">    </span><span class="sd">"""Wrapper for HuggingFace Whisper speech-to-text models.</span>
 
 <span class="sd">    Uses ``transformers`` for native MPS/CUDA/CPU support with optional</span>
 <span class="sd">    word-by-word streaming via :class:`~transformers.TextIteratorStreamer`.</span>
@@ -372,8 +371,8 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        model_name: HuggingFace model identifier. Recommended:</span>
-<span class="sd">            ``&quot;distil-whisper/distil-large-v3&quot;`` for quality/speed on GPU,</span>
-<span class="sd">            ``&quot;openai/whisper-large-v3-turbo&quot;`` for highest quality.</span>
+<span class="sd">            ``"distil-whisper/distil-large-v3"`` for quality/speed on GPU,</span>
+<span class="sd">            ``"openai/whisper-large-v3-turbo"`` for highest quality.</span>
 <span class="sd">        device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.</span>
 <span class="sd">        dtype: Torch dtype for the model weights. Defaults to</span>
 <span class="sd">            ``torch.float16`` on GPU/MPS, ``torch.float32`` on CPU.</span>
@@ -382,18 +381,18 @@
 
 <span class="sd">        wrapper = WhisperWrapper()</span>
 <span class="sd">        text = wrapper(waveform)</span>
-<span class="sd">        text = wrapper(&quot;audio.wav&quot;)</span>
+<span class="sd">        text = wrapper("audio.wav")</span>
 
 <span class="sd">    Example — streaming word-by-word::</span>
 
 <span class="sd">        for chunk in wrapper.stream(waveform):</span>
-<span class="sd">            print(chunk, end=&quot;&quot;, flush=True)</span>
+<span class="sd">            print(chunk, end="", flush=True)</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;distil-whisper/distil-large-v3&quot;</span><span class="p">,</span>
+        <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"distil-whisper/distil-large-v3"</span><span class="p">,</span>
         <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -402,10 +401,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">model_name</span>
 
         <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cpu&quot;</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"cpu"</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">)...&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loading </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">)..."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">build_hf_model</span><span class="p">(</span>
             <span class="n">AutoModelForSpeechSeq2Seq</span><span class="p">,</span>
@@ -424,7 +423,7 @@
         <span class="n">audio</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="n">sample_rate</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16000</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert any audio input to model-ready input features on ``self.device``.</span>
+<span class="w">        </span><span class="sd">"""Convert any audio input to model-ready input features on ``self.device``.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            audio: One of:</span>
@@ -439,9 +438,9 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dict with ``input_features`` on ``self.device``, plus an</span>
-<span class="sd">            ``attention_mask`` when the audio exceeds Whisper&#39;s 30 s window.</span>
+<span class="sd">            ``attention_mask`` when the audio exceeds Whisper's 30 s window.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
             <span class="n">waveform</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">load_audio</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">target_sample_rate</span><span class="o">=</span><span class="mi">16000</span><span class="p">,</span> <span class="n">mono</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">audio</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
@@ -450,20 +449,20 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">audio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">audio</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
 
-        <span class="c1"># Whisper&#39;s encoder sees a fixed 30 s window. The feature extractor&#39;s</span>
+        <span class="c1"># Whisper's encoder sees a fixed 30 s window. The feature extractor's</span>
         <span class="c1"># defaults (truncation + pad to 30 s) would silently discard everything</span>
         <span class="c1"># past 30 s, so longer audio must be kept whole and decoded long-form.</span>
         <span class="k">if</span> <span class="n">audio</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">WHISPER_WINDOW_SECONDS</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">):</span>
             <span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">(</span>
                 <span class="n">audio</span><span class="p">,</span>
                 <span class="n">sampling_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">,</span>
-                <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+                <span class="n">return_tensors</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">,</span>
                 <span class="n">truncation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;longest&quot;</span><span class="p">,</span>
+                <span class="n">padding</span><span class="o">=</span><span class="s2">"longest"</span><span class="p">,</span>
                 <span class="n">return_attention_mask</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">)</span>
+            <span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">)</span>
 
         <span class="c1"># Only the float mel features take the model dtype; the attention mask</span>
         <span class="c1"># must stay integral.</span>
@@ -478,7 +477,7 @@
 <div class="viewcode-block" id="WhisperWrapper.inference">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/whisper/index.html#exordium.text.whisper.WhisperWrapper.inference">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run greedy/beam-search decoding and return the full transcript.</span>
+<span class="w">        </span><span class="sd">"""Run greedy/beam-search decoding and return the full transcript.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            inputs: Feature dict from :meth:`preprocess` on ``self.device``.</span>
@@ -487,8 +486,8 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Transcribed text as a plain string.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">inputs_dict</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;dict[str, torch.Tensor]&quot;</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">inputs_dict</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">"dict[str, torch.Tensor]"</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
         <span class="n">generate_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_kwargs</span><span class="p">(</span><span class="n">inputs_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
@@ -498,17 +497,17 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_generate_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build ``generate`` kwargs, enabling long-form decoding when needed.&quot;&quot;&quot;</span>
-        <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;str | None&quot;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;language&quot;</span><span class="p">))</span>
-        <span class="n">beam_size_obj</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beam_size&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">"""Build ``generate`` kwargs, enabling long-form decoding when needed."""</span>
+        <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">"str | None"</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"language"</span><span class="p">))</span>
+        <span class="n">beam_size_obj</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"beam_size"</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
         <span class="n">beam_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">beam_size_obj</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">beam_size_obj</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="mi">5</span>
-        <span class="n">generate_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;num_beams&quot;</span><span class="p">:</span> <span class="n">beam_size</span><span class="p">}</span>
+        <span class="n">generate_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"num_beams"</span><span class="p">:</span> <span class="n">beam_size</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">language</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">generate_kwargs</span><span class="p">[</span><span class="s2">&quot;language&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">language</span>
+            <span class="n">generate_kwargs</span><span class="p">[</span><span class="s2">"language"</span><span class="p">]</span> <span class="o">=</span> <span class="n">language</span>
         <span class="c1"># Long-form (&gt;30 s) inputs carry an attention mask and require timestamps</span>
-        <span class="c1"># for Whisper&#39;s sequential chunk-by-chunk decoding.</span>
-        <span class="k">if</span> <span class="s2">&quot;attention_mask&quot;</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
-            <span class="n">generate_kwargs</span><span class="p">[</span><span class="s2">&quot;return_timestamps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># for Whisper's sequential chunk-by-chunk decoding.</span>
+        <span class="k">if</span> <span class="s2">"attention_mask"</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+            <span class="n">generate_kwargs</span><span class="p">[</span><span class="s2">"return_timestamps"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="n">generate_kwargs</span>
 
 <div class="viewcode-block" id="WhisperWrapper.transcribe_segments">
@@ -520,10 +519,10 @@
         <span class="n">beam_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
         <span class="n">sample_rate</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16000</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transcribe audio into timestamped :class:`Segment` chunks.</span>
+<span class="w">        </span><span class="sd">"""Transcribe audio into timestamped :class:`Segment` chunks.</span>
 
 <span class="sd">        Works for audio of any length: short clips decode in one pass, longer</span>
-<span class="sd">        recordings use Whisper&#39;s sequential long-form decoding. The segments are</span>
+<span class="sd">        recordings use Whisper's sequential long-form decoding. The segments are</span>
 <span class="sd">        what :meth:`~exordium.text.base.ForcedAligner.align_segments` consumes to</span>
 <span class="sd">        keep forced alignment bounded on long files.</span>
 
@@ -536,23 +535,23 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Segments in chronological order; empty if nothing was transcribed.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">)</span>
         <span class="n">generate_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_kwargs</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="n">language</span><span class="p">,</span> <span class="n">beam_size</span><span class="o">=</span><span class="n">beam_size</span><span class="p">)</span>
-        <span class="n">generate_kwargs</span><span class="p">[</span><span class="s2">&quot;return_timestamps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">generate_kwargs</span><span class="p">[</span><span class="s2">&quot;return_segments&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">generate_kwargs</span><span class="p">[</span><span class="s2">"return_timestamps"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">generate_kwargs</span><span class="p">[</span><span class="s2">"return_segments"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
             <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">,</span> <span class="o">**</span><span class="n">generate_kwargs</span><span class="p">)</span>
 
         <span class="n">segments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">[</span><span class="s2">&quot;segments&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">raw</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">[</span><span class="s2">"segments"</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
             <span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">batch_decode</span><span class="p">(</span>
-                <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;tokens&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">skip_special_tokens</span><span class="o">=</span><span class="kc">True</span>
+                <span class="n">raw</span><span class="p">[</span><span class="s2">"tokens"</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">skip_special_tokens</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
                 <span class="k">continue</span>
-            <span class="n">segments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Segment</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]),</span> <span class="n">end</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])))</span>
+            <span class="n">segments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Segment</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">"start"</span><span class="p">]),</span> <span class="n">end</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">"end"</span><span class="p">])))</span>
         <span class="k">return</span> <span class="n">segments</span></div>
 
 
@@ -565,7 +564,7 @@
         <span class="n">beam_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
         <span class="n">sample_rate</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16000</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transcribe audio and return the full text as a plain string.</span>
+<span class="w">        </span><span class="sd">"""Transcribe audio and return the full text as a plain string.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            audio: Audio file path, numpy array, or torch tensor.</span>
@@ -576,7 +575,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Transcribed text.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">),</span>
             <span class="n">language</span><span class="o">=</span><span class="n">language</span><span class="p">,</span>
@@ -593,7 +592,7 @@
         <span class="n">beam_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">sample_rate</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16000</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transcribe audio with word-by-word streaming output.</span>
+<span class="w">        </span><span class="sd">"""Transcribe audio with word-by-word streaming output.</span>
 
 <span class="sd">        Runs ``model.generate`` in a background thread and yields decoded text</span>
 <span class="sd">        chunks to the caller as they are produced — no need to wait for the</span>
@@ -606,8 +605,8 @@
 <span class="sd">            beam_size: Decoder beam width. Defaults to ``1`` for streaming.</span>
 <span class="sd">            sample_rate: Sample rate of the input waveform (ignored for paths).</span>
 
-<span class="sd">        Audio longer than Whisper&#39;s 30 s window is streamed window by window:</span>
-<span class="sd">        ``TextIteratorStreamer`` only observes the first chunk of Whisper&#39;s</span>
+<span class="sd">        Audio longer than Whisper's 30 s window is streamed window by window:</span>
+<span class="sd">        ``TextIteratorStreamer`` only observes the first chunk of Whisper's</span>
 <span class="sd">        sequential long-form decoding, so streaming the whole file in one</span>
 <span class="sd">        ``generate`` call would silently stop after 30 s. Each window is decoded</span>
 <span class="sd">        short-form instead, which keeps the full transcript flowing. A word</span>
@@ -618,15 +617,15 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            Exception: Whatever ``model.generate`` raised in the worker thread,</span>
-<span class="sd">                re-raised on the caller&#39;s thread once the stream drains.</span>
+<span class="sd">                re-raised on the caller's thread once the stream drains.</span>
 
 <span class="sd">        Example::</span>
 
-<span class="sd">            for chunk in wrapper.stream(&quot;audio.wav&quot;):</span>
-<span class="sd">                print(chunk, end=&quot;&quot;, flush=True)</span>
+<span class="sd">            for chunk in wrapper.stream("audio.wav"):</span>
+<span class="sd">                print(chunk, end="", flush=True)</span>
 <span class="sd">            print()  # newline after full transcript</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
             <span class="n">waveform</span><span class="p">,</span> <span class="n">rate</span> <span class="o">=</span> <span class="n">to_mono_16k</span><span class="p">(</span><span class="n">audio</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -649,7 +648,7 @@
         <span class="n">beam_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">sample_rate</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stream one ``&lt;=30 s`` window, re-raising worker-thread failures.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Stream one ``&lt;=30 s`` window, re-raising worker-thread failures."""</span>
         <span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">waveform</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">)</span>
         <span class="n">streamer</span> <span class="o">=</span> <span class="n">TextIteratorStreamer</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span>
@@ -673,7 +672,7 @@
         <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">streamer</span><span class="p">:</span>
-            <span class="n">text</span> <span class="o">=</span> <span class="n">_TIMESTAMP_TOKEN_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">chunk</span><span class="p">)</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">_TIMESTAMP_TOKEN_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">chunk</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">text</span>
 

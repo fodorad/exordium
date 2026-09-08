@@ -267,7 +267,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -441,7 +440,7 @@ detected face, containing <code class="docutils literal notranslate"><span class
 <span class="gp">&gt;&gt;&gt; </span><span class="n">landmarks_list</span> <span class="o">=</span> <span class="n">wrapper</span><span class="p">([</span><span class="n">face_crop</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">landmarks_list</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">lmks</span> <span class="o">=</span> <span class="n">landmarks_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># shape (478, 2) torch.Tensor</span>
-<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Detected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lmks</span><span class="p">)</span><span class="si">}</span><span class="s2"> landmarks&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Detected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lmks</span><span class="p">)</span><span class="si">}</span><span class="s2"> landmarks"</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -529,12 +528,12 @@ crop side length.  Default <code class="docutils literal notranslate"><span clas
 <span class="n">det</span>   <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">detect_image_path</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">crop</span>  <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra_space</span><span class="o">=</span><span class="mf">1.3</span><span class="p">)</span>   <span class="c1"># (3, H, W) tensor</span>
 <span class="n">eyes</span>  <span class="o">=</span> <span class="n">crop_eye_regions</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">det</span><span class="o">.</span><span class="n">landmarks</span><span class="p">)</span>    <span class="c1"># 5-pt keypoints</span>
-<span class="n">right</span> <span class="o">=</span> <span class="n">eyes</span><span class="p">[</span><span class="s2">&quot;eye_region_right&quot;</span><span class="p">]</span>                 <span class="c1"># (3, bb, bb) tensor</span>
+<span class="n">right</span> <span class="o">=</span> <span class="n">eyes</span><span class="p">[</span><span class="s2">"eye_region_right"</span><span class="p">]</span>                 <span class="c1"># (3, bb, bb) tensor</span>
 
 <span class="c1"># --- dense (FaceMesh) ---</span>
 <span class="n">lmks</span>  <span class="o">=</span> <span class="n">facemesh</span><span class="p">([</span><span class="n">crop</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>                      <span class="c1"># (478, 2) tensor</span>
 <span class="n">eyes</span>  <span class="o">=</span> <span class="n">crop_eye_regions</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">lmks</span><span class="p">)</span>
-<span class="n">right</span> <span class="o">=</span> <span class="n">eyes</span><span class="p">[</span><span class="s2">&quot;eye_region_right&quot;</span><span class="p">]</span>
+<span class="n">right</span> <span class="o">=</span> <span class="n">eyes</span><span class="p">[</span><span class="s2">"eye_region_right"</span><span class="p">]</span>
 </pre></div>
 </div>
 </dd></dl>

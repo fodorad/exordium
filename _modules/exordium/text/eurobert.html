@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.text.eurobert</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;EuroBERT multilingual text encoder wrapper (token-level or pooled).</span>
+<span></span><span class="sd">"""EuroBERT multilingual text encoder wrapper (token-level or pooled).</span>
 
 <span class="sd">EuroBERT is a **EuroBERT-architecture** encoder (Llama-style: rotary embeddings,</span>
 <span class="sd">grouped-query attention) — not XLM-RoBERTa. It is kept in its own module so the</span>
@@ -328,7 +327,7 @@
 <span class="sd">:class:`~exordium.text.base.PooledTokenTextWrapper` with</span>
 <span class="sd">:class:`~exordium.text.xlm_roberta.XlmRobertaWrapper` and</span>
 <span class="sd">:class:`~exordium.text.mmbert.MmbertWrapper`.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.text.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PooledTokenTextWrapper</span>
 
@@ -336,13 +335,13 @@
 <div class="viewcode-block" id="EurobertWrapper">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/eurobert/index.html#exordium.text.eurobert.EurobertWrapper">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">EurobertWrapper</span><span class="p">(</span><span class="n">PooledTokenTextWrapper</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;EuroBERT multilingual encoder — token-level ``(B, T, 1152)`` or pooled ``(B, 1152)``.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""EuroBERT multilingual encoder — token-level ``(B, T, 1152)`` or pooled ``(B, 1152)``.</span>
 
 <span class="sd">    Loads ``EuroBERT/EuroBERT-610m``, a EuroBERT-architecture encoder for 15</span>
 <span class="sd">    European languages (**hidden 1152**, up to 8192 context, 2025) that is strong</span>
 <span class="sd">    on European-language, code, and math tasks, and returns either the token-level</span>
-<span class="sd">    sequence (``pooling=&quot;none&quot;``, for a cross-modal sequence model such as</span>
-<span class="sd">    MulT/LinMulT) or a pooled sentence embedding (``pooling=&quot;mean&quot;``, the default).</span>
+<span class="sd">    sequence (``pooling="none"``, for a cross-modal sequence model such as</span>
+<span class="sd">    MulT/LinMulT) or a pooled sentence embedding (``pooling="mean"``, the default).</span>
 <span class="sd">    See :class:`~exordium.text.base.PooledTokenTextWrapper` for the full shape</span>
 <span class="sd">    contract and the ``pooling`` semantics.</span>
 
@@ -363,18 +362,18 @@
 <span class="sd">            shapes and call contract hold (used by the test suite to avoid downloads).</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        hidden_size: The backbone&#39;s hidden size ``H`` (1152), read from the config.</span>
+<span class="sd">        hidden_size: The backbone's hidden size ``H`` (1152), read from the config.</span>
 
 <span class="sd">    Example::</span>
 
 <span class="sd">        m = EurobertWrapper()</span>
-<span class="sd">        tokens = m(&quot;Ich bin sehr glücklich.&quot;, pooling=&quot;none&quot;)   # (1, T, 1152)</span>
-<span class="sd">        pooled = m(&quot;Ich bin sehr glücklich.&quot;)                   # (1, 1152)</span>
+<span class="sd">        tokens = m("Ich bin sehr glücklich.", pooling="none")   # (1, T, 1152)</span>
+<span class="sd">        pooled = m("Ich bin sehr glücklich.")                   # (1, 1152)</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;EuroBERT/EuroBERT-610m&quot;</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">)</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">"EuroBERT/EuroBERT-610m"</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">)</span></div>
 
 </pre></div>
         </article>

@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.utils.ckpt</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Checkpoint utility functions.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Checkpoint utility functions."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">urllib.request</span>
@@ -330,10 +329,10 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;Module-level logger.&quot;&quot;&quot;</span>
+<span class="sd">"""Module-level logger."""</span>
 
-<span class="n">_HF_REPO_ID</span> <span class="o">=</span> <span class="s2">&quot;fodorad/exordium-weights&quot;</span>
-<span class="sd">&quot;&quot;&quot;HuggingFace Hub repository ID for exordium model weights.&quot;&quot;&quot;</span>
+<span class="n">_HF_REPO_ID</span> <span class="o">=</span> <span class="s2">"fodorad/exordium-weights"</span>
+<span class="sd">"""HuggingFace Hub repository ID for exordium model weights."""</span>
 
 
 <div class="viewcode-block" id="build_hf_model">
@@ -345,9 +344,9 @@
     <span class="n">config_cls</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a HuggingFace model, with or without its pretrained weights.</span>
+<span class="w">    </span><span class="sd">"""Build a HuggingFace model, with or without its pretrained weights.</span>
 
-<span class="sd">    With ``pretrained=False`` only the model&#39;s ``config.json`` is fetched (kilobytes)</span>
+<span class="sd">    With ``pretrained=False`` only the model's ``config.json`` is fetched (kilobytes)</span>
 <span class="sd">    and the architecture is instantiated with **random weights** — no checkpoint is</span>
 <span class="sd">    downloaded.  The result has the same shapes and interface as the real model, so it</span>
 <span class="sd">    is enough to exercise input/output contracts, inspect the architecture, or work</span>
@@ -367,19 +366,19 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The instantiated model. Typed as ``Any`` because the concrete class comes from</span>
-<span class="sd">        *model_cls*, mirroring ``from_pretrained``&#39;s own dynamic return.</span>
+<span class="sd">        *model_cls*, mirroring ``from_pretrained``'s own dynamic return.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="kn">import</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tfm</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Building </span><span class="si">{</span><span class="n">model_id</span><span class="si">}</span><span class="s2"> architecture with random weights (no checkpoint).&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Building </span><span class="si">{</span><span class="n">model_id</span><span class="si">}</span><span class="s2"> architecture with random weights (no checkpoint)."</span><span class="p">)</span>
     <span class="n">config</span> <span class="o">=</span> <span class="p">(</span><span class="n">config_cls</span> <span class="ow">or</span> <span class="n">tfm</span><span class="o">.</span><span class="n">AutoConfig</span><span class="p">)</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_id</span><span class="p">)</span>
     <span class="c1"># ``Auto*`` classes are factories and refuse direct construction; concrete model</span>
     <span class="c1"># classes take the config positionally.</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model_cls</span><span class="p">,</span> <span class="s2">&quot;from_config&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model_cls</span><span class="p">,</span> <span class="s2">"from_config"</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model_cls</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
@@ -388,7 +387,7 @@
 <div class="viewcode-block" id="download_file">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/ckpt/index.html#exordium.utils.ckpt.download_file">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">download_file</span><span class="p">(</span><span class="n">remote_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">local_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Downloads a file to a given local path using urllib.</span>
+<span class="w">    </span><span class="sd">"""Downloads a file to a given local path using urllib.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        remote_path (str): URL of the remote file.</span>
@@ -399,15 +398,15 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        FileNotFoundError: If the file is not present after downloading.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">local_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">local_path</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">local_path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
         <span class="n">local_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading </span><span class="si">{</span><span class="n">remote_path</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Downloading </span><span class="si">{</span><span class="n">remote_path</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">remote_path</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">local_path</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">local_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloaded file is missing at </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Downloaded file is missing at </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span></div>
 
 
 
@@ -421,13 +420,13 @@
     <span class="n">upstream_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">upstream_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Download a model weight file from Hugging Face Hub if not already cached.</span>
+<span class="w">    </span><span class="sd">"""Download a model weight file from Hugging Face Hub if not already cached.</span>
 
 <span class="sd">    Fetches *filename* from :data:`_HF_REPO_ID` — our own mirror — and places it in</span>
 <span class="sd">    *local_dir*.  Subsequent calls with the same arguments are no-ops.</span>
 
 <span class="sd">    The mirror is preferred because upstream sources move or vanish (the 6DRepNet</span>
-<span class="sd">    author&#39;s original link already did).  When an upstream is given it is used as a</span>
+<span class="sd">    author's original link already did).  When an upstream is given it is used as a</span>
 <span class="sd">    **fallback**: if the mirror is unreachable or missing the file, the original source</span>
 <span class="sd">    is tried before giving up, so neither location is a single point of failure.</span>
 
@@ -436,10 +435,10 @@
 <span class="sd">    instance, serves its checkpoints straight from GitHub.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        filename: Name of the file in *repo_id* (e.g. ``&quot;fabnet_weights.pth&quot;``).</span>
+<span class="sd">        filename: Name of the file in *repo_id* (e.g. ``"fabnet_weights.pth"``).</span>
 <span class="sd">        local_dir: Directory to store the file in; it lands at ``local_dir / filename``.</span>
 <span class="sd">        repo_id: Hub repo to fetch from. Defaults to our mirror,</span>
-<span class="sd">            ``&quot;fodorad/exordium-weights&quot;``.</span>
+<span class="sd">            ``"fodorad/exordium-weights"``.</span>
 <span class="sd">        upstream_repo_id: Original Hub repo, used only if *repo_id* fails.</span>
 <span class="sd">        upstream_filename: Filename within *upstream_repo_id*, if it differs from</span>
 <span class="sd">            *filename*. Defaults to *filename*.</span>
@@ -451,7 +450,7 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        FileNotFoundError: If the file is missing after every download attempt.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">hf_hub_download</span>
 
     <span class="n">local_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">local_dir</span><span class="p">)</span>
@@ -466,10 +465,10 @@
 
     <span class="k">for</span> <span class="n">source_repo</span><span class="p">,</span> <span class="n">source_file</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading </span><span class="si">{</span><span class="n">source_repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Downloading </span><span class="si">{</span><span class="n">source_repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">hf_hub_download</span><span class="p">(</span><span class="n">repo_id</span><span class="o">=</span><span class="n">source_repo</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">source_file</span><span class="p">,</span> <span class="n">local_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">local_dir</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># noqa: BLE001 - any Hub/network failure is a fallback trigger</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not fetch </span><span class="si">{</span><span class="n">source_repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not fetch </span><span class="si">{</span><span class="n">source_repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">continue</span>
 
         <span class="c1"># An upstream file may be named differently from ours; normalise it so the</span>
@@ -480,28 +479,28 @@
 
         <span class="k">if</span> <span class="n">local_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="k">return</span> <span class="n">local_path</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source_repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2"> reported success but </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2"> is missing&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">source_repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2"> reported success but </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2"> is missing"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">upstream_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Falling back to </span><span class="si">{</span><span class="n">upstream_url</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Falling back to </span><span class="si">{</span><span class="n">upstream_url</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">download_file</span><span class="p">(</span><span class="n">upstream_url</span><span class="p">,</span> <span class="n">local_path</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># noqa: BLE001 - any network failure exhausts the sources</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not fetch </span><span class="si">{</span><span class="n">upstream_url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not fetch </span><span class="si">{</span><span class="n">upstream_url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">local_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="k">return</span> <span class="n">local_path</span>
 
-    <span class="n">attempted</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">repo</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">]</span>
+    <span class="n">attempted</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">repo</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">upstream_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">attempted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">upstream_url</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not download </span><span class="si">{</span><span class="n">filename</span><span class="si">!r}</span><span class="s2"> from any of: </span><span class="si">{</span><span class="n">attempted</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not download </span><span class="si">{</span><span class="n">filename</span><span class="si">!r}</span><span class="s2"> from any of: </span><span class="si">{</span><span class="n">attempted</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="remove_token">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/ckpt/index.html#exordium.utils.ckpt.remove_token">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">remove_token</span><span class="p">(</span><span class="n">weights</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;_model.&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Removes a token from the keys of the weight dictionary.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">remove_token</span><span class="p">(</span><span class="n">weights</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"_model."</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Removes a token from the keys of the weight dictionary.</span>
 
 <span class="sd">    The ckpt file saves the pytorch_lightning module which includes its child</span>
 <span class="sd">    members.  Loading the state_dict with the child called ``_model.`` leads</span>
@@ -509,37 +508,37 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        weights (dict): Loaded torch weights.</span>
-<span class="sd">        token (str, optional): String to be removed. Defaults to ``&quot;_model.&quot;``.</span>
+<span class="sd">        token (str, optional): String to be removed. Defaults to ``"_model."``.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: Updated weight dictionary.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">weights</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="s2">""</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">weights</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
 
 
 
 <div class="viewcode-block" id="load_checkpoint">
 <a class="viewcode-back" href="../../../autoapi/exordium/utils/ckpt/index.html#exordium.utils.ckpt.load_checkpoint">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_checkpoint</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strip_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;module.&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a torch checkpoint and strip DDP/Lightning key prefixes.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_checkpoint</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strip_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"module."</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Load a torch checkpoint and strip DDP/Lightning key prefixes.</span>
 
 <span class="sd">    Handles both raw ``state_dict`` files and Lightning checkpoint files that</span>
-<span class="sd">    store the state dict under a ``&quot;state_dict&quot;`` key.  Keys starting with</span>
+<span class="sd">    store the state dict under a ``"state_dict"`` key.  Keys starting with</span>
 <span class="sd">    ``strip_prefix`` have that prefix removed so the dict can be passed</span>
 <span class="sd">    directly to ``model.load_state_dict()``.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        path (Path | str): Path to the ``.pth`` or ``.ckpt`` file.</span>
 <span class="sd">        strip_prefix (str, optional): Prefix to remove from each key.</span>
-<span class="sd">            Defaults to ``&quot;module.&quot;`` (DDP convention).</span>
+<span class="sd">            Defaults to ``"module."`` (DDP convention).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: Cleaned state dict ready for ``model.load_state_dict()``.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ckpt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">map_location</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">ckpt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state_dict&quot;</span><span class="p">,</span> <span class="n">ckpt</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">ckpt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">map_location</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">ckpt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"state_dict"</span><span class="p">,</span> <span class="n">ckpt</span><span class="p">)</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">strip_prefix</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">{(</span><span class="n">k</span><span class="p">[</span><span class="n">n</span><span class="p">:]</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">strip_prefix</span><span class="p">)</span> <span class="k">else</span> <span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
 

@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,9 +319,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.text.whisperx_align</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;whisperX wav2vec2 forced alignment (ships with the ``text`` extra).</span>
+<span></span><span class="sd">"""whisperX wav2vec2 forced alignment (ships with the ``text`` extra).</span>
 
-<span class="sd">Wraps whisperX&#39;s per-language wav2vec2 CTC alignment so a **known** transcript</span>
+<span class="sd">Wraps whisperX's per-language wav2vec2 CTC alignment so a **known** transcript</span>
 <span class="sd">can be aligned to audio, returning the same ``list[Word]`` as the built-in</span>
 <span class="sd">:class:`~exordium.text.alignment.TorchaudioForcedAligner`.  Having both lets you</span>
 <span class="sd">cross-check word timings from two independent aligners (useful when validating</span>
@@ -330,7 +329,7 @@
 
 <span class="sd">.. note::</span>
 
-<span class="sd">   Only whisperX&#39;s **alignment** stage is used here.  Its faster-whisper ASR /</span>
+<span class="sd">   Only whisperX's **alignment** stage is used here.  Its faster-whisper ASR /</span>
 <span class="sd">   pyannote VAD path relies on ``torchaudio`` APIs removed in the version this</span>
 <span class="sd">   repo pins, so transcription is done by</span>
 <span class="sd">   :class:`~exordium.text.whisper.WhisperWrapper` instead (see</span>
@@ -339,7 +338,7 @@
 <span class="sd">whisperX ships with the ``text`` extra::</span>
 
 <span class="sd">    uv sync --extra text</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
@@ -358,27 +357,27 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_torch_device</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;Module-level logger.&quot;&quot;&quot;</span>
+<span class="sd">"""Module-level logger."""</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">whisperx</span>
 
     <span class="n">_WHISPERX_AVAILABLE</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c1"># pragma: no cover - exercised only without the extra</span>
-    <span class="n">whisperx</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># ty: ignore[invalid-assignment]</span>
+    <span class="n">whisperx</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">_WHISPERX_AVAILABLE</span> <span class="o">=</span> <span class="kc">False</span>
 
 
 <div class="viewcode-block" id="WhisperxForcedAligner">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/whisperx_align/index.html#exordium.text.whisperx_align.WhisperxForcedAligner">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">WhisperxForcedAligner</span><span class="p">(</span><span class="n">ForcedAligner</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forced aligner backed by whisperX&#39;s wav2vec2 alignment models.</span>
+<span class="w">    </span><span class="sd">"""Forced aligner backed by whisperX's wav2vec2 alignment models.</span>
 
 <span class="sd">    Loads (and caches) a language-specific alignment model on first use, then</span>
 <span class="sd">    aligns the known transcript against the audio.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        language: Language code for the alignment model (e.g. ``&quot;en&quot;``).</span>
+<span class="sd">        language: Language code for the alignment model (e.g. ``"en"``).</span>
 <span class="sd">        device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU/MPS.</span>
 
 <span class="sd">    Raises:</span>
@@ -386,22 +385,22 @@
 
 <span class="sd">    Example::</span>
 
-<span class="sd">        aligner = WhisperxForcedAligner(language=&quot;en&quot;, device_id=None)</span>
-<span class="sd">        words = aligner.align(&quot;audio.wav&quot;, &quot;hey guys what do you want to eat&quot;)</span>
+<span class="sd">        aligner = WhisperxForcedAligner(language="en", device_id=None)</span>
+<span class="sd">        words = aligner.align("audio.wav", "hey guys what do you want to eat")</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"en"</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">_WHISPERX_AVAILABLE</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-                <span class="s2">&quot;whisperX is not installed. Install the text extra with &quot;</span>
-                <span class="s2">&quot;`uv sync --extra text` to use WhisperxForcedAligner.&quot;</span>
+                <span class="s2">"whisperX is not installed. Install the text extra with "</span>
+                <span class="s2">"`uv sync --extra text` to use WhisperxForcedAligner."</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">language</span> <span class="o">=</span> <span class="n">language</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">get_torch_device</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_device_str</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading whisperX align model (</span><span class="si">{</span><span class="n">language</span><span class="si">}</span><span class="s2">) on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_device_str</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">whisperx</span><span class="o">.</span><span class="n">load_align_model</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device_str</span> <span class="o">=</span> <span class="s2">"cuda"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"cuda"</span> <span class="k">else</span> <span class="s2">"cpu"</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loading whisperX align model (</span><span class="si">{</span><span class="n">language</span><span class="si">}</span><span class="s2">) on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_device_str</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">whisperx</span><span class="o">.</span><span class="n">load_align_model</span><span class="p">(</span>  <span class="c1"># ty: ignore[unresolved-attribute]</span>
             <span class="n">language_code</span><span class="o">=</span><span class="n">language</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device_str</span>
         <span class="p">)</span>
 
@@ -413,12 +412,12 @@
         <span class="n">transcript</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align *transcript* to *audio* using whisperX and return timed words.</span>
+<span class="w">        </span><span class="sd">"""Align *transcript* to *audio* using whisperX and return timed words.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            audio: Audio file path, numpy array, or torch tensor (16 kHz mono).</span>
 <span class="sd">            transcript: The known transcript for this audio.</span>
-<span class="sd">            language: Optional language code; must match the model&#39;s language if</span>
+<span class="sd">            language: Optional language code; must match the model's language if</span>
 <span class="sd">                given (a mismatch is logged, not enforced).</span>
 
 <span class="sd">        Returns:</span>
@@ -428,7 +427,7 @@
 <span class="sd">            recordings should go through :meth:`align_segments`, which widens short</span>
 <span class="sd">            windows instead of giving up on them.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_warn_language</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">transcript</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">return</span> <span class="p">[]</span>
@@ -438,12 +437,12 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">needed</span><span class="p">:</span>
             <span class="c1"># Too few frames: whisperX divides by zero, or backtracks to untimed words.</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Audio is </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span><span class="si">}</span><span class="s2"> samples but the transcript needs </span><span class="si">{</span><span class="n">needed</span><span class="si">}</span><span class="s2"> &quot;</span>
-                <span class="s2">&quot;to force-align; returning [].&quot;</span>
+                <span class="sa">f</span><span class="s2">"Audio is </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span><span class="si">}</span><span class="s2"> samples but the transcript needs </span><span class="si">{</span><span class="n">needed</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="s2">"to force-align; returning []."</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="p">[]</span>
         <span class="n">duration</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span> <span class="o">/</span> <span class="n">sr</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">([{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">transcript</span><span class="p">,</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="n">duration</span><span class="p">}],</span> <span class="n">waveform</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">([{</span><span class="s2">"text"</span><span class="p">:</span> <span class="n">transcript</span><span class="p">,</span> <span class="s2">"start"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"end"</span><span class="p">:</span> <span class="n">duration</span><span class="p">}],</span> <span class="n">waveform</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="WhisperxForcedAligner.align_segments">
@@ -454,7 +453,7 @@
         <span class="n">segments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">],</span>
         <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align all *segments* in one whisperX call (native batched path).</span>
+<span class="w">        </span><span class="sd">"""Align all *segments* in one whisperX call (native batched path).</span>
 
 <span class="sd">        whisperX slices the audio per segment internally and returns word times</span>
 <span class="sd">        already on the full-audio timeline, so long recordings stay bounded</span>
@@ -462,7 +461,7 @@
 
 <span class="sd">        Segments too short for whisperX to align are widened first by</span>
 <span class="sd">        :func:`~exordium.text.base.prepare_segments`.  whisperX pads a short slice up to</span>
-<span class="sd">        wav2vec2&#39;s input floor, but then rescales its timestamps by</span>
+<span class="sd">        wav2vec2's input floor, but then rescales its timestamps by</span>
 <span class="sd">        ``duration / (trellis.size(0) - 1)`` — a one-row trellis divides by zero and</span>
 <span class="sd">        aborts the entire recording.  Even when it survives that, a frame-starved</span>
 <span class="sd">        segment fails backtrack and comes back *untimed*, so its words are silently</span>
@@ -479,13 +478,13 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Words in chronological order on the full-audio timeline.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_warn_language</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">segments</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[]</span>
         <span class="n">waveform</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_array</span><span class="p">(</span><span class="n">audio</span><span class="p">)</span>
         <span class="n">payload</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">start</span><span class="p">),</span> <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">end</span><span class="p">)}</span>
+            <span class="p">{</span><span class="s2">"text"</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">"start"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">start</span><span class="p">),</span> <span class="s2">"end"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">end</span><span class="p">)}</span>
             <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">prepare_segments</span><span class="p">(</span><span class="n">segments</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_align_samples</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">))</span>
         <span class="p">]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">payload</span><span class="p">:</span>
@@ -496,16 +495,16 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_warn_language</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log when a caller asks for a language the loaded model was not built for.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Log when a caller asks for a language the loaded model was not built for."""</span>
         <span class="k">if</span> <span class="n">language</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">language</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">language</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Requested language </span><span class="si">{</span><span class="n">language</span><span class="si">!r}</span><span class="s2"> != model language </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">language</span><span class="si">!r}</span><span class="s2">; &quot;</span>
-                <span class="s2">&quot;reload WhisperxForcedAligner with the desired language.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Requested language </span><span class="si">{</span><span class="n">language</span><span class="si">!r}</span><span class="s2"> != model language </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">language</span><span class="si">!r}</span><span class="s2">; "</span>
+                <span class="s2">"reload WhisperxForcedAligner with the desired language."</span>
             <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">waveform</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run whisperX alignment over *segments* and convert to :class:`Word`.&quot;&quot;&quot;</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">whisperx</span><span class="o">.</span><span class="n">align</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">"""Run whisperX alignment over *segments* and convert to :class:`Word`."""</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">whisperx</span><span class="o">.</span><span class="n">align</span><span class="p">(</span>  <span class="c1"># ty: ignore[unresolved-attribute]</span>
             <span class="n">segments</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
@@ -514,8 +513,8 @@
             <span class="n">return_char_alignments</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">words</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;word_segments&quot;</span><span class="p">]:</span>
-            <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;start&quot;</span><span class="p">),</span> <span class="n">w</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">"word_segments"</span><span class="p">]:</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"start"</span><span class="p">),</span> <span class="n">w</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"end"</span><span class="p">)</span>
             <span class="c1"># whisperX leaves unalignable words without (or with NaN) times.</span>
             <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">continue</span>
@@ -523,13 +522,13 @@
             <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="ow">or</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">end</span><span class="p">):</span>
                 <span class="k">continue</span>
             <span class="n">words</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">Word</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="s2">&quot;word&quot;</span><span class="p">]),</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">end</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)))</span>
+                <span class="n">Word</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="s2">"word"</span><span class="p">]),</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">end</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"score"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)))</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">words</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_to_array</span><span class="p">(</span><span class="n">audio</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a float32 mono waveform array at 16 kHz and its sample rate.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return a float32 mono waveform array at 16 kHz and its sample rate."""</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
             <span class="n">waveform</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">load_audio</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="n">target_sample_rate</span><span class="o">=</span><span class="mi">16000</span><span class="p">,</span> <span class="n">mono</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">waveform</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">sr</span>

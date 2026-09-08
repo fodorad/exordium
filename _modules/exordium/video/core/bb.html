@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.video.core.bb</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Bounding box utility functions for format conversion, cropping and IoU computation.</span>
+<span></span><span class="sd">"""Bounding box utility functions for format conversion, cropping and IoU computation.</span>
 
 <span class="sd">Tensor format conventions</span>
 <span class="sd">--------------------------</span>
@@ -335,7 +334,7 @@
 
 <span class="sd">All format-conversion functions are **type-preserving**: a numpy input returns</span>
 <span class="sd">numpy, a torch tensor input returns a torch tensor of the same device.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
@@ -351,14 +350,14 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_hw</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return (height, width) regardless of channel layout.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Return (height, width) regardless of channel layout."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># (C, H, W)</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># (H, W, C)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_slice</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slice spatial dims, preserving channel layout.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Slice spatial dims, preserving channel layout."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">image</span><span class="p">[:,</span> <span class="n">y1</span><span class="p">:</span><span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">:</span><span class="n">x2</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">image</span><span class="p">[</span><span class="n">y1</span><span class="p">:</span><span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">:</span><span class="n">x2</span><span class="p">]</span>
@@ -376,7 +375,7 @@
     <span class="n">mid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">bb_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Crop a square region from an image using a center point.</span>
+<span class="w">    </span><span class="sd">"""Crop a square region from an image using a center point.</span>
 
 <span class="sd">    Input type is preserved: numpy in → numpy out, tensor in → tensor out.</span>
 
@@ -389,7 +388,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Cropped image in the same format as the input, clipped to image bounds.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">_hw</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
     <span class="n">half</span> <span class="o">=</span> <span class="n">bb_size</span> <span class="o">//</span> <span class="mi">2</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mid</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">mid</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
@@ -405,7 +404,7 @@
     <span class="n">image</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">bb_xyxy</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Crop a region from an image using xyxy bounding box coordinates.</span>
+<span class="w">    </span><span class="sd">"""Crop a region from an image using xyxy bounding box coordinates.</span>
 
 <span class="sd">    Input type is preserved: numpy in → numpy out, tensor in → tensor out.</span>
 
@@ -417,7 +416,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Cropped image in the same format as the input, clipped to image bounds.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">_hw</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
     <span class="n">x1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">bb_xyxy</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">w</span><span class="p">))</span>
     <span class="n">y1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">bb_xyxy</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">h</span><span class="p">))</span>
@@ -433,7 +432,7 @@
     <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">crop_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a center crop to an image.</span>
+<span class="w">    </span><span class="sd">"""Apply a center crop to an image.</span>
 
 <span class="sd">    Input type is preserved: numpy in → numpy out, tensor in → tensor out.</span>
 
@@ -445,7 +444,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Center-cropped image in the same format as the input.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">TF</span><span class="o">.</span><span class="n">center_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">crop_size</span><span class="p">))</span>
     <span class="n">c_h</span><span class="p">,</span> <span class="n">c_w</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>
@@ -460,7 +459,7 @@
     <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">crop_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply 10-crop augmentation to an image.</span>
+<span class="w">    </span><span class="sd">"""Apply 10-crop augmentation to an image.</span>
 
 <span class="sd">    Produces four corner crops plus a center crop, each for the original and</span>
 <span class="sd">    its horizontal mirror — 10 crops in total.</span>
@@ -476,7 +475,7 @@
 <span class="sd">        * tensor: ``(10, C, crop_h, crop_w)``</span>
 <span class="sd">        * numpy:  ``(10, crop_h, crop_w, C)``</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">ch</span><span class="p">,</span> <span class="n">cw</span> <span class="o">=</span> <span class="n">crop_size</span>
     <span class="n">ih</span><span class="p">,</span> <span class="n">iw</span> <span class="o">=</span> <span class="n">_hw</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
 
@@ -524,7 +523,7 @@
     <span class="n">bb_xywh1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">bb_xywh2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate IoU for two bounding boxes in xywh format.</span>
+<span class="w">    </span><span class="sd">"""Calculate IoU for two bounding boxes in xywh format.</span>
 
 <span class="sd">    Accepts both numpy arrays and torch tensors; always returns a Python float.</span>
 
@@ -537,7 +536,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Intersection-over-Union in ``[0.0, 1.0]``.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">bb_xyxy1</span> <span class="o">=</span> <span class="n">xywh2xyxy</span><span class="p">(</span><span class="n">bb_xywh1</span><span class="p">)</span>
     <span class="n">bb_xyxy2</span> <span class="o">=</span> <span class="n">xywh2xyxy</span><span class="p">(</span><span class="n">bb_xywh2</span><span class="p">)</span>
 
@@ -561,7 +560,7 @@
     <span class="n">bb_xyxy1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">bb_xyxy2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate IoU for two bounding boxes in xyxy format.</span>
+<span class="w">    </span><span class="sd">"""Calculate IoU for two bounding boxes in xyxy format.</span>
 
 <span class="sd">    Accepts both numpy arrays and torch tensors; always returns a Python float.</span>
 
@@ -574,7 +573,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Intersection-over-Union in ``[0.0, 1.0]``.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">iou_xywh</span><span class="p">(</span><span class="n">xyxy2xywh</span><span class="p">(</span><span class="n">bb_xyxy1</span><span class="p">),</span> <span class="n">xyxy2xywh</span><span class="p">(</span><span class="n">bb_xyxy2</span><span class="p">))</span></div>
 
 
@@ -587,7 +586,7 @@
 <div class="viewcode-block" id="xyxy2xywh">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/bb/index.html#exordium.video.core.bb.xyxy2xywh">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">xyxy2xywh</span><span class="p">(</span><span class="n">bb_xyxy</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert bounding box coordinates from xyxy to xywh format.</span>
+<span class="w">    </span><span class="sd">"""Convert bounding box coordinates from xyxy to xywh format.</span>
 
 <span class="sd">    The output type mirrors the input type (numpy or torch tensor).</span>
 
@@ -599,7 +598,7 @@
 <span class="sd">        Bounding box ``[x_min, y_min, width, height]`` with the same</span>
 <span class="sd">        shape and type as the input.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bb_xyxy</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">squeezed</span> <span class="o">=</span> <span class="n">bb_xyxy</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
         <span class="n">bb</span> <span class="o">=</span> <span class="n">bb_xyxy</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">squeezed</span> <span class="k">else</span> <span class="n">bb_xyxy</span>
@@ -619,7 +618,7 @@
 <div class="viewcode-block" id="xywh2xyxy">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/bb/index.html#exordium.video.core.bb.xywh2xyxy">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">xywh2xyxy</span><span class="p">(</span><span class="n">bb_xywh</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert bounding box coordinates from xywh to xyxy format.</span>
+<span class="w">    </span><span class="sd">"""Convert bounding box coordinates from xywh to xyxy format.</span>
 
 <span class="sd">    The output type mirrors the input type (numpy or torch tensor).</span>
 
@@ -631,7 +630,7 @@
 <span class="sd">        Bounding box ``[x_min, y_min, x_max, y_max]`` with the same</span>
 <span class="sd">        shape and type as the input.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bb_xywh</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">squeezed</span> <span class="o">=</span> <span class="n">bb_xywh</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
         <span class="n">bb</span> <span class="o">=</span> <span class="n">bb_xywh</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">squeezed</span> <span class="k">else</span> <span class="n">bb_xywh</span>
@@ -651,7 +650,7 @@
 <div class="viewcode-block" id="midwh2xywh">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/bb/index.html#exordium.video.core.bb.midwh2xywh">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">midwh2xywh</span><span class="p">(</span><span class="n">bb_midwh</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert bounding box coordinates from midwh to xywh format.</span>
+<span class="w">    </span><span class="sd">"""Convert bounding box coordinates from midwh to xywh format.</span>
 
 <span class="sd">    The output type mirrors the input type (numpy or torch tensor).</span>
 
@@ -663,7 +662,7 @@
 <span class="sd">        Bounding box ``[x_min, y_min, width, height]`` with the same</span>
 <span class="sd">        shape and type as the input.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bb_midwh</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">squeezed</span> <span class="o">=</span> <span class="n">bb_midwh</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
         <span class="n">bb</span> <span class="o">=</span> <span class="n">bb_midwh</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">squeezed</span> <span class="k">else</span> <span class="n">bb_midwh</span>
@@ -683,7 +682,7 @@
 <div class="viewcode-block" id="xywh2midwh">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/bb/index.html#exordium.video.core.bb.xywh2midwh">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">xywh2midwh</span><span class="p">(</span><span class="n">bb_xywh</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert bounding box coordinates from xywh to midwh format.</span>
+<span class="w">    </span><span class="sd">"""Convert bounding box coordinates from xywh to midwh format.</span>
 
 <span class="sd">    The output type mirrors the input type (numpy or torch tensor).</span>
 
@@ -695,7 +694,7 @@
 <span class="sd">        Bounding box ``[x_center, y_center, width, height]`` with the same</span>
 <span class="sd">        shape and type as the input.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bb_xywh</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">squeezed</span> <span class="o">=</span> <span class="n">bb_xywh</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
         <span class="n">bb</span> <span class="o">=</span> <span class="n">bb_xywh</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">squeezed</span> <span class="k">else</span> <span class="n">bb_xywh</span>
@@ -715,7 +714,7 @@
 <div class="viewcode-block" id="xyxy2full">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/bb/index.html#exordium.video.core.bb.xyxy2full">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">xyxy2full</span><span class="p">(</span><span class="n">bb_xyxy</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a bounding box to all four corner coordinates.</span>
+<span class="w">    </span><span class="sd">"""Convert a bounding box to all four corner coordinates.</span>
 
 <span class="sd">    The output type mirrors the input type (numpy or torch tensor).</span>
 
@@ -726,7 +725,7 @@
 <span class="sd">        Four corner points ``[[x_tl, y_tl], [x_tr, y_tr], [x_bl, y_bl], [x_br, y_br]]``</span>
 <span class="sd">        of shape ``(4, 2)``.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bb_xyxy</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">x_tl</span><span class="p">,</span> <span class="n">y_tl</span><span class="p">,</span> <span class="n">x_br</span><span class="p">,</span> <span class="n">y_br</span> <span class="o">=</span> <span class="n">bb_xyxy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bb_xyxy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">bb_xyxy</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">bb_xyxy</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">x_tl</span><span class="p">,</span> <span class="n">y_tl</span><span class="p">,</span> <span class="n">x_br</span><span class="p">,</span> <span class="n">y_tl</span><span class="p">,</span> <span class="n">x_tl</span><span class="p">,</span> <span class="n">y_br</span><span class="p">,</span> <span class="n">x_br</span><span class="p">,</span> <span class="n">y_br</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -749,7 +748,7 @@
     <span class="n">probability</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">output_path</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw a bounding box and detection confidence score on an image.</span>
+<span class="w">    </span><span class="sd">"""Draw a bounding box and detection confidence score on an image.</span>
 
 <span class="sd">    Accepts both numpy arrays and torch tensors; returns the same type as</span>
 <span class="sd">    the input.  cv2 drawing is performed on an intermediate BGR numpy array.</span>
@@ -769,7 +768,7 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If ``bb_xyxy`` does not have shape ``(4,)``.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">is_tensor</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">img_np</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
@@ -783,7 +782,7 @@
         <span class="n">bb_xyxy</span> <span class="o">=</span> <span class="n">bb_xyxy</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
     <span class="n">bb_xyxy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">bb_xyxy</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">bb_xyxy</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected bounding box with shape (4,) got instead </span><span class="si">{</span><span class="n">bb_xyxy</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected bounding box with shape (4,) got instead </span><span class="si">{</span><span class="n">bb_xyxy</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
     <span class="n">bb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rint</span><span class="p">(</span><span class="n">bb_xyxy</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">label</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">probability</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>

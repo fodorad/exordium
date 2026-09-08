@@ -267,7 +267,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -420,7 +419,7 @@ multilingual model and no extra dependencies).</p>
 </dl>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">aligner</span> <span class="o">=</span> <span class="n">TorchaudioForcedAligner</span><span class="p">(</span><span class="n">device_id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="n">words</span> <span class="o">=</span> <span class="n">aligner</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="s2">&quot;audio.wav&quot;</span><span class="p">,</span> <span class="s2">&quot;hey guys what do you want to eat&quot;</span><span class="p">)</span>
+<span class="n">words</span> <span class="o">=</span> <span class="n">aligner</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="s2">"audio.wav"</span><span class="p">,</span> <span class="s2">"hey guys what do you want to eat"</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
 </pre></div>
@@ -492,7 +491,7 @@ omitted.</p></li>
 </dl>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ts</span> <span class="o">=</span> <span class="n">WhisperWordTimestamper</span><span class="p">(</span><span class="n">device_id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="n">words</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">transcribe_words</span><span class="p">(</span><span class="s2">&quot;audio.wav&quot;</span><span class="p">)</span>
+<span class="n">words</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">transcribe_words</span><span class="p">(</span><span class="s2">"audio.wav"</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="py method">

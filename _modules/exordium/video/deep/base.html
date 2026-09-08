@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.video.deep.base</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Abstract base class for frame-wise visual feature extractors.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Abstract base class for frame-wise visual feature extractors."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
@@ -337,15 +336,15 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.video.core.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">Video</span><span class="p">,</span> <span class="n">batch_iterator</span><span class="p">,</span> <span class="n">open_video</span><span class="p">,</span> <span class="n">to_uint8_tensor</span>
 
 <span class="n">_IMAGENET_MEAN</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">]</span>
-<span class="sd">&quot;&quot;&quot;ImageNet RGB channel means used for normalisation.&quot;&quot;&quot;</span>
+<span class="sd">"""ImageNet RGB channel means used for normalisation."""</span>
 <span class="n">_IMAGENET_STD</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">]</span>
-<span class="sd">&quot;&quot;&quot;ImageNet RGB channel standard deviations used for normalisation.&quot;&quot;&quot;</span>
+<span class="sd">"""ImageNet RGB channel standard deviations used for normalisation."""</span>
 
 
 <div class="viewcode-block" id="VisualModelWrapper">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/deep/base/index.html#exordium.video.deep.base.VisualModelWrapper">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">VisualModelWrapper</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for frame-wise visual feature extractors.</span>
+<span class="w">    </span><span class="sd">"""Abstract base class for frame-wise visual feature extractors.</span>
 
 <span class="sd">    Subclasses must implement :meth:`preprocess` (any supported input →</span>
 <span class="sd">    model-ready tensor) and :meth:`inference` (model tensor → feature tensor).</span>
@@ -386,7 +385,7 @@
 <span class="sd">        model = MyWrapper(device_id=0)</span>
 <span class="sd">        tensor_out = model(video_tensor)   # torch.Tensor (B, D)</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">get_torch_device</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
@@ -395,7 +394,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_to_uint8_tensor</span><span class="p">(</span>
         <span class="n">frames</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert any supported input to a uint8 ``(B, 3, H, W)`` CPU tensor.</span>
+<span class="w">        </span><span class="sd">"""Convert any supported input to a uint8 ``(B, 3, H, W)`` CPU tensor.</span>
 
 <span class="sd">        Delegates to :func:`~exordium.video.core.io.to_uint8_tensor`.</span>
 
@@ -411,7 +410,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            uint8 tensor of shape ``(B, 3, H, W)`` on CPU.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">to_uint8_tensor</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span>
 
 <div class="viewcode-block" id="VisualModelWrapper.preprocess">
@@ -421,7 +420,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">frames</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert any supported input to a model-ready tensor.</span>
+<span class="w">        </span><span class="sd">"""Convert any supported input to a model-ready tensor.</span>
 
 <span class="sd">        Call :meth:`_to_uint8_tensor` first to normalise the input type, then</span>
 <span class="sd">        apply model-specific resize, crop, and normalisation as tensor</span>
@@ -433,14 +432,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Preprocessed float tensor on ``self.device``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="VisualModelWrapper.inference">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/deep/base/index.html#exordium.video.deep.base.VisualModelWrapper.inference">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Model forward pass.</span>
+<span class="w">        </span><span class="sd">"""Model forward pass.</span>
 
 <span class="sd">        The input tensor is already on ``self.device`` and preprocessed.</span>
 
@@ -450,7 +449,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Feature tensor of shape ``(B, D)``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="VisualModelWrapper.__call__">
@@ -459,7 +458,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">frames</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocess and run inference, returning a feature tensor.</span>
+<span class="w">        </span><span class="sd">"""Preprocess and run inference, returning a feature tensor.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            frames: Any supported input (see class docstring).</span>
@@ -467,12 +466,12 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Feature tensor of shape ``(B, D)`` on ``self.device``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">frames</span><span class="p">))</span></div>
 
 
-    <span class="nd">@load_or_create</span><span class="p">(</span><span class="s2">&quot;st&quot;</span><span class="p">)</span>
+    <span class="nd">@load_or_create</span><span class="p">(</span><span class="s2">"st"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dir_to_feature</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">img_paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">],</span>
@@ -480,7 +479,7 @@
         <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">_kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract features from an ordered list of image files.</span>
+<span class="w">        </span><span class="sd">"""Extract features from an ordered list of image files.</span>
 
 <span class="sd">        Results are cached as a safetensors file: pass ``output_path`` and</span>
 <span class="sd">        ``overwrite`` via ``_kwargs`` to control caching behaviour.</span>
@@ -493,17 +492,17 @@
 <span class="sd">            **_kwargs: Forwarded to ``load_or_create``.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Dict with keys ``&quot;frame_ids&quot;`` (``(N,)`` long tensor) and</span>
-<span class="sd">            ``&quot;features&quot;`` (``(N, D)`` float tensor), both on CPU.</span>
+<span class="sd">            Dict with keys ``"frame_ids"`` (``(N,)`` long tensor) and</span>
+<span class="sd">            ``"features"`` (``(N, D)`` float tensor), both on CPU.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
             <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">img_paths</span><span class="p">),</span> <span class="n">batch_size</span><span class="p">),</span>
             <span class="n">total</span><span class="o">=-</span><span class="p">(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">img_paths</span><span class="p">)</span> <span class="o">//</span> <span class="n">batch_size</span><span class="p">),</span>
-            <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> extraction&quot;</span><span class="p">,</span>
+            <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> extraction"</span><span class="p">,</span>
             <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="n">batch</span> <span class="o">=</span> <span class="n">img_paths</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">]</span>
@@ -511,13 +510,13 @@
             <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
 
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;frame_ids&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span>
-            <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="s2">"frame_ids"</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span>
+            <span class="s2">"features"</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
         <span class="p">}</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_crops_for</span><span class="p">(</span><span class="n">detections</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Detection</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Crop a batch of detections, decoding video frames in one pass.</span>
+<span class="w">        </span><span class="sd">"""Crop a batch of detections, decoding video frames in one pass.</span>
 
 <span class="sd">        Video-backed detections are decoded with a single</span>
 <span class="sd">        :meth:`~exordium.video.core.io.Video.get_frames_at` call rather than one</span>
@@ -534,9 +533,9 @@
 <span class="sd">            detections: Detections to crop.  May mix sources.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            One ``(3, H&#39;, W&#39;)`` uint8 RGB crop per detection, in input order.</span>
+<span class="sd">            One ``(3, H', W')`` uint8 RGB crop per detection, in input order.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">crops</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">detections</span><span class="p">)</span>
 
         <span class="c1"># Group the video-backed detections by source: one batched decode per video.</span>
@@ -558,9 +557,9 @@
             <span class="k">if</span> <span class="n">crops</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">crops</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra_space</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;list[torch.Tensor]&quot;</span><span class="p">,</span> <span class="n">crops</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="s2">"list[torch.Tensor]"</span><span class="p">,</span> <span class="n">crops</span><span class="p">)</span>
 
-    <span class="nd">@load_or_create</span><span class="p">(</span><span class="s2">&quot;st&quot;</span><span class="p">)</span>
+    <span class="nd">@load_or_create</span><span class="p">(</span><span class="s2">"st"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">track_to_feature</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">track</span><span class="p">:</span> <span class="n">Track</span><span class="p">,</span>
@@ -571,7 +570,7 @@
         <span class="n">fill</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="o">**</span><span class="n">_kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract features from all non-interpolated detections in a track.</span>
+<span class="w">        </span><span class="sd">"""Extract features from all non-interpolated detections in a track.</span>
 
 <span class="sd">        By default the output is **sparse**: one feature row per detection, so</span>
 <span class="sd">        ``N &lt;= num_frames`` when the subject was not detected on every frame.</span>
@@ -584,7 +583,7 @@
 
 <span class="sd">        Results are cached as a safetensors file: pass ``output_path`` and</span>
 <span class="sd">        ``overwrite`` via ``_kwargs`` to control caching behaviour. Sparse and</span>
-<span class="sd">        dense results differ, so give them **different** ``output_path``s.</span>
+<span class="sd">        dense results differ, so give them **different** values of ``output_path``.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            track: Track containing a sequence of Detection objects.</span>
@@ -596,24 +595,24 @@
 <span class="sd">            end_frame_id: One past the last frame of the dense grid (exclusive).</span>
 <span class="sd">                Ignored unless ``densify``. When ``None``, defaults to the last</span>
 <span class="sd">                detected frame + 1, which **undercounts if the video continues</span>
-<span class="sd">                past the last detection** — pass the video&#39;s frame count</span>
+<span class="sd">                past the last detection** — pass the video's frame count</span>
 <span class="sd">                explicitly whenever it is known.</span>
 <span class="sd">            fill: Value for frames with no detection — either a scalar or a</span>
 <span class="sd">                ``(D,)`` tensor. Ignored unless ``densify``. Defaults to 0.0.</span>
 <span class="sd">            **_kwargs: Forwarded to ``load_or_create``.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            When ``densify=False`` (default), a dict with ``&quot;frame_ids&quot;``</span>
-<span class="sd">            (``(N,)`` long) and ``&quot;features&quot;`` (``(N, D)`` float), both on CPU.</span>
+<span class="sd">            When ``densify=False`` (default), a dict with ``"frame_ids"``</span>
+<span class="sd">            (``(N,)`` long) and ``"features"`` (``(N, D)`` float), both on CPU.</span>
 
-<span class="sd">            When ``densify=True``, a dict with ``&quot;frame_ids&quot;`` (``(T,)`` long,</span>
-<span class="sd">            contiguous), ``&quot;features&quot;`` (``(T, D)``, ``fill`` where undetected)</span>
-<span class="sd">            and ``&quot;mask&quot;`` (``(T,)`` bool, True where a detection existed) —</span>
+<span class="sd">            When ``densify=True``, a dict with ``"frame_ids"`` (``(T,)`` long,</span>
+<span class="sd">            contiguous), ``"features"`` (``(T, D)``, ``fill`` where undetected)</span>
+<span class="sd">            and ``"mask"`` (``(T,)`` bool, True where a detection existed) —</span>
 <span class="sd">            the same contract</span>
 <span class="sd">            :meth:`~exordium.video.deep.marlin.MarlinWrapper.track_to_feature`</span>
 <span class="sd">            returns.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -635,7 +634,7 @@
             <span class="n">stacked</span> <span class="o">=</span> <span class="n">probe</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">probe</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">densify</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;frame_ids&quot;</span><span class="p">:</span> <span class="n">frame_ids</span><span class="p">,</span> <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">stacked</span><span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"frame_ids"</span><span class="p">:</span> <span class="n">frame_ids</span><span class="p">,</span> <span class="s2">"features"</span><span class="p">:</span> <span class="n">stacked</span><span class="p">}</span>
 
         <span class="k">return</span> <span class="n">densify_features</span><span class="p">(</span>
             <span class="n">frame_ids</span><span class="p">,</span>
@@ -645,7 +644,7 @@
             <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="nd">@load_or_create</span><span class="p">(</span><span class="s2">&quot;st&quot;</span><span class="p">)</span>
+    <span class="nd">@load_or_create</span><span class="p">(</span><span class="s2">"st"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">video_to_feature</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">video_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
@@ -653,7 +652,7 @@
         <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">_kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract features for every frame of a video file.</span>
+<span class="w">        </span><span class="sd">"""Extract features for every frame of a video file.</span>
 
 <span class="sd">        Opens the video once with :class:`~exordium.video.core.io.Video`,</span>
 <span class="sd">        iterates over batches of decoded frames, and concatenates the results.</span>
@@ -667,10 +666,10 @@
 <span class="sd">            **_kwargs: Forwarded to ``load_or_create``.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Dict with keys ``&quot;frame_ids&quot;`` (``(T,)`` long tensor) and</span>
-<span class="sd">            ``&quot;features&quot;`` (``(T, D)`` float tensor), both on CPU.</span>
+<span class="sd">            Dict with keys ``"frame_ids"`` (``(T,)`` long tensor) and</span>
+<span class="sd">            ``"features"`` (``(T, D)`` float tensor), both on CPU.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">video_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
         <span class="n">ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -681,7 +680,7 @@
             <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
                 <span class="n">video</span><span class="o">.</span><span class="n">iter_batches</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">),</span>
                 <span class="n">total</span><span class="o">=</span><span class="n">total_batches</span><span class="p">,</span>
-                <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> extraction&quot;</span><span class="p">,</span>
+                <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> extraction"</span><span class="p">,</span>
                 <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">,</span>
             <span class="p">):</span>
                 <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
@@ -689,8 +688,8 @@
                 <span class="n">frame_id</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;frame_ids&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span>
-            <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="s2">"frame_ids"</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span>
+            <span class="s2">"features"</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
         <span class="p">}</span></div>
 
 </pre></div>

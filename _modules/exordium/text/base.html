@@ -266,7 +266,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../../autoapi/exordium/video/face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../../autoapi/exordium/video/face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -320,7 +319,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for exordium.text.base</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Abstract base classes for text and speech-to-text models.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Abstract base classes for text and speech-to-text models."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
@@ -335,57 +334,57 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_torch_device</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;Module-level logger.&quot;&quot;&quot;</span>
+<span class="sd">"""Module-level logger."""</span>
 
 <span class="n">WHISPER_WINDOW_SECONDS</span> <span class="o">=</span> <span class="mf">30.0</span>
-<span class="sd">&quot;&quot;&quot;Length of Whisper&#39;s fixed receptive field; audio longer than this needs long-form decoding.&quot;&quot;&quot;</span>
+<span class="sd">"""Length of Whisper's fixed receptive field; audio longer than this needs long-form decoding."""</span>
 
 <span class="n">WAV2VEC2_RECEPTIVE_FIELD_SAMPLES</span> <span class="o">=</span> <span class="mi">400</span>
-<span class="sd">&quot;&quot;&quot;Samples consumed by one wav2vec2 emission frame (the conv frontend&#39;s receptive field).&quot;&quot;&quot;</span>
+<span class="sd">"""Samples consumed by one wav2vec2 emission frame (the conv frontend's receptive field)."""</span>
 
 <span class="n">WAV2VEC2_STRIDE_SAMPLES</span> <span class="o">=</span> <span class="mi">320</span>
-<span class="sd">&quot;&quot;&quot;Samples between consecutive wav2vec2 emission frames (the conv frontend&#39;s total stride).&quot;&quot;&quot;</span>
+<span class="sd">"""Samples between consecutive wav2vec2 emission frames (the conv frontend's total stride)."""</span>
 
 <span class="n">MIN_ALIGN_SAMPLES</span> <span class="o">=</span> <span class="n">WAV2VEC2_RECEPTIVE_FIELD_SAMPLES</span> <span class="o">+</span> <span class="n">WAV2VEC2_STRIDE_SAMPLES</span>
-<span class="sd">&quot;&quot;&quot;Shortest slice (720 samples, 45 ms @ 16 kHz) that yields **two** emission frames.</span>
+<span class="sd">"""Shortest slice (720 samples, 45 ms @ 16 kHz) that yields **two** emission frames.</span>
 
 <span class="sd">One frame is never enough: whisperX rescales its timestamps by</span>
 <span class="sd">``duration / (trellis.size(0) - 1)``, so a one-row trellis divides by zero</span>
 <span class="sd">(``ZeroDivisionError``) and aborts the whole recording, and ``MMS_FA`` cannot even run</span>
 <span class="sd">its conv stack below 400 samples (``RuntimeError``).  This is the floor for *any* text;</span>
 <span class="sd">:func:`wav2vec2_min_samples` gives the real, text-dependent requirement.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="n">WIDEN_WINDOW_SECONDS</span> <span class="o">=</span> <span class="mf">0.5</span>
-<span class="sd">&quot;&quot;&quot;Window a degenerate segment is widened to, over and above the geometric minimum.</span>
+<span class="sd">"""Window a degenerate segment is widened to, over and above the geometric minimum.</span>
 
 <span class="sd">:func:`wav2vec2_min_samples` says what the *model* needs; it says nothing about what the</span>
-<span class="sd">*speech* needs.  A 4-token word like ``&quot;that&quot;`` needs only 85 ms of frames, but takes</span>
+<span class="sd">*speech* needs.  A 4-token word like ``"that"`` needs only 85 ms of frames, but takes</span>
 <span class="sd">~250 ms to say, so widening to the geometric floor alone hands CTC a window that clips</span>
-<span class="sd">the word — it aligns, but the timestamp comes back truncated (measured: ``&quot;hey&quot;`` scored</span>
+<span class="sd">the word — it aligns, but the timestamp comes back truncated (measured: ``"hey"`` scored</span>
 <span class="sd">0.02 and returned a 65 ms span against a true 320 ms, starting 137 ms late).</span>
 
 <span class="sd">Half a second gives the word room to sit inside the window; measured start error against</span>
 <span class="sd">ground truth drops to ~20 ms (about one emission frame).  Wider windows start to drift,</span>
 <span class="sd">as the aligner has more audio in which to mistake a similar-sounding neighbour for the</span>
 <span class="sd">word it is looking for.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <div class="viewcode-block" id="wav2vec2_min_samples">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.wav2vec2_min_samples">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">wav2vec2_min_samples</span><span class="p">(</span><span class="n">num_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Samples needed to force-align *num_tokens* tokens with a wav2vec2 CTC model.</span>
+<span class="w">    </span><span class="sd">"""Samples needed to force-align *num_tokens* tokens with a wav2vec2 CTC model.</span>
 
 <span class="sd">    The conv frontend turns ``N`` samples into ``floor((N - 400) / 320) + 1`` emission</span>
 <span class="sd">    frames, and CTC cannot emit more tokens than it has frames.  Aligning ``T`` tokens</span>
 <span class="sd">    therefore needs ``T`` frames, i.e. ``N &gt;= 400 + 320 * (T - 1)`` — never fewer than</span>
 <span class="sd">    :data:`MIN_ALIGN_SAMPLES`, since a lone frame breaks both backends outright.</span>
 
-<span class="sd">    This is why a *constant* minimum is the wrong shape: ``&quot;I&quot;`` needs 720 samples but</span>
-<span class="sd">    ``&quot;that&quot;`` needs 1360.  Starving a segment of frames does not merely lose precision —</span>
-<span class="sd">    ``MMS_FA`` raises, and whisperX&#39;s backtrack fails and returns the words untimed,</span>
+<span class="sd">    This is why a *constant* minimum is the wrong shape: ``"I"`` needs 720 samples but</span>
+<span class="sd">    ``"that"`` needs 1360.  Starving a segment of frames does not merely lose precision —</span>
+<span class="sd">    ``MMS_FA`` raises, and whisperX's backtrack fails and returns the words untimed,</span>
 <span class="sd">    which drops them silently.</span>
 
 <span class="sd">    Args:</span>
@@ -394,7 +393,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Minimum slice length in samples.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">tokens</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_tokens</span><span class="p">)</span>
     <span class="n">span</span> <span class="o">=</span> <span class="n">WAV2VEC2_RECEPTIVE_FIELD_SAMPLES</span> <span class="o">+</span> <span class="n">WAV2VEC2_STRIDE_SAMPLES</span> <span class="o">*</span> <span class="p">(</span><span class="n">tokens</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">MIN_ALIGN_SAMPLES</span><span class="p">,</span> <span class="n">span</span><span class="p">)</span></div>
@@ -405,7 +404,7 @@
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.Segment">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Segment</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;An utterance-level chunk of a transcript with its time span.</span>
+<span class="w">    </span><span class="sd">"""An utterance-level chunk of a transcript with its time span.</span>
 
 <span class="sd">    Produced by :meth:`~exordium.text.whisper.WhisperWrapper.transcribe_segments`</span>
 <span class="sd">    and consumed by :meth:`ForcedAligner.align_segments`, which aligns each</span>
@@ -413,11 +412,11 @@
 <span class="sd">    long recordings (a 16-minute waveform never enters a single forward pass).</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        text: The segment&#39;s transcribed text.</span>
+<span class="sd">        text: The segment's transcribed text.</span>
 <span class="sd">        start: Segment start in seconds from the beginning of the audio.</span>
 <span class="sd">        end: Segment end in seconds from the beginning of the audio.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">start</span><span class="p">:</span> <span class="nb">float</span>
@@ -426,7 +425,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_widen</span><span class="p">(</span><span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Grow a ``[start, end)`` sample window to *target* samples around its midpoint.</span>
+<span class="w">    </span><span class="sd">"""Grow a ``[start, end)`` sample window to *target* samples around its midpoint.</span>
 
 <span class="sd">    Slides the window back inside ``[0, limit)`` if centring would overshoot either edge,</span>
 <span class="sd">    so the result is always ``target`` samples long (the caller guarantees the audio is</span>
@@ -441,7 +440,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        The widened ``(start, end)`` in samples.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">deficit</span> <span class="o">=</span> <span class="n">target</span> <span class="o">-</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
     <span class="n">new_start</span> <span class="o">=</span> <span class="n">start</span> <span class="o">-</span> <span class="n">deficit</span> <span class="o">//</span> <span class="mi">2</span>
     <span class="n">new_end</span> <span class="o">=</span> <span class="n">new_start</span> <span class="o">+</span> <span class="n">target</span>
@@ -456,14 +455,14 @@
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.prepare_segments">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">prepare_segments</span><span class="p">(</span>
     <span class="n">segments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">],</span>
-    <span class="n">min_samples_for</span><span class="p">:</span> <span class="s2">&quot;Callable[[str], int]&quot;</span><span class="p">,</span>
+    <span class="n">min_samples_for</span><span class="p">:</span> <span class="s2">"Callable[[str], int]"</span><span class="p">,</span>
     <span class="n">sample_rate</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16000</span><span class="p">,</span>
     <span class="n">num_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Widen segments that are too short for a wav2vec2 aligner to time-stamp.</span>
+<span class="w">    </span><span class="sd">"""Widen segments that are too short for a wav2vec2 aligner to time-stamp.</span>
 
 <span class="sd">    Long-form Whisper occasionally emits **degenerate micro-segments**: real text with a</span>
-<span class="sd">    near-zero span (e.g. ``&quot;I&quot;`` over 0.02 s).  The text is fine and the surrounding audio</span>
+<span class="sd">    near-zero span (e.g. ``"I"`` over 0.02 s).  The text is fine and the surrounding audio</span>
 <span class="sd">    exists — only the *window* is too narrow to give CTC one emission frame per token.</span>
 <span class="sd">    Such a window makes ``MMS_FA`` raise and makes whisperX divide by zero, so the naive</span>
 <span class="sd">    remedy is to drop the segment; that throws the word away for no reason.</span>
@@ -497,7 +496,7 @@
 <span class="sd">        Alignable segments in chronological order, some with widened spans. Widened and</span>
 <span class="sd">        dropped segments are logged so neither is silent.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">limit</span> <span class="o">=</span> <span class="n">num_samples</span>
     <span class="n">prepared</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">widened</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -530,7 +529,7 @@
             <span class="k">continue</span>
 
         <span class="c1"># The span is unusable, so give the word a window it can actually be heard in,</span>
-        <span class="c1"># not merely the model&#39;s bare minimum — but never more audio than we have.</span>
+        <span class="c1"># not merely the model's bare minimum — but never more audio than we have.</span>
         <span class="n">target</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">needed</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">WIDEN_WINDOW_SECONDS</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">target</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">needed</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">limit</span><span class="p">))</span>
@@ -545,34 +544,34 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_to_segment</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Segment</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a :class:`Segment` from a sample-space window.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build a :class:`Segment` from a sample-space window."""</span>
     <span class="k">return</span> <span class="n">Segment</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span> <span class="o">/</span> <span class="n">sample_rate</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">end</span> <span class="o">/</span> <span class="n">sample_rate</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_log_prepared</span><span class="p">(</span><span class="n">segments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">],</span> <span class="n">widened</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">],</span> <span class="n">dropped</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Report widened and dropped segments so neither loss is silent.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Report widened and dropped segments so neither loss is silent."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">preview</span><span class="p">(</span><span class="n">items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="n">shown</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">!r}</span><span class="s2"> @ </span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">start</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s&quot;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">items</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">shown</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot; (+</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">5</span><span class="si">}</span><span class="s2"> more)&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">shown</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">!r}</span><span class="s2"> @ </span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">start</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s"</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">items</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">shown</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">" (+</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">5</span><span class="si">}</span><span class="s2"> more)"</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="s2">""</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">widened</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Widened </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">widened</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span><span class="si">}</span><span class="s2"> segment(s) too short to force-align; &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;their word timings are approximate: </span><span class="si">{</span><span class="n">preview</span><span class="p">(</span><span class="n">widened</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Widened </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">widened</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span><span class="si">}</span><span class="s2"> segment(s) too short to force-align; "</span>
+            <span class="sa">f</span><span class="s2">"their word timings are approximate: </span><span class="si">{</span><span class="n">preview</span><span class="p">(</span><span class="n">widened</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">dropped</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Dropping </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dropped</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span><span class="si">}</span><span class="s2"> segment(s) the audio cannot carry &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;(too short for their text, or past the end of the recording): &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">preview</span><span class="p">(</span><span class="n">dropped</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Dropping </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dropped</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span><span class="si">}</span><span class="s2"> segment(s) the audio cannot carry "</span>
+            <span class="sa">f</span><span class="s2">"(too short for their text, or past the end of the recording): "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">preview</span><span class="p">(</span><span class="n">dropped</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
 
 <div class="viewcode-block" id="to_mono_16k">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.to_mono_16k">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">to_mono_16k</span><span class="p">(</span><span class="n">audio</span><span class="p">:</span> <span class="s2">&quot;Path | str | np.ndarray | torch.Tensor&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return *audio* as a 1-D float32 waveform at 16 kHz plus its sample rate.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_mono_16k</span><span class="p">(</span><span class="n">audio</span><span class="p">:</span> <span class="s2">"Path | str | np.ndarray | torch.Tensor"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Return *audio* as a 1-D float32 waveform at 16 kHz plus its sample rate.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        audio: File path, numpy array, or torch tensor (arrays/tensors are</span>
@@ -581,7 +580,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Tuple of ``(waveform_1d, sample_rate)``.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.audio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_audio</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
@@ -597,7 +596,7 @@
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.Word">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Word</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single transcribed word with its time span on the audio timeline.</span>
+<span class="w">    </span><span class="sd">"""A single transcribed word with its time span on the audio timeline.</span>
 
 <span class="sd">    This is the common currency exchanged between word-timestamp backends</span>
 <span class="sd">    (Whisper + forced alignment, whisperX) and downstream consumers such as</span>
@@ -610,7 +609,7 @@
 <span class="sd">        end: Word end time in seconds from the beginning of the audio.</span>
 <span class="sd">        score: Alignment confidence in ``[0, 1]``; ``1.0`` when unknown.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">start</span><span class="p">:</span> <span class="nb">float</span>
@@ -623,10 +622,10 @@
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.SegmentMatch">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SegmentMatch</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Result of fuzzy-searching a known transcript inside a word stream.</span>
+<span class="w">    </span><span class="sd">"""Result of fuzzy-searching a known transcript inside a word stream.</span>
 
 <span class="sd">    Returned by :func:`~exordium.text.transcript_align.find_segment`.  The</span>
-<span class="sd">    ``start``/``end`` recover the segment&#39;s true position on the *current*</span>
+<span class="sd">    ``start``/``end`` recover the segment's true position on the *current*</span>
 <span class="sd">    audio timeline, while ``score`` reports how well the query text matched</span>
 <span class="sd">    (useful to accept, re-cut, or drop a dataset segment).</span>
 
@@ -638,7 +637,7 @@
 <span class="sd">        word_start_idx: Index of the first matched word in the stream.</span>
 <span class="sd">        word_end_idx: Index of the last matched word (inclusive).</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">start</span><span class="p">:</span> <span class="nb">float</span>
@@ -652,7 +651,7 @@
 <div class="viewcode-block" id="TextModelWrapper">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.TextModelWrapper">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TextModelWrapper</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for HuggingFace encoder-only transformer models.</span>
+<span class="w">    </span><span class="sd">"""Abstract base class for HuggingFace encoder-only transformer models.</span>
 
 <span class="sd">    Handles device placement and provides the standard</span>
 <span class="sd">    ``preprocess → inference → __call__`` pipeline used by all text wrappers</span>
@@ -670,23 +669,23 @@
 <span class="sd">    * CLS-token only — return ``outputs.last_hidden_state[:, 0]`` ``(B, H)``</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        model_name: HuggingFace model identifier (e.g. ``&quot;bert-base-uncased&quot;``).</span>
+<span class="sd">        model_name: HuggingFace model identifier (e.g. ``"bert-base-uncased"``).</span>
 <span class="sd">        device_id: Device index. ``-1`` or ``None`` → CPU, ``0+`` → GPU.</span>
 
 <span class="sd">    Example::</span>
 
 <span class="sd">        class BertWrapper(TextModelWrapper):</span>
 <span class="sd">            def __init__(self, device_id=-1):</span>
-<span class="sd">                super().__init__(&quot;bert-base-uncased&quot;, device_id)</span>
+<span class="sd">                super().__init__("bert-base-uncased", device_id)</span>
 
 <span class="sd">            def inference(self, inputs):</span>
 <span class="sd">                return self.model(**inputs).last_hidden_state  # (B, T, 768)</span>
 
 <span class="sd">        model = BertWrapper()</span>
-<span class="sd">        hidden = model(&quot;Hello world&quot;)          # torch.Tensor (1, T, 768)</span>
-<span class="sd">        feats  = model.predict([&quot;a&quot;, &quot;b&quot;])     # np.ndarray  (2, T, 768)</span>
+<span class="sd">        hidden = model("Hello world")          # torch.Tensor (1, T, 768)</span>
+<span class="sd">        feats  = model.predict(["a", "b"])     # np.ndarray  (2, T, 768)</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">exordium.utils.ckpt</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_hf_model</span>
@@ -706,25 +705,25 @@
         <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize text and move tensors to ``self.device``.</span>
+<span class="w">        </span><span class="sd">"""Tokenize text and move tensors to ``self.device``.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            text: Single string or list of strings.</span>
 <span class="sd">            max_length: Maximum sequence length; truncates if exceeded.</span>
-<span class="sd">                ``None`` uses the tokenizer&#39;s default.</span>
+<span class="sd">                ``None`` uses the tokenizer's default.</span>
 <span class="sd">            padding: Padding strategy forwarded to the tokenizer.</span>
-<span class="sd">                ``True`` / ``&quot;longest&quot;`` pads to the longest sequence in the</span>
-<span class="sd">                batch; ``&quot;max_length&quot;`` pads to ``max_length``.</span>
+<span class="sd">                ``True`` / ``"longest"`` pads to the longest sequence in the</span>
+<span class="sd">                batch; ``"max_length"`` pads to ``max_length``.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dict of tensors (``input_ids``, ``attention_mask``, …) on</span>
 <span class="sd">            ``self.device``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">(</span>
             <span class="n">text</span><span class="p">,</span>
-            <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+            <span class="n">return_tensors</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">,</span>
             <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">,</span>
             <span class="n">truncation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">max_length</span><span class="o">=</span><span class="n">max_length</span><span class="p">,</span>
@@ -736,7 +735,7 @@
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.TextModelWrapper.inference">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Model forward pass.</span>
+<span class="w">        </span><span class="sd">"""Model forward pass.</span>
 
 <span class="sd">        Receives the tokenizer output dict (already on ``self.device``) and</span>
 <span class="sd">        returns the feature tensor.  All extraction logic (which output to use,</span>
@@ -752,7 +751,7 @@
 <span class="sd">            * ``(B, T, H)`` for token-level encoders</span>
 <span class="sd">            * ``(B, H)`` for sentence-level encoders (pooled)</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="TextModelWrapper.__call__">
@@ -763,7 +762,7 @@
         <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize and encode text, returning a feature tensor.</span>
+<span class="w">        </span><span class="sd">"""Tokenize and encode text, returning a feature tensor.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            text: Single string or list of strings.</span>
@@ -774,7 +773,7 @@
 <span class="sd">            Feature tensor on ``self.device``.  Shape is determined by</span>
 <span class="sd">            :meth:`inference` (token-level or sentence-level).</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">padding</span><span class="p">))</span></div>
 
@@ -787,7 +786,7 @@
         <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize and encode text, returning a numpy feature array.</span>
+<span class="w">        </span><span class="sd">"""Tokenize and encode text, returning a numpy feature array.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            text: Single string or list of strings.</span>
@@ -797,7 +796,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Feature array. Shape is determined by :meth:`inference`.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">padding</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span></div>
 
 
@@ -806,7 +805,7 @@
         <span class="n">last_hidden_state</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="n">attention_mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Attention-mask-weighted mean pooling over the sequence dimension.</span>
+<span class="w">        </span><span class="sd">"""Attention-mask-weighted mean pooling over the sequence dimension.</span>
 
 <span class="sd">        Excludes padding tokens from the mean by weighting with the binary</span>
 <span class="sd">        attention mask before summing and normalising.</span>
@@ -818,7 +817,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Sentence embeddings of shape ``(B, H)``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">attention_mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">last_hidden_state</span><span class="o">.</span><span class="n">size</span><span class="p">())</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">last_hidden_state</span> <span class="o">*</span> <span class="n">mask</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="nb">min</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">)</span></div>
 
@@ -827,17 +826,17 @@
 <div class="viewcode-block" id="PooledTokenTextWrapper">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.PooledTokenTextWrapper">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PooledTokenTextWrapper</span><span class="p">(</span><span class="n">TextModelWrapper</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Encoder wrapper exposing both token-level and pooled outputs via ``pooling``.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Encoder wrapper exposing both token-level and pooled outputs via ``pooling``.</span>
 
 <span class="sd">    A :class:`TextModelWrapper` whose ``preprocess → inference → __call__``</span>
 <span class="sd">    pipeline is parameterised by a ``pooling`` mode, so one wrapper serves both</span>
 <span class="sd">    an affective-computing fusion layer (which wants the token sequence) and a</span>
 <span class="sd">    sentence-similarity consumer (which wants one vector per input):</span>
 
-<span class="sd">    * ``pooling=&quot;none&quot;`` — the raw token sequence ``last_hidden_state`` of shape</span>
+<span class="sd">    * ``pooling="none"`` — the raw token sequence ``last_hidden_state`` of shape</span>
 <span class="sd">      ``(B, T, H)`` (token-level; feed to a cross-modal sequence model such as</span>
 <span class="sd">      MulT/LinMulT alongside the ``attention_mask``).</span>
-<span class="sd">    * ``pooling=&quot;mean&quot;`` (default) — the attention-masked mean-pooled sentence</span>
+<span class="sd">    * ``pooling="mean"`` (default) — the attention-masked mean-pooled sentence</span>
 <span class="sd">      embedding of shape ``(B, H)``.</span>
 
 <span class="sd">    A single ``str`` is encoded as a batch of one, so one sentence yields</span>
@@ -849,9 +848,9 @@
 <span class="sd">    HuggingFace model id; the pooling API is inherited unchanged.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        hidden_size: The backbone&#39;s hidden size ``H``, read from the model config.</span>
+<span class="sd">        hidden_size: The backbone's hidden size ``H``, read from the model config.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">device_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">)</span>
@@ -862,32 +861,32 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
-        <span class="n">pooling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+        <span class="n">pooling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"mean"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the encoder forward pass and return token-level or pooled features.</span>
+<span class="w">        </span><span class="sd">"""Run the encoder forward pass and return token-level or pooled features.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            inputs: Tokenizer output dict on ``self.device``.</span>
-<span class="sd">            pooling: ``&quot;none&quot;`` returns the raw token sequence</span>
+<span class="sd">            pooling: ``"none"`` returns the raw token sequence</span>
 <span class="sd">                ``last_hidden_state`` of shape ``(B, T, H)`` (token-level, for a</span>
-<span class="sd">                cross-modal sequence model). ``&quot;mean&quot;`` (default) returns the</span>
+<span class="sd">                cross-modal sequence model). ``"mean"`` (default) returns the</span>
 <span class="sd">                attention-masked mean-pooled sentence embedding of shape</span>
 <span class="sd">                ``(B, H)``.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Token embeddings ``(B, T, H)`` when ``pooling=&quot;none&quot;``, or pooled</span>
-<span class="sd">            sentence embeddings ``(B, H)`` when ``pooling=&quot;mean&quot;``.</span>
+<span class="sd">            Token embeddings ``(B, T, H)`` when ``pooling="none"``, or pooled</span>
+<span class="sd">            sentence embeddings ``(B, H)`` when ``pooling="mean"``.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If ``pooling`` is not ``&quot;none&quot;`` or ``&quot;mean&quot;``.</span>
+<span class="sd">            ValueError: If ``pooling`` is not ``"none"`` or ``"mean"``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">last_hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">)</span><span class="o">.</span><span class="n">last_hidden_state</span>
-        <span class="k">if</span> <span class="n">pooling</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pooling</span> <span class="o">==</span> <span class="s2">"none"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">last_hidden</span>
-        <span class="k">if</span> <span class="n">pooling</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mean_pool</span><span class="p">(</span><span class="n">last_hidden</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">])</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown pooling </span><span class="si">{</span><span class="n">pooling</span><span class="si">!r}</span><span class="s2">; use &#39;none&#39; or &#39;mean&#39;.&quot;</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">pooling</span> <span class="o">==</span> <span class="s2">"mean"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mean_pool</span><span class="p">(</span><span class="n">last_hidden</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">"attention_mask"</span><span class="p">])</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown pooling </span><span class="si">{</span><span class="n">pooling</span><span class="si">!r}</span><span class="s2">; use 'none' or 'mean'."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PooledTokenTextWrapper.__call__">
@@ -897,22 +896,22 @@
         <span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">pooling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+        <span class="n">pooling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"mean"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize and encode text, returning a feature tensor.</span>
+<span class="w">        </span><span class="sd">"""Tokenize and encode text, returning a feature tensor.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            text: Single string or list of strings.</span>
 <span class="sd">            max_length: Maximum sequence length. ``None`` uses tokenizer default.</span>
 <span class="sd">            padding: Padding strategy. Default: ``True`` (pad to longest).</span>
-<span class="sd">            pooling: Forwarded to :meth:`inference`. ``&quot;mean&quot;`` (default) returns</span>
-<span class="sd">                pooled ``(B, H)``; ``&quot;none&quot;`` returns token-level ``(B, T, H)``.</span>
+<span class="sd">            pooling: Forwarded to :meth:`inference`. ``"mean"`` (default) returns</span>
+<span class="sd">                pooled ``(B, H)``; ``"none"`` returns token-level ``(B, T, H)``.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Feature tensor on ``self.device``: ``(B, H)`` pooled by default, or</span>
-<span class="sd">            ``(B, T, H)`` token-level when ``pooling=&quot;none&quot;``.</span>
+<span class="sd">            ``(B, T, H)`` token-level when ``pooling="none"``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">padding</span><span class="p">),</span> <span class="n">pooling</span><span class="o">=</span><span class="n">pooling</span><span class="p">)</span></div>
 
@@ -924,22 +923,22 @@
         <span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">pooling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+        <span class="n">pooling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"mean"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize and encode text, returning a numpy feature array.</span>
+<span class="w">        </span><span class="sd">"""Tokenize and encode text, returning a numpy feature array.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            text: Single string or list of strings.</span>
 <span class="sd">            max_length: Maximum sequence length.</span>
 <span class="sd">            padding: Padding strategy.</span>
-<span class="sd">            pooling: Forwarded to :meth:`inference`. ``&quot;mean&quot;`` (default) returns</span>
-<span class="sd">                pooled ``(B, H)``; ``&quot;none&quot;`` returns token-level ``(B, T, H)``.</span>
+<span class="sd">            pooling: Forwarded to :meth:`inference`. ``"mean"`` (default) returns</span>
+<span class="sd">                pooled ``(B, H)``; ``"none"`` returns token-level ``(B, T, H)``.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Feature array: ``(B, H)`` pooled by default, or ``(B, T, H)``</span>
-<span class="sd">            token-level when ``pooling=&quot;none&quot;``.</span>
+<span class="sd">            token-level when ``pooling="none"``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">pooling</span><span class="o">=</span><span class="n">pooling</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span></div>
 </div>
 
@@ -948,12 +947,12 @@
 <div class="viewcode-block" id="SpeechToText">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.SpeechToText">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SpeechToText</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for speech-to-text models.</span>
+<span class="w">    </span><span class="sd">"""Abstract base class for speech-to-text models.</span>
 
 <span class="sd">    Defines the standard ``preprocess → inference → __call__`` pipeline.</span>
 <span class="sd">    Subclasses must implement :meth:`preprocess` and :meth:`inference`.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="SpeechToText.preprocess">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.SpeechToText.preprocess">[docs]</a>
@@ -962,7 +961,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">audio</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert any audio input to model-ready features.</span>
+<span class="w">        </span><span class="sd">"""Convert any audio input to model-ready features.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            audio: Audio file path, numpy array, or torch tensor.</span>
@@ -970,14 +969,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Model-ready input (type depends on the backend).</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="SpeechToText.inference">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.SpeechToText.inference">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the model and return the full transcript.</span>
+<span class="w">        </span><span class="sd">"""Run the model and return the full transcript.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            inputs: Output of :meth:`preprocess`.</span>
@@ -986,13 +985,13 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Transcribed text as a plain string.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="SpeechToText.__call__">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.SpeechToText.__call__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">audio</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocess and transcribe, returning the full transcript.</span>
+<span class="w">        </span><span class="sd">"""Preprocess and transcribe, returning the full transcript.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            audio: Audio file path, numpy array, or torch tensor.</span>
@@ -1000,7 +999,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Transcribed text as a plain string.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">audio</span><span class="p">))</span></div>
 </div>
 
@@ -1009,7 +1008,7 @@
 <div class="viewcode-block" id="StreamingMixin">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.StreamingMixin">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">StreamingMixin</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mixin for STT backends that support word-by-word streaming output.</span>
+<span class="w">    </span><span class="sd">"""Mixin for STT backends that support word-by-word streaming output.</span>
 
 <span class="sd">    Add this mixin alongside :class:`SpeechToText` for backends where the</span>
 <span class="sd">    model decodes incrementally and can yield tokens as they are produced::</span>
@@ -1017,7 +1016,7 @@
 <span class="sd">        class WhisperWrapper(StreamingMixin, SpeechToText):</span>
 <span class="sd">            ...</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="StreamingMixin.stream">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.StreamingMixin.stream">[docs]</a>
@@ -1026,7 +1025,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">audio</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transcribe audio and yield decoded text chunks incrementally.</span>
+<span class="w">        </span><span class="sd">"""Transcribe audio and yield decoded text chunks incrementally.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            audio: Audio file path, numpy array, or torch tensor.</span>
@@ -1034,7 +1033,7 @@
 <span class="sd">        Yields:</span>
 <span class="sd">            Decoded text chunks (words or sub-word tokens) as they are produced.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 </div>
 
 
@@ -1042,10 +1041,10 @@
 <div class="viewcode-block" id="ForcedAligner">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.ForcedAligner">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ForcedAligner</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for transcript-to-audio forced aligners.</span>
+<span class="w">    </span><span class="sd">"""Abstract base class for transcript-to-audio forced aligners.</span>
 
 <span class="sd">    A forced aligner takes audio **and its known transcript** and returns each</span>
-<span class="sd">    word&#39;s time span.  Use it when the transcript is already available (e.g. a</span>
+<span class="sd">    word's time span.  Use it when the transcript is already available (e.g. a</span>
 <span class="sd">    dataset annotation) and only the timing needs to be recovered.</span>
 
 <span class="sd">    Concrete backends:</span>
@@ -1055,12 +1054,12 @@
 <span class="sd">    * :class:`~exordium.text.whisperx_align.WhisperxForcedAligner`</span>
 <span class="sd">      (whisperX wav2vec2 alignment; ships with the ``text`` extra).</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="ForcedAligner.min_align_samples">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.ForcedAligner.min_align_samples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">min_align_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Samples this backend needs to align *text*.</span>
+<span class="w">        </span><span class="sd">"""Samples this backend needs to align *text*.</span>
 
 <span class="sd">        The default counts non-whitespace characters as CTC tokens, which holds for the</span>
 <span class="sd">        character-level wav2vec2 models both backends use.  Backends with a tokenizer to</span>
@@ -1072,7 +1071,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Minimum slice length in samples.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">wav2vec2_min_samples</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">text</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">c</span><span class="o">.</span><span class="n">isspace</span><span class="p">()))</span></div>
 
 
@@ -1085,17 +1084,17 @@
         <span class="n">transcript</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align a known transcript to audio and return timed words.</span>
+<span class="w">        </span><span class="sd">"""Align a known transcript to audio and return timed words.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            audio: Audio file path, numpy array, or torch tensor (16 kHz mono).</span>
 <span class="sd">            transcript: The known transcript for this audio.</span>
-<span class="sd">            language: Language code (e.g. ``&quot;en&quot;``) or ``None`` for the default.</span>
+<span class="sd">            language: Language code (e.g. ``"en"``) or ``None`` for the default.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Words in chronological order with ``start``/``end``/``score``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="ForcedAligner.align_segments">
@@ -1106,11 +1105,11 @@
         <span class="n">segments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Segment</span><span class="p">],</span>
         <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align each segment separately and return one merged word stream.</span>
+<span class="w">        </span><span class="sd">"""Align each segment separately and return one merged word stream.</span>
 
 <span class="sd">        Aligning per segment keeps every forward pass short, so recordings of any</span>
 <span class="sd">        length work without exhausting memory. Word times are shifted back onto</span>
-<span class="sd">        the full-audio timeline by each segment&#39;s ``start``.</span>
+<span class="sd">        the full-audio timeline by each segment's ``start``.</span>
 
 <span class="sd">        Segments too short to align are widened by :func:`prepare_segments` rather than</span>
 <span class="sd">        crashing the recording or being thrown away.  Because a widened window may</span>
@@ -1126,7 +1125,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Words in chronological order on the full-audio timeline.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">waveform</span><span class="p">,</span> <span class="n">sample_rate</span> <span class="o">=</span> <span class="n">to_mono_16k</span><span class="p">(</span><span class="n">audio</span><span class="p">)</span>
         <span class="n">num_samples</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
         <span class="n">words</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1151,7 +1150,7 @@
 <div class="viewcode-block" id="WordTimestamper">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.WordTimestamper">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">WordTimestamper</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for open-vocabulary word-timestamp backends.</span>
+<span class="w">    </span><span class="sd">"""Abstract base class for open-vocabulary word-timestamp backends.</span>
 
 <span class="sd">    Unlike :class:`ForcedAligner`, a word-timestamper needs **only audio**: it</span>
 <span class="sd">    transcribes and time-stamps in one call (ASR followed by alignment).  This</span>
@@ -1161,7 +1160,7 @@
 <span class="sd">    :class:`~exordium.text.alignment.WhisperWordTimestamper` (Whisper ASR plus a</span>
 <span class="sd">    pluggable :class:`ForcedAligner`).</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="WordTimestamper.transcribe_words">
 <a class="viewcode-back" href="../../../autoapi/exordium/text/base/index.html#exordium.text.base.WordTimestamper.transcribe_words">[docs]</a>
@@ -1171,7 +1170,7 @@
         <span class="n">audio</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="n">language</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Word</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transcribe audio and return timed words.</span>
+<span class="w">        </span><span class="sd">"""Transcribe audio and return timed words.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            audio: Audio file path, numpy array, or torch tensor.</span>
@@ -1180,7 +1179,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Words in chronological order with ``start``/``end``/``score``.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 </div>
 
 </pre></div>

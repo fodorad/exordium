@@ -267,7 +267,6 @@
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../face/gaze/index.html">exordium.video.face.gaze</a><input aria-label="Toggle navigation of exordium.video.face.gaze" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l6"><a class="reference internal" href="../../face/gaze/base/index.html">exordium.video.face.gaze.base</a></li>
 <li class="toctree-l6"><a class="reference internal" href="../../face/gaze/l2csnet/index.html">exordium.video.face.gaze.l2csnet</a></li>
-<li class="toctree-l6"><a class="reference internal" href="../../face/gaze/unigaze/index.html">exordium.video.face.gaze.unigaze</a></li>
 </ul>
 </li>
 <li class="toctree-l5 has-children"><a class="reference internal" href="../../face/headpose/index.html">exordium.video.face.headpose</a><input aria-label="Toggle navigation of exordium.video.face.headpose" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
@@ -436,19 +435,19 @@ frame id falls outside <code class="docutils literal notranslate"><span class="p
 
 <span class="n">sparse</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">track_to_feature</span><span class="p">(</span><span class="n">track</span><span class="p">)</span>          <span class="c1"># (N, D), N &lt;= num_frames</span>
 <span class="n">dense</span> <span class="o">=</span> <span class="n">densify</span><span class="p">(</span>
-    <span class="n">sparse</span><span class="p">[</span><span class="s2">&quot;frame_ids&quot;</span><span class="p">],</span>
-    <span class="n">sparse</span><span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">],</span>
+    <span class="n">sparse</span><span class="p">[</span><span class="s2">"frame_ids"</span><span class="p">],</span>
+    <span class="n">sparse</span><span class="p">[</span><span class="s2">"features"</span><span class="p">],</span>
     <span class="n">end_frame_id</span><span class="o">=</span><span class="n">num_frames</span><span class="p">,</span>                    <span class="c1"># full video</span>
 <span class="p">)</span>
-<span class="n">dense</span><span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">]</span>  <span class="c1"># (num_frames, D), zeros where no face was detected</span>
-<span class="n">dense</span><span class="p">[</span><span class="s2">&quot;mask&quot;</span><span class="p">]</span>      <span class="c1"># (num_frames,) bool — feed this to your temporal model</span>
+<span class="n">dense</span><span class="p">[</span><span class="s2">"features"</span><span class="p">]</span>  <span class="c1"># (num_frames, D), zeros where no face was detected</span>
+<span class="n">dense</span><span class="p">[</span><span class="s2">"mask"</span><span class="p">]</span>      <span class="c1"># (num_frames,) bool — feed this to your temporal model</span>
 
 <span class="c1"># A 10-second snippet at 25 fps, without materialising the whole video:</span>
 <span class="n">window</span> <span class="o">=</span> <span class="n">densify</span><span class="p">(</span>
-    <span class="n">sparse</span><span class="p">[</span><span class="s2">&quot;frame_ids&quot;</span><span class="p">],</span> <span class="n">sparse</span><span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">],</span>
+    <span class="n">sparse</span><span class="p">[</span><span class="s2">"frame_ids"</span><span class="p">],</span> <span class="n">sparse</span><span class="p">[</span><span class="s2">"features"</span><span class="p">],</span>
     <span class="n">start_frame_id</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">end_frame_id</span><span class="o">=</span><span class="mi">350</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">window</span><span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># (250, D)</span>
+<span class="n">window</span><span class="p">[</span><span class="s2">"features"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># (250, D)</span>
 </pre></div>
 </div>
 </dd></dl>
