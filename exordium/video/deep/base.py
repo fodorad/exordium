@@ -251,7 +251,7 @@ class VisualModelWrapper(ABC):
 
         Results are cached as a safetensors file: pass ``output_path`` and
         ``overwrite`` via ``_kwargs`` to control caching behaviour. Sparse and
-        dense results differ, so give them **different** ``output_path``s.
+        dense results differ, so give them **different** values of ``output_path``.
 
         Args:
             track: Track containing a sequence of Detection objects.

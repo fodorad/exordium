@@ -429,17 +429,17 @@ class _RepVGGBlock(nn.Module):  # pragma: no cover
             return
         kernel, bias = self._get_equivalent_kernel_bias()
         self.rbr_reparam = nn.Conv2d(
-            self.rbr_dense.conv.in_channels,
-            self.rbr_dense.conv.out_channels,
-            kernel_size=self.rbr_dense.conv.kernel_size,
-            stride=self.rbr_dense.conv.stride,
-            padding=self.rbr_dense.conv.padding,
-            dilation=self.rbr_dense.conv.dilation,
-            groups=self.rbr_dense.conv.groups,
+            self.rbr_dense.conv.in_channels,  # ty: ignore[invalid-argument-type, unresolved-attribute]
+            self.rbr_dense.conv.out_channels,  # ty: ignore[invalid-argument-type, unresolved-attribute]
+            kernel_size=self.rbr_dense.conv.kernel_size,  # ty: ignore[invalid-argument-type, unresolved-attribute]
+            stride=self.rbr_dense.conv.stride,  # ty: ignore[invalid-argument-type]
+            padding=self.rbr_dense.conv.padding,  # ty: ignore[invalid-argument-type, unresolved-attribute]
+            dilation=self.rbr_dense.conv.dilation,  # ty: ignore[invalid-argument-type, unresolved-attribute]
+            groups=self.rbr_dense.conv.groups,  # ty: ignore[invalid-argument-type, unresolved-attribute]
             bias=True,
         )
         self.rbr_reparam.weight.data = kernel
-        self.rbr_reparam.bias.data = bias
+        self.rbr_reparam.bias.data = bias  # ty: ignore[invalid-assignment]
         for p in self.parameters():
             p.detach_()
         del self.rbr_dense, self.rbr_1x1

@@ -43,7 +43,7 @@ try:
 
     _WHISPERX_AVAILABLE = True
 except ImportError:  # pragma: no cover - exercised only without the extra
-    whisperx = None  # ty: ignore[invalid-assignment]
+    whisperx = None
     _WHISPERX_AVAILABLE = False
 
 
@@ -77,7 +77,7 @@ class WhisperxForcedAligner(ForcedAligner):
         self.device = get_torch_device(device_id)
         self._device_str = "cuda" if self.device.type == "cuda" else "cpu"
         logger.info(f"Loading whisperX align model ({language}) on {self._device_str}...")
-        self.model, self.metadata = whisperx.load_align_model(
+        self.model, self.metadata = whisperx.load_align_model(  # ty: ignore[unresolved-attribute]
             language_code=language, device=self._device_str
         )
 
@@ -175,7 +175,7 @@ class WhisperxForcedAligner(ForcedAligner):
 
     def _run(self, segments: list[dict], waveform: np.ndarray) -> list[Word]:
         """Run whisperX alignment over *segments* and convert to :class:`Word`."""
-        result = whisperx.align(
+        result = whisperx.align(  # ty: ignore[unresolved-attribute]
             segments,
             self.model,
             self.metadata,

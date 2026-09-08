@@ -57,7 +57,6 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Iris landmarks | [MediaPipe Iris](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker) | 71 eye pts + 5 iris pts, EAR, diameters |
 | Head pose | [6DRepNet](https://github.com/thohemp/6DRepNet) (300W-LP + AFLW2000) | yaw, pitch, roll (degrees) |
 | Gaze estimation | [L2CS-Net](https://github.com/Ahmednull/L2CS-Net) (ResNet-50, MPIIFaceGaze) | pitch, yaw (radians) |
-| Gaze estimation | [UniGaze](https://github.com/darijakre/unigaze) (ViT-based) | pitch, yaw (radians) |
 | Facial action units | [OpenGraphAU](https://github.com/lingjivoo/OpenGraphAU) (Swin-T backbone) | 41-dim AU intensity vector |
 
 #### Deep Visual Features
@@ -100,9 +99,6 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 ## Installation
 
 > **Requires [uv](https://docs.astral.sh/uv/).**
-> The `video` extras include `unigaze`, which pins `timm==0.3.2` (broken with modern PyTorch).
-> `uv`'s `override-dependencies` in `pyproject.toml` silently upgrades it to `timm>=1.0`.
-> Plain `pip` has no equivalent override mechanism and will fail to resolve this conflict.
 
 ```bash
 uv pip install exordium          # base only
@@ -124,7 +120,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 |---|---|
 | `audio` | OpenSMILE, torchaudio — audio feature extraction |
 | `text` | transformers, torchaudio, rapidfuzz, whisperX — text, speech & alignment |
-| `video` | MediaPipe, Ultralytics, unigaze, timm — face & video models |
+| `video` | MediaPipe, Ultralytics, timm — face & video models |
 | `all` | all previously described extras |
 
 ---
