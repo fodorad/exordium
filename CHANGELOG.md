@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.11.4](https://github.com/fodorad/exordium/compare/v2.11.3...v2.11.4) (2026-09-08)
+
+
+### Bug Fixes
+
+* **gaze:** remove UniGaze support ([#91](https://github.com/fodorad/exordium/issues/91)) ([112bd48](https://github.com/fodorad/exordium/commit/112bd489941b06123f3205c00fe5b72e3775d4c2))
+
 ## [2.11.3](https://github.com/fodorad/exordium/compare/v2.11.2...v2.11.3) (2026-08-09)
 
 
