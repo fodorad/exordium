@@ -45,10 +45,10 @@ dependencies = [
   # torchaudio.functional.forced_align, torchaudio.pipelines.MMS_FA, torchcodec decoders.
   # CI's 3.12/3.13/3.14 matrix resolves and exercises the top of the range.
   # ─────────────────────────────────────────────────────────────────────────────
-  "torch>=2.11,<2.14",
+  "torch>=2.11,<2.15",
   "torchaudio>=2.11,<2.14",
-  "torchvision>=0.26,<0.29",
-  "torchcodec>=0.14,<0.16",
+  "torchvision>=0.26,<0.30",
+  "torchcodec>=0.14,<0.17",
   "tqdm",
   "matplotlib",
   "huggingface_hub",
@@ -158,10 +158,10 @@ override-dependencies = [
   # These mirror the coupled ranges in [project.dependencies] (see the comment there
   # for the three valid matched sets). They stay ranges, not exact pins, so a consumer
   # can hold the stack at torch 2.11 without exordium's override forcing it to 2.13.
-  "torch>=2.11,<2.14",
+  "torch>=2.11,<2.15",
   "torchaudio>=2.11,<2.14",
-  "torchvision>=0.26,<0.29",
-  "torchcodec>=0.14,<0.16",
+  "torchvision>=0.26,<0.30",
+  "torchcodec>=0.14,<0.17",
   # Hold transformers at latest 5.x; the whisperx stack otherwise pulls it down
   # to 4.57. Verified whisperx alignment + the existing wrappers work on 5.x.
   "transformers>=5.5",
