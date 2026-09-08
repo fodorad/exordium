@@ -11,7 +11,6 @@ resolution-markers = [
 overrides = [
     { name = "numpy", specifier = ">=2.4" },
     { name = "pandas", specifier = ">=3.0" },
-    { name = "timm", specifier = ">=1.0" },
     { name = "torch", specifier = ">=2.11,<2.14" },
     { name = "torchaudio", specifier = ">=2.11,<2.14" },
     { name = "torchcodec", specifier = ">=0.14,<0.16" },
@@ -994,7 +993,6 @@ all = [
     { name = "torchaudio" },
     { name = "transformers" },
     { name = "ultralytics" },
-    { name = "unigaze" },
     { name = "whisperx" },
 ]
 audio = [
@@ -1027,7 +1025,6 @@ video = [
     { name = "mediapipe" },
     { name = "timm" },
     { name = "ultralytics" },
-    { name = "unigaze" },
 ]
 
 [package.metadata]
@@ -1073,8 +1070,6 @@ requires-dist = [
     { name = "ty", marker = "extra == 'dev'" },
     { name = "ultralytics", marker = "extra == 'all'" },
     { name = "ultralytics", marker = "extra == 'video'" },
-    { name = "unigaze", marker = "extra == 'all'" },
-    { name = "unigaze", marker = "extra == 'video'" },
     { name = "whisperx", marker = "extra == 'all'" },
     { name = "whisperx", marker = "extra == 'text'" },
 ]
@@ -4336,21 +4331,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/98/c6/d25cb53e141242f74950744179c21b8798bb09b9e7161465ecda4f577ddf/ultralytics_thop-2.0.20.tar.gz", hash = "sha256:f3595e0d8c6fd0b9f62fc2cd9be921755e2649a05c34f1fabaea0bff7295d641", size = 34682, upload-time = "2026-06-06T11:42:42.184Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0e/a9/5441a28af447c0ffe193f1f42dfebe2a518ab3e160e9e0d164e8901edead/ultralytics_thop-2.0.20-py3-none-any.whl", hash = "sha256:ef1b326404aeb10954f50db58982ec8dcab5946ee04a9b10e1107ec7ba4d5c22", size = 28954, upload-time = "2026-06-06T11:42:40.796Z" },
-]
-
-[[package]]
-name = "unigaze"
-version = "0.1.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "huggingface-hub" },
-    { name = "numpy" },
-    { name = "safetensors" },
-    { name = "timm" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/17/47/861770d6ac8628d96aae41f91cdce7380d1297efc9a4d90bbb426afb73cf/unigaze-0.1.3.tar.gz", hash = "sha256:886c1bcbed1f22bfa66a23761e218dab7c443e4fe31a3fa2b752e31bc29dc0db", size = 16940, upload-time = "2025-11-25T12:21:51.772Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/45/3f18355876d7a6f1b14e01481657aa3921db3e703f19aaa290f6d92e99f0/unigaze-0.1.3-py3-none-any.whl", hash = "sha256:a3f4101ac105d56f0e23e7ee9bd1981304c43b6677073231fd6140e184aefa7d", size = 16413, upload-time = "2025-11-25T12:21:50.634Z" },
 ]
 
 [[package]]

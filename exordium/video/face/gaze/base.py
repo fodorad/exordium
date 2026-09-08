@@ -299,8 +299,8 @@ class GazeWrapper(ABC):
     Subclasses must implement :meth:`preprocess`, :meth:`inference`, and
     :meth:`postprocess`.  The shared :meth:`__call__`, :meth:`predict`,
     :meth:`looking_at_camera`, and :meth:`visualize` are provided here so
-    that :class:`~exordium.video.face.gaze.l2csnet.L2csNetWrapper` and
-    :class:`~exordium.video.face.gaze.unigaze.UnigazeWrapper` are
+    that gaze wrappers such as
+    :class:`~exordium.video.face.gaze.l2csnet.L2csNetWrapper` are
     interchangeable.
 
     Supported input types for :meth:`__call__` and :meth:`predict`:

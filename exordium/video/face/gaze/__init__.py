@@ -14,7 +14,6 @@ from exordium.video.face.gaze.base import (
     vector_to_pitchyaw,
 )
 from exordium.video.face.gaze.l2csnet import L2CS_Builder, L2csNetWrapper
-from exordium.video.face.gaze.unigaze import UnigazeWrapper
 
 __all__ = [
     "GazeWrapper",
@@ -32,5 +31,4 @@ __all__ = [
     "vector_to_pitchyaw",
     "L2CS_Builder",
     "L2csNetWrapper",
-    "UnigazeWrapper",
 ]
