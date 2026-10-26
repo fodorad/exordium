@@ -1,7 +1,7 @@
 """Run Gaze-LLE on any video: gaze-target features plus an overlay video.
 
 Pipeline: detect faces, track them, expand the face boxes to head boxes, predict
-each person's gaze target at ``--fps``, then write
+each person's gaze target at ``--fps`` (default: the video's own rate), then write
 
 * ``<out-dir>/gaze.st``: safetensors with ``frame_ids``, ``person_ids``,
   ``gaze_points`` (normalized xy), ``inout`` and ``mass_on_others`` columns;
@@ -112,7 +112,10 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, default=Path("gazelle_out"))
     parser.add_argument("--device-id", type=int, default=None, help="0 for MPS/CUDA, omit for CPU")
     parser.add_argument(
-        "--fps", type=float, default=10.0, help="gaze sampling rate; 0 = every frame (native fps)"
+        "--fps",
+        type=float,
+        default=None,
+        help="gaze sampling rate in Hz (default / -1: the video's own fps, every frame)",
     )
     parser.add_argument("--min-track", type=int, default=100, help="min frames for a face track")
     parser.add_argument("--variant", default="vitl14_inout_childplay")
@@ -146,7 +149,7 @@ def main() -> None:
                     out[row, col] = mass_in_box(heatmaps[row], face_boxes[frame][other])
         return out
 
-    gaze_fps = args.fps or None  # None: every frame
+    gaze_fps = args.fps if args.fps is not None and args.fps > 0 else None
     model = GazelleWrapper(args.variant, device_id=args.device_id, autocast=args.autocast)
     result = model.video_to_gaze(
         args.video,
