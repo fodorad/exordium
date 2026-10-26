@@ -1032,6 +1032,26 @@ class Tracker(ABC):
 
         return self
 
+    def drop_track(self, track_id: int) -> None:
+        """Forget a track, its selection and its cached identity embedding.
+
+        Args:
+            track_id: Track to remove; unknown ids are ignored.
+
+        """
+        self.tracks.pop(track_id, None)
+        self._selected_tracks.pop(track_id, None)
+        self._track_embeddings.pop(track_id, None)
+        self._track_embed_counts.pop(track_id, None)
+
+    def reset(self) -> None:
+        """Forget all tracks so the tracker can start a new sequence."""
+        self.new_track_id = 0
+        self.tracks.clear()
+        self._selected_tracks.clear()
+        self._track_embeddings.clear()
+        self._track_embed_counts.clear()
+
     @abstractmethod
     def merge_rule(self, track_1: Track, track_2: Track) -> tuple[bool, Track, Track]:
         """Determine whether two tracks should be merged.
