@@ -5,6 +5,8 @@ each person's gaze target at ``--fps``, then write
 
 * ``<out-dir>/gaze.st``: safetensors with ``frame_ids``, ``person_ids``,
   ``gaze_points`` (normalized xy), ``inout`` and ``mass_on_others`` columns;
+* ``<out-dir>/gaze.xlsx`` and ``gaze.csv``: the same as a table, one row per
+  (frame, person), with a per-person ``summary`` sheet in the workbook;
 * ``<out-dir>/gaze_overlay.mp4``: the sampled frames with each head box, an arrow
   to the gaze target, and the in/out score.  When the score is below 0.5 the
   person looks out of the scene (often at the camera), so no arrow is drawn.
@@ -24,6 +26,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pandas as pd
 import torch
 from safetensors.torch import save_file
 
@@ -31,7 +34,7 @@ from exordium.video.core.detection import IouTracker
 from exordium.video.core.io import Video, save_video
 from exordium.video.face.detector.yolo11 import YoloFace11Detector
 from exordium.video.face.gaze.base import box_to_pixels, mass_in_box
-from exordium.video.face.gaze.gazelle import GazelleWrapper, boxes_from_tracks
+from exordium.video.face.gaze.gazelle import GazelleWrapper, boxes_from_tracks, gaze_table
 
 logger = logging.getLogger("gazelle_video")
 
@@ -116,6 +119,10 @@ def main() -> None:
         args.video, head_boxes, fps=args.fps, reducers={"mass_on_others": mass_on_others}
     )
     save_file(result, str(args.out_dir / "gaze.st"))
+    table = gaze_table(
+        result, fps=video_fps, labels={"mass_on_others": [f"person_{p}" for p in people]}
+    )
+    table.to_csv(args.out_dir / "gaze.csv", index=False)
 
     frame_ids = sorted(set(result["frame_ids"].tolist()))
     overlay: list[np.ndarray] = []
@@ -140,17 +147,29 @@ def main() -> None:
         args.out_dir / "gaze_overlay.mp4",
         fps=args.fps,
     )
-    logger.info(f"wrote {args.out_dir / 'gaze.st'} and {args.out_dir / 'gaze_overlay.mp4'}")
 
+    summary = []
     for person in people:
         rows = result["person_ids"] == person
         inside = result["inout"][rows] > IN_FRAME
         on_other = result["mass_on_others"][rows].max(dim=1).values > 0.3
-        logger.info(
-            f"person {person}: {int(rows.sum())} samples, "
-            f"target in frame {inside.float().mean():.0%}, "
-            f"looking at another face {(inside & on_other).float().mean():.0%}"
+        summary.append(
+            {
+                "person_id": person,
+                "samples": int(rows.sum()),
+                "target_in_frame": float(inside.float().mean()),
+                "looking_at_another_face": float((inside & on_other).float().mean()),
+            }
         )
+        logger.info(
+            f"person {person}: {summary[-1]['samples']} samples, "
+            f"target in frame {summary[-1]['target_in_frame']:.0%}, "
+            f"looking at another face {summary[-1]['looking_at_another_face']:.0%}"
+        )
+    with pd.ExcelWriter(args.out_dir / "gaze.xlsx") as workbook:
+        table.to_excel(workbook, sheet_name="gaze", index=False)
+        pd.DataFrame(summary).to_excel(workbook, sheet_name="summary", index=False)
+    logger.info(f"wrote gaze.st, gaze.xlsx, gaze.csv and gaze_overlay.mp4 to {args.out_dir}")
 
 
 if __name__ == "__main__":
