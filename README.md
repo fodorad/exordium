@@ -57,6 +57,7 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Iris landmarks | [MediaPipe Iris](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker) | 71 eye pts + 5 iris pts, EAR, diameters |
 | Head pose | [6DRepNet](https://github.com/thohemp/6DRepNet) (300W-LP + AFLW2000) | yaw, pitch, roll (degrees) |
 | Gaze estimation | [L2CS-Net](https://github.com/Ahmednull/L2CS-Net) (ResNet-50, MPIIFaceGaze) | pitch, yaw (radians) |
+| Gaze target estimation | [Gaze-LLE](https://github.com/fkryan/gazelle) (DINOv2 ViT-B/L, GazeFollow / ChildPlay) | 64×64 target heatmap + in/out-of-frame score per person |
 | Facial action units | [OpenGraphAU](https://github.com/lingjivoo/OpenGraphAU) (Swin-T backbone) | 41-dim AU intensity vector |
 
 #### Deep Visual Features
