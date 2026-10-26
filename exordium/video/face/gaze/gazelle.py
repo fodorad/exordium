@@ -22,6 +22,7 @@ import math
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import torch
 import torch.nn as nn
@@ -44,6 +45,9 @@ from exordium.video.face.gaze.base import (
     heatmap_to_point,
     mass_in_box,
 )
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 logger = logging.getLogger(__name__)
 """Module-level logger."""
@@ -187,6 +191,51 @@ def boxes_from_tracks(
             box = expand_box(box_to_normalized((x1, y1, x2, y2), width, height), scale)
             boxes.setdefault(detection.frame_id, {})[track_id] = box
     return boxes
+
+
+def gaze_table(
+    result: Mapping[str, torch.Tensor],
+    fps: float | None = None,
+    labels: Mapping[str, Sequence[str]] | None = None,
+) -> "pd.DataFrame":
+    """Flatten a :meth:`GazelleWrapper.video_to_gaze` result into a table.
+
+    One row per (frame, person), ready for ``to_excel`` / ``to_csv``.  Columns:
+    ``frame_id``, ``time_s`` (with ``fps``), ``person_id``, ``gaze_x``, ``gaze_y``
+    (normalized, ``0`` = left/top), ``inout``, then one column per reducer.
+    Reducers returning several values per row become ``<name>_<label>`` columns.
+    Full heatmaps are not tabular and are left out.
+
+    Args:
+        result: Output of :meth:`GazelleWrapper.video_to_gaze`.
+        fps: Frame rate of the source video; adds a ``time_s`` column.
+        labels: Column suffixes for multi-valued reducers, by reducer name
+            (default: ``0, 1, ...``).
+
+    Returns:
+        :class:`pandas.DataFrame` with one row per sample.
+
+    """
+    import pandas as pd  # noqa: PLC0415 - heavy, only needed for tabular export
+
+    points = result["gaze_points"]
+    table = pd.DataFrame({"frame_id": result["frame_ids"].numpy()})
+    if fps is not None:
+        table["time_s"] = result["frame_ids"].numpy() / fps
+    table["person_id"] = result["person_ids"].numpy()
+    table["gaze_x"] = points[:, 0].numpy()
+    table["gaze_y"] = points[:, 1].numpy()
+    skipped = {"frame_ids", "person_ids", "gaze_points", "heatmaps"}
+    for name, values in result.items():
+        if name in skipped:
+            continue
+        if values.ndim == 1:
+            table[name] = values.numpy()
+            continue
+        suffixes = (labels or {}).get(name, [str(i) for i in range(values.shape[1])])
+        for column, suffix in enumerate(suffixes):
+            table[f"{name}_{suffix}"] = values[:, column].numpy()
+    return table
 
 
 def _frame_boxes(boxes: BoxSource, frame_id: int) -> PersonBoxes:

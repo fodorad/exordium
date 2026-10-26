@@ -14,6 +14,7 @@ from exordium.video.face.gaze.gazelle import (
     GazelleOutput,
     GazelleWrapper,
     boxes_from_tracks,
+    gaze_table,
 )
 from tests.fixtures import (
     IMAGE_MULTISPEAKER,
@@ -199,6 +200,57 @@ class TestGazelleVideo(ModelTestCase):
             self.assertEqual(len(list(Path(tmp).glob("*.st"))), 2)
             fresh = self.model.video_to_gaze(VIDEO_MULTISPEAKER_SHORT, moved)
             self.assertTrue(torch.equal(out["gaze_points"], fresh["gaze_points"]))
+
+
+class TestGazeTable(unittest.TestCase):
+    @staticmethod
+    def _result() -> dict[str, torch.Tensor]:
+        return {
+            "frame_ids": torch.tensor([0, 0, 3]),
+            "person_ids": torch.tensor([1, 2, 1]),
+            "gaze_points": torch.tensor([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]),
+            "inout": torch.tensor([0.9, 0.1, 0.8]),
+            "heatmaps": torch.zeros(3, 64, 64),
+            "mass": torch.tensor([[0.0, 0.5], [0.2, 0.0], [0.0, 0.7]]),
+            "total": torch.tensor([1.0, 2.0, 3.0]),
+        }
+
+    def test_one_row_per_frame_and_person(self):
+        table = gaze_table(self._result())
+        self.assertEqual(len(table), 3)
+        self.assertEqual(table["frame_id"].tolist(), [0, 0, 3])
+        self.assertEqual(table["person_id"].tolist(), [1, 2, 1])
+        self.assertAlmostEqual(table["gaze_x"][2], 0.5)
+        self.assertAlmostEqual(table["gaze_y"][2], 0.6)
+        self.assertAlmostEqual(table["inout"][1], 0.1, places=5)
+
+    def test_heatmaps_are_left_out(self):
+        self.assertNotIn("heatmaps", gaze_table(self._result()).columns)
+
+    def test_time_column_from_fps(self):
+        table = gaze_table(self._result(), fps=30.0)
+        self.assertAlmostEqual(table["time_s"][2], 0.1)
+        self.assertNotIn("time_s", gaze_table(self._result()).columns)
+
+    def test_matrix_columns_are_expanded_and_labelled(self):
+        table = gaze_table(self._result(), labels={"mass": ["p1", "p2"]})
+        self.assertAlmostEqual(table["mass_p1"][1], 0.2, places=5)
+        self.assertAlmostEqual(table["mass_p2"][2], 0.7, places=5)
+        self.assertIn("mass_0", gaze_table(self._result()).columns)
+
+    def test_scalar_reducer_column_is_kept(self):
+        self.assertEqual(gaze_table(self._result())["total"].tolist(), [1.0, 2.0, 3.0])
+
+    def test_empty_result(self):
+        table = gaze_table(
+            {
+                "frame_ids": torch.zeros(0, dtype=torch.long),
+                "person_ids": torch.zeros(0, dtype=torch.long),
+                "gaze_points": torch.zeros(0, 2),
+            }
+        )
+        self.assertEqual(len(table), 0)
+        self.assertIn("gaze_x", table.columns)
 
 
 class TestBoxesFromTracks(unittest.TestCase):
