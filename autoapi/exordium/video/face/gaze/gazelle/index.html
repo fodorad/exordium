@@ -662,7 +662,8 @@ an in/out head).</p>
 <li><p><strong>pretrained</strong> – Load the released decoder and DINOv2 weights.  <code class="docutils literal notranslate"><span class="pre">False</span></code>
 builds the architecture with random weights (shape tests, offline).</p></li>
 <li><p><strong>autocast</strong> – Run the forward pass in reduced precision (fp16 on CUDA, bf16
-elsewhere).  Off by default.</p></li>
+elsewhere).  Off by default; about 1.5x faster on MPS, but much slower
+on CPU.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -739,7 +740,9 @@ once, logs a warning, and the call is retried there.</p>
 <p>One row per (frame, person).  Frames without any box are skipped, never
 guessed.  Pass <code class="docutils literal notranslate"><span class="pre">output_path</span></code> (and <code class="docutils literal notranslate"><span class="pre">overwrite</span></code>) to cache the result as
 safetensors; pass <code class="docutils literal notranslate"><span class="pre">chunk_dir</span></code> to also persist progress every
-<code class="docutils literal notranslate"><span class="pre">chunk_frames</span></code> frames so an interrupted run resumes where it stopped.</p>
+<code class="docutils literal notranslate"><span class="pre">chunk_frames</span></code> frames so an interrupted run resumes where it stopped.
+Chunk files carry a digest of their inputs, so changed boxes, variant or
+outputs recompute instead of reusing old chunks.</p>
 <p>Full heatmaps are large, so by default only gaze points and in/out scores
 are kept; use <code class="docutils literal notranslate"><span class="pre">reducers</span></code> for per-row values computed from the heatmaps
 (e.g. <a class="reference internal" href="../base/index.html#exordium.video.face.gaze.base.mass_in_box" title="exordium.video.face.gaze.base.mass_in_box"><code class="xref py py-func docutils literal notranslate"><span class="pre">mass_in_box()</span></code></a> on a partner’s

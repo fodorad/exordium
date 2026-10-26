@@ -242,7 +242,8 @@ Module Contents
    :param pretrained: Load the released decoder and DINOv2 weights.  ``False``
                       builds the architecture with random weights (shape tests, offline).
    :param autocast: Run the forward pass in reduced precision (fp16 on CUDA, bf16
-                    elsewhere).  Off by default.
+                    elsewhere).  Off by default; about 1.5x faster on MPS, but much slower
+                    on CPU.
 
    :raises ValueError: If ``variant`` is unknown.
 
@@ -304,6 +305,8 @@ Module Contents
       guessed.  Pass ``output_path`` (and ``overwrite``) to cache the result as
       safetensors; pass ``chunk_dir`` to also persist progress every
       ``chunk_frames`` frames so an interrupted run resumes where it stopped.
+      Chunk files carry a digest of their inputs, so changed boxes, variant or
+      outputs recompute instead of reusing old chunks.
 
       Full heatmaps are large, so by default only gaze points and in/out scores
       are kept; use ``reducers`` for per-row values computed from the heatmaps
