@@ -742,6 +742,20 @@ Module Contents
 
 
 
+   .. py:method:: drop_track(track_id: int) -> None
+
+      Forget a track, its selection and its cached identity embedding.
+
+      :param track_id: Track to remove; unknown ids are ignored.
+
+
+
+   .. py:method:: reset() -> None
+
+      Forget all tracks so the tracker can start a new sequence.
+
+
+
    .. py:method:: merge_rule(track_1: Track, track_2: Track) -> tuple[bool, Track, Track]
       :abstractmethod:
 

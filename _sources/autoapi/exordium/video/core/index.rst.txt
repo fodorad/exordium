@@ -14,6 +14,7 @@ Submodules
    /autoapi/exordium/video/core/densify/index
    /autoapi/exordium/video/core/detection/index
    /autoapi/exordium/video/core/io/index
+   /autoapi/exordium/video/core/streaming/index
    /autoapi/exordium/video/core/transform/index
 
 

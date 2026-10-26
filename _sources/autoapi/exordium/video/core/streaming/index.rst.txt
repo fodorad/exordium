@@ -1,0 +1,182 @@
+exordium.video.core.streaming
+=============================
+
+.. py:module:: exordium.video.core.streaming
+
+.. autoapi-nested-parse::
+
+   Streaming face tracking: one frame at a time, with a provisional protagonist.
+
+   Batch tracking (:meth:`~exordium.video.core.detection.Tracker.label`) needs every
+   frame up front.  :class:`StreamingTracker` wraps an *online* tracker
+   (:class:`~exordium.video.core.detection.IouTracker` or
+   :class:`~exordium.video.core.detection.FaceIdTracker`) so a live feed can be
+   tracked as frames arrive, and keeps a running guess of the protagonist that is
+   revised as evidence accumulates.
+
+   The protagonist is scored like the offline
+   :meth:`~exordium.video.core.detection.FaceClusterTracker.select_protagonist`:
+   frames on screen times the largest face size.  Each update also says whether the
+   current choice looks settled (see :class:`StreamUpdate`), so a consumer knows
+   when to commit.
+
+   Memory stays bounded on endless streams: a track keeps only its most recent
+   detections, scores are kept as running aggregates, and tracks that stay absent
+   are forgotten.  The globally clustering
+   :class:`~exordium.video.core.detection.FaceClusterTracker` is inherently offline
+   and cannot be wrapped.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.core.streaming.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.core.streaming.TrackStats
+   exordium.video.core.streaming.StreamUpdate
+   exordium.video.core.streaming.StreamingTracker
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:class:: TrackStats
+
+   Running aggregates of one track, independent of the detections kept.
+
+   .. attribute:: track_id
+
+      Id of the track in the wrapped tracker.
+
+   .. attribute:: first_frame
+
+      Frame id where the track started.
+
+   .. attribute:: last_frame
+
+      Frame id of its latest detection.
+
+   .. attribute:: frames
+
+      On-screen frames, discounted by ``decay`` when forgetting is on.
+
+   .. attribute:: max_size
+
+      Largest box side seen, in pixels.
+
+
+   .. py:property:: score
+      :type: float
+
+
+      on-screen frames times largest face size.
+
+      :type: Protagonist score
+
+
+.. py:class:: StreamUpdate
+
+   Result of pushing one frame into a :class:`StreamingTracker`.
+
+   .. attribute:: frame_id
+
+      Id of the frame just processed.
+
+   .. attribute:: assignments
+
+      ``(track_id, detection)`` for every kept detection.
+
+   .. attribute:: protagonist_id
+
+      Current protagonist track, or ``None`` before any track.
+
+   .. attribute:: scores
+
+      Current score of every live track.
+
+   .. attribute:: margin
+
+      Protagonist score over the runner-up's (``inf`` with one track).
+
+   .. attribute:: stable
+
+      ``True`` once the choice looks settled: the protagonist has been on
+      screen for ``min_track_frames``, has led for ``min_stable_frames`` and
+      its margin is at least ``min_margin``.
+
+   .. attribute:: stable_for
+
+      Frames the current protagonist has led without interruption.
+
+   .. attribute:: protagonist_detection
+
+      The protagonist's detection in this frame, or
+      ``None`` if it is not visible in it.
+
+
+.. py:class:: StreamingTracker(tracker: exordium.video.core.detection.Tracker, min_score: float = 0.7, max_lost: int = 30, iou_threshold: float = 0.2, decay: float = 1.0, switch_ratio: float = 1.1, min_track_frames: int = 15, min_stable_frames: int = 30, min_margin: float = 1.2, window: int = 30, forget_after: int = 900)
+
+   Track faces frame by frame and follow the likely protagonist.
+
+   :param tracker: Online tracker doing the frame-to-track assignment; it is driven
+                   through :meth:`~exordium.video.core.detection.Tracker.update`.
+   :param min_score: Minimum detection confidence to track.
+   :param max_lost: Maximum frame gap to keep a track open for matching.
+   :param iou_threshold: Minimum IoU to continue a track.
+   :param decay: Per-frame factor in ``(0, 1]`` applied to on-screen frames, so old
+                 evidence fades on long streams.  ``1.0`` keeps everything, which makes
+                 the final choice equal the offline one.
+   :param switch_ratio: A challenger must out-score the protagonist by this factor
+                        to replace it, which stops flapping between near equals.  ``1.0``
+                        always follows the highest score.
+   :param min_track_frames: Frames the protagonist needs on screen to be ``stable``.
+   :param min_stable_frames: Frames the protagonist needs to have led to be ``stable``.
+   :param min_margin: Required protagonist-over-runner-up score ratio for ``stable``.
+   :param window: Recent detections kept per track.  Scores are unaffected.  A
+                  detection built from a live frame references that frame, so ``window``
+                  frames stay in memory: keep it small for high-resolution streams.
+   :param forget_after: Drop a track after this many frames without a detection.
+
+   :raises ValueError: If ``decay`` is outside ``(0, 1]``.
+
+
+   .. py:attribute:: stats
+      :type:  dict[int, TrackStats]
+
+      Running aggregates of the live tracks.
+
+
+   .. py:method:: reset() -> None
+
+      Forget all tracks and state, so a new sequence can start (ids restart).
+
+
+
+   .. py:method:: push(frame_detections: exordium.video.core.detection.FrameDetections, frame_id: int | None = None) -> StreamUpdate
+
+      Process the next frame.
+
+      :param frame_detections: Detections of this frame (may be empty).
+      :param frame_id: Frame id; taken from the detections when omitted.  Required
+                       for an empty frame.
+
+      :returns: The :class:`StreamUpdate` after this frame.
+
+      :raises ValueError: If the frame id cannot be determined, disagrees with the
+          detections, or does not exceed the previous frame's.
+
+
+

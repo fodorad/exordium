@@ -237,6 +237,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/core/densify/index.html">exordium.video.core.densify</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/core/detection/index.html">exordium.video.core.detection</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/core/io/index.html">exordium.video.core.io</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/core/streaming/index.html">exordium.video.core.streaming</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/core/transform/index.html">exordium.video.core.transform</a></li>
 </ul>
 </li>
@@ -1549,6 +1550,32 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">frame_detections</span><span class="p">,</span> <span class="n">min_score</span><span class="p">,</span> <span class="n">max_lost</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="Tracker.drop_track">
+<a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.Tracker.drop_track">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">drop_track</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">track_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Forget a track, its selection and its cached identity embedding.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            track_id: Track to remove; unknown ids are ignored.</span>
+
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">track_id</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_selected_tracks</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">track_id</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">track_id</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">track_id</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tracker.reset">
+<a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.Tracker.reset">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Forget all tracks so the tracker can start a new sequence."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_track_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_selected_tracks</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embeddings</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_embed_counts</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Tracker.merge_rule">

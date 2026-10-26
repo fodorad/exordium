@@ -238,6 +238,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../densify/index.html">exordium.video.core.densify</a></li>
 <li class="toctree-l5 current current-page"><a class="current reference internal" href="#">exordium.video.core.detection</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../io/index.html">exordium.video.core.io</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../streaming/index.html">exordium.video.core.streaming</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../transform/index.html">exordium.video.core.transform</a></li>
 </ul>
 </li>
@@ -1144,6 +1145,23 @@ detection order.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="exordium.video.core.detection.Tracker.drop_track">
+<span class="sig-name descname"><span class="pre">drop_track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/core/detection.html#Tracker.drop_track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.core.detection.Tracker.drop_track" title="Link to this definition">¶</a></dt>
+<dd><p>Forget a track, its selection and its cached identity embedding.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>track_id</strong> – Track to remove; unknown ids are ignored.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="exordium.video.core.detection.Tracker.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/core/detection.html#Tracker.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.core.detection.Tracker.reset" title="Link to this definition">¶</a></dt>
+<dd><p>Forget all tracks so the tracker can start a new sequence.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="exordium.video.core.detection.Tracker.merge_rule">
 <span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">merge_rule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#exordium.video.core.detection.Track" title="exordium.video.core.detection.Track"><span class="pre">Track</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#exordium.video.core.detection.Track" title="exordium.video.core.detection.Track"><span class="pre">Track</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#exordium.video.core.detection.Track" title="exordium.video.core.detection.Track"><span class="pre">Track</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#exordium.video.core.detection.Track" title="exordium.video.core.detection.Track"><span class="pre">Track</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../../_modules/exordium/video/core/detection.html#Tracker.merge_rule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#exordium.video.core.detection.Tracker.merge_rule" title="Link to this definition">¶</a></dt>
 <dd><p>Determine whether two tracks should be merged.</p>
@@ -1760,6 +1778,8 @@ aspect ratio.</p></li>
 <li><a class="reference internal" href="#exordium.video.core.detection.Tracker.selected_tracks"><code class="docutils literal notranslate"><span class="pre">Tracker.selected_tracks</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.core.detection.Tracker.update"><code class="docutils literal notranslate"><span class="pre">Tracker.update()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.core.detection.Tracker.label"><code class="docutils literal notranslate"><span class="pre">Tracker.label()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.core.detection.Tracker.drop_track"><code class="docutils literal notranslate"><span class="pre">Tracker.drop_track()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.core.detection.Tracker.reset"><code class="docutils literal notranslate"><span class="pre">Tracker.reset()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.core.detection.Tracker.merge_rule"><code class="docutils literal notranslate"><span class="pre">Tracker.merge_rule()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.core.detection.Tracker.merge"><code class="docutils literal notranslate"><span class="pre">Tracker.merge()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.core.detection.Tracker.select_long_tracks"><code class="docutils literal notranslate"><span class="pre">Tracker.select_long_tracks()</span></code></a></li>
