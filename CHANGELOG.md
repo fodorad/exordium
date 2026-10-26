@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.12.0](https://github.com/fodorad/exordium/compare/v2.11.4...v2.12.0) (2026-10-26)
+
+
+### Features
+
+* **gaze:** add cached video_to_gaze helper ([#103](https://github.com/fodorad/exordium/issues/103)) ([afcd1a1](https://github.com/fodorad/exordium/commit/afcd1a15564822e6f60fa9e9f9bb498e742af3e1))
+* **gaze:** add gaze target geometry utilities ([#99](https://github.com/fodorad/exordium/issues/99)) ([9c27ba0](https://github.com/fodorad/exordium/commit/9c27ba0cd210dba1e1a65072e873c1f7252733e0))
+* **gaze:** add gaze_table and xlsx/csv export ([#107](https://github.com/fodorad/exordium/issues/107)) ([e62afc7](https://github.com/fodorad/exordium/commit/e62afc7302851be17d5603e4d753c15280e6e0ff))
+* **gaze:** add Gaze-LLE gaze target wrapper ([#102](https://github.com/fodorad/exordium/issues/102)) ([583ef23](https://github.com/fodorad/exordium/commit/583ef23f1d5a64e31a3930242b7ed443f1d5e73e))
+* **gaze:** native-fps default and heatmap overlay in the example ([#108](https://github.com/fodorad/exordium/issues/108)) ([632e397](https://github.com/fodorad/exordium/commit/632e397404f98323afc1f693d2e9d4d863fa9629))
+
+
+### Bug Fixes
+
+* **gaze:** key resumable chunks on their inputs ([#106](https://github.com/fodorad/exordium/issues/106)) ([28adf41](https://github.com/fodorad/exordium/commit/28adf41ea1156c0c2683ac8ffcc32a88bbcbb6ee))
+* **types:** pass ty 0.0.92 type check ([#100](https://github.com/fodorad/exordium/issues/100)) ([3df73de](https://github.com/fodorad/exordium/commit/3df73defe71b926c2840d8540c07db637c0b36ca))
+
+
+### Documentation
+
+* **gaze:** add Gaze-LLE benchmark, README row and multispeaker example ([#104](https://github.com/fodorad/exordium/issues/104)) ([22787f7](https://github.com/fodorad/exordium/commit/22787f734f015da321bd319c6b8ad95d24a3ad0a))
+
 ## [2.11.4](https://github.com/fodorad/exordium/compare/v2.11.3...v2.11.4) (2026-09-08)
 
 
