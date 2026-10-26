@@ -18,21 +18,31 @@ mirrored on ``fodorad/exordium-weights`` and downloaded on first use.
 
 import logging
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 import torch
 import torch.nn as nn
 import torchvision.transforms.functional as TF
+from safetensors.torch import load_file, save_file
 from timm.models.vision_transformer import Block
 from transformers import Dinov2Model
 
 from exordium import WEIGHT_DIR
 from exordium.utils.ckpt import build_hf_model, download_weight
+from exordium.utils.decorator import load_or_create
 from exordium.utils.device import get_torch_device
-from exordium.video.core.io import to_uint8_tensor
+from exordium.video.core.detection import Track
+from exordium.video.core.io import Video, batch_iterator, to_uint8_tensor
 from exordium.video.deep.base import _IMAGENET_MEAN, _IMAGENET_STD
-from exordium.video.face.gaze.base import NormalizedBox, heatmap_to_point, mass_in_box
+from exordium.video.face.gaze.base import (
+    NormalizedBox,
+    box_to_normalized,
+    expand_box,
+    heatmap_to_point,
+    mass_in_box,
+)
 
 logger = logging.getLogger(__name__)
 """Module-level logger."""
@@ -141,6 +151,46 @@ class GazelleOutput:
 
         """
         return mass_in_box(self.heatmap, box)
+
+
+PersonBoxes = Mapping[int, NormalizedBox]
+"""Head boxes of one frame, keyed by person id."""
+
+BoxSource = Mapping[int, PersonBoxes] | Callable[[int], PersonBoxes]
+"""Head boxes per frame id: a mapping, or a callable evaluated lazily per frame."""
+
+Reducer = Callable[[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]
+"""Maps ``(heatmaps (N, 64, 64), frame_ids (N,), person_ids (N,))`` to per-row values."""
+
+
+def boxes_from_tracks(
+    tracks: Mapping[int, Track], width: int, height: int, scale: float = 1.0
+) -> dict[int, dict[int, NormalizedBox]]:
+    """Turn face tracks into per-frame head boxes for :meth:`GazelleWrapper.video_to_gaze`.
+
+    Args:
+        tracks: Tracks keyed by track id; the id becomes the person id.
+        width: Frame width in pixels.
+        height: Frame height in pixels.
+        scale: Box expansion factor.  Face boxes are tighter than the head boxes
+            Gaze-LLE was trained on, so values around ``1.3``-``1.5`` help.
+
+    Returns:
+        ``{frame_id: {person_id: normalized xyxy box}}``.
+
+    """
+    boxes: dict[int, dict[int, NormalizedBox]] = {}
+    for track_id, track in tracks.items():
+        for detection in track.detections:
+            x1, y1, x2, y2 = (float(v) for v in detection.bb_xyxy)
+            box = expand_box(box_to_normalized((x1, y1, x2, y2), width, height), scale)
+            boxes.setdefault(detection.frame_id, {})[track_id] = box
+    return boxes
+
+
+def _frame_boxes(boxes: BoxSource, frame_id: int) -> PersonBoxes:
+    """Head boxes of one frame from either kind of :data:`BoxSource`."""
+    return boxes.get(frame_id, {}) if isinstance(boxes, Mapping) else boxes(frame_id)
 
 
 def _positional_encoding_2d(d_model: int, height: int, width: int) -> torch.Tensor:
@@ -410,3 +460,130 @@ class GazelleWrapper:
         """
         with torch.inference_mode():
             return self.inference(self.preprocess(frames), boxes)
+
+    def _sample_frame_ids(self, video: Video, fps: float | None) -> list[int]:
+        """Frame indices to process: all, or the nearest frame every ``1 / fps`` seconds."""
+        if fps is None or fps >= video.fps:
+            return list(range(video.num_frames))
+        times = torch.arange(0, video.num_frames / video.fps, 1 / fps, dtype=torch.float64)
+        indices = torch.round(times * video.fps).long().clamp(max=video.num_frames - 1)
+        return torch.unique(indices).tolist()
+
+    def _predict_rows(
+        self,
+        video: Video,
+        frame_ids: list[int],
+        boxes: BoxSource,
+        batch_size: int,
+        store_heatmaps: bool,
+        reducers: Mapping[str, Reducer],
+    ) -> dict[str, torch.Tensor]:
+        """Predict one row per (frame, person) for ``frame_ids``, all boxed."""
+        columns: dict[str, list[torch.Tensor]] = {}
+
+        def collect(name: str, value: torch.Tensor) -> None:
+            columns.setdefault(name, []).append(value.cpu())
+
+        for batch_ids in batch_iterator(frame_ids, batch_size):
+            per_frame = [_frame_boxes(boxes, f) for f in batch_ids]
+            frames = video.get_frames_at(batch_ids)
+            people = [list(frame_boxes) for frame_boxes in per_frame]
+            out = self(frames, [[fb[p] for p in ids] for fb, ids in zip(per_frame, people)])
+            valid = out.valid
+            rows_frame = torch.tensor(batch_ids).unsqueeze(1).expand_as(valid)[valid.cpu()]
+            rows_person = torch.tensor([p for ids in people for p in ids])
+            heatmaps = out.heatmap[valid]
+            collect("frame_ids", rows_frame)
+            collect("person_ids", rows_person)
+            collect("gaze_points", out.gaze_point()[valid])
+            if out.inout is not None:
+                collect("inout", out.inout[valid])
+            if store_heatmaps:
+                collect("heatmaps", heatmaps)
+            for name, reducer in reducers.items():
+                collect(name, reducer(heatmaps, rows_frame, rows_person))
+        return {name: torch.cat(parts) for name, parts in columns.items()}
+
+    @load_or_create("st")
+    def video_to_gaze(
+        self,
+        video_path: str | Path,
+        boxes: BoxSource,
+        fps: float | None = None,
+        batch_size: int = 8,
+        store_heatmaps: bool = False,
+        reducers: Mapping[str, Reducer] | None = None,
+        chunk_frames: int = 256,
+        chunk_dir: str | Path | None = None,
+        verbose: bool = False,
+        **_kwargs,
+    ) -> dict[str, torch.Tensor]:
+        """Predict gaze targets for every boxed person in a video.
+
+        One row per (frame, person).  Frames without any box are skipped, never
+        guessed.  Pass ``output_path`` (and ``overwrite``) to cache the result as
+        safetensors; pass ``chunk_dir`` to also persist progress every
+        ``chunk_frames`` frames so an interrupted run resumes where it stopped.
+
+        Full heatmaps are large, so by default only gaze points and in/out scores
+        are kept; use ``reducers`` for per-row values computed from the heatmaps
+        (e.g. :func:`~exordium.video.face.gaze.base.mass_in_box` on a partner's
+        box) or ``store_heatmaps`` to keep them all.
+
+        Args:
+            video_path: Input video.
+            boxes: Head boxes per frame id (``{frame_id: {person_id: box}}`` or a
+                callable returning that for one frame); see
+                :func:`boxes_from_tracks`.
+            fps: Subsample to about this rate; ``None`` uses every frame.
+                ``frame_ids`` in the result always refer to the original video.
+            batch_size: Frames per forward pass.
+            store_heatmaps: Also return the ``(N, 64, 64)`` heatmaps.
+            reducers: Named callables computing extra per-row columns.
+            chunk_frames: Frames per resumable chunk.
+            chunk_dir: Directory for chunk files; ``None`` disables resuming.
+            verbose: Log progress per chunk.
+            **_kwargs: Forwarded to ``load_or_create``.
+
+        Returns:
+            Dict of CPU tensors: ``frame_ids (N,)``, ``person_ids (N,)``,
+            ``gaze_points (N, 2)`` (argmax), ``inout (N,)`` when the variant has
+            one, ``heatmaps`` if requested, and one entry per reducer.
+
+        """
+        reducers = reducers or {}
+        chunk_path = None if chunk_dir is None else Path(chunk_dir)
+        parts: list[dict[str, torch.Tensor]] = []
+        with Video(video_path) as video:
+            wanted = [f for f in self._sample_frame_ids(video, fps) if _frame_boxes(boxes, f)]
+            for number, chunk in enumerate(batch_iterator(wanted, chunk_frames)):
+                saved = None if chunk_path is None else chunk_path / f"chunk_{number:06d}.st"
+                if saved is not None and saved.exists():
+                    parts.append(load_file(str(saved)))
+                    continue
+                if verbose:
+                    logger.info(f"Gaze chunk {number}: frames {chunk[0]}..{chunk[-1]}")
+                rows = self._predict_rows(video, chunk, boxes, batch_size, store_heatmaps, reducers)
+                if saved is not None:
+                    saved.parent.mkdir(parents=True, exist_ok=True)
+                    save_file(rows, str(saved))
+                parts.append(rows)
+        if not parts:
+            return self._empty_result(store_heatmaps, reducers)
+        return {name: torch.cat([part[name] for part in parts]) for name in parts[0]}
+
+    def _empty_result(
+        self, store_heatmaps: bool, reducers: Mapping[str, Reducer]
+    ) -> dict[str, torch.Tensor]:
+        """Result for a video with no boxed frames."""
+        result = {
+            "frame_ids": torch.zeros(0, dtype=torch.long),
+            "person_ids": torch.zeros(0, dtype=torch.long),
+            "gaze_points": torch.zeros(0, 2),
+        }
+        if GAZELLE_VARIANTS[self.variant].inout:
+            result["inout"] = torch.zeros(0)
+        if store_heatmaps:
+            result["heatmaps"] = torch.zeros(0, HEATMAP_SIZE, HEATMAP_SIZE)
+        result.update({name: torch.zeros(0) for name in reducers})
+        return result
