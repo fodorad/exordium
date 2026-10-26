@@ -80,7 +80,7 @@ video = [
 ]
 dev = [
   "ruff",
-  "ty",
+  "ty>=0.0.92",
   "coverage",
   "pre-commit",
   "ipykernel",  # run the example notebooks in examples/
@@ -174,3 +174,9 @@ override-dependencies = [
 
 [tool.ty.environment]
 python-version = "3.12"
+
+[tool.ty.rules]
+# torch declares ``Module.forward`` as a writable ``Callable`` attribute, so every
+# ``def forward`` in an ``nn.Module`` subclass trips this rule. Known false positive
+# of typing torch modules, not a defect in the overrides.
+invalid-mutable-override = "ignore"

@@ -75,7 +75,7 @@ class Detection(ABC):
 
     frame_id: int
     """Zero-based index of the frame within its source."""
-    source: str | Path | torch.Tensor
+    source: str | Path | torch.Tensor | np.ndarray
     """Origin of the detection — a file path, an in-memory numpy array, or a torch tensor."""
     score: float
     """Detector confidence score in ``[0, 1]``."""
