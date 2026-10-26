@@ -409,7 +409,10 @@ mirrored on <code class="docutils literal notranslate"><span class="pre">fodorad
 <tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks" title="exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">boxes_from_tracks</span></code></a>(→ dict[int, dict[int, ...)</p></td>
 <td><p>Turn face tracks into per-frame head boxes for <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.head_maps_from_boxes" title="exordium.video.face.gaze.gazelle.head_maps_from_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">head_maps_from_boxes</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.gaze_table" title="exordium.video.face.gaze.gazelle.gaze_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaze_table</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p>Flatten a <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a> result into a table.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.head_maps_from_boxes" title="exordium.video.face.gaze.gazelle.head_maps_from_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">head_maps_from_boxes</span></code></a>(→ torch.Tensor)</p></td>
 <td><p>Rasterise normalized head boxes onto the backbone token grid.</p></td>
 </tr>
 </tbody>
@@ -590,6 +593,30 @@ Gaze-LLE was trained on, so values around <code class="docutils literal notransl
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">{frame_id:</span> <span class="pre">{person_id:</span> <span class="pre">normalized</span> <span class="pre">xyxy</span> <span class="pre">box}}</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.gazelle.gaze_table">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.gazelle.</span></span><span class="sig-name descname"><span class="pre">gaze_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">collections.abc.Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">collections.abc.Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">collections.abc.Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#exordium.video.face.gaze.gazelle.gaze_table" title="Link to this definition">¶</a></dt>
+<dd><p>Flatten a <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a> result into a table.</p>
+<p>One row per (frame, person), ready for <code class="docutils literal notranslate"><span class="pre">to_excel</span></code> / <code class="docutils literal notranslate"><span class="pre">to_csv</span></code>.  Columns:
+<code class="docutils literal notranslate"><span class="pre">frame_id</span></code>, <code class="docutils literal notranslate"><span class="pre">time_s</span></code> (with <code class="docutils literal notranslate"><span class="pre">fps</span></code>), <code class="docutils literal notranslate"><span class="pre">person_id</span></code>, <code class="docutils literal notranslate"><span class="pre">gaze_x</span></code>, <code class="docutils literal notranslate"><span class="pre">gaze_y</span></code>
+(normalized, <code class="docutils literal notranslate"><span class="pre">0</span></code> = left/top), <code class="docutils literal notranslate"><span class="pre">inout</span></code>, then one column per reducer.
+Reducers returning several values per row become <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_&lt;label&gt;</span></code> columns.
+Full heatmaps are not tabular and are left out.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>result</strong> – Output of <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a>.</p></li>
+<li><p><strong>fps</strong> – Frame rate of the source video; adds a <code class="docutils literal notranslate"><span class="pre">time_s</span></code> column.</p></li>
+<li><p><strong>labels</strong> – Column suffixes for multi-valued reducers, by reducer name
+(default: <code class="docutils literal notranslate"><span class="pre">0,</span> <span class="pre">1,</span> <span class="pre">...</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> with one row per sample.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -866,6 +893,7 @@ one, <code class="docutils literal notranslate"><span class="pre">heatmaps</span
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.BoxSource"><code class="docutils literal notranslate"><span class="pre">BoxSource</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.Reducer"><code class="docutils literal notranslate"><span class="pre">Reducer</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="docutils literal notranslate"><span class="pre">boxes_from_tracks()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.gaze_table"><code class="docutils literal notranslate"><span class="pre">gaze_table()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleDecoder"><code class="docutils literal notranslate"><span class="pre">GazelleDecoder</span></code></a><ul>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleDecoder.forward"><code class="docutils literal notranslate"><span class="pre">GazelleDecoder.forward()</span></code></a></li>
 </ul>

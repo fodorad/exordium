@@ -58,6 +58,7 @@ Functions
 .. autoapisummary::
 
    exordium.video.face.gaze.gazelle.boxes_from_tracks
+   exordium.video.face.gaze.gazelle.gaze_table
    exordium.video.face.gaze.gazelle.head_maps_from_boxes
 
 
@@ -192,6 +193,24 @@ Module Contents
                  Gaze-LLE was trained on, so values around ``1.3``-``1.5`` help.
 
    :returns: ``{frame_id: {person_id: normalized xyxy box}}``.
+
+
+.. py:function:: gaze_table(result: collections.abc.Mapping[str, torch.Tensor], fps: float | None = None, labels: collections.abc.Mapping[str, collections.abc.Sequence[str]] | None = None) -> pandas.DataFrame
+
+   Flatten a :meth:`GazelleWrapper.video_to_gaze` result into a table.
+
+   One row per (frame, person), ready for ``to_excel`` / ``to_csv``.  Columns:
+   ``frame_id``, ``time_s`` (with ``fps``), ``person_id``, ``gaze_x``, ``gaze_y``
+   (normalized, ``0`` = left/top), ``inout``, then one column per reducer.
+   Reducers returning several values per row become ``<name>_<label>`` columns.
+   Full heatmaps are not tabular and are left out.
+
+   :param result: Output of :meth:`GazelleWrapper.video_to_gaze`.
+   :param fps: Frame rate of the source video; adds a ``time_s`` column.
+   :param labels: Column suffixes for multi-valued reducers, by reducer name
+                  (default: ``0, 1, ...``).
+
+   :returns: :class:`pandas.DataFrame` with one row per sample.
 
 
 .. py:class:: GazelleDecoder(backbone_dim: int, inout: bool)
