@@ -16,6 +16,7 @@ Hugging Face (``facebook/dinov2-{base,large}``).  Decoder checkpoints are
 mirrored on ``fodorad/exordium-weights`` and downloaded on first use.
 """
 
+import hashlib
 import logging
 import math
 from collections.abc import Callable, Mapping, Sequence
@@ -314,7 +315,8 @@ class GazelleWrapper:
         pretrained: Load the released decoder and DINOv2 weights.  ``False``
             builds the architecture with random weights (shape tests, offline).
         autocast: Run the forward pass in reduced precision (fp16 on CUDA, bf16
-            elsewhere).  Off by default.
+            elsewhere).  Off by default; about 1.5x faster on MPS, but much slower
+            on CPU.
 
     Raises:
         ValueError: If ``variant`` is unknown.
@@ -524,6 +526,8 @@ class GazelleWrapper:
         guessed.  Pass ``output_path`` (and ``overwrite``) to cache the result as
         safetensors; pass ``chunk_dir`` to also persist progress every
         ``chunk_frames`` frames so an interrupted run resumes where it stopped.
+        Chunk files carry a digest of their inputs, so changed boxes, variant or
+        outputs recompute instead of reusing old chunks.
 
         Full heatmaps are large, so by default only gaze points and in/out scores
         are kept; use ``reducers`` for per-row values computed from the heatmaps
@@ -557,7 +561,10 @@ class GazelleWrapper:
         with Video(video_path) as video:
             wanted = [f for f in self._sample_frame_ids(video, fps) if _frame_boxes(boxes, f)]
             for number, chunk in enumerate(batch_iterator(wanted, chunk_frames)):
-                saved = None if chunk_path is None else chunk_path / f"chunk_{number:06d}.st"
+                saved = None
+                if chunk_path is not None:
+                    key = self._chunk_key(chunk, boxes, store_heatmaps, reducers)
+                    saved = chunk_path / f"chunk_{number:06d}_{key}.st"
                 if saved is not None and saved.exists():
                     parts.append(load_file(str(saved)))
                     continue
@@ -571,6 +578,22 @@ class GazelleWrapper:
         if not parts:
             return self._empty_result(store_heatmaps, reducers)
         return {name: torch.cat([part[name] for part in parts]) for name in parts[0]}
+
+    def _chunk_key(
+        self,
+        frame_ids: list[int],
+        boxes: BoxSource,
+        store_heatmaps: bool,
+        reducers: Mapping[str, Reducer],
+    ) -> str:
+        """Short digest of everything that determines a chunk's rows.
+
+        Part of the chunk file name, so a ``chunk_dir`` reused after changing the
+        variant, boxes, frames or outputs never serves stale rows.
+        """
+        per_frame = [(f, sorted(_frame_boxes(boxes, f).items())) for f in frame_ids]
+        state = (self.variant, store_heatmaps, sorted(reducers), per_frame)
+        return hashlib.sha1(repr(state).encode()).hexdigest()[:10]
 
     def _empty_result(
         self, store_heatmaps: bool, reducers: Mapping[str, Reducer]
