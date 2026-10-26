@@ -1,0 +1,267 @@
+exordium.video.face.gaze.gazelle
+================================
+
+.. py:module:: exordium.video.face.gaze.gazelle
+
+.. autoapi-nested-parse::
+
+   Gaze-LLE gaze-target estimation wrapper.
+
+   Gaze-LLE predicts *where* a person looks in the image: for every head box it
+   returns a 64x64 heatmap over the scene and, for the ``inout`` variants, the
+   probability that the target lies inside the frame.  A frozen DINOv2 encoder
+   embeds the scene once per frame; a light transformer decoder is then run per
+   person, conditioned on a learned token added at the head-box location.
+
+   The decoder below is a re-implementation of the upstream one so the released
+   checkpoints load unchanged.  Upstream: https://github.com/fkryan/gazelle
+   (MIT License, Copyright (c) 2024 Fiona Ryan).  Paper: *Gaze-LLE: Gaze Target
+   Estimation via Large-Scale Learned Encoders*, Ryan et al., CVPR 2025.
+
+   The checkpoints hold decoder weights only; the DINOv2 backbone comes from
+   Hugging Face (``facebook/dinov2-{base,large}``).  Decoder checkpoints are
+   mirrored on ``fodorad/exordium-weights`` and downloaded on first use.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.gazelle.logger
+   exordium.video.face.gaze.gazelle.INPUT_SIZE
+   exordium.video.face.gaze.gazelle.PATCH_SIZE
+   exordium.video.face.gaze.gazelle.FEATURE_GRID
+   exordium.video.face.gaze.gazelle.HEATMAP_SIZE
+   exordium.video.face.gaze.gazelle.GAZELLE_VARIANTS
+   exordium.video.face.gaze.gazelle.DEFAULT_VARIANT
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.gazelle.GazelleVariant
+   exordium.video.face.gaze.gazelle.GazelleOutput
+   exordium.video.face.gaze.gazelle.GazelleDecoder
+   exordium.video.face.gaze.gazelle.GazelleWrapper
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.gazelle.head_maps_from_boxes
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+   Module-level logger.
+
+.. py:data:: INPUT_SIZE
+   :value: 448
+
+
+   Side of the square image fed to the backbone, in pixels.
+
+.. py:data:: PATCH_SIZE
+   :value: 14
+
+
+   DINOv2 patch size; ``INPUT_SIZE // PATCH_SIZE`` tokens per side.
+
+.. py:data:: FEATURE_GRID
+   :value: 32
+
+
+   Side of the backbone token grid (32).
+
+.. py:data:: HEATMAP_SIZE
+   :value: 64
+
+
+   Side of the predicted heatmap (64).
+
+.. py:class:: GazelleVariant
+
+   Static description of a released Gaze-LLE checkpoint.
+
+   .. attribute:: backbone
+
+      DINOv2 size understood by :class:`transformers.Dinov2Model`
+      (``"base"`` or ``"large"``).
+
+   .. attribute:: inout
+
+      Whether the checkpoint predicts an in/out-of-frame score.
+
+   .. attribute:: weight_file
+
+      Path of the decoder checkpoint in the weights mirror.
+
+
+.. py:data:: GAZELLE_VARIANTS
+   :type:  dict[str, GazelleVariant]
+
+   GazeFollow then ChildPlay).
+
+   :type: Released checkpoints by variant name (``childplay``
+
+.. py:data:: DEFAULT_VARIANT
+   :value: 'vitl14_inout_childplay'
+
+
+   ViT-L fine-tuned on ChildPlay, with in/out prediction.
+
+   :type: Default variant
+
+.. py:class:: GazelleOutput
+
+   Gaze-target predictions for a batch of frames.
+
+   People are padded to the largest count in the batch; ``valid`` marks the
+   real ones.  Padded entries are zero.
+
+   .. attribute:: heatmap
+
+      ``(B, P, 64, 64)`` gaze-target heatmaps in ``[0, 1]``.
+
+   .. attribute:: valid
+
+      ``(B, P)`` bool mask of real (non-padded) people.
+
+   .. attribute:: inout
+
+      ``(B, P)`` probability that the target is inside the frame,
+      or ``None`` for variants without an in/out head.
+
+
+   .. py:method:: gaze_point(mode: str = 'argmax') -> torch.Tensor
+
+      Reduce each heatmap to a normalized ``(x, y)`` gaze point.
+
+      :param mode: ``"argmax"`` or ``"soft"``; see
+                   :func:`~exordium.video.face.gaze.base.heatmap_to_point`.
+
+      :returns: Tensor of shape ``(B, P, 2)``.
+
+
+
+   .. py:method:: mass_in_box(box: exordium.video.face.gaze.base.NormalizedBox) -> torch.Tensor
+
+      Share of each heatmap that falls inside a normalized box.
+
+      :param box: Box ``(x1, y1, x2, y2)`` in ``[0, 1]`` image coordinates.
+
+      :returns: Tensor of shape ``(B, P)``.
+
+
+
+.. py:class:: GazelleDecoder(backbone_dim: int, inout: bool)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Gaze-LLE decoder: head-conditioned transformer over scene tokens.
+
+   Parameter names match the upstream checkpoints (minus the backbone).
+
+   :param backbone_dim: Channel width of the backbone features.
+   :param inout: Add the in/out-of-frame token and head.
+
+   Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+
+   .. py:method:: forward(features: torch.Tensor, head_maps: torch.Tensor, scene_index: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor | None]
+
+      Decode one gaze target per person.
+
+      :param features: Scene features ``(B, C, 32, 32)``, one row per frame.
+      :param head_maps: Binary head masks ``(N, 32, 32)``, one row per person.
+      :param scene_index: ``(N,)`` index into ``features`` for each person.
+
+      :returns: ``(N, 64, 64)`` and ``(N,)`` (``None`` without
+                an in/out head).
+      :rtype: ``(heatmap, inout)``
+
+
+
+.. py:function:: head_maps_from_boxes(boxes: collections.abc.Sequence[exordium.video.face.gaze.base.NormalizedBox | None], device: torch.device | str = 'cpu') -> torch.Tensor
+
+   Rasterise normalized head boxes onto the backbone token grid.
+
+   :param boxes: One normalized ``xyxy`` box per person; ``None`` gives an empty mask.
+   :param device: Device of the returned tensor.
+
+   :returns: Float tensor ``(N, 32, 32)`` with ones inside each box.
+
+
+.. py:class:: GazelleWrapper(variant: str = DEFAULT_VARIANT, device_id: int | None = None, pretrained: bool = True, autocast: bool = False)
+
+   Gaze-LLE gaze-target estimator for multi-person frames.
+
+   :param variant: Key of :data:`GAZELLE_VARIANTS`.
+   :param device_id: Device index; ``None`` or negative for CPU.
+   :param pretrained: Load the released decoder and DINOv2 weights.  ``False``
+                      builds the architecture with random weights (shape tests, offline).
+   :param autocast: Run the forward pass in reduced precision (fp16 on CUDA, bf16
+                    elsewhere).  Off by default.
+
+   :raises ValueError: If ``variant`` is unknown.
+
+   Example::
+
+       model = GazelleWrapper(device_id=0)
+       out = model(frames, boxes)        # boxes: per frame, normalized xyxy per person
+       out.gaze_point()                  # (B, P, 2)
+
+
+
+   .. py:method:: preprocess(frames) -> torch.Tensor
+
+      Resize to 448x448 (aspect ratio not preserved) and normalise.
+
+      Boxes are image-relative, so the distortion does not shift them.
+
+      :param frames: Any input accepted by
+                     :func:`~exordium.video.core.io.to_uint8_tensor`: uint8 RGB
+                     tensor or array, or image path(s).
+
+      :returns: Float tensor ``(B, 3, 448, 448)`` on ``self.device``.
+
+
+
+   .. py:method:: inference(tensor: torch.Tensor, boxes: collections.abc.Sequence[collections.abc.Sequence[exordium.video.face.gaze.base.NormalizedBox | None]]) -> GazelleOutput
+
+      Run Gaze-LLE on preprocessed frames.
+
+      If the device rejects an op (notably on MPS), the model moves to the CPU
+      once, logs a warning, and the call is retried there.
+
+      :param tensor: Output of :meth:`preprocess`, ``(B, 3, 448, 448)``.
+      :param boxes: Per frame, one normalized ``xyxy`` head box per person
+                    (``None`` for an empty mask).  Out-of-range values are clipped.
+
+      :returns: :class:`GazelleOutput` on ``self.device``.
+
+      :raises ValueError: If ``boxes`` does not have one entry per frame.
+
+
+
+   .. py:method:: __call__(frames, boxes: collections.abc.Sequence[collections.abc.Sequence[exordium.video.face.gaze.base.NormalizedBox | None]]) -> GazelleOutput
+
+      Preprocess ``frames`` and predict gaze targets for the given head boxes.
+
+      :param frames: Any input accepted by :meth:`preprocess`.
+      :param boxes: Per frame, normalized ``xyxy`` head box per person.
+
+      :returns: :class:`GazelleOutput`.
+
+
+
