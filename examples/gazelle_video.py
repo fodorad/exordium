@@ -1,14 +1,15 @@
 """Run Gaze-LLE on any video: gaze-target features plus an overlay video.
 
 Pipeline: detect faces, track them, expand the face boxes to head boxes, predict
-each person's gaze target at ``--fps``, then write
+each person's gaze target at ``--fps`` (default: the video's own rate), then write
 
 * ``<out-dir>/gaze.st``: safetensors with ``frame_ids``, ``person_ids``,
   ``gaze_points`` (normalized xy), ``inout`` and ``mass_on_others`` columns;
 * ``<out-dir>/gaze.xlsx`` and ``gaze.csv``: the same as a table, one row per
   (frame, person), with a per-person ``summary`` sheet in the workbook;
 * ``<out-dir>/gaze_overlay.mp4``: the sampled frames with each head box, an arrow
-  to the gaze target, and the in/out score.  When the score is below 0.5 the
+  to the gaze target, and the in/out score; with ``--heatmaps`` also each person's
+  gaze heatmap, tinted in the person's colour.  When the score is below 0.5 the
   person looks out of the scene (often at the camera), so no arrow is drawn.
 
 and logs per-person statistics.
@@ -47,14 +48,37 @@ PALETTE = [(60, 220, 60), (255, 140, 30), (40, 140, 255), (220, 60, 220), (240, 
 """BGR colour per person, cycled."""
 
 
+HEATMAP_ALPHA = 0.65
+"""Peak opacity of a blended gaze heatmap."""
+
+
+def blend_heatmap(frame: np.ndarray, heatmap: torch.Tensor, colour: tuple[int, int, int]) -> None:
+    """Tint ``frame`` in place with ``colour`` where the heatmap is high.
+
+    Args:
+        frame: BGR image.
+        heatmap: ``(64, 64)`` gaze-target heatmap; scaled so its peak is fully opaque.
+        colour: BGR tint.
+
+    """
+    height, width = frame.shape[:2]
+    weight = heatmap.numpy() / max(float(heatmap.max()), 1e-6)
+    weight = cv2.resize(weight, (width, height), interpolation=cv2.INTER_CUBIC)
+    weight = np.clip(weight, 0, 1)[..., None] * HEATMAP_ALPHA
+    frame[:] = (frame * (1 - weight) + np.array(colour, dtype=np.float32) * weight).astype(np.uint8)
+
+
 def draw_overlay(
-    frame: np.ndarray, rows: list[tuple[int, torch.Tensor, float]], boxes: dict, label: str
+    frame: np.ndarray,
+    rows: list[tuple[int, torch.Tensor, float, torch.Tensor | None]],
+    boxes: dict,
+    label: str,
 ) -> np.ndarray:
-    """Draw head boxes, gaze arrows and in/out scores on one BGR frame.
+    """Draw gaze heatmaps, head boxes, arrows and in/out scores on one BGR frame.
 
     Args:
         frame: BGR image, modified in place.
-        rows: ``(person_id, gaze_point, inout)`` for every person in the frame.
+        rows: ``(person_id, gaze_point, inout, heatmap_or_None)`` per person.
         boxes: ``{person_id: normalized head box}`` of this frame.
         label: Text for the top-left corner.
 
@@ -63,7 +87,10 @@ def draw_overlay(
 
     """
     height, width = frame.shape[:2]
-    for person, point, inout in rows:
+    for person, _, inout, heatmap in rows:
+        if heatmap is not None and inout > IN_FRAME:
+            blend_heatmap(frame, heatmap, PALETTE[person % len(PALETTE)])
+    for person, point, inout, _ in rows:
         colour = PALETTE[person % len(PALETTE)]
         x1, y1, x2, y2 = (int(v) for v in box_to_pixels(boxes[person], width, height))
         cv2.rectangle(frame, (x1, y1), (x2, y2), colour, 3)
@@ -84,9 +111,17 @@ def main() -> None:
     parser.add_argument("--video", type=Path, default=DEFAULT_VIDEO)
     parser.add_argument("--out-dir", type=Path, default=Path("gazelle_out"))
     parser.add_argument("--device-id", type=int, default=None, help="0 for MPS/CUDA, omit for CPU")
-    parser.add_argument("--fps", type=float, default=10.0, help="gaze sampling rate")
+    parser.add_argument(
+        "--fps",
+        type=float,
+        default=None,
+        help="gaze sampling rate in Hz (default / -1: the video's own fps, every frame)",
+    )
     parser.add_argument("--min-track", type=int, default=100, help="min frames for a face track")
     parser.add_argument("--variant", default="vitl14_inout_childplay")
+    parser.add_argument(
+        "--heatmaps", action="store_true", help="blend each person's gaze heatmap into the overlay"
+    )
     parser.add_argument("--autocast", action="store_true", help="bf16/fp16; faster on MPS/CUDA")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -114,11 +149,16 @@ def main() -> None:
                     out[row, col] = mass_in_box(heatmaps[row], face_boxes[frame][other])
         return out
 
+    gaze_fps = args.fps if args.fps is not None and args.fps > 0 else None
     model = GazelleWrapper(args.variant, device_id=args.device_id, autocast=args.autocast)
     result = model.video_to_gaze(
-        args.video, head_boxes, fps=args.fps, reducers={"mass_on_others": mass_on_others}
+        args.video,
+        head_boxes,
+        fps=gaze_fps,
+        reducers={"mass_on_others": mass_on_others},
+        store_heatmaps=args.heatmaps,
     )
-    save_file(result, str(args.out_dir / "gaze.st"))
+    save_file({k: v for k, v in result.items() if k != "heatmaps"}, str(args.out_dir / "gaze.st"))
     table = gaze_table(
         result, fps=video_fps, labels={"mass_on_others": [f"person_{p}" for p in people]}
     )
@@ -136,6 +176,7 @@ def main() -> None:
                         int(result["person_ids"][i]),
                         result["gaze_points"][i],
                         float(result["inout"][i]),
+                        result["heatmaps"][i] if args.heatmaps else None,
                     )
                     for i in picked
                 ]
@@ -145,7 +186,7 @@ def main() -> None:
     save_video(
         [cv2.cvtColor(f, cv2.COLOR_BGR2RGB) for f in overlay],
         args.out_dir / "gaze_overlay.mp4",
-        fps=args.fps,
+        fps=gaze_fps or video_fps,
     )
 
     summary = []

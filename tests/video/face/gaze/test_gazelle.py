@@ -153,6 +153,12 @@ class TestGazelleVideo(ModelTestCase):
         self.assertIn(len(ids), (10, 11))  # clip is 29.97 fps, 1.001 s long
         self.assertEqual(ids[:3], [0, 3, 6])
 
+    def test_default_and_non_positive_fps_use_every_frame(self):
+        boxes = _boxes(range(30), people=1)
+        for fps in (None, -1, 0):
+            out = self.model.video_to_gaze(VIDEO_MULTISPEAKER_SHORT, boxes, fps=fps, batch_size=10)
+            self.assertEqual(out["frame_ids"].tolist(), list(range(30)))
+
     def test_store_heatmaps(self):
         out = self.model.video_to_gaze(
             VIDEO_MULTISPEAKER_SHORT, _boxes(range(3)), store_heatmaps=True

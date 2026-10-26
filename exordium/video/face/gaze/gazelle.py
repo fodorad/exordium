@@ -514,7 +514,7 @@ class GazelleWrapper:
 
     def _sample_frame_ids(self, video: Video, fps: float | None) -> list[int]:
         """Frame indices to process: all, or the nearest frame every ``1 / fps`` seconds."""
-        if fps is None or fps >= video.fps:
+        if fps is None or fps <= 0 or fps >= video.fps:
             return list(range(video.num_frames))
         times = torch.arange(0, video.num_frames / video.fps, 1 / fps, dtype=torch.float64)
         indices = torch.round(times * video.fps).long().clamp(max=video.num_frames - 1)
@@ -588,7 +588,9 @@ class GazelleWrapper:
             boxes: Head boxes per frame id (``{frame_id: {person_id: box}}`` or a
                 callable returning that for one frame); see
                 :func:`boxes_from_tracks`.
-            fps: Subsample to about this rate; ``None`` uses every frame.
+            fps: Subsample to about this rate in Hz.  ``None`` (default) or a
+                non-positive value such as ``-1`` uses every frame, i.e. the video's
+                own rate.
                 ``frame_ids`` in the result always refer to the original video.
             batch_size: Frames per forward pass.
             store_heatmaps: Also return the ``(N, 64, 64)`` heatmaps.
