@@ -148,6 +148,155 @@ def softmax_temperature(tensor: torch.Tensor, temperature: float) -> torch.Tenso
 
 
 # ---------------------------------------------------------------------------
+# Gaze-target utilities (boxes and heatmaps)
+# ---------------------------------------------------------------------------
+
+NormalizedBox = tuple[float, float, float, float]
+"""Box ``(x1, y1, x2, y2)`` in image-relative coordinates, each in ``[0, 1]``."""
+
+
+def box_to_normalized(
+    box_xyxy: tuple[float, float, float, float], width: int, height: int
+) -> NormalizedBox:
+    """Convert a pixel ``xyxy`` box to image-relative coordinates.
+
+    Args:
+        box_xyxy: Box ``(x1, y1, x2, y2)`` in pixels.
+        width: Image width in pixels.
+        height: Image height in pixels.
+
+    Returns:
+        Box clipped to ``[0, 1]``.
+
+    Raises:
+        ValueError: If ``width`` or ``height`` is not positive.
+
+    """
+    if width <= 0 or height <= 0:
+        raise ValueError(f"Image size must be positive, got {width}x{height}")
+    x1, y1, x2, y2 = box_xyxy
+    return (
+        min(max(x1 / width, 0.0), 1.0),
+        min(max(y1 / height, 0.0), 1.0),
+        min(max(x2 / width, 0.0), 1.0),
+        min(max(y2 / height, 0.0), 1.0),
+    )
+
+
+def box_to_pixels(box: NormalizedBox, width: int, height: int) -> tuple[float, float, float, float]:
+    """Convert an image-relative box back to pixel ``xyxy`` coordinates.
+
+    Args:
+        box: Box ``(x1, y1, x2, y2)`` in ``[0, 1]``.
+        width: Image width in pixels.
+        height: Image height in pixels.
+
+    Returns:
+        Box ``(x1, y1, x2, y2)`` in pixels.
+
+    """
+    x1, y1, x2, y2 = box
+    return x1 * width, y1 * height, x2 * width, y2 * height
+
+
+def expand_box(box: NormalizedBox, scale: float) -> NormalizedBox:
+    """Scale a normalized box around its centre, clipped to the image.
+
+    Face detectors return tighter boxes than the head boxes gaze-target models
+    are trained on; a ``scale`` slightly above ``1`` bridges the gap.
+
+    Args:
+        box: Box ``(x1, y1, x2, y2)`` in ``[0, 1]``.
+        scale: Multiplier for width and height (``1.0`` keeps the box).
+
+    Returns:
+        Expanded box clipped to ``[0, 1]``.
+
+    Raises:
+        ValueError: If ``scale`` is not positive.
+
+    """
+    if scale <= 0:
+        raise ValueError(f"scale must be positive, got {scale}")
+    x1, y1, x2, y2 = box
+    cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+    half_w, half_h = (x2 - x1) * scale / 2, (y2 - y1) * scale / 2
+    return (
+        max(cx - half_w, 0.0),
+        max(cy - half_h, 0.0),
+        min(cx + half_w, 1.0),
+        min(cy + half_h, 1.0),
+    )
+
+
+def heatmap_to_point(heatmap: torch.Tensor, mode: str = "argmax") -> torch.Tensor:
+    """Reduce gaze-target heatmaps to normalized ``(x, y)`` points.
+
+    Coordinates refer to cell centres, so a peak in cell ``(i, j)`` of an
+    ``(H, W)`` map maps to ``((j + 0.5) / W, (i + 0.5) / H)``.
+
+    Args:
+        heatmap: Tensor of shape ``(..., H, W)``.
+        mode: ``"argmax"`` for the peak cell, ``"soft"`` for the
+            heatmap-weighted mean (the map centre for an all-zero map).
+
+    Returns:
+        Tensor of shape ``(..., 2)`` with ``(x, y)`` in ``[0, 1]``.
+
+    Raises:
+        ValueError: If ``mode`` is not ``"argmax"`` or ``"soft"``.
+
+    """
+    if mode not in ("argmax", "soft"):
+        raise ValueError(f"mode must be 'argmax' or 'soft', got {mode!r}")
+    h, w = heatmap.shape[-2:]
+    xs = (torch.arange(w, device=heatmap.device, dtype=torch.float32) + 0.5) / w
+    ys = (torch.arange(h, device=heatmap.device, dtype=torch.float32) + 0.5) / h
+    heatmap = heatmap.float()
+    if mode == "argmax":
+        flat = heatmap.flatten(-2).argmax(dim=-1)
+        return torch.stack([xs[flat % w], ys[flat // w]], dim=-1)
+    total = heatmap.sum(dim=(-2, -1))
+    x = (heatmap.sum(dim=-2) * xs).sum(dim=-1) / total.clamp(min=1e-12)
+    y = (heatmap.sum(dim=-1) * ys).sum(dim=-1) / total.clamp(min=1e-12)
+    point = torch.stack([x, y], dim=-1)
+    return torch.where((total > 0).unsqueeze(-1), point, point.new_tensor([0.5, 0.5]))
+
+
+def _axis_overlap(lo: float, hi: float, size: int, device: torch.device) -> torch.Tensor:
+    """Fraction of each of ``size`` equal cells on ``[0, 1]`` covered by ``[lo, hi]``."""
+    edges = torch.arange(size + 1, device=device, dtype=torch.float32) / size
+    overlap = torch.minimum(edges[1:], edges.new_tensor(hi)) - torch.maximum(
+        edges[:-1], edges.new_tensor(lo)
+    )
+    return overlap.clamp(min=0) * size
+
+
+def mass_in_box(heatmap: torch.Tensor, box: NormalizedBox) -> torch.Tensor:
+    """Share of heatmap mass that falls inside a normalized box.
+
+    Cells partially covered by the box contribute proportionally, so the value
+    grows smoothly with the box.
+
+    Args:
+        heatmap: Non-negative tensor of shape ``(..., H, W)``.
+        box: Box ``(x1, y1, x2, y2)`` in ``[0, 1]``.
+
+    Returns:
+        Tensor of shape ``(...)`` in ``[0, 1]``; ``0`` for an all-zero map.
+
+    """
+    h, w = heatmap.shape[-2:]
+    heatmap = heatmap.float()
+    x1, y1, x2, y2 = box
+    wx = _axis_overlap(x1, x2, w, heatmap.device)
+    wy = _axis_overlap(y1, y2, h, heatmap.device)
+    inside = torch.einsum("...hw,h,w->...", heatmap, wy, wx)
+    total = heatmap.sum(dim=(-2, -1))
+    return torch.where(total > 0, inside / total.clamp(min=1e-12), torch.zeros_like(total))
+
+
+# ---------------------------------------------------------------------------
 # Visualisation helpers
 # ---------------------------------------------------------------------------
 
