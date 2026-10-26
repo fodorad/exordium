@@ -773,6 +773,52 @@ class TestTrackerScoreFilter(unittest.TestCase):
         self.assertEqual(len(tracker.tracks), 0)
 
 
+class TestTrackerUpdate(unittest.TestCase):
+    """``Tracker.update`` is the per-frame step that ``label`` loops over."""
+
+    @staticmethod
+    def _two_faces(n_frames: int) -> VideoDetections:
+        vd = VideoDetections()
+        for i in range(n_frames):
+            fd = FrameDetections()
+            fd.add(_np_det(i, x=10 + i, y=10))
+            fd.add(_np_det(i, x=400 + i, y=300))
+            vd.add(fd)
+        return vd
+
+    def test_returns_track_id_per_kept_detection(self):
+        tracker = IouTracker()
+        fd = FrameDetections()
+        fd.add(_np_det(0, x=10, y=10))
+        fd.add(_np_det(0, x=400, y=300))
+        fd.add(_np_det(0, x=200, y=200, score=0.1))
+        assignments = tracker.update(fd, min_score=0.7)
+        self.assertEqual([track_id for track_id, _ in assignments], [0, 1])
+        self.assertIs(assignments[0][1], fd[0])
+        self.assertEqual(len(tracker.tracks), 2)
+
+    def test_following_frame_continues_tracks(self):
+        tracker = IouTracker()
+        first = tracker.update(self._two_faces(2)[0])
+        second = tracker.update(self._two_faces(2)[1])
+        self.assertEqual([track_id for track_id, _ in first], [track_id for track_id, _ in second])
+
+    def test_update_loop_equals_label(self):
+        vd = self._two_faces(8)
+        by_label = IouTracker().label(vd)
+        by_update = IouTracker()
+        for fd in vd:
+            by_update.update(fd)
+        self.assertEqual(sorted(by_label.tracks), sorted(by_update.tracks))
+        for track_id, track in by_label.tracks.items():
+            self.assertEqual(track.frame_ids(), by_update.tracks[track_id].frame_ids())
+
+    def test_empty_frame_is_a_noop(self):
+        tracker = IouTracker()
+        self.assertEqual(tracker.update(FrameDetections()), [])
+        self.assertEqual(len(tracker.tracks), 0)
+
+
 class TestTrackerMergeMultipleTracks(unittest.TestCase):
     def test_merge_two_tracks_at_same_position(self):
         """Two tracks at same position that meet merge_rule should be merged."""

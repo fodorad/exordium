@@ -961,6 +961,46 @@ class Tracker(ABC):
             return best_id
         return None
 
+    def update(
+        self,
+        frame_detections: FrameDetections,
+        min_score: float = 0.7,
+        max_lost: int = 30,
+        iou_threshold: float = 0.2,
+    ) -> list[tuple[int, Detection]]:
+        """Assign one frame's detections to persistent tracks.
+
+        The per-frame step behind :meth:`label`, usable on its own to track an
+        incoming stream.  Delegates track matching to :meth:`_match_detection`;
+        detections below ``min_score`` are skipped, and a new track is started
+        whenever no existing one matches.
+
+        Args:
+            frame_detections: Detections of a single frame.
+            min_score: Minimum detection confidence to consider.
+            max_lost: Maximum frame gap to keep a track open.
+            iou_threshold: Minimum IoU required to continue a track.
+
+        Returns:
+            ``(track_id, detection)`` for every detection that was kept, in
+            detection order.
+
+        """
+        assignments: list[tuple[int, Detection]] = []
+        for detection in frame_detections:
+            if detection.score < min_score:
+                continue
+
+            track_id = self._match_detection(detection, max_lost, iou_threshold)
+            if track_id is not None:
+                self.tracks[track_id].add(detection)
+            else:
+                track_id = self.new_track_id
+                self.tracks[track_id] = Track(track_id, detection)
+                self.new_track_id += 1
+            assignments.append((track_id, detection))
+        return assignments
+
     def label(
         self,
         detections: VideoDetections,
@@ -970,10 +1010,7 @@ class Tracker(ABC):
     ) -> Tracker:
         """Assign per-frame detections to persistent tracks.
 
-        Iterates over all :class:`FrameDetections` in ``detections`` and
-        delegates per-detection track matching to :meth:`_match_detection`.
-        Detections below ``min_score`` are skipped.  A new track is started
-        whenever :meth:`_match_detection` returns ``None``.
+        Runs :meth:`update` over all :class:`FrameDetections` in ``detections``.
 
         Args:
             detections: Per-frame detection results.
@@ -991,16 +1028,7 @@ class Tracker(ABC):
             desc="Label tracks",
             disable=not self.verbose,
         ):
-            for detection in frame_detections:
-                if detection.score < min_score:
-                    continue
-
-                best_id = self._match_detection(detection, max_lost, iou_threshold)
-                if best_id is not None:
-                    self.tracks[best_id].add(detection)
-                else:
-                    self.tracks[self.new_track_id] = Track(self.new_track_id, detection)
-                    self.new_track_id += 1
+            self.update(frame_detections, min_score, max_lost, iou_threshold)
 
         return self
 
