@@ -80,7 +80,7 @@ Module Contents
 
 
    .. py:attribute:: source
-      :type:  str | pathlib.Path | torch.Tensor
+      :type:  str | pathlib.Path | torch.Tensor | numpy.ndarray
 
       Origin of the detection — a file path, an in-memory numpy array, or a torch tensor.
 

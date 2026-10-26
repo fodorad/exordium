@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../../genindex.html"><link rel="search" title="Search" href="../../../../search.html">
         <link rel="canonical" href="https://fodorad.github.io/exordium/_modules/exordium/video/core/io.html">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+    <!-- Generated with Sphinx 9.2.0 and Furo 2025.12.19 -->
         <title>exordium.video.core.io - Exordium latest documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
@@ -602,7 +602,7 @@
             <span class="n">batch_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batch_start</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame_indices</span><span class="p">))</span>
             <span class="n">batch_indices</span> <span class="o">=</span> <span class="n">frame_indices</span><span class="p">[</span><span class="n">batch_start</span><span class="p">:</span><span class="n">batch_end</span><span class="p">]</span>
 
-            <span class="n">frames</span> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">get_frames_at</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">batch_indices</span><span class="p">))</span>
+            <span class="n">frames</span> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">get_frames_at</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">batch_indices</span><span class="p">])</span>
 
             <span class="c1"># Apply resize to entire batch if needed</span>
             <span class="k">if</span> <span class="n">resize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -718,7 +718,7 @@
             <span class="n">batch_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batch_start</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame_indices</span><span class="p">))</span>
             <span class="n">batch_indices</span> <span class="o">=</span> <span class="n">frame_indices</span><span class="p">[</span><span class="n">batch_start</span><span class="p">:</span><span class="n">batch_end</span><span class="p">]</span>
 
-            <span class="n">frames</span> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">get_frames_at</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">batch_indices</span><span class="p">))</span>
+            <span class="n">frames</span> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">get_frames_at</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">batch_indices</span><span class="p">])</span>
 
             <span class="c1"># Apply resize to entire batch if needed</span>
             <span class="k">if</span> <span class="n">resize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
