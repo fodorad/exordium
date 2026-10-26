@@ -48,7 +48,7 @@ dependencies = [
   "torch>=2.11,<2.15",
   "torchaudio>=2.11,<2.14",
   "torchvision>=0.26,<0.30",
-  "torchcodec>=0.14,<0.17",
+  "torchcodec>=0.14,<0.18",
   "tqdm",
   "matplotlib",
   "huggingface_hub",
@@ -80,7 +80,7 @@ video = [
 ]
 dev = [
   "ruff",
-  "ty",
+  "ty>=0.0.92",
   "coverage",
   "pre-commit",
   "ipykernel",  # run the example notebooks in examples/
@@ -161,7 +161,7 @@ override-dependencies = [
   "torch>=2.11,<2.15",
   "torchaudio>=2.11,<2.14",
   "torchvision>=0.26,<0.30",
-  "torchcodec>=0.14,<0.17",
+  "torchcodec>=0.14,<0.18",
   # Hold transformers at latest 5.x; the whisperx stack otherwise pulls it down
   # to 4.57. Verified whisperx alignment + the existing wrappers work on 5.x.
   "transformers>=5.5",
@@ -174,3 +174,9 @@ override-dependencies = [
 
 [tool.ty.environment]
 python-version = "3.12"
+
+[tool.ty.rules]
+# torch declares ``Module.forward`` as a writable ``Callable`` attribute, so every
+# ``def forward`` in an ``nn.Module`` subclass trips this rule. Known false positive
+# of typing torch modules, not a defect in the overrides.
+invalid-mutable-override = "ignore"
