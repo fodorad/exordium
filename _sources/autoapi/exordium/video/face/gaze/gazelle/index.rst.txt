@@ -36,6 +36,9 @@ Attributes
    exordium.video.face.gaze.gazelle.HEATMAP_SIZE
    exordium.video.face.gaze.gazelle.GAZELLE_VARIANTS
    exordium.video.face.gaze.gazelle.DEFAULT_VARIANT
+   exordium.video.face.gaze.gazelle.PersonBoxes
+   exordium.video.face.gaze.gazelle.BoxSource
+   exordium.video.face.gaze.gazelle.Reducer
 
 
 Classes
@@ -54,6 +57,7 @@ Functions
 
 .. autoapisummary::
 
+   exordium.video.face.gaze.gazelle.boxes_from_tracks
    exordium.video.face.gaze.gazelle.head_maps_from_boxes
 
 
@@ -163,6 +167,33 @@ Module Contents
 
 
 
+.. py:data:: PersonBoxes
+
+   Head boxes of one frame, keyed by person id.
+
+.. py:data:: BoxSource
+
+   a mapping, or a callable evaluated lazily per frame.
+
+   :type: Head boxes per frame id
+
+.. py:data:: Reducer
+
+   Maps ``(heatmaps (N, 64, 64), frame_ids (N,), person_ids (N,))`` to per-row values.
+
+.. py:function:: boxes_from_tracks(tracks: collections.abc.Mapping[int, exordium.video.core.detection.Track], width: int, height: int, scale: float = 1.0) -> dict[int, dict[int, exordium.video.face.gaze.base.NormalizedBox]]
+
+   Turn face tracks into per-frame head boxes for :meth:`GazelleWrapper.video_to_gaze`.
+
+   :param tracks: Tracks keyed by track id; the id becomes the person id.
+   :param width: Frame width in pixels.
+   :param height: Frame height in pixels.
+   :param scale: Box expansion factor.  Face boxes are tighter than the head boxes
+                 Gaze-LLE was trained on, so values around ``1.3``-``1.5`` help.
+
+   :returns: ``{frame_id: {person_id: normalized xyxy box}}``.
+
+
 .. py:class:: GazelleDecoder(backbone_dim: int, inout: bool)
 
    Bases: :py:obj:`torch.nn.Module`
@@ -262,6 +293,41 @@ Module Contents
       :param boxes: Per frame, normalized ``xyxy`` head box per person.
 
       :returns: :class:`GazelleOutput`.
+
+
+
+   .. py:method:: video_to_gaze(video_path: str | pathlib.Path, boxes: BoxSource, fps: float | None = None, batch_size: int = 8, store_heatmaps: bool = False, reducers: collections.abc.Mapping[str, Reducer] | None = None, chunk_frames: int = 256, chunk_dir: str | pathlib.Path | None = None, verbose: bool = False, **_kwargs) -> dict[str, torch.Tensor]
+
+      Predict gaze targets for every boxed person in a video.
+
+      One row per (frame, person).  Frames without any box are skipped, never
+      guessed.  Pass ``output_path`` (and ``overwrite``) to cache the result as
+      safetensors; pass ``chunk_dir`` to also persist progress every
+      ``chunk_frames`` frames so an interrupted run resumes where it stopped.
+
+      Full heatmaps are large, so by default only gaze points and in/out scores
+      are kept; use ``reducers`` for per-row values computed from the heatmaps
+      (e.g. :func:`~exordium.video.face.gaze.base.mass_in_box` on a partner's
+      box) or ``store_heatmaps`` to keep them all.
+
+      :param video_path: Input video.
+      :param boxes: Head boxes per frame id (``{frame_id: {person_id: box}}`` or a
+                    callable returning that for one frame); see
+                    :func:`boxes_from_tracks`.
+      :param fps: Subsample to about this rate; ``None`` uses every frame.
+                  ``frame_ids`` in the result always refer to the original video.
+      :param batch_size: Frames per forward pass.
+      :param store_heatmaps: Also return the ``(N, 64, 64)`` heatmaps.
+      :param reducers: Named callables computing extra per-row columns.
+      :param chunk_frames: Frames per resumable chunk.
+      :param chunk_dir: Directory for chunk files; ``None`` disables resuming.
+      :param verbose: Log progress per chunk.
+      :param \*\*_kwargs: Forwarded to ``load_or_create``.
+
+      :returns: ``frame_ids (N,)``, ``person_ids (N,)``,
+                ``gaze_points (N, 2)`` (argmax), ``inout (N,)`` when the variant has
+                one, ``heatmaps`` if requested, and one entry per reducer.
+      :rtype: Dict of CPU tensors
 
 
 

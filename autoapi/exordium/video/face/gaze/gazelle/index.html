@@ -367,6 +367,15 @@ mirrored on <code class="docutils literal notranslate"><span class="pre">fodorad
 <tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.DEFAULT_VARIANT" title="exordium.video.face.gaze.gazelle.DEFAULT_VARIANT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_VARIANT</span></code></a></p></td>
 <td><p>ViT-L fine-tuned on ChildPlay, with in/out prediction.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.PersonBoxes" title="exordium.video.face.gaze.gazelle.PersonBoxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PersonBoxes</span></code></a></p></td>
+<td><p>Head boxes of one frame, keyed by person id.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.BoxSource" title="exordium.video.face.gaze.gazelle.BoxSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BoxSource</span></code></a></p></td>
+<td><p>a mapping, or a callable evaluated lazily per frame.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.Reducer" title="exordium.video.face.gaze.gazelle.Reducer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reducer</span></code></a></p></td>
+<td><p>Maps <code class="docutils literal notranslate"><span class="pre">(heatmaps</span> <span class="pre">(N,</span> <span class="pre">64,</span> <span class="pre">64),</span> <span class="pre">frame_ids</span> <span class="pre">(N,),</span> <span class="pre">person_ids</span> <span class="pre">(N,))</span></code> to per-row values.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -397,7 +406,10 @@ mirrored on <code class="docutils literal notranslate"><span class="pre">fodorad
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.head_maps_from_boxes" title="exordium.video.face.gaze.gazelle.head_maps_from_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">head_maps_from_boxes</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks" title="exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">boxes_from_tracks</span></code></a>(→ dict[int, dict[int, ...)</p></td>
+<td><p>Turn face tracks into per-frame head boxes for <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.head_maps_from_boxes" title="exordium.video.face.gaze.gazelle.head_maps_from_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">head_maps_from_boxes</span></code></a>(→ torch.Tensor)</p></td>
 <td><p>Rasterise normalized head boxes onto the backbone token grid.</p></td>
 </tr>
 </tbody>
@@ -539,6 +551,49 @@ or <code class="docutils literal notranslate"><span class="pre">None</span></cod
 
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.gazelle.PersonBoxes">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.gazelle.</span></span><span class="sig-name descname"><span class="pre">PersonBoxes</span></span><a class="headerlink" href="#exordium.video.face.gaze.gazelle.PersonBoxes" title="Link to this definition">¶</a></dt>
+<dd><p>Head boxes of one frame, keyed by person id.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.gazelle.BoxSource">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.gazelle.</span></span><span class="sig-name descname"><span class="pre">BoxSource</span></span><a class="headerlink" href="#exordium.video.face.gaze.gazelle.BoxSource" title="Link to this definition">¶</a></dt>
+<dd><p>a mapping, or a callable evaluated lazily per frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Head boxes per frame id</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.gazelle.Reducer">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.gazelle.</span></span><span class="sig-name descname"><span class="pre">Reducer</span></span><a class="headerlink" href="#exordium.video.face.gaze.gazelle.Reducer" title="Link to this definition">¶</a></dt>
+<dd><p>Maps <code class="docutils literal notranslate"><span class="pre">(heatmaps</span> <span class="pre">(N,</span> <span class="pre">64,</span> <span class="pre">64),</span> <span class="pre">frame_ids</span> <span class="pre">(N,),</span> <span class="pre">person_ids</span> <span class="pre">(N,))</span></code> to per-row values.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.gazelle.boxes_from_tracks">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.gazelle.</span></span><span class="sig-name descname"><span class="pre">boxes_from_tracks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tracks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">collections.abc.Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../../../core/detection/index.html#exordium.video.core.detection.Track" title="exordium.video.core.detection.Track"><span class="pre">exordium.video.core.detection.Track</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../base/index.html#exordium.video.face.gaze.base.NormalizedBox" title="exordium.video.face.gaze.base.NormalizedBox"><span class="pre">exordium.video.face.gaze.base.NormalizedBox</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks" title="Link to this definition">¶</a></dt>
+<dd><p>Turn face tracks into per-frame head boxes for <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tracks</strong> – Tracks keyed by track id; the id becomes the person id.</p></li>
+<li><p><strong>width</strong> – Frame width in pixels.</p></li>
+<li><p><strong>height</strong> – Frame height in pixels.</p></li>
+<li><p><strong>scale</strong> – Box expansion factor.  Face boxes are tighter than the head boxes
+Gaze-LLE was trained on, so values around <code class="docutils literal notranslate"><span class="pre">1.3</span></code>-<code class="docutils literal notranslate"><span class="pre">1.5</span></code> help.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">{frame_id:</span> <span class="pre">{person_id:</span> <span class="pre">normalized</span> <span class="pre">xyxy</span> <span class="pre">box}}</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="exordium.video.face.gaze.gazelle.GazelleDecoder">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.gazelle.</span></span><span class="sig-name descname"><span class="pre">GazelleDecoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backbone_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#exordium.video.face.gaze.gazelle.GazelleDecoder" title="Link to this definition">¶</a></dt>
@@ -677,6 +732,47 @@ once, logs a warning, and the call is retried there.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze">
+<span class="sig-name descname"><span class="pre">video_to_gaze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">video_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#exordium.video.face.gaze.gazelle.BoxSource" title="exordium.video.face.gaze.gazelle.BoxSource"><span class="pre">BoxSource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_heatmaps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">collections.abc.Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#exordium.video.face.gaze.gazelle.Reducer" title="exordium.video.face.gaze.gazelle.Reducer"><span class="pre">Reducer</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_frames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pathlib.Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">_kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="Link to this definition">¶</a></dt>
+<dd><p>Predict gaze targets for every boxed person in a video.</p>
+<p>One row per (frame, person).  Frames without any box are skipped, never
+guessed.  Pass <code class="docutils literal notranslate"><span class="pre">output_path</span></code> (and <code class="docutils literal notranslate"><span class="pre">overwrite</span></code>) to cache the result as
+safetensors; pass <code class="docutils literal notranslate"><span class="pre">chunk_dir</span></code> to also persist progress every
+<code class="docutils literal notranslate"><span class="pre">chunk_frames</span></code> frames so an interrupted run resumes where it stopped.</p>
+<p>Full heatmaps are large, so by default only gaze points and in/out scores
+are kept; use <code class="docutils literal notranslate"><span class="pre">reducers</span></code> for per-row values computed from the heatmaps
+(e.g. <a class="reference internal" href="../base/index.html#exordium.video.face.gaze.base.mass_in_box" title="exordium.video.face.gaze.base.mass_in_box"><code class="xref py py-func docutils literal notranslate"><span class="pre">mass_in_box()</span></code></a> on a partner’s
+box) or <code class="docutils literal notranslate"><span class="pre">store_heatmaps</span></code> to keep them all.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>video_path</strong> – Input video.</p></li>
+<li><p><strong>boxes</strong> – Head boxes per frame id (<code class="docutils literal notranslate"><span class="pre">{frame_id:</span> <span class="pre">{person_id:</span> <span class="pre">box}}</span></code> or a
+callable returning that for one frame); see
+<a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks" title="exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="xref py py-func docutils literal notranslate"><span class="pre">boxes_from_tracks()</span></code></a>.</p></li>
+<li><p><strong>fps</strong> – Subsample to about this rate; <code class="docutils literal notranslate"><span class="pre">None</span></code> uses every frame.
+<code class="docutils literal notranslate"><span class="pre">frame_ids</span></code> in the result always refer to the original video.</p></li>
+<li><p><strong>batch_size</strong> – Frames per forward pass.</p></li>
+<li><p><strong>store_heatmaps</strong> – Also return the <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">64,</span> <span class="pre">64)</span></code> heatmaps.</p></li>
+<li><p><strong>reducers</strong> – Named callables computing extra per-row columns.</p></li>
+<li><p><strong>chunk_frames</strong> – Frames per resumable chunk.</p></li>
+<li><p><strong>chunk_dir</strong> – Directory for chunk files; <code class="docutils literal notranslate"><span class="pre">None</span></code> disables resuming.</p></li>
+<li><p><strong>verbose</strong> – Log progress per chunk.</p></li>
+<li><p><strong>**_kwargs</strong> – Forwarded to <code class="docutils literal notranslate"><span class="pre">load_or_create</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">frame_ids</span> <span class="pre">(N,)</span></code>, <code class="docutils literal notranslate"><span class="pre">person_ids</span> <span class="pre">(N,)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">gaze_points</span> <span class="pre">(N,</span> <span class="pre">2)</span></code> (argmax), <code class="docutils literal notranslate"><span class="pre">inout</span> <span class="pre">(N,)</span></code> when the variant has
+one, <code class="docutils literal notranslate"><span class="pre">heatmaps</span></code> if requested, and one entry per reducer.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict of CPU tensors</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -763,6 +859,10 @@ once, logs a warning, and the call is retried there.</p>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleOutput.mass_in_box"><code class="docutils literal notranslate"><span class="pre">GazelleOutput.mass_in_box()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.PersonBoxes"><code class="docutils literal notranslate"><span class="pre">PersonBoxes</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.BoxSource"><code class="docutils literal notranslate"><span class="pre">BoxSource</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.Reducer"><code class="docutils literal notranslate"><span class="pre">Reducer</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="docutils literal notranslate"><span class="pre">boxes_from_tracks()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleDecoder"><code class="docutils literal notranslate"><span class="pre">GazelleDecoder</span></code></a><ul>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleDecoder.forward"><code class="docutils literal notranslate"><span class="pre">GazelleDecoder.forward()</span></code></a></li>
 </ul>
@@ -772,6 +872,7 @@ once, logs a warning, and the call is retried there.</p>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.preprocess"><code class="docutils literal notranslate"><span class="pre">GazelleWrapper.preprocess()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.inference"><code class="docutils literal notranslate"><span class="pre">GazelleWrapper.inference()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.__call__"><code class="docutils literal notranslate"><span class="pre">GazelleWrapper.__call__()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a></li>
 </ul>
 </li>
 </ul>
