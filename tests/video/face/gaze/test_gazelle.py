@@ -190,6 +190,16 @@ class TestGazelleVideo(ModelTestCase):
             self.assertEqual(saved[0].stat().st_mtime_ns, kept)
             self.assertTrue(torch.equal(full["gaze_points"], resumed["gaze_points"]))
 
+    def test_changed_boxes_do_not_reuse_chunks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            kwargs = dict(batch_size=2, chunk_frames=4, chunk_dir=Path(tmp))
+            self.model.video_to_gaze(VIDEO_MULTISPEAKER_SHORT, _boxes(range(4)), **kwargs)
+            moved = {f: {0: BOX_B, 1: BOX_A} for f in range(4)}
+            out = self.model.video_to_gaze(VIDEO_MULTISPEAKER_SHORT, moved, **kwargs)
+            self.assertEqual(len(list(Path(tmp).glob("*.st"))), 2)
+            fresh = self.model.video_to_gaze(VIDEO_MULTISPEAKER_SHORT, moved)
+            self.assertTrue(torch.equal(out["gaze_points"], fresh["gaze_points"]))
+
 
 class TestBoxesFromTracks(unittest.TestCase):
     def test_converts_to_normalized_and_expands(self):
