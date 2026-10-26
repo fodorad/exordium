@@ -328,6 +328,18 @@
           <section id="module-exordium.video.face.gaze.base">
 <span id="exordium-video-face-gaze-base"></span><h1>exordium.video.face.gaze.base<a class="headerlink" href="#module-exordium.video.face.gaze.base" title="Link to this heading">¶</a></h1>
 <p>Gaze estimation base class and shared utility functions.</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.NormalizedBox" title="exordium.video.face.gaze.base.NormalizedBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalizedBox</span></code></a></p></td>
+<td><p>Box <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> in image-relative coordinates, each in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
 <div class="table-wrapper autosummary longtable docutils container">
@@ -366,19 +378,34 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.softmax_temperature" title="exordium.video.face.gaze.base.softmax_temperature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">softmax_temperature</span></code></a>(→ torch.Tensor)</p></td>
 <td><p>Apply temperature-scaled softmax along dimension 1.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.draw_vector" title="exordium.video.face.gaze.base.draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">draw_vector</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.box_to_normalized" title="exordium.video.face.gaze.base.box_to_normalized"><code class="xref py py-obj docutils literal notranslate"><span class="pre">box_to_normalized</span></code></a>(→ NormalizedBox)</p></td>
+<td><p>Convert a pixel <code class="docutils literal notranslate"><span class="pre">xyxy</span></code> box to image-relative coordinates.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.box_to_pixels" title="exordium.video.face.gaze.base.box_to_pixels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">box_to_pixels</span></code></a>(→ tuple[float, float, float, float])</p></td>
+<td><p>Convert an image-relative box back to pixel <code class="docutils literal notranslate"><span class="pre">xyxy</span></code> coordinates.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.expand_box" title="exordium.video.face.gaze.base.expand_box"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_box</span></code></a>(→ NormalizedBox)</p></td>
+<td><p>Scale a normalized box around its centre, clipped to the image.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.heatmap_to_point" title="exordium.video.face.gaze.base.heatmap_to_point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">heatmap_to_point</span></code></a>(→ torch.Tensor)</p></td>
+<td><p>Reduce gaze-target heatmaps to normalized <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> points.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.mass_in_box" title="exordium.video.face.gaze.base.mass_in_box"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mass_in_box</span></code></a>(→ torch.Tensor)</p></td>
+<td><p>Share of heatmap mass that falls inside a normalized box.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.draw_vector" title="exordium.video.face.gaze.base.draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">draw_vector</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
 <td><p>Draw a gaze arrow onto an image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.convert_rotate_draw_vector" title="exordium.video.face.gaze.base.convert_rotate_draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_rotate_draw_vector</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.convert_rotate_draw_vector" title="exordium.video.face.gaze.base.convert_rotate_draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_rotate_draw_vector</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
 <td><p>Convert gaze angles to XY, rotate, then draw onto an image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.convert_draw_vector" title="exordium.video.face.gaze.base.convert_draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_draw_vector</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.convert_draw_vector" title="exordium.video.face.gaze.base.convert_draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_draw_vector</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
 <td><p>Convert gaze angles to XY and draw onto an image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.looking_at_camera_yaw_pitch" title="exordium.video.face.gaze.base.looking_at_camera_yaw_pitch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">looking_at_camera_yaw_pitch</span></code></a>(→ bool)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.looking_at_camera_yaw_pitch" title="exordium.video.face.gaze.base.looking_at_camera_yaw_pitch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">looking_at_camera_yaw_pitch</span></code></a>(→ bool)</p></td>
 <td><p>Check whether a gaze direction points toward the camera.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.looking_at_camera_xy" title="exordium.video.face.gaze.base.looking_at_camera_xy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">looking_at_camera_xy</span></code></a>(→ bool)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.looking_at_camera_xy" title="exordium.video.face.gaze.base.looking_at_camera_xy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">looking_at_camera_xy</span></code></a>(→ bool)</p></td>
 <td><p>Check whether a 2D gaze vector points toward the camera.</p></td>
 </tr>
 </tbody>
@@ -497,6 +524,115 @@
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Temperature-scaled softmax probabilities of shape <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">C)</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.base.NormalizedBox">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.base.</span></span><span class="sig-name descname"><span class="pre">NormalizedBox</span></span><a class="headerlink" href="#exordium.video.face.gaze.base.NormalizedBox" title="Link to this definition">¶</a></dt>
+<dd><p>Box <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> in image-relative coordinates, each in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.base.box_to_normalized">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.base.</span></span><span class="sig-name descname"><span class="pre">box_to_normalized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">box_xyxy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#exordium.video.face.gaze.base.NormalizedBox" title="exordium.video.face.gaze.base.NormalizedBox"><span class="pre">NormalizedBox</span></a></span></span><a class="headerlink" href="#exordium.video.face.gaze.base.box_to_normalized" title="Link to this definition">¶</a></dt>
+<dd><p>Convert a pixel <code class="docutils literal notranslate"><span class="pre">xyxy</span></code> box to image-relative coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>box_xyxy</strong> – Box <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> in pixels.</p></li>
+<li><p><strong>width</strong> – Image width in pixels.</p></li>
+<li><p><strong>height</strong> – Image height in pixels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Box clipped to <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">width</span></code> or <code class="docutils literal notranslate"><span class="pre">height</span></code> is not positive.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.base.box_to_pixels">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.base.</span></span><span class="sig-name descname"><span class="pre">box_to_pixels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">box</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#exordium.video.face.gaze.base.NormalizedBox" title="exordium.video.face.gaze.base.NormalizedBox"><span class="pre">NormalizedBox</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#exordium.video.face.gaze.base.box_to_pixels" title="Link to this definition">¶</a></dt>
+<dd><p>Convert an image-relative box back to pixel <code class="docutils literal notranslate"><span class="pre">xyxy</span></code> coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>box</strong> – Box <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p></li>
+<li><p><strong>width</strong> – Image width in pixels.</p></li>
+<li><p><strong>height</strong> – Image height in pixels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Box <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> in pixels.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.base.expand_box">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.base.</span></span><span class="sig-name descname"><span class="pre">expand_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">box</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#exordium.video.face.gaze.base.NormalizedBox" title="exordium.video.face.gaze.base.NormalizedBox"><span class="pre">NormalizedBox</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#exordium.video.face.gaze.base.NormalizedBox" title="exordium.video.face.gaze.base.NormalizedBox"><span class="pre">NormalizedBox</span></a></span></span><a class="headerlink" href="#exordium.video.face.gaze.base.expand_box" title="Link to this definition">¶</a></dt>
+<dd><p>Scale a normalized box around its centre, clipped to the image.</p>
+<p>Face detectors return tighter boxes than the head boxes gaze-target models
+are trained on; a <code class="docutils literal notranslate"><span class="pre">scale</span></code> slightly above <code class="docutils literal notranslate"><span class="pre">1</span></code> bridges the gap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>box</strong> – Box <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p></li>
+<li><p><strong>scale</strong> – Multiplier for width and height (<code class="docutils literal notranslate"><span class="pre">1.0</span></code> keeps the box).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Expanded box clipped to <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">scale</span></code> is not positive.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.base.heatmap_to_point">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.base.</span></span><span class="sig-name descname"><span class="pre">heatmap_to_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">heatmap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'argmax'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#exordium.video.face.gaze.base.heatmap_to_point" title="Link to this definition">¶</a></dt>
+<dd><p>Reduce gaze-target heatmaps to normalized <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> points.</p>
+<p>Coordinates refer to cell centres, so a peak in cell <code class="docutils literal notranslate"><span class="pre">(i,</span> <span class="pre">j)</span></code> of an
+<code class="docutils literal notranslate"><span class="pre">(H,</span> <span class="pre">W)</span></code> map maps to <code class="docutils literal notranslate"><span class="pre">((j</span> <span class="pre">+</span> <span class="pre">0.5)</span> <span class="pre">/</span> <span class="pre">W,</span> <span class="pre">(i</span> <span class="pre">+</span> <span class="pre">0.5)</span> <span class="pre">/</span> <span class="pre">H)</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>heatmap</strong> – Tensor of shape <code class="docutils literal notranslate"><span class="pre">(...,</span> <span class="pre">H,</span> <span class="pre">W)</span></code>.</p></li>
+<li><p><strong>mode</strong> – <code class="docutils literal notranslate"><span class="pre">&quot;argmax&quot;</span></code> for the peak cell, <code class="docutils literal notranslate"><span class="pre">&quot;soft&quot;</span></code> for the
+heatmap-weighted mean (the map centre for an all-zero map).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor of shape <code class="docutils literal notranslate"><span class="pre">(...,</span> <span class="pre">2)</span></code> with <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">mode</span></code> is not <code class="docutils literal notranslate"><span class="pre">&quot;argmax&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;soft&quot;</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.base.mass_in_box">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.base.</span></span><span class="sig-name descname"><span class="pre">mass_in_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">heatmap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#exordium.video.face.gaze.base.NormalizedBox" title="exordium.video.face.gaze.base.NormalizedBox"><span class="pre">NormalizedBox</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#exordium.video.face.gaze.base.mass_in_box" title="Link to this definition">¶</a></dt>
+<dd><p>Share of heatmap mass that falls inside a normalized box.</p>
+<p>Cells partially covered by the box contribute proportionally, so the value
+grows smoothly with the box.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>heatmap</strong> – Non-negative tensor of shape <code class="docutils literal notranslate"><span class="pre">(...,</span> <span class="pre">H,</span> <span class="pre">W)</span></code>.</p></li>
+<li><p><strong>box</strong> – Box <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor of shape <code class="docutils literal notranslate"><span class="pre">(...)</span></code> in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>; <code class="docutils literal notranslate"><span class="pre">0</span></code> for an all-zero map.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -831,6 +967,7 @@ input was a tensor batch, <code class="docutils literal notranslate"><span class
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">exordium.video.face.gaze.base</a><ul>
+<li><a class="reference internal" href="#attributes">Attributes</a></li>
 <li><a class="reference internal" href="#classes">Classes</a></li>
 <li><a class="reference internal" href="#functions">Functions</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
@@ -841,6 +978,12 @@ input was a tensor batch, <code class="docutils literal notranslate"><span class
 <li><a class="reference internal" href="#exordium.video.face.gaze.base.spherical2cartesial"><code class="docutils literal notranslate"><span class="pre">spherical2cartesial()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.base.compute_angular_error"><code class="docutils literal notranslate"><span class="pre">compute_angular_error()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.base.softmax_temperature"><code class="docutils literal notranslate"><span class="pre">softmax_temperature()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.base.NormalizedBox"><code class="docutils literal notranslate"><span class="pre">NormalizedBox</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.base.box_to_normalized"><code class="docutils literal notranslate"><span class="pre">box_to_normalized()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.base.box_to_pixels"><code class="docutils literal notranslate"><span class="pre">box_to_pixels()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.base.expand_box"><code class="docutils literal notranslate"><span class="pre">expand_box()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.base.heatmap_to_point"><code class="docutils literal notranslate"><span class="pre">heatmap_to_point()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.base.mass_in_box"><code class="docutils literal notranslate"><span class="pre">mass_in_box()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.base.draw_vector"><code class="docutils literal notranslate"><span class="pre">draw_vector()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.base.convert_rotate_draw_vector"><code class="docutils literal notranslate"><span class="pre">convert_rotate_draw_vector()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.base.convert_draw_vector"><code class="docutils literal notranslate"><span class="pre">convert_draw_vector()</span></code></a></li>

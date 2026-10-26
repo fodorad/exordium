@@ -9,6 +9,14 @@ exordium.video.face.gaze.base
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   exordium.video.face.gaze.base.NormalizedBox
+
+
 Classes
 -------
 
@@ -29,6 +37,11 @@ Functions
    exordium.video.face.gaze.base.spherical2cartesial
    exordium.video.face.gaze.base.compute_angular_error
    exordium.video.face.gaze.base.softmax_temperature
+   exordium.video.face.gaze.base.box_to_normalized
+   exordium.video.face.gaze.base.box_to_pixels
+   exordium.video.face.gaze.base.expand_box
+   exordium.video.face.gaze.base.heatmap_to_point
+   exordium.video.face.gaze.base.mass_in_box
    exordium.video.face.gaze.base.draw_vector
    exordium.video.face.gaze.base.convert_rotate_draw_vector
    exordium.video.face.gaze.base.convert_draw_vector
@@ -107,6 +120,78 @@ Module Contents
    :param temperature: Scaling factor. Values < 1 sharpen; values > 1 flatten.
 
    :returns: Temperature-scaled softmax probabilities of shape ``(N, C)``.
+
+
+.. py:data:: NormalizedBox
+
+   Box ``(x1, y1, x2, y2)`` in image-relative coordinates, each in ``[0, 1]``.
+
+.. py:function:: box_to_normalized(box_xyxy: tuple[float, float, float, float], width: int, height: int) -> NormalizedBox
+
+   Convert a pixel ``xyxy`` box to image-relative coordinates.
+
+   :param box_xyxy: Box ``(x1, y1, x2, y2)`` in pixels.
+   :param width: Image width in pixels.
+   :param height: Image height in pixels.
+
+   :returns: Box clipped to ``[0, 1]``.
+
+   :raises ValueError: If ``width`` or ``height`` is not positive.
+
+
+.. py:function:: box_to_pixels(box: NormalizedBox, width: int, height: int) -> tuple[float, float, float, float]
+
+   Convert an image-relative box back to pixel ``xyxy`` coordinates.
+
+   :param box: Box ``(x1, y1, x2, y2)`` in ``[0, 1]``.
+   :param width: Image width in pixels.
+   :param height: Image height in pixels.
+
+   :returns: Box ``(x1, y1, x2, y2)`` in pixels.
+
+
+.. py:function:: expand_box(box: NormalizedBox, scale: float) -> NormalizedBox
+
+   Scale a normalized box around its centre, clipped to the image.
+
+   Face detectors return tighter boxes than the head boxes gaze-target models
+   are trained on; a ``scale`` slightly above ``1`` bridges the gap.
+
+   :param box: Box ``(x1, y1, x2, y2)`` in ``[0, 1]``.
+   :param scale: Multiplier for width and height (``1.0`` keeps the box).
+
+   :returns: Expanded box clipped to ``[0, 1]``.
+
+   :raises ValueError: If ``scale`` is not positive.
+
+
+.. py:function:: heatmap_to_point(heatmap: torch.Tensor, mode: str = 'argmax') -> torch.Tensor
+
+   Reduce gaze-target heatmaps to normalized ``(x, y)`` points.
+
+   Coordinates refer to cell centres, so a peak in cell ``(i, j)`` of an
+   ``(H, W)`` map maps to ``((j + 0.5) / W, (i + 0.5) / H)``.
+
+   :param heatmap: Tensor of shape ``(..., H, W)``.
+   :param mode: ``"argmax"`` for the peak cell, ``"soft"`` for the
+                heatmap-weighted mean (the map centre for an all-zero map).
+
+   :returns: Tensor of shape ``(..., 2)`` with ``(x, y)`` in ``[0, 1]``.
+
+   :raises ValueError: If ``mode`` is not ``"argmax"`` or ``"soft"``.
+
+
+.. py:function:: mass_in_box(heatmap: torch.Tensor, box: NormalizedBox) -> torch.Tensor
+
+   Share of heatmap mass that falls inside a normalized box.
+
+   Cells partially covered by the box contribute proportionally, so the value
+   grows smoothly with the box.
+
+   :param heatmap: Non-negative tensor of shape ``(..., H, W)``.
+   :param box: Box ``(x1, y1, x2, y2)`` in ``[0, 1]``.
+
+   :returns: Tensor of shape ``(...)`` in ``[0, 1]``; ``0`` for an all-zero map.
 
 
 .. py:function:: draw_vector(image: numpy.ndarray | torch.Tensor, origin, end_point) -> numpy.ndarray | torch.Tensor
