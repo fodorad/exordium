@@ -781,7 +781,9 @@ box) or <code class="docutils literal notranslate"><span class="pre">store_heatm
 <li><p><strong>boxes</strong> – Head boxes per frame id (<code class="docutils literal notranslate"><span class="pre">{frame_id:</span> <span class="pre">{person_id:</span> <span class="pre">box}}</span></code> or a
 callable returning that for one frame); see
 <a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks" title="exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="xref py py-func docutils literal notranslate"><span class="pre">boxes_from_tracks()</span></code></a>.</p></li>
-<li><p><strong>fps</strong> – Subsample to about this rate; <code class="docutils literal notranslate"><span class="pre">None</span></code> uses every frame.
+<li><p><strong>fps</strong> – Subsample to about this rate in Hz.  <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) or a
+non-positive value such as <code class="docutils literal notranslate"><span class="pre">-1</span></code> uses every frame, i.e. the video’s
+own rate.
 <code class="docutils literal notranslate"><span class="pre">frame_ids</span></code> in the result always refer to the original video.</p></li>
 <li><p><strong>batch_size</strong> – Frames per forward pass.</p></li>
 <li><p><strong>store_heatmaps</strong> – Also return the <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">64,</span> <span class="pre">64)</span></code> heatmaps.</p></li>
