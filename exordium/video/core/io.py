@@ -252,7 +252,7 @@ def load_video(
             batch_end = min(batch_start + batch_size, len(frame_indices))
             batch_indices = frame_indices[batch_start:batch_end]
 
-            frames = video.get_frames_at(list(batch_indices))
+            frames = video.get_frames_at([int(i) for i in batch_indices])
 
             # Apply resize to entire batch if needed
             if resize is not None:
@@ -365,7 +365,7 @@ def load_frames(
             batch_end = min(batch_start + batch_size, len(frame_indices))
             batch_indices = frame_indices[batch_start:batch_end]
 
-            frames = video.get_frames_at(list(batch_indices))
+            frames = video.get_frames_at([int(i) for i in batch_indices])
 
             # Apply resize to entire batch if needed
             if resize is not None:
