@@ -102,7 +102,9 @@ class StreamingTracker:
         min_track_frames: Frames the protagonist needs on screen to be ``stable``.
         min_stable_frames: Frames the protagonist needs to have led to be ``stable``.
         min_margin: Required protagonist-over-runner-up score ratio for ``stable``.
-        window: Recent detections kept per track.  Scores are unaffected.
+        window: Recent detections kept per track.  Scores are unaffected.  A
+            detection built from a live frame references that frame, so ``window``
+            frames stay in memory: keep it small for high-resolution streams.
         forget_after: Drop a track after this many frames without a detection.
 
     Raises:
@@ -121,7 +123,7 @@ class StreamingTracker:
         min_track_frames: int = 15,
         min_stable_frames: int = 30,
         min_margin: float = 1.2,
-        window: int = 300,
+        window: int = 30,
         forget_after: int = 900,
     ) -> None:
         if not 0 < decay <= 1:
