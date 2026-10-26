@@ -1474,6 +1474,49 @@
             <span class="k">return</span> <span class="n">best_id</span>
         <span class="k">return</span> <span class="kc">None</span>
 
+<div class="viewcode-block" id="Tracker.update">
+<a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.Tracker.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">frame_detections</span><span class="p">:</span> <span class="n">FrameDetections</span><span class="p">,</span>
+        <span class="n">min_score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">max_lost</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+        <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Detection</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""Assign one frame's detections to persistent tracks.</span>
+
+<span class="sd">        The per-frame step behind :meth:`label`, usable on its own to track an</span>
+<span class="sd">        incoming stream.  Delegates track matching to :meth:`_match_detection`;</span>
+<span class="sd">        detections below ``min_score`` are skipped, and a new track is started</span>
+<span class="sd">        whenever no existing one matches.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            frame_detections: Detections of a single frame.</span>
+<span class="sd">            min_score: Minimum detection confidence to consider.</span>
+<span class="sd">            max_lost: Maximum frame gap to keep a track open.</span>
+<span class="sd">            iou_threshold: Minimum IoU required to continue a track.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``(track_id, detection)`` for every detection that was kept, in</span>
+<span class="sd">            detection order.</span>
+
+<span class="sd">        """</span>
+        <span class="n">assignments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Detection</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">detection</span> <span class="ow">in</span> <span class="n">frame_detections</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">detection</span><span class="o">.</span><span class="n">score</span> <span class="o">&lt;</span> <span class="n">min_score</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">track_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_detection</span><span class="p">(</span><span class="n">detection</span><span class="p">,</span> <span class="n">max_lost</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">track_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">[</span><span class="n">track_id</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">detection</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">track_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_track_id</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">[</span><span class="n">track_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">Track</span><span class="p">(</span><span class="n">track_id</span><span class="p">,</span> <span class="n">detection</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">new_track_id</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">assignments</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">track_id</span><span class="p">,</span> <span class="n">detection</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">assignments</span></div>
+
+
 <div class="viewcode-block" id="Tracker.label">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/detection/index.html#exordium.video.core.detection.Tracker.label">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">label</span><span class="p">(</span>
@@ -1485,10 +1528,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tracker</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Assign per-frame detections to persistent tracks.</span>
 
-<span class="sd">        Iterates over all :class:`FrameDetections` in ``detections`` and</span>
-<span class="sd">        delegates per-detection track matching to :meth:`_match_detection`.</span>
-<span class="sd">        Detections below ``min_score`` are skipped.  A new track is started</span>
-<span class="sd">        whenever :meth:`_match_detection` returns ``None``.</span>
+<span class="sd">        Runs :meth:`update` over all :class:`FrameDetections` in ``detections``.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            detections: Per-frame detection results.</span>
@@ -1506,16 +1546,7 @@
             <span class="n">desc</span><span class="o">=</span><span class="s2">"Label tracks"</span><span class="p">,</span>
             <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
         <span class="p">):</span>
-            <span class="k">for</span> <span class="n">detection</span> <span class="ow">in</span> <span class="n">frame_detections</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">detection</span><span class="o">.</span><span class="n">score</span> <span class="o">&lt;</span> <span class="n">min_score</span><span class="p">:</span>
-                    <span class="k">continue</span>
-
-                <span class="n">best_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_detection</span><span class="p">(</span><span class="n">detection</span><span class="p">,</span> <span class="n">max_lost</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">best_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">[</span><span class="n">best_id</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">detection</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">new_track_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">Track</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_track_id</span><span class="p">,</span> <span class="n">detection</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">new_track_id</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">frame_detections</span><span class="p">,</span> <span class="n">min_score</span><span class="p">,</span> <span class="n">max_lost</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span></div>
 

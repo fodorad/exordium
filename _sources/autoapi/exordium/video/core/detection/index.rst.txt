@@ -708,14 +708,30 @@ Module Contents
       Active track selection, or all tracks if none selected.
 
 
+   .. py:method:: update(frame_detections: FrameDetections, min_score: float = 0.7, max_lost: int = 30, iou_threshold: float = 0.2) -> list[tuple[int, Detection]]
+
+      Assign one frame's detections to persistent tracks.
+
+      The per-frame step behind :meth:`label`, usable on its own to track an
+      incoming stream.  Delegates track matching to :meth:`_match_detection`;
+      detections below ``min_score`` are skipped, and a new track is started
+      whenever no existing one matches.
+
+      :param frame_detections: Detections of a single frame.
+      :param min_score: Minimum detection confidence to consider.
+      :param max_lost: Maximum frame gap to keep a track open.
+      :param iou_threshold: Minimum IoU required to continue a track.
+
+      :returns: ``(track_id, detection)`` for every detection that was kept, in
+                detection order.
+
+
+
    .. py:method:: label(detections: VideoDetections, min_score: float = 0.7, max_lost: int = 30, iou_threshold: float = 0.2) -> Tracker
 
       Assign per-frame detections to persistent tracks.
 
-      Iterates over all :class:`FrameDetections` in ``detections`` and
-      delegates per-detection track matching to :meth:`_match_detection`.
-      Detections below ``min_score`` are skipped.  A new track is started
-      whenever :meth:`_match_detection` returns ``None``.
+      Runs :meth:`update` over all :class:`FrameDetections` in ``detections``.
 
       :param detections: Per-frame detection results.
       :param min_score: Minimum detection confidence to consider.
