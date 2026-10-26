@@ -111,7 +111,9 @@ def main() -> None:
     parser.add_argument("--video", type=Path, default=DEFAULT_VIDEO)
     parser.add_argument("--out-dir", type=Path, default=Path("gazelle_out"))
     parser.add_argument("--device-id", type=int, default=None, help="0 for MPS/CUDA, omit for CPU")
-    parser.add_argument("--fps", type=float, default=10.0, help="gaze sampling rate")
+    parser.add_argument(
+        "--fps", type=float, default=10.0, help="gaze sampling rate; 0 = every frame (native fps)"
+    )
     parser.add_argument("--min-track", type=int, default=100, help="min frames for a face track")
     parser.add_argument("--variant", default="vitl14_inout_childplay")
     parser.add_argument(
@@ -144,11 +146,12 @@ def main() -> None:
                     out[row, col] = mass_in_box(heatmaps[row], face_boxes[frame][other])
         return out
 
+    gaze_fps = args.fps or None  # None: every frame
     model = GazelleWrapper(args.variant, device_id=args.device_id, autocast=args.autocast)
     result = model.video_to_gaze(
         args.video,
         head_boxes,
-        fps=args.fps,
+        fps=gaze_fps,
         reducers={"mass_on_others": mass_on_others},
         store_heatmaps=args.heatmaps,
     )
@@ -180,7 +183,7 @@ def main() -> None:
     save_video(
         [cv2.cvtColor(f, cv2.COLOR_BGR2RGB) for f in overlay],
         args.out_dir / "gaze_overlay.mp4",
-        fps=args.fps,
+        fps=gaze_fps or video_fps,
     )
 
     summary = []
