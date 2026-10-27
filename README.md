@@ -48,6 +48,7 @@ Exordium is a comprehensive toolkit for **multimodal feature extraction** across
 | Multi-face tracking | IoU-based tracker | track IDs across frames |
 | Face-ID tracking | [AdaFace](https://github.com/mk-minchul/AdaFace) (IResNet-18/50/101, CVPR 2022) + IoU gating | track IDs with identity recovery |
 | Protagonist extraction | IoU tracklets + [AdaFace](https://github.com/mk-minchul/AdaFace) global clustering (agglomerative, `FaceClusterTracker`) | single protagonist track |
+| Streaming tracking | `StreamingFacePipeline`: detector + online tracker, frame by frame | track IDs, provisional protagonist, stability flag |
 
 #### Face Analysis
 

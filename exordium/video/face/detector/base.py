@@ -148,6 +148,27 @@ class FaceDetector(ABC):
             source=source,
         )
 
+    def detect_frame(self, frame: np.ndarray | torch.Tensor, frame_id: int) -> FrameDetections:
+        """Run the detector on one frame of a stream.
+
+        Unlike :meth:`detect_image`, the detections carry the given ``frame_id`` and
+        are not cached, so the result can feed a tracker directly.
+
+        Args:
+            frame: ``np.ndarray (H, W, 3)`` or ``torch.Tensor (3, H, W)`` uint8 RGB.
+            frame_id: Index of the frame in its stream.
+
+        Returns:
+            :class:`~exordium.video.core.detection.FrameDetections` whose detections
+            reference ``frame`` as their source.
+
+        """
+        if isinstance(frame, np.ndarray):
+            frame = torch.from_numpy(np.ascontiguousarray(frame)).permute(2, 0, 1)
+        return self._build_frame_detections(
+            self.run_detector([frame])[0], frame_id=frame_id, source=frame
+        )
+
     @load_or_create("vdet")
     def detect_frame_dir(self, frame_dir: str | Path, **_kwargs) -> VideoDetections:
         """Run detector on ordered frames of a video in a single folder.

@@ -15,7 +15,15 @@ when to commit.
 
 Memory stays bounded on endless streams: a track keeps only its most recent
 detections, scores are kept as running aggregates, and tracks that stay absent
-are forgotten.  The globally clustering
+are forgotten.
+
+Online tracking cannot merge tracks that coexist in a frame, so one person who is
+detected twice (say, overlapping boxes) can end up as two tracks and the
+protagonist id may change when the second overtakes the first.  Use a
+:class:`~exordium.video.core.detection.FaceIdTracker` backend to bridge gaps; the
+offline path remains the more robust choice when the whole clip is available.
+
+The globally clustering
 :class:`~exordium.video.core.detection.FaceClusterTracker` is inherently offline
 and cannot be wrapped.
 """
