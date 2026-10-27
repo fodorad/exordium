@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.14.0](https://github.com/fodorad/exordium/compare/v2.13.0...v2.14.0) (2026-10-27)
+
+
+### Features
+
+* **gaze:** load your own face tracks with boxes_from_table and --boxes ([#113](https://github.com/fodorad/exordium/issues/113)) ([6f85e88](https://github.com/fodorad/exordium/commit/6f85e889fad9200b036f91fad3d8929944a92523))
+
 ## [2.13.0](https://github.com/fodorad/exordium/compare/v2.12.0...v2.13.0) (2026-10-27)
 
 
