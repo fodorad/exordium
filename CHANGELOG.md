@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.13.0](https://github.com/fodorad/exordium/compare/v2.12.0...v2.13.0) (2026-10-27)
+
+
+### Features
+
+* **tracking:** add StreamingFacePipeline for live frames ([#112](https://github.com/fodorad/exordium/issues/112)) ([ae5ccef](https://github.com/fodorad/exordium/commit/ae5ccef58faeb714ef39835828ab7b5b2bb366a0))
+* **tracking:** add StreamingTracker with provisional protagonist ([#110](https://github.com/fodorad/exordium/issues/110)) ([ea2d33a](https://github.com/fodorad/exordium/commit/ea2d33af54a2e097d3ad8d8a517ae1200b30637f))
+
 ## [2.12.0](https://github.com/fodorad/exordium/compare/v2.11.4...v2.12.0) (2026-10-26)
 
 
