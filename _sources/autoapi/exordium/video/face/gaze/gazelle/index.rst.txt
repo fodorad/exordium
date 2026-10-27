@@ -57,6 +57,7 @@ Functions
 
 .. autoapisummary::
 
+   exordium.video.face.gaze.gazelle.boxes_from_table
    exordium.video.face.gaze.gazelle.boxes_from_tracks
    exordium.video.face.gaze.gazelle.gaze_table
    exordium.video.face.gaze.gazelle.head_maps_from_boxes
@@ -181,6 +182,31 @@ Module Contents
 .. py:data:: Reducer
 
    Maps ``(heatmaps (N, 64, 64), frame_ids (N,), person_ids (N,))`` to per-row values.
+
+.. py:function:: boxes_from_table(table: pandas.DataFrame | str | Path, width: int, height: int, scale: float = 1.0, box_format: str = 'xyxy', normalized: bool = False) -> dict[int, dict[int, exordium.video.face.gaze.base.NormalizedBox]]
+
+   Load your own face tracks for :meth:`GazelleWrapper.video_to_gaze`.
+
+   Any detector and tracker will do: write one row per face per frame to a CSV
+   (or build a :class:`pandas.DataFrame`) with the columns ``frame_id``,
+   ``person_id`` (your track id) and the box, either ``x1, y1, x2, y2``
+   (``box_format="xyxy"``) or ``x, y, w, h`` (``"xywh"``).  Boxes are in pixels
+   unless ``normalized`` is set, and frame ids are zero-based video frame indices.
+
+   :param table: DataFrame, or path to a CSV file, with the columns above.
+   :param width: Frame width in pixels (ignored when ``normalized``).
+   :param height: Frame height in pixels (ignored when ``normalized``).
+   :param scale: Box expansion factor.  Face boxes are tighter than the head boxes
+                 Gaze-LLE was trained on, so values around ``1.3``-``1.5`` help; use
+                 ``1.0`` for boxes that already cover the head.
+   :param box_format: ``"xyxy"`` or ``"xywh"``.
+   :param normalized: Boxes are already in ``[0, 1]`` image coordinates.
+
+   :returns: ``{frame_id: {person_id: normalized xyxy box}}``.
+
+   :raises ValueError: On an unknown ``box_format``, a missing column, or a person
+       listed twice in one frame.
+
 
 .. py:function:: boxes_from_tracks(tracks: collections.abc.Mapping[int, exordium.video.core.detection.Track], width: int, height: int, scale: float = 1.0) -> dict[int, dict[int, exordium.video.face.gaze.base.NormalizedBox]]
 

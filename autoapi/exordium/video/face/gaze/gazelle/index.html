@@ -408,13 +408,16 @@ mirrored on <code class="docutils literal notranslate"><span class="pre">fodorad
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks" title="exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">boxes_from_tracks</span></code></a>(→ dict[int, dict[int, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_table" title="exordium.video.face.gaze.gazelle.boxes_from_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">boxes_from_table</span></code></a>(→ dict[int, dict[int, ...)</p></td>
+<td><p>Load your own face tracks for <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks" title="exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">boxes_from_tracks</span></code></a>(→ dict[int, dict[int, ...)</p></td>
 <td><p>Turn face tracks into per-frame head boxes for <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.gaze_table" title="exordium.video.face.gaze.gazelle.gaze_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaze_table</span></code></a>(→ pandas.DataFrame)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.gaze_table" title="exordium.video.face.gaze.gazelle.gaze_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaze_table</span></code></a>(→ pandas.DataFrame)</p></td>
 <td><p>Flatten a <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a> result into a table.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.head_maps_from_boxes" title="exordium.video.face.gaze.gazelle.head_maps_from_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">head_maps_from_boxes</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.head_maps_from_boxes" title="exordium.video.face.gaze.gazelle.head_maps_from_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">head_maps_from_boxes</span></code></a>(→ torch.Tensor)</p></td>
 <td><p>Rasterise normalized head boxes onto the backbone token grid.</p></td>
 </tr>
 </tbody>
@@ -577,6 +580,38 @@ or <code class="docutils literal notranslate"><span class="pre">None</span></cod
 <dt class="sig sig-object py" id="exordium.video.face.gaze.gazelle.Reducer">
 <span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.gazelle.</span></span><span class="sig-name descname"><span class="pre">Reducer</span></span><a class="headerlink" href="#exordium.video.face.gaze.gazelle.Reducer" title="Link to this definition">¶</a></dt>
 <dd><p>Maps <code class="docutils literal notranslate"><span class="pre">(heatmaps</span> <span class="pre">(N,</span> <span class="pre">64,</span> <span class="pre">64),</span> <span class="pre">frame_ids</span> <span class="pre">(N,),</span> <span class="pre">person_ids</span> <span class="pre">(N,))</span></code> to per-row values.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="exordium.video.face.gaze.gazelle.boxes_from_table">
+<span class="sig-prename descclassname"><span class="pre">exordium.video.face.gaze.gazelle.</span></span><span class="sig-name descname"><span class="pre">boxes_from_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'xyxy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../base/index.html#exordium.video.face.gaze.base.NormalizedBox" title="exordium.video.face.gaze.base.NormalizedBox"><span class="pre">exordium.video.face.gaze.base.NormalizedBox</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#exordium.video.face.gaze.gazelle.boxes_from_table" title="Link to this definition">¶</a></dt>
+<dd><p>Load your own face tracks for <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a>.</p>
+<p>Any detector and tracker will do: write one row per face per frame to a CSV
+(or build a <code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>) with the columns <code class="docutils literal notranslate"><span class="pre">frame_id</span></code>,
+<code class="docutils literal notranslate"><span class="pre">person_id</span></code> (your track id) and the box, either <code class="docutils literal notranslate"><span class="pre">x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2</span></code>
+(<code class="docutils literal notranslate"><span class="pre">box_format=&quot;xyxy&quot;</span></code>) or <code class="docutils literal notranslate"><span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">w,</span> <span class="pre">h</span></code> (<code class="docutils literal notranslate"><span class="pre">&quot;xywh&quot;</span></code>).  Boxes are in pixels
+unless <code class="docutils literal notranslate"><span class="pre">normalized</span></code> is set, and frame ids are zero-based video frame indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> – DataFrame, or path to a CSV file, with the columns above.</p></li>
+<li><p><strong>width</strong> – Frame width in pixels (ignored when <code class="docutils literal notranslate"><span class="pre">normalized</span></code>).</p></li>
+<li><p><strong>height</strong> – Frame height in pixels (ignored when <code class="docutils literal notranslate"><span class="pre">normalized</span></code>).</p></li>
+<li><p><strong>scale</strong> – Box expansion factor.  Face boxes are tighter than the head boxes
+Gaze-LLE was trained on, so values around <code class="docutils literal notranslate"><span class="pre">1.3</span></code>-<code class="docutils literal notranslate"><span class="pre">1.5</span></code> help; use
+<code class="docutils literal notranslate"><span class="pre">1.0</span></code> for boxes that already cover the head.</p></li>
+<li><p><strong>box_format</strong> – <code class="docutils literal notranslate"><span class="pre">&quot;xyxy&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;xywh&quot;</span></code>.</p></li>
+<li><p><strong>normalized</strong> – Boxes are already in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> image coordinates.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">{frame_id:</span> <span class="pre">{person_id:</span> <span class="pre">normalized</span> <span class="pre">xyxy</span> <span class="pre">box}}</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – On an unknown <code class="docutils literal notranslate"><span class="pre">box_format</span></code>, a missing column, or a person
+listed twice in one frame.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -896,6 +931,7 @@ one, <code class="docutils literal notranslate"><span class="pre">heatmaps</span
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.PersonBoxes"><code class="docutils literal notranslate"><span class="pre">PersonBoxes</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.BoxSource"><code class="docutils literal notranslate"><span class="pre">BoxSource</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.Reducer"><code class="docutils literal notranslate"><span class="pre">Reducer</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_table"><code class="docutils literal notranslate"><span class="pre">boxes_from_table()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="docutils literal notranslate"><span class="pre">boxes_from_tracks()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.gaze_table"><code class="docutils literal notranslate"><span class="pre">gaze_table()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleDecoder"><code class="docutils literal notranslate"><span class="pre">GazelleDecoder</span></code></a><ul>
