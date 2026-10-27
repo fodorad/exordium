@@ -19,6 +19,13 @@ Usage::
     python examples/gazelle_video.py --video my.mp4 --out-dir out --device-id 0
 
 Without ``--video`` it runs on the repo's 3-speaker test clip.
+
+Your own face tracks: pass ``--boxes tracks.csv`` to skip exordium's detector and
+tracker.  The CSV has one row per face per frame with the columns ``frame_id``
+(zero-based video frame), ``person_id`` (your track id) and the box, either
+``x1,y1,x2,y2`` or, with ``--box-format xywh``, ``x,y,w,h``, in pixels (or
+``--normalized-boxes`` for 0-1 coordinates).  Faces are expanded to head boxes by
+``--head-scale``.
 """
 
 import argparse
@@ -33,9 +40,13 @@ from safetensors.torch import save_file
 
 from exordium.video.core.detection import IouTracker
 from exordium.video.core.io import Video, save_video
-from exordium.video.face.detector.yolo11 import YoloFace11Detector
 from exordium.video.face.gaze.base import box_to_pixels, mass_in_box
-from exordium.video.face.gaze.gazelle import GazelleWrapper, boxes_from_tracks, gaze_table
+from exordium.video.face.gaze.gazelle import (
+    GazelleWrapper,
+    boxes_from_table,
+    boxes_from_tracks,
+    gaze_table,
+)
 
 logger = logging.getLogger("gazelle_video")
 
@@ -118,6 +129,16 @@ def main() -> None:
         help="gaze sampling rate in Hz (default / -1: the video's own fps, every frame)",
     )
     parser.add_argument("--min-track", type=int, default=100, help="min frames for a face track")
+    parser.add_argument(
+        "--boxes", type=Path, default=None, help="CSV of your own face tracks (skips detection)"
+    )
+    parser.add_argument("--box-format", choices=["xyxy", "xywh"], default="xyxy")
+    parser.add_argument(
+        "--normalized-boxes", action="store_true", help="--boxes are in 0-1 image coordinates"
+    )
+    parser.add_argument(
+        "--head-scale", type=float, default=HEAD_SCALE, help="face box -> head box expansion"
+    )
     parser.add_argument("--variant", default="vitl14_inout_childplay")
     parser.add_argument(
         "--heatmaps", action="store_true", help="blend each person's gaze heatmap into the overlay"
@@ -129,16 +150,26 @@ def main() -> None:
 
     with Video(args.video) as video:
         width, height, video_fps = video.width, video.height, video.fps
-    detections = YoloFace11Detector(device_id=args.device_id).detect_video(args.video)
-    tracker = IouTracker(max_lost=30).label(detections, min_score=0.5).merge()
-    tracker.select_long_tracks(min_length=args.min_track)
-    tracks = tracker.selected_tracks
-    if not tracks:
-        raise SystemExit(f"No face track of at least {args.min_track} frames in {args.video}")
-    head_boxes = boxes_from_tracks(tracks, width, height, scale=HEAD_SCALE)
-    face_boxes = boxes_from_tracks(tracks, width, height)
-    people = sorted(tracks)
-    logger.info(f"tracked people: {people}")
+    if args.boxes is not None:
+        table_args = {"box_format": args.box_format, "normalized": args.normalized_boxes}
+        head_boxes = boxes_from_table(args.boxes, width, height, args.head_scale, **table_args)
+        face_boxes = boxes_from_table(args.boxes, width, height, 1.0, **table_args)
+        people = sorted({person for frame in head_boxes.values() for person in frame})
+        if not people:
+            raise SystemExit(f"No boxes in {args.boxes}")
+    else:
+        from exordium.video.face.detector.yolo11 import YoloFace11Detector  # noqa: PLC0415
+
+        detections = YoloFace11Detector(device_id=args.device_id).detect_video(args.video)
+        tracker = IouTracker(max_lost=30).label(detections, min_score=0.5).merge()
+        tracker.select_long_tracks(min_length=args.min_track)
+        tracks = tracker.selected_tracks
+        if not tracks:
+            raise SystemExit(f"No face track of at least {args.min_track} frames in {args.video}")
+        head_boxes = boxes_from_tracks(tracks, width, height, scale=args.head_scale)
+        face_boxes = boxes_from_tracks(tracks, width, height)
+        people = sorted(tracks)
+    logger.info(f"people: {people}")
 
     def mass_on_others(heatmaps, frame_ids, person_ids):
         """Per row, the heatmap share on each person's face (zero on one's own)."""

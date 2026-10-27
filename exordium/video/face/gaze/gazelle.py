@@ -168,6 +168,71 @@ Reducer = Callable[[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]
 """Maps ``(heatmaps (N, 64, 64), frame_ids (N,), person_ids (N,))`` to per-row values."""
 
 
+_BOX_COLUMNS = {"xyxy": ("x1", "y1", "x2", "y2"), "xywh": ("x", "y", "w", "h")}
+"""Box columns of a boxes table, by format."""
+
+
+def boxes_from_table(
+    table: "pd.DataFrame | str | Path",
+    width: int,
+    height: int,
+    scale: float = 1.0,
+    box_format: str = "xyxy",
+    normalized: bool = False,
+) -> dict[int, dict[int, NormalizedBox]]:
+    """Load your own face tracks for :meth:`GazelleWrapper.video_to_gaze`.
+
+    Any detector and tracker will do: write one row per face per frame to a CSV
+    (or build a :class:`pandas.DataFrame`) with the columns ``frame_id``,
+    ``person_id`` (your track id) and the box, either ``x1, y1, x2, y2``
+    (``box_format="xyxy"``) or ``x, y, w, h`` (``"xywh"``).  Boxes are in pixels
+    unless ``normalized`` is set, and frame ids are zero-based video frame indices.
+
+    Args:
+        table: DataFrame, or path to a CSV file, with the columns above.
+        width: Frame width in pixels (ignored when ``normalized``).
+        height: Frame height in pixels (ignored when ``normalized``).
+        scale: Box expansion factor.  Face boxes are tighter than the head boxes
+            Gaze-LLE was trained on, so values around ``1.3``-``1.5`` help; use
+            ``1.0`` for boxes that already cover the head.
+        box_format: ``"xyxy"`` or ``"xywh"``.
+        normalized: Boxes are already in ``[0, 1]`` image coordinates.
+
+    Returns:
+        ``{frame_id: {person_id: normalized xyxy box}}``.
+
+    Raises:
+        ValueError: On an unknown ``box_format``, a missing column, or a person
+            listed twice in one frame.
+
+    """
+    import pandas as pd  # noqa: PLC0415 - heavy, only needed for tabular input
+
+    if box_format not in _BOX_COLUMNS:
+        raise ValueError(f"box_format must be one of {list(_BOX_COLUMNS)}, got {box_format!r}")
+    frame = table if isinstance(table, pd.DataFrame) else pd.read_csv(table)
+    columns = ["frame_id", "person_id", *_BOX_COLUMNS[box_format]]
+    missing = [c for c in columns if c not in frame.columns]
+    if missing:
+        raise ValueError(f"Boxes table is missing column(s) {missing}; need {columns}")
+    if frame.duplicated(["frame_id", "person_id"]).any():
+        dup = frame[frame.duplicated(["frame_id", "person_id"], keep=False)].iloc[0]
+        raise ValueError(
+            f"Person {dup['person_id']} appears twice in frame {dup['frame_id']}; "
+            "give each person one box per frame."
+        )
+    boxes: dict[int, dict[int, NormalizedBox]] = {}
+    for frame_id, person_id, a, b, c, d in frame[columns].itertuples(index=False):
+        x1, y1, x2, y2 = (a, b, c, d) if box_format == "xyxy" else (a, b, a + c, b + d)
+        box: NormalizedBox = (float(x1), float(y1), float(x2), float(y2))
+        if not normalized:
+            box = box_to_normalized(box, width, height)
+        if scale != 1.0:
+            box = expand_box(box, scale)
+        boxes.setdefault(int(frame_id), {})[int(person_id)] = box
+    return boxes
+
+
 def boxes_from_tracks(
     tracks: Mapping[int, Track], width: int, height: int, scale: float = 1.0
 ) -> dict[int, dict[int, NormalizedBox]]:
