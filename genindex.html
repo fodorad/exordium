@@ -279,6 +279,7 @@
 <li class="toctree-l6"><a class="reference internal" href="autoapi/exordium/video/face/landmark/iris/index.html">exordium.video.face.landmark.iris</a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/exordium/video/face/streaming/index.html">exordium.video.face.streaming</a></li>
 </ul>
 </li>
 </ul>
@@ -666,6 +667,8 @@
 </li>
         <li><a href="autoapi/exordium/video/core/densify/index.html#exordium.video.core.densify.densify">densify() (in module exordium.video.core.densify)</a>
 </li>
+        <li><a href="autoapi/exordium/video/face/detector/base/index.html#exordium.video.face.detector.base.FaceDetector.detect_frame">detect_frame() (exordium.video.face.detector.base.FaceDetector method)</a>
+</li>
         <li><a href="autoapi/exordium/video/face/detector/base/index.html#exordium.video.face.detector.base.FaceDetector.detect_frame_dir">detect_frame_dir() (exordium.video.face.detector.base.FaceDetector method)</a>
 </li>
         <li><a href="autoapi/exordium/video/face/detector/base/index.html#exordium.video.face.detector.base.FaceDetector.detect_image">detect_image() (exordium.video.face.detector.base.FaceDetector method)</a>
@@ -977,8 +980,6 @@
           <li><a href="autoapi/exordium/utils/padding/index.html#module-exordium.utils.padding">module</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     exordium.video
 
@@ -986,6 +987,8 @@
           <li><a href="autoapi/exordium/video/index.html#module-exordium.video">module</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     exordium.video.core
 
@@ -1222,6 +1225,13 @@
 
         <ul>
           <li><a href="autoapi/exordium/video/face/landmark/iris/index.html#module-exordium.video.face.landmark.iris">module</a>
+</li>
+        </ul></li>
+        <li>
+    exordium.video.face.streaming
+
+        <ul>
+          <li><a href="autoapi/exordium/video/face/streaming/index.html#module-exordium.video.face.streaming">module</a>
 </li>
         </ul></li>
         <li><a href="autoapi/exordium/video/face/gaze/base/index.html#exordium.video.face.gaze.base.expand_box">expand_box() (in module exordium.video.face.gaze.base)</a>
@@ -1719,6 +1729,8 @@
 </li>
           <li><a href="autoapi/exordium/video/face/landmark/iris/index.html#exordium.video.face.landmark.iris.logger">(in module exordium.video.face.landmark.iris)</a>
 </li>
+          <li><a href="autoapi/exordium/video/face/streaming/index.html#exordium.video.face.streaming.logger">(in module exordium.video.face.streaming)</a>
+</li>
         </ul></li>
         <li><a href="autoapi/exordium/video/face/gaze/base/index.html#exordium.video.face.gaze.base.GazeWrapper.looking_at_camera">looking_at_camera() (exordium.video.face.gaze.base.GazeWrapper static method)</a>
 </li>
@@ -1920,6 +1932,8 @@
 </li>
           <li><a href="autoapi/exordium/video/face/landmark/iris/index.html#module-exordium.video.face.landmark.iris">exordium.video.face.landmark.iris</a>
 </li>
+          <li><a href="autoapi/exordium/video/face/streaming/index.html#module-exordium.video.face.streaming">exordium.video.face.streaming</a>
+</li>
         </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
@@ -2081,6 +2095,8 @@
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="autoapi/exordium/audio/spectrogram/index.html#exordium.audio.spectrogram.preprocess_audio">preprocess_audio() (in module exordium.audio.spectrogram)</a>
 </li>
+        <li><a href="autoapi/exordium/video/face/streaming/index.html#exordium.video.face.streaming.StreamingFacePipeline.process">process() (exordium.video.face.streaming.StreamingFacePipeline method)</a>
+</li>
         <li><a href="autoapi/exordium/audio/spectrogram/index.html#exordium.audio.spectrogram.process_audio_file">process_audio_file() (in module exordium.audio.spectrogram)</a>
 </li>
         <li><a href="autoapi/exordium/utils/concurrent/index.html#exordium.utils.concurrent.processes_eval">processes_eval() (in module exordium.utils.concurrent)</a>
@@ -2092,7 +2108,11 @@
         <li><a href="autoapi/exordium/video/core/streaming/index.html#exordium.video.core.streaming.StreamUpdate.protagonist_id">protagonist_id (exordium.video.core.streaming.StreamUpdate attribute)</a>
 </li>
         <li><a href="autoapi/exordium/video/core/streaming/index.html#exordium.video.core.streaming.StreamingTracker.push">push() (exordium.video.core.streaming.StreamingTracker method)</a>
+
+        <ul>
+          <li><a href="autoapi/exordium/video/face/streaming/index.html#exordium.video.face.streaming.StreamingFacePipeline.push">(exordium.video.face.streaming.StreamingFacePipeline method)</a>
 </li>
+        </ul></li>
     </ul></td>
   </tr></table>
 </section>
@@ -2117,6 +2137,8 @@
 
         <ul>
           <li><a href="autoapi/exordium/video/core/streaming/index.html#exordium.video.core.streaming.StreamingTracker.reset">(exordium.video.core.streaming.StreamingTracker method)</a>
+</li>
+          <li><a href="autoapi/exordium/video/face/streaming/index.html#exordium.video.face.streaming.StreamingFacePipeline.reset">(exordium.video.face.streaming.StreamingFacePipeline method)</a>
 </li>
         </ul></li>
         <li><a href="autoapi/exordium/video/core/transform/index.html#exordium.video.core.transform.Resize">Resize (class in exordium.video.core.transform)</a>
@@ -2309,6 +2331,8 @@
           <li><a href="autoapi/exordium/text/whisper/index.html#exordium.text.whisper.WhisperWrapper.stream">(exordium.text.whisper.WhisperWrapper method)</a>
 </li>
         </ul></li>
+        <li><a href="autoapi/exordium/video/face/streaming/index.html#exordium.video.face.streaming.StreamingFacePipeline">StreamingFacePipeline (class in exordium.video.face.streaming)</a>
+</li>
         <li><a href="autoapi/exordium/text/base/index.html#exordium.text.base.StreamingMixin">StreamingMixin (class in exordium.text.base)</a>
 </li>
         <li><a href="autoapi/exordium/video/core/streaming/index.html#exordium.video.core.streaming.StreamingTracker">StreamingTracker (class in exordium.video.core.streaming)</a>

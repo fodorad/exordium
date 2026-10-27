@@ -108,6 +108,21 @@ Module Contents
 
 
 
+   .. py:method:: detect_frame(frame: numpy.ndarray | torch.Tensor, frame_id: int) -> exordium.video.core.detection.FrameDetections
+
+      Run the detector on one frame of a stream.
+
+      Unlike :meth:`detect_image`, the detections carry the given ``frame_id`` and
+      are not cached, so the result can feed a tracker directly.
+
+      :param frame: ``np.ndarray (H, W, 3)`` or ``torch.Tensor (3, H, W)`` uint8 RGB.
+      :param frame_id: Index of the frame in its stream.
+
+      :returns: :class:`~exordium.video.core.detection.FrameDetections` whose detections
+                reference ``frame`` as their source.
+
+
+
    .. py:method:: detect_frame_dir(frame_dir: str | pathlib.Path, **_kwargs) -> exordium.video.core.detection.VideoDetections
 
       Run detector on ordered frames of a video in a single folder.

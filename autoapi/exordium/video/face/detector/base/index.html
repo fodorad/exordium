@@ -281,6 +281,7 @@
 <li class="toctree-l6"><a class="reference internal" href="../../landmark/iris/index.html">exordium.video.face.landmark.iris</a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="../../streaming/index.html">exordium.video.face.streaming</a></li>
 </ul>
 </li>
 </ul>
@@ -449,6 +450,26 @@ faces found in the image.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="exordium.video.face.detector.base.FaceDetector.detect_frame">
+<span class="sig-name descname"><span class="pre">detect_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../../core/detection/index.html#exordium.video.core.detection.FrameDetections" title="exordium.video.core.detection.FrameDetections"><span class="pre">exordium.video.core.detection.FrameDetections</span></a></span></span><a class="headerlink" href="#exordium.video.face.detector.base.FaceDetector.detect_frame" title="Link to this definition">¶</a></dt>
+<dd><p>Run the detector on one frame of a stream.</p>
+<p>Unlike <a class="reference internal" href="#exordium.video.face.detector.base.FaceDetector.detect_image" title="exordium.video.face.detector.base.FaceDetector.detect_image"><code class="xref py py-meth docutils literal notranslate"><span class="pre">detect_image()</span></code></a>, the detections carry the given <code class="docutils literal notranslate"><span class="pre">frame_id</span></code> and
+are not cached, so the result can feed a tracker directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>frame</strong> – <code class="docutils literal notranslate"><span class="pre">np.ndarray</span> <span class="pre">(H,</span> <span class="pre">W,</span> <span class="pre">3)</span></code> or <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span> <span class="pre">(3,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> uint8 RGB.</p></li>
+<li><p><strong>frame_id</strong> – Index of the frame in its stream.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="../../../core/detection/index.html#exordium.video.core.detection.FrameDetections" title="exordium.video.core.detection.FrameDetections"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameDetections</span></code></a> whose detections
+reference <code class="docutils literal notranslate"><span class="pre">frame</span></code> as their source.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="exordium.video.face.detector.base.FaceDetector.detect_frame_dir">
 <span class="sig-name descname"><span class="pre">detect_frame_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">_kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../../core/detection/index.html#exordium.video.core.detection.VideoDetections" title="exordium.video.core.detection.VideoDetections"><span class="pre">exordium.video.core.detection.VideoDetections</span></a></span></span><a class="headerlink" href="#exordium.video.face.detector.base.FaceDetector.detect_frame_dir" title="Link to this definition">¶</a></dt>
 <dd><p>Run detector on ordered frames of a video in a single folder.</p>
@@ -547,6 +568,7 @@ detections.</p>
 <li><a class="reference internal" href="#exordium.video.face.detector.base.FaceDetector.run_detector"><code class="docutils literal notranslate"><span class="pre">FaceDetector.run_detector()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.detector.base.FaceDetector.detect_image_path"><code class="docutils literal notranslate"><span class="pre">FaceDetector.detect_image_path()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.detector.base.FaceDetector.detect_image"><code class="docutils literal notranslate"><span class="pre">FaceDetector.detect_image()</span></code></a></li>
+<li><a class="reference internal" href="#exordium.video.face.detector.base.FaceDetector.detect_frame"><code class="docutils literal notranslate"><span class="pre">FaceDetector.detect_frame()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.detector.base.FaceDetector.detect_frame_dir"><code class="docutils literal notranslate"><span class="pre">FaceDetector.detect_frame_dir()</span></code></a></li>
 <li><a class="reference internal" href="#exordium.video.face.detector.base.FaceDetector.detect_video"><code class="docutils literal notranslate"><span class="pre">FaceDetector.detect_video()</span></code></a></li>
 </ul>

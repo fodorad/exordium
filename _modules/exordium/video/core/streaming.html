@@ -280,6 +280,7 @@
 <li class="toctree-l6"><a class="reference internal" href="../../../../autoapi/exordium/video/face/landmark/iris/index.html">exordium.video.face.landmark.iris</a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="../../../../autoapi/exordium/video/face/streaming/index.html">exordium.video.face.streaming</a></li>
 </ul>
 </li>
 </ul>
@@ -338,7 +339,15 @@
 
 <span class="sd">Memory stays bounded on endless streams: a track keeps only its most recent</span>
 <span class="sd">detections, scores are kept as running aggregates, and tracks that stay absent</span>
-<span class="sd">are forgotten.  The globally clustering</span>
+<span class="sd">are forgotten.</span>
+
+<span class="sd">Online tracking cannot merge tracks that coexist in a frame, so one person who is</span>
+<span class="sd">detected twice (say, overlapping boxes) can end up as two tracks and the</span>
+<span class="sd">protagonist id may change when the second overtakes the first.  Use a</span>
+<span class="sd">:class:`~exordium.video.core.detection.FaceIdTracker` backend to bridge gaps; the</span>
+<span class="sd">offline path remains the more robust choice when the whole clip is available.</span>
+
+<span class="sd">The globally clustering</span>
 <span class="sd">:class:`~exordium.video.core.detection.FaceClusterTracker` is inherently offline</span>
 <span class="sd">and cannot be wrapped.</span>
 <span class="sd">"""</span>

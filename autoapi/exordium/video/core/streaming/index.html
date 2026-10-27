@@ -281,6 +281,7 @@
 <li class="toctree-l6"><a class="reference internal" href="../../face/landmark/iris/index.html">exordium.video.face.landmark.iris</a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="../../face/streaming/index.html">exordium.video.face.streaming</a></li>
 </ul>
 </li>
 </ul>
@@ -343,7 +344,13 @@ current choice looks settled (see <a class="reference internal" href="#exordium.
 when to commit.</p>
 <p>Memory stays bounded on endless streams: a track keeps only its most recent
 detections, scores are kept as running aggregates, and tracks that stay absent
-are forgotten.  The globally clustering
+are forgotten.</p>
+<p>Online tracking cannot merge tracks that coexist in a frame, so one person who is
+detected twice (say, overlapping boxes) can end up as two tracks and the
+protagonist id may change when the second overtakes the first.  Use a
+<a class="reference internal" href="../detection/index.html#exordium.video.core.detection.FaceIdTracker" title="exordium.video.core.detection.FaceIdTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FaceIdTracker</span></code></a> backend to bridge gaps; the
+offline path remains the more robust choice when the whole clip is available.</p>
+<p>The globally clustering
 <a class="reference internal" href="../detection/index.html#exordium.video.core.detection.FaceClusterTracker" title="exordium.video.core.detection.FaceClusterTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FaceClusterTracker</span></code></a> is inherently offline
 and cannot be wrapped.</p>
 <section id="attributes">

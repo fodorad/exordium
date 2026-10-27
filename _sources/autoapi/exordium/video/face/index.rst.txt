@@ -15,5 +15,6 @@ Submodules
    /autoapi/exordium/video/face/gaze/index
    /autoapi/exordium/video/face/headpose/index
    /autoapi/exordium/video/face/landmark/index
+   /autoapi/exordium/video/face/streaming/index
 
 
