@@ -13,6 +13,7 @@ from exordium.video.face.gaze.gazelle import (
     GAZELLE_VARIANTS,
     GazelleOutput,
     GazelleWrapper,
+    boxes_from_table,
     boxes_from_tracks,
     gaze_table,
 )
@@ -257,6 +258,89 @@ class TestGazeTable(unittest.TestCase):
         )
         self.assertEqual(len(table), 0)
         self.assertIn("gaze_x", table.columns)
+
+
+class TestBoxesFromTable(unittest.TestCase):
+    ROWS = (
+        "frame_id,person_id,x1,y1,x2,y2\n"
+        "0,7,100,50,300,150\n"
+        "0,9,500,100,700,300\n"
+        "2,7,110,50,310,150\n"
+    )
+
+    def _csv(self, tmp: str, text: str | None = None) -> Path:
+        path = Path(tmp) / "boxes.csv"
+        path.write_text(self.ROWS if text is None else text)
+        return path
+
+    def test_reads_a_csv_in_pixels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boxes = boxes_from_table(self._csv(tmp), width=1000, height=500)
+        self.assertEqual(sorted(boxes), [0, 2])
+        self.assertEqual(sorted(boxes[0]), [7, 9])
+        x1, y1, x2, y2 = boxes[0][7]
+        self.assertAlmostEqual(x1, 0.1)
+        self.assertAlmostEqual(y1, 0.1)
+        self.assertAlmostEqual(x2, 0.3)
+        self.assertAlmostEqual(y2, 0.3)
+
+    def test_accepts_a_dataframe_and_expands(self):
+        import pandas as pd
+
+        table = pd.DataFrame(
+            {"frame_id": [0], "person_id": [1], "x1": [400], "y1": [200], "x2": [600], "y2": [300]}
+        )
+        plain = boxes_from_table(table, 1000, 500)[0][1]
+        wide = boxes_from_table(table, 1000, 500, scale=2.0)[0][1]
+        self.assertLess(wide[0], plain[0])
+        self.assertGreater(wide[3], plain[3])
+
+    def test_xywh_format(self):
+        import pandas as pd
+
+        table = pd.DataFrame(
+            {"frame_id": [0], "person_id": [1], "x": [100], "y": [50], "w": [200], "h": [100]}
+        )
+        box = boxes_from_table(table, 1000, 500, box_format="xywh")[0][1]
+        self.assertAlmostEqual(box[2], 0.3)
+        self.assertAlmostEqual(box[3], 0.3)
+
+    def test_normalized_boxes_pass_through(self):
+        import pandas as pd
+
+        table = pd.DataFrame(
+            {"frame_id": [4], "person_id": [1], "x1": [0.1], "y1": [0.2], "x2": [0.3], "y2": [0.4]}
+        )
+        box = boxes_from_table(table, 1000, 500, normalized=True)[4][1]
+        self.assertEqual(box, (0.1, 0.2, 0.3, 0.4))
+
+    def test_missing_column_is_named(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._csv(tmp, "frame_id,person_id,x1,y1,x2\n0,1,1,2,3\n")
+            with self.assertRaisesRegex(ValueError, "y2"):
+                boxes_from_table(path, 1000, 500)
+
+    def test_duplicate_person_in_a_frame_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._csv(tmp, self.ROWS + "0,7,1,1,2,2\n")
+            with self.assertRaisesRegex(ValueError, "twice"):
+                boxes_from_table(path, 1000, 500)
+
+    def test_unknown_box_format(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(ValueError):
+                boxes_from_table(self._csv(tmp), 1000, 500, box_format="cxcywh")
+
+    def test_feeds_video_to_gaze(self):
+        model = GazelleWrapper("vitb14_inout", pretrained=PRETRAINED)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._csv(
+                tmp, "frame_id,person_id,x1,y1,x2,y2\n0,3,100,50,300,150\n1,3,100,50,300,150\n"
+            )
+            boxes = boxes_from_table(path, 1280, 720)
+        out = model.video_to_gaze(VIDEO_MULTISPEAKER_SHORT, boxes)
+        self.assertEqual(out["frame_ids"].tolist(), [0, 1])
+        self.assertEqual(out["person_ids"].tolist(), [3, 3])
 
 
 class TestBoxesFromTracks(unittest.TestCase):
