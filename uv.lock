@@ -11,7 +11,7 @@ resolution-markers = [
 overrides = [
     { name = "numpy", specifier = ">=2.4" },
     { name = "pandas", specifier = ">=3.0" },
-    { name = "torch", specifier = ">=2.11,<2.15" },
+    { name = "torch", specifier = ">=2.11,<2.16" },
     { name = "torchaudio", specifier = ">=2.11,<2.14" },
     { name = "torchcodec", specifier = ">=0.14,<0.18" },
     { name = "torchvision", specifier = ">=0.26,<0.30" },
@@ -1111,7 +1111,7 @@ requires-dist = [
     { name = "sphinx-autobuild", marker = "extra == 'docs'" },
     { name = "timm", marker = "extra == 'all'" },
     { name = "timm", marker = "extra == 'video'" },
-    { name = "torch", specifier = ">=2.11,<2.15" },
+    { name = "torch", specifier = ">=2.11,<2.16" },
     { name = "torchaudio", specifier = ">=2.11,<2.14" },
     { name = "torchaudio", marker = "extra == 'all'" },
     { name = "torchaudio", marker = "extra == 'audio'" },
