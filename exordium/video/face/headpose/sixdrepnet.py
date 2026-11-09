@@ -429,13 +429,13 @@ class _RepVGGBlock(nn.Module):  # pragma: no cover
             return
         kernel, bias = self._get_equivalent_kernel_bias()
         self.rbr_reparam = nn.Conv2d(
-            self.rbr_dense.conv.in_channels,  # ty: ignore[invalid-argument-type, unresolved-attribute]
-            self.rbr_dense.conv.out_channels,  # ty: ignore[invalid-argument-type, unresolved-attribute]
-            kernel_size=self.rbr_dense.conv.kernel_size,  # ty: ignore[invalid-argument-type, unresolved-attribute]
+            self.rbr_dense.conv.in_channels,  # ty: ignore[invalid-argument-type, missing-union-attribute]
+            self.rbr_dense.conv.out_channels,  # ty: ignore[invalid-argument-type, missing-union-attribute]
+            kernel_size=self.rbr_dense.conv.kernel_size,  # ty: ignore[invalid-argument-type, missing-union-attribute]
             stride=self.rbr_dense.conv.stride,  # ty: ignore[invalid-argument-type]
-            padding=self.rbr_dense.conv.padding,  # ty: ignore[invalid-argument-type, unresolved-attribute]
-            dilation=self.rbr_dense.conv.dilation,  # ty: ignore[invalid-argument-type, unresolved-attribute]
-            groups=self.rbr_dense.conv.groups,  # ty: ignore[invalid-argument-type, unresolved-attribute]
+            padding=self.rbr_dense.conv.padding,  # ty: ignore[invalid-argument-type, missing-union-attribute]
+            dilation=self.rbr_dense.conv.dilation,  # ty: ignore[invalid-argument-type, missing-union-attribute]
+            groups=self.rbr_dense.conv.groups,  # ty: ignore[invalid-argument-type, missing-union-attribute]
             bias=True,
         )
         self.rbr_reparam.weight.data = kernel
@@ -465,12 +465,12 @@ class _RepVGGBlock(nn.Module):  # pragma: no cover
         if branch is None:
             return 0, 0
         if isinstance(branch, nn.Sequential):
-            kernel = branch.conv.weight  # ty: ignore[unresolved-attribute]
-            rm = branch.bn.running_mean  # ty: ignore[unresolved-attribute]
-            rv = branch.bn.running_var  # ty: ignore[unresolved-attribute]
-            gamma = branch.bn.weight  # ty: ignore[unresolved-attribute]
-            beta = branch.bn.bias  # ty: ignore[unresolved-attribute]
-            eps = branch.bn.eps  # ty: ignore[unresolved-attribute]
+            kernel = branch.conv.weight  # ty: ignore[missing-union-attribute]
+            rm = branch.bn.running_mean  # ty: ignore[missing-union-attribute]
+            rv = branch.bn.running_var  # ty: ignore[missing-union-attribute]
+            gamma = branch.bn.weight  # ty: ignore[missing-union-attribute]
+            beta = branch.bn.bias  # ty: ignore[missing-union-attribute]
+            eps = branch.bn.eps  # ty: ignore[missing-union-attribute]
         else:
             assert isinstance(branch, nn.BatchNorm2d)
             if not hasattr(self, "id_tensor"):
