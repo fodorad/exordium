@@ -510,7 +510,7 @@ def save_video(
     height, width = frames_list[0].shape[:2]
 
     # Create video writer
-    fourcc = cv2.VideoWriter_fourcc(*codec)  # ty: ignore[unresolved-attribute]
+    fourcc = cv2.VideoWriter_fourcc(*codec)  # ty: ignore[missing-attribute]
     writer = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
 
     # Write frames
@@ -863,7 +863,7 @@ class ImageSequenceReader(Dataset):
         """
         return len(self.files)
 
-    def __getitem__(self, idx: int):  # ty: ignore[invalid-method-override]
+    def __getitem__(self, idx: int):  # ty: ignore[lost-keyword-for-regular-parameter]
         """Load image at index.
 
         Args:

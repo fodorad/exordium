@@ -45,7 +45,7 @@ dependencies = [
   # torchaudio.functional.forced_align, torchaudio.pipelines.MMS_FA, torchcodec decoders.
   # CI's 3.12/3.13/3.14 matrix resolves and exercises the top of the range.
   # ─────────────────────────────────────────────────────────────────────────────
-  "torch>=2.11,<2.15",
+  "torch>=2.11,<2.16",
   "torchaudio>=2.11,<2.14",
   "torchvision>=0.26,<0.30",
   "torchcodec>=0.14,<0.18",
@@ -81,7 +81,7 @@ video = [
 ]
 dev = [
   "ruff",
-  "ty>=0.0.92",
+  "ty>=0.0.100",
   "coverage",
   "pre-commit",
   "ipykernel",  # run the example notebooks in examples/
@@ -159,7 +159,7 @@ override-dependencies = [
   # These mirror the coupled ranges in [project.dependencies] (see the comment there
   # for the three valid matched sets). They stay ranges, not exact pins, so a consumer
   # can hold the stack at torch 2.11 without exordium's override forcing it to 2.13.
-  "torch>=2.11,<2.15",
+  "torch>=2.11,<2.16",
   "torchaudio>=2.11,<2.14",
   "torchvision>=0.26,<0.30",
   "torchcodec>=0.14,<0.18",
@@ -180,4 +180,4 @@ python-version = "3.12"
 # torch declares ``Module.forward`` as a writable ``Callable`` attribute, so every
 # ``def forward`` in an ``nn.Module`` subclass trips this rule. Known false positive
 # of typing torch modules, not a defect in the overrides.
-invalid-mutable-override = "ignore"
+incompatible-mutable-override = "ignore"

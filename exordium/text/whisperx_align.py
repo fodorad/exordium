@@ -77,7 +77,7 @@ class WhisperxForcedAligner(ForcedAligner):
         self.device = get_torch_device(device_id)
         self._device_str = "cuda" if self.device.type == "cuda" else "cpu"
         logger.info(f"Loading whisperX align model ({language}) on {self._device_str}...")
-        self.model, self.metadata = whisperx.load_align_model(  # ty: ignore[unresolved-attribute]
+        self.model, self.metadata = whisperx.load_align_model(  # ty: ignore[missing-union-attribute]
             language_code=language, device=self._device_str
         )
 
@@ -175,7 +175,7 @@ class WhisperxForcedAligner(ForcedAligner):
 
     def _run(self, segments: list[dict], waveform: np.ndarray) -> list[Word]:
         """Run whisperX alignment over *segments* and convert to :class:`Word`."""
-        result = whisperx.align(  # ty: ignore[unresolved-attribute]
+        result = whisperx.align(  # ty: ignore[missing-union-attribute]
             segments,
             self.model,
             self.metadata,
