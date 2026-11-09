@@ -336,28 +336,28 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.preprocess_audio" title="exordium.audio.spectrogram.preprocess_audio"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocess_audio</span></code></a>(→ tuple[torch.Tensor, int])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.preprocess_audio" title="exordium.audio.spectrogram.preprocess_audio"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocess_audio</span></code></a>(waveform, waveform_sample_rate, ...) → tuple[torch.Tensor, int]</p></td>
 <td><p>Convert waveform to mono and resample if needed.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.apply_preemphasis" title="exordium.audio.spectrogram.apply_preemphasis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_preemphasis</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.apply_preemphasis" title="exordium.audio.spectrogram.apply_preemphasis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_preemphasis</span></code></a>(y[, coef]) → torch.Tensor</p></td>
 <td><p>Apply pre-emphasis filter to audio signal.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.compute_mfcc" title="exordium.audio.spectrogram.compute_mfcc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_mfcc</span></code></a>(→ tuple[numpy.ndarray, numpy.ndarray])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.compute_mfcc" title="exordium.audio.spectrogram.compute_mfcc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_mfcc</span></code></a>(y, sample_rate[, n_mfcc, n_mels, n_fft, ...]) → tuple[numpy.ndarray, numpy.ndarray]</p></td>
 <td><p>Compute MFCC features from audio signal.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.compute_melspec" title="exordium.audio.spectrogram.compute_melspec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_melspec</span></code></a>(→ tuple[numpy.ndarray, numpy.ndarray])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.compute_melspec" title="exordium.audio.spectrogram.compute_melspec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_melspec</span></code></a>(y, sample_rate[, n_mels, n_fft, ...]) → tuple[numpy.ndarray, numpy.ndarray]</p></td>
 <td><p>Compute Mel spectrogram features from audio signal.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.compute_deltas" title="exordium.audio.spectrogram.compute_deltas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_deltas</span></code></a>(→ numpy.ndarray | tuple[numpy.ndarray, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.compute_deltas" title="exordium.audio.spectrogram.compute_deltas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_deltas</span></code></a>(features[, return_all]) → numpy.ndarray | tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]</p></td>
 <td><p>Compute delta and delta-delta features from input features.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.save_mfcc_specshow" title="exordium.audio.spectrogram.save_mfcc_specshow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_mfcc_specshow</span></code></a>() → None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.save_mfcc_specshow" title="exordium.audio.spectrogram.save_mfcc_specshow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_mfcc_specshow</span></code></a>(data, output_path, title[, figsize]) → None</p></td>
 <td><p>Save MFCC plot to file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.save_melspec_specshow" title="exordium.audio.spectrogram.save_melspec_specshow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_melspec_specshow</span></code></a>() → None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.save_melspec_specshow" title="exordium.audio.spectrogram.save_melspec_specshow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_melspec_specshow</span></code></a>(data, output_path, title[, ...]) → None</p></td>
 <td><p>Save mel-spectrogram plot to file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.process_audio_file" title="exordium.audio.spectrogram.process_audio_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_audio_file</span></code></a>(→ dict)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.spectrogram.process_audio_file" title="exordium.audio.spectrogram.process_audio_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_audio_file</span></code></a>(input_path, output_path[, ...]) → dict</p></td>
 <td><p>Process audio file and return features.</p></td>
 </tr>
 </tbody>

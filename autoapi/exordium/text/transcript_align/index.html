@@ -372,16 +372,16 @@ corpus.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.transcript_align.normalize_token" title="exordium.text.transcript_align.normalize_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_token</span></code></a>(→ str)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.transcript_align.normalize_token" title="exordium.text.transcript_align.normalize_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_token</span></code></a>(text) → str</p></td>
 <td><p>Normalize text for matching: lowercase, de-accent, strip punctuation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.transcript_align.find_segment" title="exordium.text.transcript_align.find_segment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_segment</span></code></a>(→ exordium.text.base.SegmentMatch | None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.transcript_align.find_segment" title="exordium.text.transcript_align.find_segment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_segment</span></code></a>(query_text, words, *[, score_cutoff]) → exordium.text.base.SegmentMatch | None</p></td>
 <td><p>Fuzzy-search <em>query_text</em> inside a timed <em>words</em> stream.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.transcript_align.find_segments" title="exordium.text.transcript_align.find_segments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_segments</span></code></a>(...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.transcript_align.find_segments" title="exordium.text.transcript_align.find_segments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_segments</span></code></a>(query_texts, words, *[, score_cutoff]) → list[exordium.text.base.SegmentMatch | None]</p></td>
 <td><p>Locate many segment transcripts in one shared <em>words</em> stream.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.transcript_align.build_word_index" title="exordium.text.transcript_align.build_word_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_word_index</span></code></a>(→ WordIndex)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.transcript_align.build_word_index" title="exordium.text.transcript_align.build_word_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_word_index</span></code></a>(words) → WordIndex</p></td>
 <td><p>Normalize <em>words</em> once into a reusable <a class="reference internal" href="#exordium.text.transcript_align.WordIndex" title="exordium.text.transcript_align.WordIndex"><code class="xref py py-class docutils literal notranslate"><span class="pre">WordIndex</span></code></a>.</p></td>
 </tr>
 </tbody>

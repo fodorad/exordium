@@ -399,13 +399,13 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.wav2vec2_min_samples" title="exordium.text.base.wav2vec2_min_samples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wav2vec2_min_samples</span></code></a>(→ int)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.wav2vec2_min_samples" title="exordium.text.base.wav2vec2_min_samples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wav2vec2_min_samples</span></code></a>(num_tokens) → int</p></td>
 <td><p>Samples needed to force-align <em>num_tokens</em> tokens with a wav2vec2 CTC model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.prepare_segments" title="exordium.text.base.prepare_segments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_segments</span></code></a>(→ list[Segment])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.base.prepare_segments" title="exordium.text.base.prepare_segments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_segments</span></code></a>(segments, min_samples_for[, ...]) → list[Segment]</p></td>
 <td><p>Widen segments that are too short for a wav2vec2 aligner to time-stamp.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.to_mono_16k" title="exordium.text.base.to_mono_16k"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_mono_16k</span></code></a>(→ tuple[torch.Tensor, int])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.base.to_mono_16k" title="exordium.text.base.to_mono_16k"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_mono_16k</span></code></a>(audio) → tuple[torch.Tensor, int]</p></td>
 <td><p>Return <em>audio</em> as a 1-D float32 waveform at 16 kHz plus its sample rate.</p></td>
 </tr>
 </tbody>

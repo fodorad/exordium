@@ -336,16 +336,16 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.normalize.get_mean_std" title="exordium.utils.normalize.get_mean_std"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_mean_std</span></code></a>(→ tuple[torch.Tensor, torch.Tensor])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.normalize.get_mean_std" title="exordium.utils.normalize.get_mean_std"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_mean_std</span></code></a>(dataloader, ndim[, verbose]) → tuple[torch.Tensor, torch.Tensor]</p></td>
 <td><p>Calculates mean and std values of samples for standardization using a DataLoader object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.normalize.standardization" title="exordium.utils.normalize.standardization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">standardization</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.normalize.standardization" title="exordium.utils.normalize.standardization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">standardization</span></code></a>(x, mean, std) → torch.Tensor</p></td>
 <td><p>Applies standardization to a given torch.Tensor.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.normalize.save_params_to_json" title="exordium.utils.normalize.save_params_to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_params_to_json</span></code></a>(mean, std, file_path)</p></td>
 <td><p>Save standardization params to a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.normalize.load_params_from_json" title="exordium.utils.normalize.load_params_from_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_params_from_json</span></code></a>(→ tuple[torch.Tensor, torch.Tensor])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.normalize.load_params_from_json" title="exordium.utils.normalize.load_params_from_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_params_from_json</span></code></a>(file_path) → tuple[torch.Tensor, torch.Tensor]</p></td>
 <td><p>Load standardization params from a JSON file.</p></td>
 </tr>
 </tbody>

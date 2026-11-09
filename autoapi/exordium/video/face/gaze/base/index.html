@@ -360,55 +360,55 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.rotate_vector" title="exordium.video.face.gaze.base.rotate_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate_vector</span></code></a>(→ tuple[float, float])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.rotate_vector" title="exordium.video.face.gaze.base.rotate_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate_vector</span></code></a>(xy, rotation_degree) → tuple[float, float]</p></td>
 <td><p>Rotate a 2D gaze vector by an angle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.pitchyaw_to_pixel" title="exordium.video.face.gaze.base.pitchyaw_to_pixel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pitchyaw_to_pixel</span></code></a>(→ tuple[float, float])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.pitchyaw_to_pixel" title="exordium.video.face.gaze.base.pitchyaw_to_pixel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pitchyaw_to_pixel</span></code></a>(pitch, yaw[, length]) → tuple[float, float]</p></td>
 <td><p>Convert gaze pitch and yaw angles to a 2D XY direction vector.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.vector_to_pitchyaw" title="exordium.video.face.gaze.base.vector_to_pitchyaw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vector_to_pitchyaw</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.vector_to_pitchyaw" title="exordium.video.face.gaze.base.vector_to_pitchyaw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vector_to_pitchyaw</span></code></a>(vectors) → torch.Tensor</p></td>
 <td><p>Convert normalised 3D gaze vectors to <code class="docutils literal notranslate"><span class="pre">(pitch,</span> <span class="pre">yaw)</span></code> angles in radians.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.gazeto3d" title="exordium.video.face.gaze.base.gazeto3d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gazeto3d</span></code></a>(→ numpy.ndarray)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.gazeto3d" title="exordium.video.face.gaze.base.gazeto3d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gazeto3d</span></code></a>(gaze) → numpy.ndarray</p></td>
 <td><p>Convert <code class="docutils literal notranslate"><span class="pre">(pitch,</span> <span class="pre">yaw)</span></code> angles to a 3D unit vector.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.spherical2cartesial" title="exordium.video.face.gaze.base.spherical2cartesial"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spherical2cartesial</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.spherical2cartesial" title="exordium.video.face.gaze.base.spherical2cartesial"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spherical2cartesial</span></code></a>(x) → torch.Tensor</p></td>
 <td><p>Convert spherical <code class="docutils literal notranslate"><span class="pre">(pitch,</span> <span class="pre">yaw)</span></code> angles to 3D Cartesian unit vectors.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.compute_angular_error" title="exordium.video.face.gaze.base.compute_angular_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_angular_error</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.compute_angular_error" title="exordium.video.face.gaze.base.compute_angular_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_angular_error</span></code></a>(input, target) → torch.Tensor</p></td>
 <td><p>Compute mean angular error between predicted and target gaze directions.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.softmax_temperature" title="exordium.video.face.gaze.base.softmax_temperature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">softmax_temperature</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.softmax_temperature" title="exordium.video.face.gaze.base.softmax_temperature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">softmax_temperature</span></code></a>(tensor, temperature) → torch.Tensor</p></td>
 <td><p>Apply temperature-scaled softmax along dimension 1.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.box_to_normalized" title="exordium.video.face.gaze.base.box_to_normalized"><code class="xref py py-obj docutils literal notranslate"><span class="pre">box_to_normalized</span></code></a>(→ NormalizedBox)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.box_to_normalized" title="exordium.video.face.gaze.base.box_to_normalized"><code class="xref py py-obj docutils literal notranslate"><span class="pre">box_to_normalized</span></code></a>(box_xyxy, width, height) → NormalizedBox</p></td>
 <td><p>Convert a pixel <code class="docutils literal notranslate"><span class="pre">xyxy</span></code> box to image-relative coordinates.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.box_to_pixels" title="exordium.video.face.gaze.base.box_to_pixels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">box_to_pixels</span></code></a>(→ tuple[float, float, float, float])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.box_to_pixels" title="exordium.video.face.gaze.base.box_to_pixels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">box_to_pixels</span></code></a>(box, width, height) → tuple[float, float, float, float]</p></td>
 <td><p>Convert an image-relative box back to pixel <code class="docutils literal notranslate"><span class="pre">xyxy</span></code> coordinates.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.expand_box" title="exordium.video.face.gaze.base.expand_box"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_box</span></code></a>(→ NormalizedBox)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.expand_box" title="exordium.video.face.gaze.base.expand_box"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_box</span></code></a>(box, scale) → NormalizedBox</p></td>
 <td><p>Scale a normalized box around its centre, clipped to the image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.heatmap_to_point" title="exordium.video.face.gaze.base.heatmap_to_point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">heatmap_to_point</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.heatmap_to_point" title="exordium.video.face.gaze.base.heatmap_to_point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">heatmap_to_point</span></code></a>(heatmap[, mode]) → torch.Tensor</p></td>
 <td><p>Reduce gaze-target heatmaps to normalized <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> points.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.mass_in_box" title="exordium.video.face.gaze.base.mass_in_box"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mass_in_box</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.mass_in_box" title="exordium.video.face.gaze.base.mass_in_box"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mass_in_box</span></code></a>(heatmap, box) → torch.Tensor</p></td>
 <td><p>Share of heatmap mass that falls inside a normalized box.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.draw_vector" title="exordium.video.face.gaze.base.draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">draw_vector</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.draw_vector" title="exordium.video.face.gaze.base.draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">draw_vector</span></code></a>(image, origin, end_point) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Draw a gaze arrow onto an image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.convert_rotate_draw_vector" title="exordium.video.face.gaze.base.convert_rotate_draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_rotate_draw_vector</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.convert_rotate_draw_vector" title="exordium.video.face.gaze.base.convert_rotate_draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_rotate_draw_vector</span></code></a>(image, yaw, pitch, ...[, ...]) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Convert gaze angles to XY, rotate, then draw onto an image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.convert_draw_vector" title="exordium.video.face.gaze.base.convert_draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_draw_vector</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.convert_draw_vector" title="exordium.video.face.gaze.base.convert_draw_vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_draw_vector</span></code></a>(image, yaw, pitch, origin[, length]) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Convert gaze angles to XY and draw onto an image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.looking_at_camera_yaw_pitch" title="exordium.video.face.gaze.base.looking_at_camera_yaw_pitch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">looking_at_camera_yaw_pitch</span></code></a>(→ bool)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.looking_at_camera_yaw_pitch" title="exordium.video.face.gaze.base.looking_at_camera_yaw_pitch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">looking_at_camera_yaw_pitch</span></code></a>(yaw, pitch[, thr]) → bool</p></td>
 <td><p>Check whether a gaze direction points toward the camera.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.looking_at_camera_xy" title="exordium.video.face.gaze.base.looking_at_camera_xy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">looking_at_camera_xy</span></code></a>(→ bool)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.base.looking_at_camera_xy" title="exordium.video.face.gaze.base.looking_at_camera_xy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">looking_at_camera_xy</span></code></a>(xy[, thr]) → bool</p></td>
 <td><p>Check whether a 2D gaze vector points toward the camera.</p></td>
 </tr>
 </tbody>

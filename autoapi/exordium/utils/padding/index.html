@@ -336,16 +336,16 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.padding.pad_or_crop_time_dim" title="exordium.utils.padding.pad_or_crop_time_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pad_or_crop_time_dim</span></code></a>(→ tuple[torch.Tensor, torch.Tensor])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.padding.pad_or_crop_time_dim" title="exordium.utils.padding.pad_or_crop_time_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pad_or_crop_time_dim</span></code></a>(tensor, target_size[, pad_value]) → tuple[torch.Tensor, torch.Tensor]</p></td>
 <td><p>Adjust the time dimension (T) of a tensor to a given size and generate a mask.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.padding.pad_layered_time_dim" title="exordium.utils.padding.pad_layered_time_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pad_layered_time_dim</span></code></a>(→ tuple[torch.Tensor, torch.Tensor])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.padding.pad_layered_time_dim" title="exordium.utils.padding.pad_layered_time_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pad_layered_time_dim</span></code></a>(tensor, target_time_dim[, pad_value]) → tuple[torch.Tensor, torch.Tensor]</p></td>
 <td><p>Pad the time dimension of a tensor and generate a mask.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.padding.repeat_pad_time_dim" title="exordium.utils.padding.repeat_pad_time_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">repeat_pad_time_dim</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.padding.repeat_pad_time_dim" title="exordium.utils.padding.repeat_pad_time_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">repeat_pad_time_dim</span></code></a>(tensor, target_size) → torch.Tensor</p></td>
 <td><p>Pad the time dimension by repeating the last frame.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.padding.fill_gaps_with_repeat" title="exordium.utils.padding.fill_gaps_with_repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_gaps_with_repeat</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.padding.fill_gaps_with_repeat" title="exordium.utils.padding.fill_gaps_with_repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_gaps_with_repeat</span></code></a>(tensor[, valid_mask]) → torch.Tensor</p></td>
 <td><p>Fill zero-valued time steps by repeating the nearest earlier valid frame.</p></td>
 </tr>
 </tbody>

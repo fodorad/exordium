@@ -385,22 +385,22 @@ claims, and, when not, the recovered start/end to re-cut with.</p></li>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.evaluation.normalize_asr" title="exordium.text.evaluation.normalize_asr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_asr</span></code></a>(→ str)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.evaluation.normalize_asr" title="exordium.text.evaluation.normalize_asr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_asr</span></code></a>(text[, kind]) → str</p></td>
 <td><p>Apply Whisper's standard ASR text normalizer.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.evaluation.evaluate_transcript" title="exordium.text.evaluation.evaluate_transcript"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_transcript</span></code></a>(→ TranscriptMetrics)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.evaluation.evaluate_transcript" title="exordium.text.evaluation.evaluate_transcript"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_transcript</span></code></a>(reference, hypothesis, *[, ...]) → TranscriptMetrics</p></td>
 <td><p>Score how closely <em>hypothesis</em> matches <em>reference</em>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.evaluation.is_acceptable" title="exordium.text.evaluation.is_acceptable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_acceptable</span></code></a>(→ bool)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.evaluation.is_acceptable" title="exordium.text.evaluation.is_acceptable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_acceptable</span></code></a>(metrics, *[, max_normalized_wer, ...]) → bool</p></td>
 <td><p>Heuristic accept/reject for an annotation given its <a class="reference internal" href="#exordium.text.evaluation.TranscriptMetrics" title="exordium.text.evaluation.TranscriptMetrics"><code class="xref py py-class docutils literal notranslate"><span class="pre">TranscriptMetrics</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.evaluation.build_embedder" title="exordium.text.evaluation.build_embedder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_embedder</span></code></a>(→ Embedder)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.evaluation.build_embedder" title="exordium.text.evaluation.build_embedder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_embedder</span></code></a>([model, device_id, pretrained]) → Embedder</p></td>
 <td><p>Build a sentence embedder for <a class="reference internal" href="#exordium.text.evaluation.TranscriptMetrics.semantic_similarity" title="exordium.text.evaluation.TranscriptMetrics.semantic_similarity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">TranscriptMetrics.semantic_similarity</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.evaluation.validate_segment" title="exordium.text.evaluation.validate_segment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_segment</span></code></a>(→ SegmentValidation)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.text.evaluation.validate_segment" title="exordium.text.evaluation.validate_segment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_segment</span></code></a>(text, words, annotated_start, ...[, ...]) → SegmentValidation</p></td>
 <td><p>Check whether an annotated segment sits where the annotation claims.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.evaluation.validate_segments" title="exordium.text.evaluation.validate_segments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_segments</span></code></a>(→ list[SegmentValidation])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.text.evaluation.validate_segments" title="exordium.text.evaluation.validate_segments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_segments</span></code></a>(segments, words, *[, score_cutoff, ...]) → list[SegmentValidation]</p></td>
 <td><p>Batch-validate <code class="docutils literal notranslate"><span class="pre">(text,</span> <span class="pre">start,</span> <span class="pre">end)</span></code> segments against one word stream.</p></td>
 </tr>
 </tbody>

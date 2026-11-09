@@ -353,40 +353,40 @@ numpy, a torch tensor input returns a torch tensor of the same device.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.crop_mid" title="exordium.video.core.bb.crop_mid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_mid</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.crop_mid" title="exordium.video.core.bb.crop_mid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_mid</span></code></a>(image, mid, bb_size) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Crop a square region from an image using a center point.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.crop_xyxy" title="exordium.video.core.bb.crop_xyxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_xyxy</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.crop_xyxy" title="exordium.video.core.bb.crop_xyxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_xyxy</span></code></a>(image, bb_xyxy) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Crop a region from an image using xyxy bounding box coordinates.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.center_crop" title="exordium.video.core.bb.center_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">center_crop</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.center_crop" title="exordium.video.core.bb.center_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">center_crop</span></code></a>(img, crop_size) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Apply a center crop to an image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.apply_10_crop" title="exordium.video.core.bb.apply_10_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_10_crop</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.apply_10_crop" title="exordium.video.core.bb.apply_10_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_10_crop</span></code></a>(img, crop_size) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Apply 10-crop augmentation to an image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.iou_xywh" title="exordium.video.core.bb.iou_xywh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">iou_xywh</span></code></a>(→ float)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.iou_xywh" title="exordium.video.core.bb.iou_xywh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">iou_xywh</span></code></a>(bb_xywh1, bb_xywh2) → float</p></td>
 <td><p>Calculate IoU for two bounding boxes in xywh format.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.iou_xyxy" title="exordium.video.core.bb.iou_xyxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">iou_xyxy</span></code></a>(→ float)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.iou_xyxy" title="exordium.video.core.bb.iou_xyxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">iou_xyxy</span></code></a>(bb_xyxy1, bb_xyxy2) → float</p></td>
 <td><p>Calculate IoU for two bounding boxes in xyxy format.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.xyxy2xywh" title="exordium.video.core.bb.xyxy2xywh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xyxy2xywh</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.xyxy2xywh" title="exordium.video.core.bb.xyxy2xywh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xyxy2xywh</span></code></a>(bb_xyxy) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Convert bounding box coordinates from xyxy to xywh format.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.xywh2xyxy" title="exordium.video.core.bb.xywh2xyxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xywh2xyxy</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.xywh2xyxy" title="exordium.video.core.bb.xywh2xyxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xywh2xyxy</span></code></a>(bb_xywh) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Convert bounding box coordinates from xywh to xyxy format.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.midwh2xywh" title="exordium.video.core.bb.midwh2xywh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">midwh2xywh</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.midwh2xywh" title="exordium.video.core.bb.midwh2xywh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">midwh2xywh</span></code></a>(bb_midwh) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Convert bounding box coordinates from midwh to xywh format.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.xywh2midwh" title="exordium.video.core.bb.xywh2midwh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xywh2midwh</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.xywh2midwh" title="exordium.video.core.bb.xywh2midwh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xywh2midwh</span></code></a>(bb_xywh) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Convert bounding box coordinates from xywh to midwh format.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.xyxy2full" title="exordium.video.core.bb.xyxy2full"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xyxy2full</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.bb.xyxy2full" title="exordium.video.core.bb.xyxy2full"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xyxy2full</span></code></a>(bb_xyxy) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Convert a bounding box to all four corner coordinates.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.visualize_bb" title="exordium.video.core.bb.visualize_bb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">visualize_bb</span></code></a>(→ numpy.ndarray | torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.bb.visualize_bb" title="exordium.video.core.bb.visualize_bb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">visualize_bb</span></code></a>(image, bb_xyxy, probability[, output_path]) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Draw a bounding box and detection confidence score on an image.</p></td>
 </tr>
 </tbody>

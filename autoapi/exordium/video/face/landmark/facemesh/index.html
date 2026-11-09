@@ -360,13 +360,13 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.landmark.facemesh.crop_eye_regions" title="exordium.video.face.landmark.facemesh.crop_eye_regions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_eye_regions</span></code></a>(→ dict[str, numpy.ndarray | torch.Tensor])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.landmark.facemesh.crop_eye_regions" title="exordium.video.face.landmark.facemesh.crop_eye_regions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_eye_regions</span></code></a>(image, landmarks[, scale]) → dict[str, numpy.ndarray | torch.Tensor]</p></td>
 <td><p>Crop right and left eye regions from a face image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.landmark.facemesh.rotate_landmarks" title="exordium.video.face.landmark.facemesh.rotate_landmarks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate_landmarks</span></code></a>(→ numpy.ndarray)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.landmark.facemesh.rotate_landmarks" title="exordium.video.face.landmark.facemesh.rotate_landmarks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate_landmarks</span></code></a>(landmarks, R) → numpy.ndarray</p></td>
 <td><p>Rotate landmarks using a transformation matrix.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.landmark.facemesh.visualize_landmarks" title="exordium.video.face.landmark.facemesh.visualize_landmarks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">visualize_landmarks</span></code></a>(, colors, int, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.landmark.facemesh.visualize_landmarks" title="exordium.video.face.landmark.facemesh.visualize_landmarks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">visualize_landmarks</span></code></a>(image, landmarks[, output_path, ...]) → numpy.ndarray | torch.Tensor</p></td>
 <td><p>Draw 2D landmarks onto an image.</p></td>
 </tr>
 </tbody>

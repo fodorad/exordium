@@ -369,52 +369,52 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.get_video_metadata" title="exordium.video.core.io.get_video_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_video_metadata</span></code></a>(→ dict)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.get_video_metadata" title="exordium.video.core.io.get_video_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_video_metadata</span></code></a>(input_path) → dict</p></td>
 <td><p>Get video metadata using the configured backend.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.load_video" title="exordium.video.core.io.load_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_video</span></code></a>(→ tuple[torch.Tensor, float])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.load_video" title="exordium.video.core.io.load_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_video</span></code></a>(input_path[, start_frame, end_frame, fps, ...]) → tuple[torch.Tensor, float]</p></td>
 <td><p>Load a contiguous range of video frames, optionally resampled to a target FPS.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.load_frames" title="exordium.video.core.io.load_frames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_frames</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.load_frames" title="exordium.video.core.io.load_frames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_frames</span></code></a>(input_path, frame_ids[, start_frame, ...]) → torch.Tensor</p></td>
 <td><p>Load specific, non-contiguous video frames by absolute frame index.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.video_to_frames" title="exordium.video.core.io.video_to_frames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">video_to_frames</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.video_to_frames" title="exordium.video.core.io.video_to_frames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">video_to_frames</span></code></a>(input_path[, output_dir, ...]) → None</p></td>
 <td><p>Extracts and saves the frames from a video.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.save_video" title="exordium.video.core.io.save_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_video</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.save_video" title="exordium.video.core.io.save_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_video</span></code></a>(frames, output_path[, fps, codec, overwrite]) → None</p></td>
 <td><p>Saves frames as a video file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.sequence_to_video" title="exordium.video.core.io.sequence_to_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sequence_to_video</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.sequence_to_video" title="exordium.video.core.io.sequence_to_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sequence_to_video</span></code></a>(frames, output_path[, fps, overwrite]) → None</p></td>
 <td><p>Saves a video to a .mp4 file without audio.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.save_frames" title="exordium.video.core.io.save_frames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_frames</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.save_frames" title="exordium.video.core.io.save_frames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_frames</span></code></a>(frames, output_dir[, start_number, zfill, ...]) → None</p></td>
 <td><p>Saves a sequence of frames to individual image files in a directory.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.save_frames_with_ids" title="exordium.video.core.io.save_frames_with_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_frames_with_ids</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.save_frames_with_ids" title="exordium.video.core.io.save_frames_with_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_frames_with_ids</span></code></a>(frames, frame_ids, output_dir[, ...]) → None</p></td>
 <td><p>Saves a sequence of frames to individual image files in a directory, using frame IDs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.batch_iterator" title="exordium.video.core.io.batch_iterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">batch_iterator</span></code></a>(→ collections.abc.Generator[list, None, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.batch_iterator" title="exordium.video.core.io.batch_iterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">batch_iterator</span></code></a>(iterable, batch_size) → collections.abc.Generator[list, None, None]</p></td>
 <td><p>Yields batch size list of objects from an iterable.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.image_to_np" title="exordium.video.core.io.image_to_np"><code class="xref py py-obj docutils literal notranslate"><span class="pre">image_to_np</span></code></a>(→ numpy.ndarray)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.image_to_np" title="exordium.video.core.io.image_to_np"><code class="xref py py-obj docutils literal notranslate"><span class="pre">image_to_np</span></code></a>(image[, channel_order]) → numpy.ndarray</p></td>
 <td><p>Converts commonly used image formats to standardized numpy array.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.image_to_tensor" title="exordium.video.core.io.image_to_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">image_to_tensor</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.image_to_tensor" title="exordium.video.core.io.image_to_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">image_to_tensor</span></code></a>(image[, channel_order]) → torch.Tensor</p></td>
 <td><p>Load or convert a single image to a uint8 <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> CPU tensor.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.to_uint8_tensor" title="exordium.video.core.io.to_uint8_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_uint8_tensor</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.to_uint8_tensor" title="exordium.video.core.io.to_uint8_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_uint8_tensor</span></code></a>(frames) → torch.Tensor</p></td>
 <td><p>Convert any supported input to a uint8 <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">3,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> CPU tensor.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.images_to_np" title="exordium.video.core.io.images_to_np"><code class="xref py py-obj docutils literal notranslate"><span class="pre">images_to_np</span></code></a>(→ numpy.ndarray)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.images_to_np" title="exordium.video.core.io.images_to_np"><code class="xref py py-obj docutils literal notranslate"><span class="pre">images_to_np</span></code></a>(images[, channel_order, resize]) → numpy.ndarray</p></td>
 <td><p>Converts multiple images to a single np.ndarray of shape (H, W, 3) and RGB channel order.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.interpolate_1d" title="exordium.video.core.io.interpolate_1d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_1d</span></code></a>(→ numpy.ndarray)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.interpolate_1d" title="exordium.video.core.io.interpolate_1d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_1d</span></code></a>(start_index, end_index, start_data, ...) → numpy.ndarray</p></td>
 <td><p>Interpolates data using a range.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.open_video" title="exordium.video.core.io.open_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_video</span></code></a>(→ collections.abc.Generator[Video, None, None])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.io.open_video" title="exordium.video.core.io.open_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_video</span></code></a>(path[, device]) → collections.abc.Generator[Video, None, None]</p></td>
 <td><p>Borrow a cached, shared <a class="reference internal" href="#exordium.video.core.io.Video" title="exordium.video.core.io.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a> handle for the duration of a block.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.clear_video_cache" title="exordium.video.core.io.clear_video_cache"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear_video_cache</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.io.clear_video_cache" title="exordium.video.core.io.clear_video_cache"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear_video_cache</span></code></a>() → None</p></td>
 <td><p>Drop every handle held by <a class="reference internal" href="#exordium.video.core.io.open_video" title="exordium.video.core.io.open_video"><code class="xref py py-func docutils literal notranslate"><span class="pre">open_video()</span></code></a>.</p></td>
 </tr>
 </tbody>

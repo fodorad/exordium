@@ -348,19 +348,19 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.build_hf_model" title="exordium.utils.ckpt.build_hf_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_hf_model</span></code></a>(→ Any)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.build_hf_model" title="exordium.utils.ckpt.build_hf_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_hf_model</span></code></a>(model_cls, model_id[, pretrained, ...]) → Any</p></td>
 <td><p>Build a HuggingFace model, with or without its pretrained weights.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.ckpt.download_file" title="exordium.utils.ckpt.download_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_file</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.ckpt.download_file" title="exordium.utils.ckpt.download_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_file</span></code></a>(remote_path, local_path[, overwrite]) → None</p></td>
 <td><p>Downloads a file to a given local path using urllib.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.download_weight" title="exordium.utils.ckpt.download_weight"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_weight</span></code></a>(→ pathlib.Path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.download_weight" title="exordium.utils.ckpt.download_weight"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_weight</span></code></a>(filename, local_dir[, repo_id, ...]) → pathlib.Path</p></td>
 <td><p>Download a model weight file from Hugging Face Hub if not already cached.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.ckpt.remove_token" title="exordium.utils.ckpt.remove_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_token</span></code></a>(→ dict)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.utils.ckpt.remove_token" title="exordium.utils.ckpt.remove_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_token</span></code></a>(weights[, token]) → dict</p></td>
 <td><p>Removes a token from the keys of the weight dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.load_checkpoint" title="exordium.utils.ckpt.load_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_checkpoint</span></code></a>(→ dict)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.utils.ckpt.load_checkpoint" title="exordium.utils.ckpt.load_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_checkpoint</span></code></a>(path[, strip_prefix]) → dict</p></td>
 <td><p>Load a torch checkpoint and strip DDP/Lightning key prefixes.</p></td>
 </tr>
 </tbody>

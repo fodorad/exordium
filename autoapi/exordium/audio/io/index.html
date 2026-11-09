@@ -360,13 +360,13 @@
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.io.save_audio" title="exordium.audio.io.save_audio"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_audio</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.io.save_audio" title="exordium.audio.io.save_audio"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_audio</span></code></a>(audio, output_path[, sr]) → None</p></td>
 <td><p>Save audio waveform to file using torchaudio.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.io.load_audio" title="exordium.audio.io.load_audio"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_audio</span></code></a>(→ tuple[torch.Tensor, int])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.audio.io.load_audio" title="exordium.audio.io.load_audio"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_audio</span></code></a>(audio_path[, target_sample_rate, clamp, ...]) → tuple[torch.Tensor, int]</p></td>
 <td><p>Load audio file with optional resampling and preprocessing.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.io.split_audio" title="exordium.audio.io.split_audio"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_audio</span></code></a>(→ list[torch.Tensor])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.audio.io.split_audio" title="exordium.audio.io.split_audio"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_audio</span></code></a>(audio, segment_duration, sample_rate) → list[torch.Tensor]</p></td>
 <td><p>Split audio into fixed-duration segments.</p></td>
 </tr>
 </tbody>

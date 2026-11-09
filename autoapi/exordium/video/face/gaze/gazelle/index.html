@@ -408,16 +408,16 @@ mirrored on <code class="docutils literal notranslate"><span class="pre">fodorad
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_table" title="exordium.video.face.gaze.gazelle.boxes_from_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">boxes_from_table</span></code></a>(→ dict[int, dict[int, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_table" title="exordium.video.face.gaze.gazelle.boxes_from_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">boxes_from_table</span></code></a>(table, width, height[, scale, ...]) → dict[int, dict[int, exordium.video.face.gaze.base.NormalizedBox]]</p></td>
 <td><p>Load your own face tracks for <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks" title="exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">boxes_from_tracks</span></code></a>(→ dict[int, dict[int, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.boxes_from_tracks" title="exordium.video.face.gaze.gazelle.boxes_from_tracks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">boxes_from_tracks</span></code></a>(tracks, width, height[, scale]) → dict[int, dict[int, exordium.video.face.gaze.base.NormalizedBox]]</p></td>
 <td><p>Turn face tracks into per-frame head boxes for <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.gaze_table" title="exordium.video.face.gaze.gazelle.gaze_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaze_table</span></code></a>(→ pandas.DataFrame)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.gaze_table" title="exordium.video.face.gaze.gazelle.gaze_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaze_table</span></code></a>(result[, fps, labels]) → pandas.DataFrame</p></td>
 <td><p>Flatten a <a class="reference internal" href="#exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze" title="exordium.video.face.gaze.gazelle.GazelleWrapper.video_to_gaze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GazelleWrapper.video_to_gaze()</span></code></a> result into a table.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.head_maps_from_boxes" title="exordium.video.face.gaze.gazelle.head_maps_from_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">head_maps_from_boxes</span></code></a>(→ torch.Tensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.face.gaze.gazelle.head_maps_from_boxes" title="exordium.video.face.gaze.gazelle.head_maps_from_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">head_maps_from_boxes</span></code></a>(boxes[, device]) → torch.Tensor</p></td>
 <td><p>Rasterise normalized head boxes onto the backbone token grid.</p></td>
 </tr>
 </tbody>

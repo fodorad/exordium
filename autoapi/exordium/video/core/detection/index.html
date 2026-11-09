@@ -402,22 +402,22 @@ numpy arrays and convert to BGR numpy internally before writing with cv2.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.detection.add_detections_to_frame" title="exordium.video.core.detection.add_detections_to_frame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_detections_to_frame</span></code></a>(→ numpy.ndarray)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.detection.add_detections_to_frame" title="exordium.video.core.detection.add_detections_to_frame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_detections_to_frame</span></code></a>(frame_detections[, frame]) → numpy.ndarray</p></td>
 <td><p>Overlay detection bounding boxes and scores onto a video frame.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.detection.save_detections_to_video" title="exordium.video.core.detection.save_detections_to_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_detections_to_video</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.detection.save_detections_to_video" title="exordium.video.core.detection.save_detections_to_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_detections_to_video</span></code></a>(video_detections, frame_dir, ...) → None</p></td>
 <td><p>Save annotated frame images with detection overlays to a directory.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.detection.save_track_target_to_images" title="exordium.video.core.detection.save_track_target_to_images"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_track_target_to_images</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.detection.save_track_target_to_images" title="exordium.video.core.detection.save_track_target_to_images"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_track_target_to_images</span></code></a>(track, output_dir[, ...]) → None</p></td>
 <td><p>Save cropped face images for each detection in a track.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.detection.save_track_with_context_to_video" title="exordium.video.core.detection.save_track_with_context_to_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_track_with_context_to_video</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.detection.save_track_with_context_to_video" title="exordium.video.core.detection.save_track_with_context_to_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_track_with_context_to_video</span></code></a>(track, frame_dir, ...) → None</p></td>
 <td><p>Save full-frame images annotated with the track bounding box and score.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.detection.visualize_detection" title="exordium.video.core.detection.visualize_detection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">visualize_detection</span></code></a>(→ numpy.ndarray)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#exordium.video.core.detection.visualize_detection" title="exordium.video.core.detection.visualize_detection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">visualize_detection</span></code></a>(detection[, output_path, show_indices]) → numpy.ndarray</p></td>
 <td><p>Visualize the landmarks of a single detection on its source frame.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.detection.visualize_detection_crop" title="exordium.video.core.detection.visualize_detection_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">visualize_detection_crop</span></code></a>() → numpy.ndarray)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#exordium.video.core.detection.visualize_detection_crop" title="exordium.video.core.detection.visualize_detection_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">visualize_detection_crop</span></code></a>(detection[, square, ...]) → numpy.ndarray</p></td>
 <td><p>Visualize the landmarks of a single detection on its face crop.</p></td>
 </tr>
 </tbody>
