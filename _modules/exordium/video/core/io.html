@@ -872,7 +872,7 @@
     <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">frames_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
 
     <span class="c1"># Create video writer</span>
-    <span class="n">fourcc</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoWriter_fourcc</span><span class="p">(</span><span class="o">*</span><span class="n">codec</span><span class="p">)</span>  <span class="c1"># ty: ignore[unresolved-attribute]</span>
+    <span class="n">fourcc</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoWriter_fourcc</span><span class="p">(</span><span class="o">*</span><span class="n">codec</span><span class="p">)</span>  <span class="c1"># ty: ignore[missing-attribute]</span>
     <span class="n">writer</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoWriter</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">),</span> <span class="n">fourcc</span><span class="p">,</span> <span class="n">fps</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">))</span>
 
     <span class="c1"># Write frames</span>
@@ -1260,7 +1260,7 @@
 
 <div class="viewcode-block" id="ImageSequenceReader.__getitem__">
 <a class="viewcode-back" href="../../../../autoapi/exordium/video/core/io/index.html#exordium.video.core.io.ImageSequenceReader.__getitem__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>  <span class="c1"># ty: ignore[invalid-method-override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>  <span class="c1"># ty: ignore[lost-keyword-for-regular-parameter]</span>
 <span class="w">        </span><span class="sd">"""Load image at index.</span>
 
 <span class="sd">        Args:</span>
