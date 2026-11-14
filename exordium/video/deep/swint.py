@@ -242,7 +242,7 @@ class WindowAttention(nn.Module):  # pragma: no cover
         attn = q @ k.transpose(-2, -1)
 
         relative_position_bias = self.relative_position_bias_table[
-            self.relative_position_index.view(-1)  # ty: ignore[call-non-callable]
+            self.relative_position_index.view(-1)  # ty: ignore[not-callable]
         ].view(
             self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1
         )  # Wh*Ww,Wh*Ww,nH
@@ -652,7 +652,7 @@ class BasicLayer(nn.Module):  # pragma: no cover
         """
         flops = 0
         for blk in self.blocks:
-            flops += blk.flops()  # ty: ignore[call-non-callable]
+            flops += blk.flops()  # ty: ignore[not-callable]
         if self.downsample is not None:
             flops += self.downsample.flops()
         return flops
@@ -908,7 +908,7 @@ class SwinTransformer(nn.Module):  # pragma: no cover
         flops = 0
         flops += self.patch_embed.flops()
         for i, layer in enumerate(self.layers):
-            flops += layer.flops()  # ty: ignore[call-non-callable]
+            flops += layer.flops()  # ty: ignore[not-callable]
         flops += (
             self.num_features
             * self.patches_resolution[0]
