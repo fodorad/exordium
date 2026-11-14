@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.14.1](https://github.com/fodorad/exordium/compare/v2.14.0...v2.14.1) (2026-11-14)
+
+
+### Bug Fixes
+
+* **types:** adopt ty 0.0.103 rule names and pin ty exactly ([#122](https://github.com/fodorad/exordium/issues/122)) ([9074a14](https://github.com/fodorad/exordium/commit/9074a14f64ed27617ee94f781c7832b850430967))
+
 ## [2.14.0](https://github.com/fodorad/exordium/compare/v2.13.0...v2.14.0) (2026-10-27)
 
 
