@@ -303,7 +303,7 @@ class MarlinWrapper(VisualModelWrapper):
             Feature tensor ``(B, D)``.
 
         """
-        return self.model.extract_features(tensor, keep_seq=False)  # ty: ignore[call-non-callable]
+        return self.model.extract_features(tensor, keep_seq=False)  # ty: ignore[not-callable]
 
     # ── batch feature extraction helpers ──────────────────────────────────
 

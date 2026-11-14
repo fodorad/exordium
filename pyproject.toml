@@ -81,7 +81,7 @@ video = [
 ]
 dev = [
   "ruff",
-  "ty>=0.0.100",
+  "ty==0.0.103",  # exact pin: ty renames rules between releases; bump via Dependabot
   "coverage",
   "pre-commit",
   "ipykernel",  # run the example notebooks in examples/

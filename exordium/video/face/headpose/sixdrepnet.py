@@ -453,7 +453,7 @@ class _RepVGGBlock(nn.Module):  # pragma: no cover
         k3, b3 = self._fuse_bn(self.rbr_dense)
         k1, b1 = self._fuse_bn(self.rbr_1x1)
         ki, bi = self._fuse_bn(self.rbr_identity)
-        return k3 + self._pad_1x1(k1) + ki, b3 + b1 + bi  # ty: ignore[invalid-return-type]
+        return k3 + self._pad_1x1(k1) + ki, b3 + b1 + bi  # ty: ignore[invalid-explicit-return]
 
     @staticmethod
     def _pad_1x1(k: torch.Tensor | int) -> torch.Tensor | int:
